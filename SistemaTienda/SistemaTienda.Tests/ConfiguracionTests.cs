@@ -30,7 +30,7 @@ public sealed class ConfiguracionTests
         bd.ConfigurarTienda();
 
         var segundoIntento = bd.Config.EjecutarAsistenteInicial(
-            "Otra tienda", "Abarrotes", 16m, 3.5m, 200m, false, 0m, 1, "9999");
+            "Otra tienda", "Abarrotes", 16m, 3.5m, 20_000, false, 0, 1, "9999");
 
         Assert.True(segundoIntento.IsError);
     }
@@ -138,36 +138,37 @@ public sealed class ConfiguracionTests
 
         Assert.True(bd.Config.AgregarGasto(new Gasto
         {
-            Concepto = "Renta", Monto = 100m, MetodoPago = "Efectivo", Origen = OrigenGasto.Caja
+            Concepto = "Renta", Monto = 10_000, MetodoPago = "Efectivo", Origen = OrigenGasto.Caja
         }).IsSuccess);
 
         Assert.True(bd.Config.AgregarGasto(new Gasto
         {
-            Concepto = "Renta", Monto = 50.50m, MetodoPago = "Tarjeta", Origen = OrigenGasto.Externo
+            Concepto = "Renta", Monto = 5_050, MetodoPago = "Tarjeta", Origen = OrigenGasto.Externo
         }).IsSuccess);
 
         Assert.True(bd.Config.AgregarGasto(new Gasto
         {
-            Concepto = "Luz", Monto = 80m, MetodoPago = "Transferencia", Origen = OrigenGasto.Externo
+            Concepto = "Luz", Monto = 8_000, MetodoPago = "Transferencia", Origen = OrigenGasto.Externo
         }).IsSuccess);
 
-        Assert.Equal(230.50m, bd.Config.ObtenerTotalGastos().Value);
+        Assert.Equal(23_050, bd.Config.ObtenerTotalGastos().Value);
 
         var porConcepto = bd.Config.ObtenerGastosPorConcepto().Value;
         Assert.Equal(2, porConcepto.Count);
         Assert.Equal("Renta", porConcepto[0].Concepto);
-        Assert.Equal(150.50m, porConcepto[0].Total);
+        Assert.Equal(15_050, porConcepto[0].Total);
     }
 
     [Theory]
     [InlineData(0)]
     [InlineData(-10)]
-    public void AgregarGasto_ConMontoNoPositivo_Falla(decimal monto)
+    public void AgregarGasto_ConMontoNoPositivo_Falla(long monto)
     {
         using var bd = new BaseDatosPrueba();
         bd.ConfigurarTienda();
 
         var resultado = bd.Config.AgregarGasto(new Gasto { Concepto = "Prueba", Monto = monto });
+
 
         Assert.True(resultado.IsError);
     }
@@ -178,7 +179,7 @@ public sealed class ConfiguracionTests
         using var bd = new BaseDatosPrueba();
         bd.ConfigurarTienda();
 
-        var resultado = bd.Config.AgregarGasto(new Gasto { Concepto = "  ", Monto = 10m });
+        var resultado = bd.Config.AgregarGasto(new Gasto { Concepto = "  ", Monto = 1_000 });
 
         Assert.True(resultado.IsError);
     }

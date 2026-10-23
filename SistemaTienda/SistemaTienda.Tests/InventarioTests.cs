@@ -5,7 +5,7 @@ namespace SistemaTienda.Tests;
 public sealed class InventarioTests
 {
     private static Producto Producto(string codigo = "7501000000010", string nombre = "Refresco",
-        decimal costo = 10m, decimal precio = 15m, int stock = 10, int minimo = 5) => new()
+        long costo = 1_000, long precio = 1_500, int stock = 10, int minimo = 5) => new()
         {
             CodigoBarras = codigo,
             Nombre = nombre,
@@ -111,7 +111,7 @@ public sealed class InventarioTests
     public void RegistrarMerma_ReduceStockYReportaCostoPerdido()
     {
         using var bd = new BaseDatosPrueba();
-        bd.Inventario.AgregarProducto(Producto(costo: 10m, stock: 10));
+        bd.Inventario.AgregarProducto(Producto(costo: 1_000, stock: 10));
         var producto = Assert.Single(bd.Inventario.ObtenerProductos());
 
         var merma = bd.Inventario.RegistrarMerma(producto.Id, 2, "Caducado", "Dueño");
@@ -153,7 +153,7 @@ public sealed class InventarioTests
         bd.Inventario.AgregarProducto(Producto(stock: 5));
         var producto = Assert.Single(bd.Inventario.ObtenerProductos());
 
-        var entrada = bd.Inventario.RegistrarEntrada(producto.Id, 7, 9.5m, "Dueño", "Compra");
+        var entrada = bd.Inventario.RegistrarEntrada(producto.Id, 7, 950, "Dueño", "Compra");
 
         Assert.True(entrada.IsSuccess, entrada.Message);
         Assert.Equal(12, bd.Inventario.BuscarPorId(producto.Id).Stock);
@@ -247,7 +247,7 @@ public sealed class InventarioTests
         var producto = Assert.Single(bd.Inventario.ObtenerProductos());
 
         producto.Nombre = "Refresco light";
-        producto.Precio = 18m;
+        producto.Precio = 1_800;
         producto.Stock = 999;
         var actualizacion = bd.Inventario.ActualizarProducto(producto);
 
@@ -255,7 +255,7 @@ public sealed class InventarioTests
 
         var recargado = bd.Inventario.BuscarPorId(producto.Id);
         Assert.Equal("Refresco light", recargado.Nombre);
-        Assert.Equal(18m, recargado.Precio);
+        Assert.Equal(1_800, recargado.Precio);
         Assert.Equal(10, recargado.Stock);
     }
 
@@ -263,10 +263,10 @@ public sealed class InventarioTests
     public void ObtenerValorizadoInventario_MultiplicaStockPorCosto()
     {
         using var bd = new BaseDatosPrueba();
-        bd.Inventario.AgregarProducto(Producto(codigo: "A1", costo: 10m, stock: 10));
-        bd.Inventario.AgregarProducto(Producto(codigo: "A2", costo: 2.50m, stock: 4));
+        bd.Inventario.AgregarProducto(Producto(codigo: "A1", costo: 1_000, stock: 10));
+        bd.Inventario.AgregarProducto(Producto(codigo: "A2", costo: 250, stock: 4));
 
-        Assert.Equal(110m, bd.Inventario.ObtenerValorizadoInventario());
+        Assert.Equal(11_000, bd.Inventario.ObtenerValorizadoInventario());
     }
 
     [Fact]
@@ -277,7 +277,7 @@ public sealed class InventarioTests
         var producto = Assert.Single(bd.Inventario.ObtenerProductos());
 
         bd.Inventario.ReducirStockVenta(producto.Id, 3, "Cajero");
-        bd.Inventario.RegistrarEntrada(producto.Id, 5, 10m, "Dueño");
+        bd.Inventario.RegistrarEntrada(producto.Id, 5, 1_000, "Dueño");
         bd.Inventario.RegistrarMerma(producto.Id, 2, "Roto", "Dueño");
         bd.Inventario.AjustarStock(producto.Id, 20, "Conteo", "Dueño");
 

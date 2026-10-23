@@ -14,7 +14,7 @@ public sealed class FiadoProveedoresTests
         {
             Nombre = "Doña Mari",
             Telefono = "555-123-4567",
-            SaldoActual = 300m
+            SaldoActual = 30_000
         });
 
         Assert.True(alta.IsSuccess, alta.Message);
@@ -22,7 +22,7 @@ public sealed class FiadoProveedoresTests
         var cliente = bd.Db.ObtenerClienteFiadoPorId(alta.Value.ClienteId);
         Assert.Equal("Doña Mari", cliente.Nombre);
         Assert.Equal("555-123-4567", cliente.Telefono);
-        Assert.Equal(300m, cliente.SaldoActual);
+        Assert.Equal(30_000, cliente.SaldoActual);
     }
 
     [Fact]
@@ -42,7 +42,7 @@ public sealed class FiadoProveedoresTests
         using var bd = new BaseDatosPrueba();
         bd.ConfigurarTienda();
 
-        var alta = bd.Config.AgregarClienteFiado(new ClienteFiado { Nombre = "Cliente", SaldoActual = -1m });
+        var alta = bd.Config.AgregarClienteFiado(new ClienteFiado { Nombre = "Cliente", SaldoActual = -1 });
 
         Assert.True(alta.IsError);
     }
@@ -52,13 +52,13 @@ public sealed class FiadoProveedoresTests
     {
         using var bd = new BaseDatosPrueba();
         bd.ConfigurarTienda();
-        var alta = bd.Config.AgregarClienteFiado(new ClienteFiado { Nombre = "Cliente", SaldoActual = 300m });
+        var alta = bd.Config.AgregarClienteFiado(new ClienteFiado { Nombre = "Cliente", SaldoActual = 30_000 });
 
-        var abono = bd.Config.RegistrarAbonoCliente(alta.Value.ClienteId, 120m);
+        var abono = bd.Config.RegistrarAbonoCliente(alta.Value.ClienteId, 12_000);
 
         Assert.True(abono.IsSuccess, abono.Message);
-        Assert.Equal(180m, abono.Value.SaldoRestante);
-        Assert.Equal(180m, bd.Db.ObtenerClienteFiadoPorId(alta.Value.ClienteId).SaldoActual);
+        Assert.Equal(18_000, abono.Value.SaldoRestante);
+        Assert.Equal(18_000, bd.Db.ObtenerClienteFiadoPorId(alta.Value.ClienteId).SaldoActual);
     }
 
     [Fact]
@@ -66,22 +66,22 @@ public sealed class FiadoProveedoresTests
     {
         using var bd = new BaseDatosPrueba();
         bd.ConfigurarTienda();
-        var alta = bd.Config.AgregarClienteFiado(new ClienteFiado { Nombre = "Cliente", SaldoActual = 100m });
+        var alta = bd.Config.AgregarClienteFiado(new ClienteFiado { Nombre = "Cliente", SaldoActual = 10_000 });
 
-        var abono = bd.Config.RegistrarAbonoCliente(alta.Value.ClienteId, 150m);
+        var abono = bd.Config.RegistrarAbonoCliente(alta.Value.ClienteId, 15_000);
 
         Assert.True(abono.IsError);
-        Assert.Equal(100m, bd.Db.ObtenerClienteFiadoPorId(alta.Value.ClienteId).SaldoActual);
+        Assert.Equal(10_000, bd.Db.ObtenerClienteFiadoPorId(alta.Value.ClienteId).SaldoActual);
     }
 
     [Theory]
-    [InlineData(0)]
-    [InlineData(-5)]
-    public void RegistrarAbono_ConMontoNoPositivo_Falla(decimal monto)
+    [InlineData(0L)]
+    [InlineData(-500L)]
+    public void RegistrarAbono_ConMontoNoPositivo_Falla(long monto)
     {
         using var bd = new BaseDatosPrueba();
         bd.ConfigurarTienda();
-        var alta = bd.Config.AgregarClienteFiado(new ClienteFiado { Nombre = "Cliente", SaldoActual = 100m });
+        var alta = bd.Config.AgregarClienteFiado(new ClienteFiado { Nombre = "Cliente", SaldoActual = 10_000 });
 
         Assert.True(bd.Config.RegistrarAbonoCliente(alta.Value.ClienteId, monto).IsError);
     }
@@ -92,7 +92,7 @@ public sealed class FiadoProveedoresTests
         using var bd = new BaseDatosPrueba();
         bd.ConfigurarTienda();
 
-        Assert.True(bd.Config.RegistrarAbonoCliente(999, 10m).IsError);
+        Assert.True(bd.Config.RegistrarAbonoCliente(999, 1_000).IsError);
     }
 
     [Fact]
@@ -100,8 +100,8 @@ public sealed class FiadoProveedoresTests
     {
         using var bd = new BaseDatosPrueba();
         bd.ConfigurarTienda();
-        bd.Config.AgregarClienteFiado(new ClienteFiado { Nombre = "Con deuda", SaldoActual = 50m });
-        bd.Config.AgregarClienteFiado(new ClienteFiado { Nombre = "Al día", SaldoActual = 0m });
+        bd.Config.AgregarClienteFiado(new ClienteFiado { Nombre = "Con deuda", SaldoActual = 5_000 });
+        bd.Config.AgregarClienteFiado(new ClienteFiado { Nombre = "Al día", SaldoActual = 0 });
 
         var conSaldo = bd.Config.ObtenerClientesConSaldo().Value;
 
@@ -119,16 +119,16 @@ public sealed class FiadoProveedoresTests
             Nombre = "Distribuidora del Norte",
             Clave = "DNO010101ABC",
             Telefono = "818-000-1111",
-            SaldoPendiente = 500m
+            SaldoPendiente = 50_000
         });
 
         Assert.True(alta.IsSuccess, alta.Message);
 
-        var pago = bd.Config.RegistrarPagoProveedor(alta.Value.ProveedorId, 200m);
+        var pago = bd.Config.RegistrarPagoProveedor(alta.Value.ProveedorId, 20_000);
 
         Assert.True(pago.IsSuccess, pago.Message);
-        Assert.Equal(300m, pago.Value.SaldoRestante);
-        Assert.Equal(300m, bd.Db.ObtenerProveedorPorId(alta.Value.ProveedorId).SaldoPendiente);
+        Assert.Equal(30_000, pago.Value.SaldoRestante);
+        Assert.Equal(30_000, bd.Db.ObtenerProveedorPorId(alta.Value.ProveedorId).SaldoPendiente);
     }
 
     [Fact]
@@ -136,22 +136,22 @@ public sealed class FiadoProveedoresTests
     {
         using var bd = new BaseDatosPrueba();
         bd.ConfigurarTienda();
-        var alta = bd.Config.AgregarProveedor(new Proveedor { Nombre = "Proveedor", SaldoPendiente = 100m });
+        var alta = bd.Config.AgregarProveedor(new Proveedor { Nombre = "Proveedor", SaldoPendiente = 10_000 });
 
-        var pago = bd.Config.RegistrarPagoProveedor(alta.Value.ProveedorId, 101m);
+        var pago = bd.Config.RegistrarPagoProveedor(alta.Value.ProveedorId, 10_100);
 
         Assert.True(pago.IsError);
-        Assert.Equal(100m, bd.Db.ObtenerProveedorPorId(alta.Value.ProveedorId).SaldoPendiente);
+        Assert.Equal(10_000, bd.Db.ObtenerProveedorPorId(alta.Value.ProveedorId).SaldoPendiente);
     }
 
     [Theory]
-    [InlineData(0)]
-    [InlineData(-1)]
-    public void RegistrarPagoProveedor_ConMontoNoPositivo_Falla(decimal monto)
+    [InlineData(0L)]
+    [InlineData(-100L)]
+    public void RegistrarPagoProveedor_ConMontoNoPositivo_Falla(long monto)
     {
         using var bd = new BaseDatosPrueba();
         bd.ConfigurarTienda();
-        var alta = bd.Config.AgregarProveedor(new Proveedor { Nombre = "Proveedor", SaldoPendiente = 100m });
+        var alta = bd.Config.AgregarProveedor(new Proveedor { Nombre = "Proveedor", SaldoPendiente = 10_000 });
 
         Assert.True(bd.Config.RegistrarPagoProveedor(alta.Value.ProveedorId, monto).IsError);
     }

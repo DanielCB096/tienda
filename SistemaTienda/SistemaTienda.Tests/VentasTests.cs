@@ -8,7 +8,7 @@ namespace SistemaTienda.Tests;
 public sealed class VentasTests
 {
     private static Producto CrearProducto(BaseDatosPrueba bd, string codigo,
-        decimal precio, decimal costo, int stock)
+        long precio, long costo, int stock)
     {
         var producto = new Producto
         {
@@ -51,18 +51,18 @@ public sealed class VentasTests
     {
         using var bd = new BaseDatosPrueba();
         bd.ConfigurarTienda();
-        var producto = CrearProducto(bd, "A1", precio: 25m, costo: 10m, stock: 10);
+        var producto = CrearProducto(bd, "A1", precio: 2_500, costo: 1_000, stock: 10);
 
-        var resultado = Vender(bd, new PagoSolicitado { Efectivo = 75m }, (producto, 3));
+        var resultado = Vender(bd, new PagoSolicitado { Efectivo = 7_500 }, (producto, 3));
 
         Assert.True(resultado.IsSuccess, resultado.Message);
         var venta = resultado.Value;
         Assert.True(venta.Id > 0);
-        Assert.Equal(75m, venta.Total);
-        Assert.Equal(30m, venta.CostoTotal);
+        Assert.Equal(7_500, venta.Total);
+        Assert.Equal(3_000, venta.CostoTotal);
         Assert.Equal(MetodoPagoVenta.Efectivo, venta.MetodoPago);
-        Assert.Equal(75m, venta.PagoEfectivo);
-        Assert.Equal(0m, venta.ComisionTarjeta);
+        Assert.Equal(7_500, venta.PagoEfectivo);
+        Assert.Equal(0, venta.ComisionTarjeta);
 
         var actualizado = bd.Inventario.BuscarPorId(producto.Id);
         Assert.Equal(7, actualizado.Stock);
@@ -70,9 +70,9 @@ public sealed class VentasTests
         var linea = Assert.Single(bd.Db.ObtenerLineasVenta(venta.Id));
         Assert.Equal(producto.Id, linea.ProductoId);
         Assert.Equal(3, linea.Cantidad);
-        Assert.Equal(25m, linea.PrecioUnitario);
-        Assert.Equal(10m, linea.CostoUnitario);
-        Assert.Equal(75m, linea.Importe);
+        Assert.Equal(2_500, linea.PrecioUnitario);
+        Assert.Equal(1_000, linea.CostoUnitario);
+        Assert.Equal(7_500, linea.Importe);
 
         var movimientos = bd.Inventario.HistorialMovimientos(producto.Id);
         Assert.Contains(movimientos, m => m.Tipo == MovimientoTipo.Salida && m.Cantidad == -3);
@@ -84,9 +84,9 @@ public sealed class VentasTests
     {
         using var bd = new BaseDatosPrueba();
         bd.ConfigurarTienda();
-        var producto = CrearProducto(bd, "A1", precio: 10m, costo: 5m, stock: 2);
+        var producto = CrearProducto(bd, "A1", precio: 1_000, costo: 500, stock: 2);
 
-        var resultado = Vender(bd, new PagoSolicitado { Efectivo = 30m }, (producto, 3));
+        var resultado = Vender(bd, new PagoSolicitado { Efectivo = 3_000 }, (producto, 3));
 
         Assert.True(resultado.IsError);
         Assert.Equal(2, bd.Inventario.BuscarPorId(producto.Id).Stock);
@@ -100,23 +100,23 @@ public sealed class VentasTests
     {
         using var bd = new BaseDatosPrueba();
         bd.ConfigurarTienda();
-        var producto = CrearProducto(bd, "A1", precio: 15m, costo: 10m, stock: 5);
+        var producto = CrearProducto(bd, "A1", precio: 1_500, costo: 1_000, stock: 5);
 
-        var venta = Vender(bd, new PagoSolicitado { Efectivo = 30m }, (producto, 2));
+        var venta = Vender(bd, new PagoSolicitado { Efectivo = 3_000 }, (producto, 2));
         Assert.True(venta.IsSuccess, venta.Message);
 
-        producto.Costo = 12m;
-        producto.Precio = 20m;
+        producto.Costo = 1_200;
+        producto.Precio = 2_000;
         Assert.True(bd.Inventario.ActualizarProducto(producto).IsSuccess);
 
         var linea = Assert.Single(bd.Db.ObtenerLineasVenta(venta.Value.Id));
-        Assert.Equal(15m, linea.PrecioUnitario);
-        Assert.Equal(10m, linea.CostoUnitario);
-        Assert.Equal(30m, linea.Importe);
+        Assert.Equal(1_500, linea.PrecioUnitario);
+        Assert.Equal(1_000, linea.CostoUnitario);
+        Assert.Equal(3_000, linea.Importe);
 
         var guardada = bd.Db.ObtenerVentaPorId(venta.Value.Id);
-        Assert.Equal(30m, guardada.Total);
-        Assert.Equal(20m, guardada.CostoTotal);
+        Assert.Equal(3_000, guardada.Total);
+        Assert.Equal(2_000, guardada.CostoTotal);
     }
 
     [Fact]
@@ -125,17 +125,17 @@ public sealed class VentasTests
         using var bd = new BaseDatosPrueba();
         bd.ConfigurarTienda(fiado: true);
         var clienteId = CrearCliente(bd, "Ana");
-        var producto = CrearProducto(bd, "A1", precio: 50m, costo: 20m, stock: 5);
+        var producto = CrearProducto(bd, "A1", precio: 5_000, costo: 2_000, stock: 5);
 
         var resultado = Vender(bd,
-            new PagoSolicitado { Fiado = 100m, ClienteId = clienteId },
+            new PagoSolicitado { Fiado = 10_000, ClienteId = clienteId },
             (producto, 2));
 
         Assert.True(resultado.IsSuccess, resultado.Message);
         Assert.Equal(MetodoPagoVenta.Fiado, resultado.Value.MetodoPago);
-        Assert.Equal(100m, resultado.Value.PagoFiado);
-        Assert.Equal(0m, resultado.Value.PagoEfectivo);
-        Assert.Equal(100m, bd.Db.ObtenerClienteFiadoPorId(clienteId).SaldoActual);
+        Assert.Equal(10_000, resultado.Value.PagoFiado);
+        Assert.Equal(0, resultado.Value.PagoEfectivo);
+        Assert.Equal(10_000, bd.Db.ObtenerClienteFiadoPorId(clienteId).SaldoActual);
         Assert.Equal(3, bd.Inventario.BuscarPorId(producto.Id).Stock);
     }
 
@@ -145,15 +145,15 @@ public sealed class VentasTests
         using var bd = new BaseDatosPrueba();
         bd.ConfigurarTienda(fiado: false);
         var clienteId = CrearCliente(bd);
-        var producto = CrearProducto(bd, "A1", precio: 50m, costo: 20m, stock: 5);
+        var producto = CrearProducto(bd, "A1", precio: 5_000, costo: 2_000, stock: 5);
 
         var resultado = Vender(bd,
-            new PagoSolicitado { Fiado = 50m, ClienteId = clienteId },
+            new PagoSolicitado { Fiado = 5_000, ClienteId = clienteId },
             (producto, 1));
 
         Assert.True(resultado.IsError);
         Assert.Equal(5, bd.Inventario.BuscarPorId(producto.Id).Stock);
-        Assert.Equal(0m, bd.Db.ObtenerClienteFiadoPorId(clienteId).SaldoActual);
+        Assert.Equal(0, bd.Db.ObtenerClienteFiadoPorId(clienteId).SaldoActual);
         Assert.Equal(0, bd.Db.ExecuteScalar<int>("SELECT COUNT(*) FROM Ventas"));
     }
 
@@ -163,20 +163,20 @@ public sealed class VentasTests
         using var bd = new BaseDatosPrueba();
         bd.ConfigurarTienda(fiado: true);
         var clienteId = CrearCliente(bd);
-        var producto = CrearProducto(bd, "A1", precio: 400m, costo: 100m, stock: 10);
+        var producto = CrearProducto(bd, "A1", precio: 40_000, costo: 10_000, stock: 10);
 
         var primera = Vender(bd,
-            new PagoSolicitado { Fiado = 400m, ClienteId = clienteId },
+            new PagoSolicitado { Fiado = 40_000, ClienteId = clienteId },
             (producto, 1));
         Assert.True(primera.IsSuccess, primera.Message);
 
         var segunda = Vender(bd,
-            new PagoSolicitado { Fiado = 400m, ClienteId = clienteId },
+            new PagoSolicitado { Fiado = 40_000, ClienteId = clienteId },
             (producto, 1));
 
         Assert.True(segunda.IsError);
         Assert.Contains("límite de crédito", segunda.Message);
-        Assert.Equal(400m, bd.Db.ObtenerClienteFiadoPorId(clienteId).SaldoActual);
+        Assert.Equal(40_000, bd.Db.ObtenerClienteFiadoPorId(clienteId).SaldoActual);
         Assert.Equal(9, bd.Inventario.BuscarPorId(producto.Id).Stock);
         Assert.Equal(1, bd.Db.ExecuteScalar<int>("SELECT COUNT(*) FROM Ventas"));
     }
@@ -186,9 +186,9 @@ public sealed class VentasTests
     {
         using var bd = new BaseDatosPrueba();
         bd.ConfigurarTienda();
-        var producto = CrearProducto(bd, "A1", precio: 50m, costo: 20m, stock: 5);
+        var producto = CrearProducto(bd, "A1", precio: 5_000, costo: 2_000, stock: 5);
 
-        var resultado = Vender(bd, new PagoSolicitado { Efectivo = 40m }, (producto, 1));
+        var resultado = Vender(bd, new PagoSolicitado { Efectivo = 4_000 }, (producto, 1));
 
         Assert.True(resultado.IsError);
         Assert.Contains("no coinciden", resultado.Message);
@@ -201,17 +201,17 @@ public sealed class VentasTests
     {
         using var bd = new BaseDatosPrueba();
         bd.ConfigurarTienda();
-        var producto = CrearProducto(bd, "A1", precio: 50m, costo: 20m, stock: 5);
+        var producto = CrearProducto(bd, "A1", precio: 5_000, costo: 2_000, stock: 5);
 
         var resultado = Vender(bd,
-            new PagoSolicitado { Efectivo = 30m, Tarjeta = 70m },
+            new PagoSolicitado { Efectivo = 3_000, Tarjeta = 7_000 },
             (producto, 2));
 
         Assert.True(resultado.IsSuccess, resultado.Message);
         Assert.Equal(MetodoPagoVenta.Mixto, resultado.Value.MetodoPago);
-        Assert.Equal(30m, resultado.Value.PagoEfectivo);
-        Assert.Equal(70m, resultado.Value.PagoTarjeta);
-        Assert.Equal(2.45m, resultado.Value.ComisionTarjeta);
+        Assert.Equal(3_000, resultado.Value.PagoEfectivo);
+        Assert.Equal(7_000, resultado.Value.PagoTarjeta);
+        Assert.Equal(245, resultado.Value.ComisionTarjeta);
     }
 
     [Fact]
@@ -219,12 +219,12 @@ public sealed class VentasTests
     {
         using var bd = new BaseDatosPrueba();
         bd.ConfigurarTienda();
-        var producto = CrearProducto(bd, "A1", precio: 50m, costo: 20m, stock: 5);
+        var producto = CrearProducto(bd, "A1", precio: 5_000, costo: 2_000, stock: 5);
         var servicio = new VentaService(bd.Db);
 
         var cantidadCero = servicio.RegistrarVenta(
             new[] { new LineaVentaSolicitada { ProductoId = producto.Id, Cantidad = 0 } },
-            new PagoSolicitado { Efectivo = 0m }, "Cajero");
+            new PagoSolicitado { Efectivo = 0 }, "Cajero");
 
         var duplicada = servicio.RegistrarVenta(
             new[]
@@ -232,7 +232,7 @@ public sealed class VentasTests
                 new LineaVentaSolicitada { ProductoId = producto.Id, Cantidad = 1 },
                 new LineaVentaSolicitada { ProductoId = producto.Id, Cantidad = 1 }
             },
-            new PagoSolicitado { Efectivo = 100m }, "Cajero");
+            new PagoSolicitado { Efectivo = 10_000 }, "Cajero");
 
         Assert.True(cantidadCero.IsError);
         Assert.True(duplicada.IsError);
@@ -246,10 +246,10 @@ public sealed class VentasTests
         using var bd = new BaseDatosPrueba();
         bd.ConfigurarTienda(fiado: true);
         var clienteId = CrearCliente(bd);
-        var producto = CrearProducto(bd, "A1", precio: 50m, costo: 20m, stock: 5);
+        var producto = CrearProducto(bd, "A1", precio: 5_000, costo: 2_000, stock: 5);
 
         var resultado = Vender(bd,
-            new PagoSolicitado { Fiado = 20m, Efectivo = 30m, ClienteId = clienteId },
+            new PagoSolicitado { Fiado = 2_000, Efectivo = 3_000, ClienteId = clienteId },
             (producto, 1));
 
         Assert.True(resultado.IsError);
@@ -262,8 +262,8 @@ public sealed class VentasTests
     {
         using var bd = new BaseDatosPrueba();
         bd.ConfigurarTienda();
-        var producto = CrearProducto(bd, "A1", precio: 10m, costo: 5m, stock: 5);
-        Assert.True(Vender(bd, new PagoSolicitado { Efectivo = 10m }, (producto, 1)).IsSuccess);
+        var producto = CrearProducto(bd, "A1", precio: 1_000, costo: 500, stock: 5);
+        Assert.True(Vender(bd, new PagoSolicitado { Efectivo = 1_000 }, (producto, 1)).IsSuccess);
 
         var servicio = new VentaService(bd.Db);
         Assert.Single(servicio.ObtenerVentasDelDia(DateTime.Today));
@@ -299,12 +299,17 @@ public sealed class VentasTests
             {
                 CodigoBarras = "A1",
                 Nombre = "Anterior",
-                Costo = 5m,
-                Precio = 10m,
+                Costo = 500,
+                Precio = 1_000,
                 Stock = 4
             }) > 0);
 
-            // Simula una base creada antes de existir las ventas y el corte de caja.
+            // Simula una base creada antes de existir las ventas, el corte y los centavos:
+            // los importes vuelven a pesos y se eliminan las tablas posteriores.
+            original.ExecuteCommand("UPDATE Productos SET Costo = Costo / 100.0, Precio = Precio / 100.0");
+            original.ExecuteCommand("UPDATE MovimientoInventario SET CostoUnitario = CostoUnitario / 100.0");
+            original.ExecuteCommand("UPDATE ConfiguracionTienda SET FondoCajaInicial = FondoCajaInicial / 100.0, " +
+                                    "LimiCreditoCliente = LimiCreditoCliente / 100.0");
             original.ExecuteCommand("DROP TABLE AbonosFiado");
             original.ExecuteCommand("DROP TABLE MovimientosCaja");
             original.ExecuteCommand("DROP TABLE CortesCaja");
@@ -319,7 +324,11 @@ public sealed class VentasTests
                 migrada.ExecuteScalar<int>("PRAGMA user_version"));
             Assert.Equal(1, migrada.ExecuteScalar<int>(
                 "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'Ventas'"));
-            Assert.Single(migrada.ObtenerProductos());
+            var producto = Assert.Single(migrada.ObtenerProductos());
+            Assert.Equal(500, producto.Costo);
+            Assert.Equal(1_000, producto.Precio);
+            Assert.Equal(4, producto.Stock);
+            Assert.Equal(20_000, migrada.ObtenerConfiguracion().FondoCajaInicial);
             Assert.Single(RespaldoLocal.Listar(migrada.DirectorioRespaldos),
                 r => r.Nombre.Contains("antes-migrar"));
         }

@@ -7,7 +7,7 @@ namespace SistemaTienda.Tests;
 
 public sealed class MigracionesRespaldoTests
 {
-    private static Migracion MigracionCreaTabla(int version = 4) =>
+    private static Migracion MigracionCreaTabla(int version = 5) =>
         new(version, "crea TablaPrueba", (conn, tx) =>
         {
             using var cmd = conn.CreateCommand();
@@ -25,14 +25,14 @@ public sealed class MigracionesRespaldoTests
         var resultado = migrador.Migrar();
 
         Assert.True(resultado.IsSuccess, resultado.Message);
-        Assert.Equal(3, resultado.Value.VersionInicial);
-        Assert.Equal(4, resultado.Value.VersionFinal);
-        Assert.Equal(new[] { 4 }, resultado.Value.VersionesAplicadas);
+        Assert.Equal(4, resultado.Value.VersionInicial);
+        Assert.Equal(5, resultado.Value.VersionFinal);
+        Assert.Equal(new[] { 5 }, resultado.Value.VersionesAplicadas);
         Assert.True(resultado.Value.HuboCambios);
 
         Assert.True(File.Exists(resultado.Value.RutaRespaldo));
         Assert.True(RespaldoLocal.Verificar(resultado.Value.RutaRespaldo));
-        Assert.Equal(4, entorno.Db.ExecuteScalar<int>("PRAGMA user_version"));
+        Assert.Equal(5, entorno.Db.ExecuteScalar<int>("PRAGMA user_version"));
         Assert.Equal(1, entorno.Db.ExecuteScalar<int>(
             "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'TablaPrueba'"));
     }
@@ -52,7 +52,7 @@ public sealed class MigracionesRespaldoTests
         Assert.False(segunda.Value.HuboCambios);
         Assert.Empty(segunda.Value.VersionesAplicadas);
         Assert.Equal(respaldosTrasPrimera, RespaldoLocal.Listar(entorno.DirectorioRespaldos).Count);
-        Assert.Equal(4, entorno.Db.ExecuteScalar<int>("PRAGMA user_version"));
+        Assert.Equal(5, entorno.Db.ExecuteScalar<int>("PRAGMA user_version"));
     }
 
     [Fact]
@@ -60,7 +60,7 @@ public sealed class MigracionesRespaldoTests
     {
         using var entorno = new EntornoMigracion();
 
-        var migracionQueFalla = new Migracion(4, "falla a propósito", (conn, tx) =>
+        var migracionQueFalla = new Migracion(5, "falla a propósito", (conn, tx) =>
         {
             using var cmd = conn.CreateCommand();
             cmd.Transaction = tx;
@@ -74,7 +74,7 @@ public sealed class MigracionesRespaldoTests
         var resultado = migrador.Migrar();
 
         Assert.True(resultado.IsError);
-        Assert.Equal(3, entorno.Db.ExecuteScalar<int>("PRAGMA user_version"));
+        Assert.Equal(4, entorno.Db.ExecuteScalar<int>("PRAGMA user_version"));
         Assert.Equal(0, entorno.Db.ExecuteScalar<int>(
             "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'TablaParcial'"));
         Assert.Equal(1, entorno.Db.ExecuteScalar<int>("SELECT COUNT(*) FROM ConfiguracionTienda"));
@@ -107,7 +107,7 @@ public sealed class MigracionesRespaldoTests
             new MigradorEsquema(ruta, new[] { MigracionCreaTabla(version: 1) }));
 
         Assert.Throws<ArgumentException>(() =>
-            new MigradorEsquema(ruta, new[] { MigracionCreaTabla(4), MigracionCreaTabla(4) }));
+            new MigradorEsquema(ruta, new[] { MigracionCreaTabla(5), MigracionCreaTabla(5) }));
     }
 
     [Fact]
@@ -132,7 +132,7 @@ public sealed class MigracionesRespaldoTests
         using var bd = new BaseDatosPrueba();
         bd.Inventario.AgregarProducto(new Producto
         {
-            CodigoBarras = "A1", Nombre = "Antes", Costo = 1m, Precio = 2m, Stock = 5
+            CodigoBarras = "A1", Nombre = "Antes", Costo = 100, Precio = 200, Stock = 5
         });
 
         var servicio = new RespaldoService(bd.Db);
@@ -141,7 +141,7 @@ public sealed class MigracionesRespaldoTests
 
         bd.Inventario.AgregarProducto(new Producto
         {
-            CodigoBarras = "A2", Nombre = "Después", Costo = 1m, Precio = 2m, Stock = 3
+            CodigoBarras = "A2", Nombre = "Después", Costo = 100, Precio = 200, Stock = 3
         });
         Assert.Equal(2, bd.Db.ObtenerProductos().Count);
 
@@ -165,6 +165,102 @@ public sealed class MigracionesRespaldoTests
 
         Assert.True(servicio.Restaurar(respaldo.Value, confirmado: false).IsError);
         Assert.True(servicio.Restaurar(Path.Combine(bd.Db.DirectorioRespaldos, "no-existe.db"), true).IsError);
+    }
+
+    [Fact]
+    public void Migrar_BaseV3_ConvierteImportesACentavosYConservaLaIntegridad()
+    {
+        using var entorno = new EntornoMigracion();
+
+        // Simula una base v3: importes en pesos con hasta tres decimales.
+        entorno.Db.ExecuteCommand(@"
+            UPDATE ConfiguracionTienda
+            SET FondoCajaInicial = 200.00, LimiCreditoCliente = 500.00;
+
+            INSERT INTO ClientesFiado (Nombre, Telefono, SaldoActual)
+                VALUES ('Cliente', '555-000-0000', 300.00);
+            INSERT INTO Productos (CodigoBarras, Nombre, Costo, Precio, Stock, Impuesto)
+                VALUES ('A1', 'Producto', 12.345, 20.00, 4, 16.00);
+            INSERT INTO MovimientoInventario (ProductoId, Tipo, Cantidad, CostoUnitario, Motivo)
+                SELECT Id, 'Entrada', 4, 12.345, 'Inicial' FROM Productos WHERE CodigoBarras = 'A1';
+            INSERT INTO Gastos (Concepto, Monto, MetodoPago, Origen)
+                VALUES ('Luz', 25.50, 'Efectivo', 'Caja');
+            INSERT INTO Proveedores (Nombre, Clave, SaldoPendiente)
+                VALUES ('Proveedor', 'P1', 500.00);
+            INSERT INTO Ventas (Fecha, Usuario, ClienteId, MetodoPago, Total, CostoTotal,
+                PagoEfectivo, PagoTarjeta, PagoFiado, ComisionTarjeta)
+                VALUES (datetime('now'), 'Cajero', (SELECT Id FROM ClientesFiado LIMIT 1), 'Efectivo',
+                        20.00, 12.345, 20.00, 0, 0, 0);
+            INSERT INTO VentaLineas (VentaId, ProductoId, CodigoBarras, Nombre, Cantidad,
+                PrecioUnitario, CostoUnitario, Importe)
+                SELECT (SELECT Id FROM Ventas LIMIT 1), Id, 'A1', 'Producto', 1, 20.00, 12.345, 20.00
+                FROM Productos WHERE CodigoBarras = 'A1';
+            INSERT INTO CortesCaja (Desde, Hasta, FondoInicial, VentasEfectivo, VentasTarjeta,
+                VentasFiado, TotalVentas, NumeroVentas, NumeroVentasEfectivo, NumeroVentasTarjeta,
+                NumeroVentasMixto, NumeroVentasFiado, AbonosEfectivo, IngresosCaja, RetirosCaja,
+                GastosCaja, EfectivoEsperado, EfectivoContado, Diferencia, Usuario, Observaciones,
+                FechaRegistro)
+                VALUES (datetime('now'), datetime('now'), 200.00, 20.00, 0, 0, 20.00, 1, 1, 0, 0, 0,
+                        0, 0, 0, 25.50, 194.50, 200.00, 5.50, 'Cajero', '', datetime('now'));
+            INSERT INTO MovimientosCaja (Fecha, Tipo, Monto, Motivo, Usuario)
+                VALUES (datetime('now'), 'Ingreso', 5.25, 'Cambio', 'Cajero');
+            INSERT INTO AbonosFiado (ClienteId, Fecha, Monto, MetodoPago, Usuario)
+                SELECT Id, datetime('now'), 10.00, 'Efectivo', 'Cajero' FROM ClientesFiado LIMIT 1;
+
+            PRAGMA user_version = 3;
+        ");
+
+        entorno.Db.InicializarBaseDeDatos();
+
+        Assert.Equal(4, entorno.Db.ExecuteScalar<int>("PRAGMA user_version"));
+        Assert.Single(RespaldoLocal.Listar(entorno.DirectorioRespaldos), r => r.Nombre.Contains("antes-migrar"));
+
+        var config = entorno.Db.ObtenerConfiguracion();
+        Assert.Equal(20_000, config.FondoCajaInicial);
+        Assert.Equal(50_000, config.LimiCreditoCliente);
+
+        // ROUND(12.345 * 100) = 1235 centavos.
+        Assert.Equal(1_235, entorno.Db.ExecuteScalar<long>(
+            "SELECT Costo FROM Productos WHERE CodigoBarras = 'A1'"));
+        Assert.Equal(2_000, entorno.Db.ExecuteScalar<long>(
+            "SELECT Precio FROM Productos WHERE CodigoBarras = 'A1'"));
+        Assert.Equal(1_235, entorno.Db.ExecuteScalar<long>(
+            "SELECT CostoUnitario FROM MovimientoInventario LIMIT 1"));
+        Assert.Equal(2_550, entorno.Db.ExecuteScalar<long>("SELECT Monto FROM Gastos LIMIT 1"));
+        Assert.Equal(30_000, entorno.Db.ExecuteScalar<long>("SELECT SaldoActual FROM ClientesFiado LIMIT 1"));
+        Assert.Equal(50_000, entorno.Db.ExecuteScalar<long>("SELECT SaldoPendiente FROM Proveedores LIMIT 1"));
+
+        Assert.Equal(2_000, entorno.Db.ExecuteScalar<long>("SELECT Total FROM Ventas LIMIT 1"));
+        Assert.Equal(1_235, entorno.Db.ExecuteScalar<long>("SELECT CostoTotal FROM Ventas LIMIT 1"));
+        Assert.Equal(2_000, entorno.Db.ExecuteScalar<long>("SELECT PagoEfectivo FROM Ventas LIMIT 1"));
+        Assert.Equal(2_000, entorno.Db.ExecuteScalar<long>("SELECT Importe FROM VentaLineas LIMIT 1"));
+        Assert.Equal(1_235, entorno.Db.ExecuteScalar<long>("SELECT CostoUnitario FROM VentaLineas LIMIT 1"));
+
+        Assert.Equal(20_000, entorno.Db.ExecuteScalar<long>("SELECT FondoInicial FROM CortesCaja LIMIT 1"));
+        Assert.Equal(2_000, entorno.Db.ExecuteScalar<long>("SELECT VentasEfectivo FROM CortesCaja LIMIT 1"));
+        Assert.Equal(2_550, entorno.Db.ExecuteScalar<long>("SELECT GastosCaja FROM CortesCaja LIMIT 1"));
+        Assert.Equal(550, entorno.Db.ExecuteScalar<long>("SELECT Diferencia FROM CortesCaja LIMIT 1"));
+        Assert.Equal(525, entorno.Db.ExecuteScalar<long>("SELECT Monto FROM MovimientosCaja LIMIT 1"));
+        Assert.Equal(1_000, entorno.Db.ExecuteScalar<long>("SELECT Monto FROM AbonosFiado LIMIT 1"));
+
+        // Todos los importes quedan como INTEGER; los porcentajes siguen en DECIMAL.
+        Assert.Equal(0, entorno.Db.ExecuteScalar<int>(@"
+            SELECT COUNT(*) FROM pragma_table_info('CortesCaja')
+            WHERE name IN ('FondoInicial', 'VentasEfectivo', 'VentasTarjeta', 'VentasFiado',
+                           'TotalVentas', 'AbonosEfectivo', 'IngresosCaja', 'RetirosCaja',
+                           'GastosCaja', 'EfectivoEsperado', 'EfectivoContado', 'Diferencia')
+              AND type <> 'INTEGER'"));
+        Assert.Equal(0, entorno.Db.ExecuteScalar<int>(@"
+            SELECT COUNT(*) FROM pragma_table_info('Ventas')
+            WHERE name IN ('Total', 'CostoTotal', 'PagoEfectivo', 'PagoTarjeta', 'PagoFiado', 'ComisionTarjeta')
+              AND type <> 'INTEGER'"));
+        Assert.Equal("DECIMAL", entorno.Db.ExecuteScalar<string>(
+            "SELECT type FROM pragma_table_info('Productos') WHERE name = 'Impuesto'"));
+        Assert.Equal("DECIMAL", entorno.Db.ExecuteScalar<string>(
+            "SELECT type FROM pragma_table_info('ConfiguracionTienda') WHERE name = 'ComisionTarjeta'"));
+
+        Assert.Equal(1, entorno.Db.ExecuteScalar<int>("PRAGMA foreign_keys"));
+        Assert.Equal(0, entorno.Db.ExecuteScalar<int>("SELECT COUNT(*) FROM pragma_foreign_key_check"));
     }
 
     [Fact]

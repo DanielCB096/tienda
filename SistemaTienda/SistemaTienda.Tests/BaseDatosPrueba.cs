@@ -31,7 +31,7 @@ public sealed class BaseDatosPrueba : IDisposable
     public void ConfigurarTienda(string pin = "1234", bool fiado = true)
     {
         var resultado = Config.EjecutarAsistenteInicial(
-            "Tienda de prueba", "Abarrotes", 16m, 3.5m, 200m, fiado, 500m, 1, pin);
+            "Tienda de prueba", "Abarrotes", 16m, 3.5m, 20_000, fiado, 50_000, 1, pin);
 
         Assert.True(resultado.IsSuccess, resultado.Message);
     }
