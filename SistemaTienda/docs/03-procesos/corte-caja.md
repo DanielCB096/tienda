@@ -2,7 +2,7 @@
 
 ## Estado de implementación (2026-10-23)
 
-Base implementada en consola sobre el esquema vigente (v5, importes en centavos y bitácora de cortes y movimientos). El corte cierra un periodo, concilia el efectivo y queda inmutable.
+Base implementada en consola sobre el esquema vigente (v6, importes en centavos, bitácora de cortes y movimientos y anulaciones de venta). El corte cierra un periodo, concilia el efectivo y queda inmutable.
 
 | Elemento | Estado |
 |----------|--------|
@@ -14,6 +14,7 @@ Base implementada en consola sobre el esquema vigente (v5, importes en centavos 
 | Gastos de caja | ✅ Solo los gastos con origen `Caja` restan; los `Externo` no |
 | Diferencia | ✅ Si no es cero, el motivo es obligatorio y el corte no se guarda sin él |
 | Inmutabilidad | ✅ No hay edición ni borrado: se corrige con un movimiento o corte nuevo |
+| Ventas anuladas | ✅ Se excluyen de los totales; una venta incluida en un corte cerrado ya no se puede anular |
 | Permisos y aprobación de retiros | ✅ Corte e ingreso para dueño/encargado; retiro solo dueño; validado en `CorteCajaService` |
 | Denominaciones de billetes/monedas | ⛔ Pendiente; hoy solo se captura el total contado |
 

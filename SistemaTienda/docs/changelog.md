@@ -32,6 +32,18 @@ Próximamente después de completar los módulos críticos.
 - Configuración básica de tienda (nombre, giro, impuestos, métodos de pago).
 - Documentación inicial (glosario, stack, módulos, ADR).
 
+### v0.0.10 - 2026-10-23: Anulación de ventas
+
+- *Agregado*: esquema v6 con `AnulacionesVenta` (una por venta, `UNIQUE`), índice por fecha y disparadores que impiden `UPDATE` y `DELETE`; la venta original y sus líneas no se modifican.
+- *Agregado*: `DatabaseTools.AnularVenta` anula la venta completa en una transacción: registra la anulación, devuelve el stock de cada línea con el costo congelado y revierte el saldo fiado del cliente.
+- *Agregado*: permiso `AnularVenta` para dueño y encargado; `VentaService.AnularVenta` exige motivo y usuario, y deja la acción `AnulacionVenta` en la bitácora.
+- *Agregado*: se bloquea la anulación cuando la venta ya quedó incluida en un corte de caja cerrado.
+- *Modificado*: las ventas anuladas se excluyen del corte pendiente y del reporte de utilidad, y se marcan `[ANULADA]` en ventas del día.
+- *Agregado*: menú Ventas → [3] Anular venta con resumen de líneas y confirmación escribiendo `ANULAR`; recuerda que el reembolso en efectivo es manual.
+- *Agregado*: 8 pruebas de anulación (stock, fiado, corte cerrado, corte abierto, doble anulación, permisos, motivo y utilidad).
+- *Limitación*: la anulación no registra un movimiento de caja. La venta se excluye del corte; si el reembolso en efectivo se paga después de cerrar el corte, se registra manualmente como retiro en el corte siguiente.
+- Total del proyecto: 170 pruebas.
+
 ### v0.0.9 - 2026-10-23: Respaldo automático por intervalo
 
 - *Agregado*: `RespaldoService.EjecutarAutomaticoSiCorresponde` crea un respaldo verificado cuando pasó `RespaldoIntervaloDias` desde el último (0 = deshabilitado); cualquier respaldo previo cuenta para el intervalo.

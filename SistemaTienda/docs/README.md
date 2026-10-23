@@ -10,7 +10,7 @@ La base técnica está **compilando y con pruebas automatizadas**. El núcleo im
 - Catálogo de productos e inventario por movimientos (entradas, ventas, mermas, ajustes).
 - Gastos simples y su totalización.
 - Clientes con fiado (saldo y abonos con historial) y proveedores (saldo y pagos).
-- Ventas / POS: venta atómica multi-línea con costo y precio congelados, pagos en efectivo, tarjeta (comisión), mixto y fiado, y ticket de texto.
+- Ventas / POS: venta atómica multi-línea con costo y precio congelados, pagos en efectivo, tarjeta (comisión), mixto y fiado, ticket de texto y anulación completa con devolución de stock y reverso de fiado.
 - Corte de caja: periodo desde el corte anterior, efectivo esperado, diferencia con motivo obligatorio, ingresos/retiros e historial.
 - Reporte de utilidad por periodo: ventas, costo congelado, comisión de tarjeta, mermas y gastos.
 - Bitácora inmutable de operaciones sensibles (antes/después, usuario y motivo) y permisos validados en la capa de aplicación.
@@ -19,7 +19,7 @@ La base técnica está **compilando y con pruebas automatizadas**. El núcleo im
 - Dinero en centavos enteros (`long`/`INTEGER`, esquema v4) con conversión y formato centralizados en `Dinero`.
 - Interfaz de consola provisional.
 
-Pendiente para el MVP: anulación de ventas, copia de respaldos a USB/nube, conteo de caja por denominaciones y la interfaz definitiva (ADR pendiente). Ver [roadmap.md](roadmap.md) y [deuda-tecnica.md](deuda-tecnica.md).
+Pendiente para el MVP: copia de respaldos a USB/nube, conteo de caja por denominaciones y la interfaz definitiva (ADR pendiente). Ver [roadmap.md](roadmap.md) y [deuda-tecnica.md](deuda-tecnica.md).
 
 ## Índice
 

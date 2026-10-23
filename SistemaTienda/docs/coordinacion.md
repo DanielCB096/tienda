@@ -43,6 +43,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 | T9 | DeepSeek → Qoder | feat/integracion-t4-t9 | 25 pruebas de borde integradas y convertidas a centavos: gastos, saldos, inventario, usuarios y mapeo de tipos; 150 pruebas | fd879cc |
 | T5 | Qoder | feat/reportes-utilidad | Reporte de utilidad bruta y neta por periodo (costo congelado, comisión, mermas y gastos), filtro por fecha, permiso `Consultar` y 7 pruebas; 157 pruebas | 1f3152b |
 | T10 | Qoder | feat/respaldo-automatico | Respaldo automático por intervalo al iniciar/cerrar con aviso, bitácora de respaldos manuales y automáticos y 5 pruebas; 162 pruebas | bbc5257 |
+| T11 | Qoder | feat/anulacion-ventas | Esquema v6 (`AnulacionesVenta` inmutable), anulación de venta completa con devolución de stock y reverso de fiado, bloqueo tras corte cerrado, permiso `AnularVenta`, menú [3], exclusión de utilidad/corte y 8 pruebas; 170 pruebas | 7c5ed91 |
 
 ## Tareas
 
@@ -58,6 +59,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 | T8 | Corte de caja | Hecho | T2 | En `feat/corte-caja` (parte de `feat/ventas-pos`). Esquema v3: cortes, movimientos de caja y abonos con historial. |
 | T9 | Cobertura adicional de pruebas | Hecho | T1–T3 | En `feat/integracion-t4-t9`. 25 pruebas de borde en gastos, saldos, inventario, usuarios y mapeo de tipos. Hallazgos sin corregir: `AjustarStock` no valida que el producto exista; se permiten PIN duplicados y `VerificarAcceso` devuelve el primer usuario por nombre; `AgregarGasto` no recorta el concepto; la búsqueda por nombre no ignora acentos. Ver [deuda-tecnica.md](deuda-tecnica.md). |
 | T10 | Respaldo automático por intervalo | Hecho | T1 | En `feat/respaldo-automatico` (sobre `feat/reportes-utilidad`). Se evalúa al iniciar sesión y al cerrar; `0` deshabilita; cualquier respaldo previo cuenta y la copia queda en `Bitacora`. Pendiente: copia a USB/nube y respaldo durante sesiones largas. |
+| T11 | Anulación de ventas | Hecho | T2, T4, T8 | En `feat/anulacion-ventas` (sobre `feat/respaldo-automatico`). Esquema v6; solo venta completa, bloqueada si ya está en un corte cerrado; devuelve stock con costo congelado y revierte fiado; reembolso en efectivo manual (ver [deuda-tecnica.md](deuda-tecnica.md)). |
 
 ## Plantilla para reclamar
 
@@ -79,3 +81,4 @@ Al terminar, mueve la fila a `Hecho` (o elimínala de En curso) y registra el co
 | 2026-10-23 | Qoder | feat/corte-caja | T8 terminado: esquema v3, corte atómico con diferencia justificada, abonos con historial y movimientos de caja, 94 pruebas en CI | fc6436b..HEAD |
 | 2026-10-23 | Qoder | feat/centavos-enteros | T3 terminado: esquema v4 con importes en centavos enteros, `Dinero`, consola y servicios adaptados, migración con integridad de claves foráneas, 114 pruebas en CI | d26debc..20894d6 |
 | 2026-10-23 | Qoder | feat/respaldo-automatico | T10 terminado: respaldo automático por intervalo con aviso en consola, bitácora de respaldos manuales y automáticos, 5 pruebas nuevas; 162 pruebas | bbc5257 |
+| 2026-10-23 | Qoder | feat/anulacion-ventas | T11 terminado: esquema v6, anulación de venta completa con reverso de stock y fiado, bloqueo tras corte cerrado, permiso y bitácora, 8 pruebas nuevas; 170 pruebas en CI | 7c5ed91 |

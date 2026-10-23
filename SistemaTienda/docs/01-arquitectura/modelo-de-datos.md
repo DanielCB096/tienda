@@ -1,6 +1,6 @@
-# Modelo de Datos (esquema v4)
+# Modelo de Datos (esquema v6)
 
-Base local SQLite, un solo archivo. `PRAGMA user_version = 4`.
+Base local SQLite, un solo archivo. `PRAGMA user_version = 6`.
 
 El acceso vive en `SistemaTienda.Infrastructure/Database.cs` (`DatabaseTools`). Todas las consultas son parametrizadas.
 
@@ -12,6 +12,7 @@ El acceso vive en `SistemaTienda.Infrastructure/Database.cs` (`DatabaseTools`). 
   - **v3** — crea `CortesCaja`, `MovimientosCaja` y `AbonosFiado` con sus índices (corte de caja e historial de abonos).
   - **v4** — convierte todos los importes de `DECIMAL` (pesos) a `INTEGER` (centavos enteros). Como SQLite no permite cambiar el tipo de una columna, reconstruye cada tabla con `CREATE ... _Nueva`, `INSERT ... SELECT CAST(ROUND(col * 100) AS INTEGER)`, `DROP` y `RENAME`, conservando Id, FKs e índices. Los porcentajes (`Impuesto`, `ImpuestoPredeterminado`, `ComisionTarjeta`) siguen en `DECIMAL`.
   - **v5** — crea `Bitacora` con sus índices y disparadores que impiden `UPDATE` y `DELETE` (auditoría inmutable).
+  - **v6** — crea `AnulacionesVenta` con índice por fecha y disparadores que impiden `UPDATE` y `DELETE` (anulación inmutable de ventas).
 - Una base nueva se crea directamente en la versión máxima (`Migraciones.VersionMaxima`): no se crea respaldo previo porque aún no hay datos.
 - `MigradorEsquema.Migrar()` se ejecuta dentro de `InicializarBaseDeDatos()` al arrancar:
   1. Lee `user_version`; si la base es más nueva que la app, aborta sin tocar nada.
@@ -104,7 +105,7 @@ Historial inmutable de inventario.
 
 ### Ventas
 
-Cabecera inmutable de cada venta (migración v2). No se edita ni se borra: un error se corrige con una venta nueva.
+Cabecera inmutable de cada venta (migración v2). No se edita ni se borra: un error se corrige anulando la venta completa (migración v6) y registrando una nueva. Las consultas marcan `Anulada` con `EXISTS` sobre `AnulacionesVenta`.
 
 | Columna | Tipo | Notas |
 |---------|------|-------|
@@ -135,6 +136,18 @@ Detalle de productos vendidos con precio y costo congelados.
 | PrecioUnitario | INTEGER | Centavos; precio de catálogo al vender |
 | CostoUnitario | INTEGER | Centavos; costo al vender |
 | Importe | INTEGER | Centavos; `PrecioUnitario × Cantidad` |
+
+### AnulacionesVenta
+
+Registro inmutable de la anulación de una venta completa (migración v6). Una venta solo puede tener una anulación (`UNIQUE`).
+
+| Columna | Tipo | Notas |
+|---------|------|-------|
+| Id | INTEGER PK | |
+| VentaId | INTEGER FK → Ventas, UNIQUE | Venta anulada |
+| Fecha | DATETIME | Momento de la anulación |
+| Usuario | TEXT | Quien autorizó la anulación |
+| Motivo | TEXT | Obligatorio |
 
 ### Gastos
 
@@ -266,6 +279,10 @@ Reglas implementadas:
 
 El precio y el costo de cada línea se copian al vender; cambios posteriores en el catálogo no alteran ventas históricas.
 
+## Invariante: anulación atómica
+
+`DatabaseTools.AnularVenta` rechaza la operación si la venta no existe, ya está anulada o su fecha cae dentro de un corte de caja cerrado. En caso contrario, dentro de una sola transacción: inserta la fila en `AnulacionesVenta`, registra una entrada de inventario por cada línea con el `CostoUnitario` congelado y, si hubo fiado, descuenta `PagoFiado` del saldo del cliente. La venta y sus líneas no se modifican; la auditoría se escribe después del commit.
+
 ## Invariante: corte de caja atómico e inmutable
 
 `DatabaseTools.RegistrarCorteCaja` calcula los totales y guarda la cabecera en **una sola transacción**: si la inserción falla, no queda corte ni totales parciales. El periodo va de `Desde` (exclusivo) a `Hasta` (inclusivo); el siguiente corte empieza en el `Hasta` anterior.
@@ -276,7 +293,7 @@ Si `Diferencia ≠ 0` y `Observaciones` está vacía, la operación se rechaza y
 
 ## Índices
 
-`Productos(CodigoBarras)`, `Productos(Nombre)`, `Productos(Stock)`, `MovimientoInventario(ProductoId)`, `MovimientoInventario(Fecha)`, `Gastos(Fecha)`, `ClientesFiado(Nombre)`, `Proveedores(Nombre)`, `Ventas(Fecha)`, `VentaLineas(VentaId)`, `VentaLineas(ProductoId)`, `CortesCaja(Hasta)`, `MovimientosCaja(Fecha)`, `AbonosFiado(Fecha)`, `AbonosFiado(ClienteId)`.
+`Productos(CodigoBarras)`, `Productos(Nombre)`, `Productos(Stock)`, `MovimientoInventario(ProductoId)`, `MovimientoInventario(Fecha)`, `Gastos(Fecha)`, `ClientesFiado(Nombre)`, `Proveedores(Nombre)`, `Ventas(Fecha)`, `VentaLineas(VentaId)`, `VentaLineas(ProductoId)`, `CortesCaja(Hasta)`, `MovimientosCaja(Fecha)`, `AbonosFiado(Fecha)`, `AbonosFiado(ClienteId)`, `AnulacionesVenta(Fecha)` (además del índice único implícito en `VentaId`).
 
 ## Notas de tipado
 

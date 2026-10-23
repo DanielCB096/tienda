@@ -120,7 +120,8 @@ Acceso: Menú → "Corte de Caja" (requiere PIN de cajero o debido).
 ### "Me equivoqué al poner la cantidad"
 
 - Si la venta aún no se ha finalizado (aún está en el carrito), se puede quitar el producto del carrito y volver a agregar con la cantidad correcta.
-- Si la venta ya se registró, no se puede editar. Se debe registrar una **devolución** o **contramovimiento** (nueva venta inversa con motivo "Error en captura").
+- Si la venta ya se registró, no se puede editar. Solicita al dueño o encargado que la **anule** desde Ventas → [3] Anular venta: se anula la venta completa, se devuelve el stock y, si fue fiado, se revierte el saldo del cliente.
+- El reembolso en efectivo se entrega manualmente. La venta anulada ya se excluye del corte; si el reembolso se paga después de cerrar el corte, el dueño lo registra como retiro en el corte siguiente.
 
 ### "El cliente no tiene código de barras"
 

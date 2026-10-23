@@ -25,7 +25,7 @@ Utilidad neta  = Utilidad bruta − Mermas − Gastos
 
 | Componente | Origen |
 |------------|--------|
-| Ventas | `Ventas.Total`, contando también las ventas a fiado (criterio devengado) |
+| Ventas | `Ventas.Total`, contando también las ventas a fiado (criterio devengado); las ventas anuladas se excluyen |
 | Costo de ventas | `Ventas.CostoTotal`, congelado al momento de vender |
 | Comisión de tarjeta | `Ventas.ComisionTarjeta`, calculada al cobrar |
 | Mermas | `MovimientoInventario` con tipo `Salida` y motivo `Merma:%`, usando su `CostoUnitario` congelado |

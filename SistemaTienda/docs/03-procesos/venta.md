@@ -2,7 +2,7 @@
 
 ## Estado de implementación (2026-10-23)
 
-Base implementada en `feat/ventas-pos` (esquema v2). La interfaz es la consola provisional.
+Base implementada en `feat/ventas-pos` (esquema v2; la anulación se agregó en v6). La interfaz es la consola provisional.
 
 | Función | Estado |
 |---------|--------|
@@ -16,11 +16,31 @@ Base implementada en `feat/ventas-pos` (esquema v2). La interfaz es la consola p
 | Ticket interno en pantalla | ✅ Implementado (texto) |
 | Ticket con QR y compartir (WhatsApp, correo, galería) | ⛔ Pendiente |
 | Descuentos | ⛔ Fase 2 (no incluidos en MVP) |
-| Anulación posterior de una venta | ⛔ Pendiente: requiere movimiento de reversión, permiso y bitácora (T4) |
-| Reporte de utilidad por venta | ⛔ Pendiente (T5) |
-| Integración con corte de caja | ⛔ Pendiente (módulo 8) |
+| Anulación posterior de una venta | ✅ Implementado (T11, esquema v6): venta completa, permiso dueño/encargado, devolución de stock y reverso de fiado |
+| Reporte de utilidad por periodo | ✅ Implementado (T5); el detalle por venta sigue pendiente |
+| Integración con corte de caja | ✅ Implementado: las ventas anuladas se excluyen del corte pendiente y no se pueden anular tras un corte cerrado |
 
 Decisiones aplicadas: el precio de catálogo incluye impuesto y no se recalcula; el fiado no se combina con otros métodos; no hay ventas en espera (una a la vez); el sistema no se integra con la terminal bancaria.
+
+## Anulación de Venta (T11, esquema v6)
+
+Reglas confirmadas con el usuario:
+
+| Decisión | Descripción |
+|----------|-------------|
+| **Solo venta completa** | No hay anulación por línea ni devoluciones parciales en esta versión. |
+| **Bloqueo tras corte cerrado** | Si la venta ya quedó incluida en un corte de caja cerrado, no se puede anular; la corrección se hace con movimientos nuevos. |
+| **Reembolso manual** | La anulación no genera un movimiento de caja automático. La venta se excluye del corte pendiente; si el efectivo se devuelve después de ese corte, el dueño lo registra como retiro en el corte siguiente. |
+
+Flujo:
+
+1. Menú Ventas → [3] Anular venta (dueño o encargado).
+2. Se captura el número de venta y se muestran fecha, total, método y líneas.
+3. Se exige el motivo y se confirma escribiendo `ANULAR`.
+4. En una sola transacción se registra la anulación en `AnulacionesVenta`, se devuelve el stock con el costo congelado de cada línea y, si hubo fiado, se descuenta del saldo del cliente.
+5. La acción queda en la bitácora como `AnulacionVenta` con usuario, motivo y datos de la venta. La venta original no se edita ni se borra.
+
+Las ventas anuladas se excluyen del corte pendiente y del reporte de utilidad, y aparecen marcadas `[ANULADA]` en las ventas del día. Si el reembolso en efectivo se paga en el mismo periodo, no se registra retiro: la exclusión de la venta ya refleja la devolución. Si se paga después de cerrar el corte, se registra como retiro en el corte donde sale el efectivo.
 
 ## Flujo Simplificado de Venta (Decisiones Confirmadas)
 
@@ -70,7 +90,7 @@ Decisiones aplicadas: el precio de catálogo incluye impuesto y no se recalcula;
 
 ### Integración con Otros Módulos
 
-- **Inventario (Módulo 2)**: Cada venta reduce automáticamente el stock del producto vendido (transacción atómica). Si el stock es insuficiente, la venta se bloquea.
+- **Inventario (Módulo 2)**: Cada venta reduce automáticamente el stock del producto vendido (transacción atómica). Si el stock es insuficiente, la venta se bloquea. La anulación devuelve el stock con el costo congelado de la venta original.
 - **Configuración (Módulo 1)**: El precio en catálogo ya incluye el impuesto configurado. Los métodos de pago activados y la comisión de tarjeta vienen de la configuración.
 - **Respaldo (Módulo 7)**: Cada venta registrada se incluye automáticamente en la base de datos SQLite; los respaldos incluyen el historial de ventas.
 
@@ -80,7 +100,7 @@ Decisiones aplicadas: el precio de catálogo incluye impuesto y no se recalcula;
 2. **Precio incluye impuesto**: El precio de catálogo es el precio final. No se calcula impuesto adicional al momento de la venta.
 3. **Método de pago por venta**: Efectivo, Tarjeta, Mixto o Fiado. El sistema NO se integra con la terminal bancaria, solo registra el método.
 4. **Comisión de tarjeta**: Es configurable por tienda (en Configuración) y se resta automáticamente de la utilidad neta sobre las ventas con método tarjeta.
-5. **Historial inmodificable**: No se pueden editar ventas pasadas. Si hay error, se anula y se registra una nueva venta correcta.
+5. **Historial inmodificable**: No se pueden editar ventas pasadas. Si hay error, se anula la venta completa (con motivo, permiso y bitácora) y se registra una nueva venta correcta.
 6. **Ticket no fiscal**: El ticket digital es un comprobante interno. No se promete validez fiscal. Diseñado sin impedir la facturación CFDI futura (los campos opcionales están en la base de datos por si se necesita después).
 7. **Ticket incluye QR**: **NUEVO** - El código QR en el ticket contiene los datos esenciales de la venta (total, productos, etc.) para facilitar al cliente el acceso o pago posterior.
 
@@ -123,4 +143,4 @@ Decisiones aplicadas: el precio de catálogo incluye impuesto y no se recalcula;
 
 ---
 
-**Próximos pasos en código**: corte de caja (efectivo esperado a partir de `Ventas.PagoEfectivo`), reporte de utilidad con costo congelado y comisión, y ticket con QR cuando exista interfaz gráfica.
+**Próximos pasos en código**: ticket con QR y compartir cuando exista interfaz gráfica; descuentos quedan para Fase 2.

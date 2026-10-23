@@ -17,11 +17,11 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 - **Impacto**: se actualiza el saldo, pero no se guarda el movimiento de pago. No se puede auditar ni reconstruir el saldo. Contradice "el historial no se edita". Los abonos de fiado ya tienen historial (`AbonosFiado`), los pagos a proveedores no.
 - **Cierre**: tabla `PagosProveedor` inmutable; el saldo se actualiza dentro de la misma transacción.
 
-### Ventas sin anulación ni descuentos
+### Ventas sin descuentos
 
 - **Dónde**: `VentaService` y `DatabaseTools.RegistrarVenta`.
-- **Impacto**: la venta es inmutable pero no existe una operación de anulación: un cobro equivocado solo se compensa manualmente por ahora. Tampoco hay descuentos; el total es siempre precio de catálogo × cantidad.
-- **Cierre**: anulación con movimiento de reverso (devolver stock, ajustar fiado), permiso de encargado/dueño y registro en bitácora; descuentos como fase 2 con autorización.
+- **Impacto**: el total es siempre precio de catálogo × cantidad. La anulación ya existe (solo venta completa, bloqueada tras un corte cerrado), pero no hay descuentos por línea ni por venta.
+- **Cierre**: descuentos como fase 2 con autorización y registro en bitácora.
 
 ### Ventas sin ticket QR ni compartir
 
@@ -36,6 +36,13 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 - **Cierre**: captura por denominaciones y método de pago en abonos.
 
 ## Media prioridad
+
+### Reembolso de anulación sin movimiento de caja
+
+- **Dónde**: `DatabaseTools.AnularVenta` y `Program.AnularVenta`.
+- **Por qué**: se confirmó con el usuario que el reembolso sea manual y documentado en esta versión.
+- **Impacto**: la anulación devuelve stock y revierte el fiado, pero no registra un movimiento de caja. La venta se excluye del corte pendiente, así que un reembolso pagado en el mismo periodo no necesita retiro; si se paga después de cerrar el corte, el dueño debe registrar un retiro en el corte siguiente. El sistema no conoce el método ni el momento del reembolso.
+- **Cierre**: si se requiere, generar automáticamente un `MovimientoCaja` de retiro ligado a la anulación, con permiso y bitácora.
 
 ### Respaldo automático solo se evalúa al iniciar o cerrar
 

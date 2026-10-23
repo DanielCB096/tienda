@@ -8,7 +8,7 @@ Estado al 2026-10-23. Orden sugerido en [CLAUDE-tienda.md §13](../CLAUDE-tienda
 |---|--------|--------|-------|
 | 1 | Configuración y usuarios | ✅ Base implementada | Asistente, PIN hasheado, roles, gastos, bitácora inmutable y permisos en servicios |
 | 2 | Catálogo e inventario | ✅ Base implementada | CRUD, movimientos, stock bajo, búsqueda |
-| 3 | Ventas / POS | 🟡 Base implementada | Venta multi-línea atómica, efectivo/tarjeta/mixto/fiado, costo y precio congelados, comisión, ticket de texto; falta QR, compartir y anulación |
+| 3 | Ventas / POS | 🟡 Base implementada | Venta multi-línea atómica, efectivo/tarjeta/mixto/fiado, costo y precio congelados, comisión, ticket de texto y anulación completa con reverso; falta QR y compartir |
 | 4 | Mermas | 🟡 Parcial | Descuenta stock y reporta costo; el historial sale de movimientos |
 | 5 | Gastos y pagos | 🟡 Parcial | Gastos simples; pagos al personal no existen |
 | 6 | Clientes y fiado | 🟡 Parcial | Cliente, saldo y abono con historial (`AbonosFiado`); falta estado de cuenta impreso |
@@ -17,20 +17,20 @@ Estado al 2026-10-23. Orden sugerido en [CLAUDE-tienda.md §13](../CLAUDE-tienda
 | 9 | Reportes y utilidad | 🟡 Base implementada | Utilidad por periodo (ventas − costo − comisión − mermas − gastos) más valorizado y stock bajo; faltan ventas por día y comparativos |
 | 10 | Respaldo y restauración | 🟡 Base implementada | Manual y automático por intervalo (al iniciar/cerrar), antes de migrar y antes de restaurar, con verificación y bitácora; falta USB/nube y respaldo durante sesiones largas |
 | — | Interfaz definitiva | ⛔ Pendiente | Consola provisional; ADR de UI abierto |
-| — | Migraciones versionadas | ✅ Base implementada | Runner con `PRAGMA user_version`, respaldo previo y rollback; v5 aplicada (ventas, corte de caja, centavos y bitácora) |
+| — | Migraciones versionadas | ✅ Base implementada | Runner con `PRAGMA user_version`, respaldo previo y rollback; v6 aplicada (ventas, corte de caja, centavos, bitácora y anulaciones) |
 | — | Dinero en centavos | ✅ Implementado | Importes `long`/`INTEGER` en todas las tablas; porcentajes en `decimal`; `Dinero` centraliza conversión y formato |
 | — | Bitácora / auditoría | ✅ Base implementada | Tabla inmutable con disparadores y permisos validados en `Application` |
 
 ## Siguiente trabajo recomendado
 
-1. **Anulación de ventas** con movimiento de reverso, permiso y registro en bitácora.
-2. **Interfaz definitiva** según ADR de UI (MAUI/WPF/PWA), incluido el ticket con QR y compartir.
-3. **Importación Excel/CSV** y plantillas por giro.
-4. **Copia de respaldos a USB o nube personal** (Fase 2).
+1. **Interfaz definitiva** según ADR de UI (MAUI/WPF/PWA), incluido el ticket con QR y compartir.
+2. **Importación Excel/CSV** y plantillas por giro.
+3. **Copia de respaldos a USB o nube personal** (Fase 2).
 
 ## Riesgos abiertos
 
 - La migración v4 reconstruye todas las tablas de dinero: en bases grandes el primer arranque puede tardar; siempre se crea un respaldo `antes-migrar` verificado antes de tocar datos.
 - La bitácora se escribe después de la operación: una falla al registrarla deja la acción aplicada sin auditoría.
+- La anulación devuelve stock y revierte el fiado, pero no mueve efectivo: la venta se excluye del corte y, si el reembolso se paga después de cerrarlo, debe registrarse como retiro en el corte siguiente.
 - El respaldo automático se evalúa al iniciar o cerrar: en una sesión abierta varios días la copia puede quedar vieja hasta el cierre.
 - La consola no es la interfaz objetivo; puede cambiar por completo.

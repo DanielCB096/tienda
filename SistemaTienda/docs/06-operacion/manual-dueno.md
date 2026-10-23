@@ -33,6 +33,14 @@ Acceso rápido desde el panel principal o menú.
 - Ver total y cambio (si es efectivo).
 - Generar y mostrar/compartir ticket.
 
+#### Anular una venta registrada
+
+- Menú Ventas → [3] Anular venta (solo dueño o encargado).
+- Se anula la venta completa; el motivo es obligatorio y se confirma escribiendo `ANULAR`.
+- El sistema devuelve el stock con el costo congelado y revierte el saldo si fue fiado; la venta original queda marcada `[ANULADA]`.
+- El reembolso en efectivo se entrega manualmente. La venta se excluye del corte pendiente; si el reembolso se paga después de cerrar el corte, regístralo como retiro en el corte siguiente.
+- No se puede anular una venta que ya quedó incluida en un corte cerrado.
+
 ### 4. Corte de Caja
 
 - Acceso: Menú → "Corte de Caja" (requiere PIN).

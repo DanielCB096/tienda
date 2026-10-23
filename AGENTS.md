@@ -74,11 +74,11 @@ Cada agente: su carpeta, su rama y su PR.
 
 ## Estado del proyecto (2026-10-23)
 
-- Rama publicada con el trabajo actual: `feat/respaldo-automatico` (sobre `feat/reportes-utilidad`, que parte de `feat/integracion-t4-t9`).
-- `main`: solo el commit base; los PR de `feat/base-compilable`, `feat/migraciones-respaldo`, `feat/ventas-pos`, `feat/corte-caja`, `feat/centavos-enteros`, `feat/integracion-t4-t9`, `feat/reportes-utilidad` y `feat/respaldo-automatico` siguen pendientes de integración, en ese orden.
-- Build: 0 errores, 0 advertencias. Pruebas: **162 en verde** (verificadas localmente y por GitHub Actions).
-- Implementado: configuración inicial, usuarios/PIN/roles, gastos, inventario por movimientos, ventas/POS (efectivo, tarjeta, mixto y fiado; costo y precio congelados; comisión), fiado (cliente/abono con historial), proveedores (saldo/pago), corte de caja (efectivo esperado, diferencia justificada, ingresos/retiros e historial), bitácora inmutable y permisos validados en servicios, migraciones versionadas con respaldo, respaldo/restauración local y respaldo automático por intervalo al iniciar/cerrar, dinero en centavos enteros (`long`/`INTEGER`, esquema v4), reporte de utilidad por periodo (ventas − costo congelado − comisión − mermas − gastos), consola provisional.
-- No implementado: anulación de ventas, ticket con QR/compartir, copia de respaldos a USB/nube, UI definitiva y conteo por denominaciones.
+- Rama publicada con el trabajo actual: `feat/anulacion-ventas` (sobre `feat/respaldo-automatico`, que parte de `feat/reportes-utilidad`).
+- `main`: solo el commit base; los PR de `feat/base-compilable`, `feat/migraciones-respaldo`, `feat/ventas-pos`, `feat/corte-caja`, `feat/centavos-enteros`, `feat/integracion-t4-t9`, `feat/reportes-utilidad`, `feat/respaldo-automatico` y `feat/anulacion-ventas` siguen pendientes de integración, en ese orden.
+- Build: 0 errores, 0 advertencias. Pruebas: **170 en verde** (verificadas por GitHub Actions; local bloqueado por Smart App Control).
+- Implementado: configuración inicial, usuarios/PIN/roles, gastos, inventario por movimientos, ventas/POS (efectivo, tarjeta, mixto y fiado; costo y precio congelados; comisión; anulación completa con reverso), fiado (cliente/abono con historial), proveedores (saldo/pago), corte de caja (efectivo esperado, diferencia justificada, ingresos/retiros e historial), bitácora inmutable y permisos validados en servicios, migraciones versionadas con respaldo, respaldo/restauración local y respaldo automático por intervalo al iniciar/cerrar, dinero en centavos enteros (`long`/`INTEGER`, esquema v4), reporte de utilidad por periodo (ventas − costo congelado − comisión − mermas − gastos), consola provisional.
+- No implementado: ticket con QR/compartir, copia de respaldos a USB/nube, UI definitiva y conteo por denominaciones.
 - Deuda principal: pagos a proveedores sin historial inmutable, merma sin entidad propia, bitácora no atómica con la operación y corte sin desglose de billetes.
 
 ## Tareas disponibles
@@ -101,7 +101,7 @@ El detalle vive en el tablero. Resumen y criterios de terminado:
 - `VentaService` valida pagos (suma = total), duplicados, cantidades y reglas de fiado (exclusivo, cliente, límite).
 - Menú de consola: carrito, cobro, cambio, ticket de texto y ventas del día.
 - Pruebas en `VentasTests` (13 casos); total del proyecto: 81 al cerrar T2.
-- Pendiente fuera de T2: anulación con reverso, descuentos, QR/compartir.
+- Pendiente fuera de T2: descuentos y QR/compartir (la anulación llegó en T11).
 
 ### T8 — Corte de caja (HECHO)
 
@@ -147,6 +147,17 @@ El detalle vive en el tablero. Resumen y criterios de terminado:
 - La creación manual y automática se registra en la bitácora (`AccionBitacora.Respaldo`) con ruta, etiqueta y usuario.
 - Pruebas en `RespaldoAutomaticoTests` (5 casos); total 162.
 - Pendiente fuera de T10: copia a USB/nube y respaldo durante sesiones largas.
+
+### T11 — Anulación de ventas (HECHO)
+
+- Completado en `feat/anulacion-ventas` sobre `feat/respaldo-automatico` (7c5ed91).
+- Esquema v6 con `AnulacionesVenta` inmutable (una por venta) e índice por fecha.
+- `DatabaseTools.AnularVenta` registra la anulación, devuelve el stock con el costo congelado y revierte el fiado en una transacción; se bloquea si la venta ya está en un corte cerrado.
+- Permiso `AnularVenta` para dueño y encargado; motivo obligatorio y acción `AnulacionVenta` en la bitácora.
+- Las ventas anuladas se excluyen del corte pendiente y de la utilidad, y se marcan `[ANULADA]` en ventas del día.
+- Menú Ventas → [3] Anular venta con confirmación `ANULAR`.
+- Pruebas en `AnulacionVentasTests` (8 casos); total 170.
+- Limitación confirmada: el reembolso en efectivo es manual; ver `deuda-tecnica.md`.
 
 ### T6 — Importación Excel/CSV
 
