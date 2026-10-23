@@ -96,6 +96,23 @@ Qué pasa cuando las cosas van mal:
 - Búsqueda por nombre con 100 productos que coinciden.
 - Reporte de utilidad de un mes entero.
 
+## Pruebas automatizadas existentes (2026-10-23)
+
+Proyecto `SistemaTienda.Tests` (xUnit, net8.0). Cada prueba crea una base SQLite temporal aislada y la elimina al terminar.
+
+```bash
+dotnet test SistemaTienda/SistemaTienda.sln
+```
+
+| Archivo | Cubre |
+|---------|-------|
+| `ConfiguracionTests` | Asistente inicial, PIN hasheado, login, roles, gastos |
+| `InventarioTests` | Alta, duplicados, venta, merma, entrada, ajuste, stock bajo, búsqueda, valorizado |
+| `FiadoProveedoresTests` | Cliente, abono, saldo, proveedor, pago, validaciones |
+| `BaseDatosTests` | Inicialización idempotente, tablas, mapeo de tipos |
+
+Total actual: 59 casos, todos en verde. Los puntos 1, 3, 5, 6 y 7 del listado de áreas críticas tienen cobertura parcial; faltan corte de caja, costo congelado, respaldo/restauración, ticket y rendimiento porque los módulos no existen todavía.
+
 ## Herramientas de Prueba
 
 - **Datos de prueba ficticios**: Un script o conjunto de datos iniciales que incluir:

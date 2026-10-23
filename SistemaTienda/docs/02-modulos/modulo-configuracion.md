@@ -130,4 +130,9 @@ Después del asistente, el dueño puede modificar en cualquier momento:
 
 ---
 
-**Estado actual**: Documentación completada. Próximo paso: Implementar la clase `ConfiguracionTienda` y la lógica de respaldo en `SistemaTienda.Core` e `SistemaTienda.Infrastructure`, y la interfaz de configuración en `SistemaTienda.Presentation`.
+**Estado actual (2026-10-23)**: base implementada y probada.
+
+- *Implementado*: asistente de primera configuración (solo si no hay usuarios); PIN de 4-6 dígitos hasheado con PBKDF2-SHA256 (100 000 iteraciones, salt de 16 bytes); login con 3 intentos; roles Dueño/Encargado/Empleado; alta de usuarios; validación de roles en los menús; gastos simples con total y agrupación por concepto.
+- *Desviaciones del diseño*: el asistente pide nombre, giro, impuesto, comisión, fondo, fiado, límite, intervalo de respaldo y PIN; no pregunta métodos de pago ni crea respaldo inicial (no hay módulo de respaldo). Los roles se guardan como `INTEGER`, no como texto.
+- *Pendiente*: edición de usuarios y PIN, bitácora, permisos validados en servicios, plantillas por giro, respaldo inicial, recuperación de PIN.
+- *Pruebas*: `ConfiguracionTests` (18 casos) y `BaseDatosTests`.

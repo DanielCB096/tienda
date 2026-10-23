@@ -8,7 +8,7 @@ El módulo de clientes y fiado permite a la tienda ofrecer ventas a crédito a s
 ### 6.2.1. Nueva Venta a Fiado
 1. El cajero selecciona la opción "[1] Nueva venta a fiado" en el menú principal
 2. Ingresa el nombre del cliente (o busca en la lista existente)
-3. Ingresa opcionalmente la cédula o RFC del cliente
+3. Ingresa opcionalmente el teléfono del cliente (único dato de contacto; no se piden RFC ni cédula por privacidad)
 4. Ingresa el monto total de la compra
 5. Ingresa el abono inicial (puede ser 0 para venta al contado total)
 6. El sistema calcula y muestra el saldo pendiente
@@ -34,7 +34,7 @@ El módulo de clientes y fiado permite a la tienda ofrecer ventas a crédito a s
 |-------|------|-------------|
 | Id | INTEGER PRIMARY KEY | Identificador único |
 | Nombre | TEXT | Nombre del cliente |
-| Clave | TEXT | Cédula de identidad o RFC |
+| Telefono | TEXT | Teléfono de contacto (opcional) |
 | SaldoActual | DECIMAL | Saldo pendiente actual |
 | FechaRegistro | DATETIME | Fecha en que se registró el cliente |
 | UltimaActualizacion | DATETIME | Última fecha de movimiento |
@@ -43,7 +43,7 @@ El módulo de clientes y fiado permite a la tienda ofrecer ventas a crédito a s
 ```
 Id: 1
 Nombre: "Juan Pérez"
-Clave: "JAZ950101ABC"
+Telefono: "555-123-4567"
 SaldoActual: 150.50
 FechaRegistro: 2024-01-15 10:30:00
 UltimaActualizacion: 2024-03-20 14:20:00
@@ -125,3 +125,10 @@ Nueva Venta a Fiado
 - No hay recordatorios automáticos por WhatsApp/SMS
 - No hay historial de pagos detallado por cliente (solo saldo actual)
 - Los saldos son informativos y no tienen consecuencias legales dentro del sistema
+
+## 6.9. Estado de implementación (2026-10-23)
+
+- *Implementado*: alta de cliente con nombre, teléfono y saldo inicial; consulta de clientes con saldo; abono con validación de monto positivo y de no exceder el saldo; el menú de fiado solo aparece si `FiadoActivado` es verdadero.
+- *Pendiente*: venta a fiado (depende del módulo de ventas), historial de abonos y ventas por cliente, cancelación de venta a fiado, límite de crédito por cliente.
+- *Deuda*: el abono actualiza el saldo sin registrar un movimiento inmutable (ver [deuda-técnica](../deuda-tecnica.md)).
+- *Pruebas*: `FiadoProveedoresTests`.

@@ -32,25 +32,52 @@ Sistema para tiendas pequeñas de **cualquier giro** en México. Registra ventas
 
 ## 3. Stack y estructura
 
-- **Tipo de aplicación:** [POR DEFINIR — PWA o escritorio, ver ADR]
-- **Lenguaje/framework:** [POR DEFINIR]
-- **Base de datos local:** [POR DEFINIR — ej. SQLite o IndexedDB]
-- **Interfaz:** [POR DEFINIR]
-- **Pruebas:** [POR DEFINIR]
-- **Distribución e instalación:** [POR DEFINIR]
+- **Tipo de aplicación:** escritorio/terminal local-first. La interfaz actual es una **consola provisional**; la UI definitiva sigue pendiente de ADR (MAUI/WPF/PWA).
+- **Lenguaje/framework:** C# / .NET 8 (`net8.0`), solución con capas Core → Infrastructure → Application → Presentation.
+- **Base de datos local:** SQLite mediante `Microsoft.Data.Sqlite` 8.0.10 (`SistemaTienda.Infrastructure/Database.cs`).
+- **Interfaz:** consola (`SistemaTienda.Presentation`), menús por rol y sesión con PIN.
+- **Pruebas:** xUnit 2.9 + Microsoft.NET.Test.Sdk, con base SQLite temporal por prueba (`SistemaTienda.Tests`).
+- **Distribución e instalación:** pendiente de definir; por ahora `dotnet run`. Requiere SDK .NET 8+; los ejecutables usan `RollForward=Major` para correr sobre runtimes mayores.
+- **Dinero:** hoy en `decimal` (deuda registrada: migrar a centavos enteros, ver `SistemaTienda/docs/deuda-tecnica.md`).
 
-Estructura de carpetas: [POR DEFINIR — pegar aquí el árbol cuando exista]
+Estructura de carpetas:
+
+```
+tienda/
+├── CLAUDE-tienda.md
+├── prompt.txt
+└── SistemaTienda/
+    ├── SistemaTienda.sln
+    ├── SistemaTienda.Core/            # Entidades, enums y ProcessResult
+    ├── SistemaTienda.Infrastructure/  # DatabaseTools: esquema y acceso SQLite
+    ├── SistemaTienda.Application/     # Servicios de configuración e inventario
+    ├── SistemaTienda.Presentation/    # Consola: asistente, login y menús
+    ├── SistemaTienda.Tests/           # Pruebas xUnit con SQLite temporal
+    └── docs/                          # Ver docs/README.md
+```
 
 ## 4. Comandos
 
 ```bash
-# Completar cuando exista el proyecto
-instalar:      [POR DEFINIR]
-desarrollo:    [POR DEFINIR]
-pruebas:       [POR DEFINIR]
-lint/formato:  [POR DEFINIR]
-migraciones:   [POR DEFINIR]
-build:         [POR DEFINIR]
+# Restaurar dependencias
+dotnet restore SistemaTienda/SistemaTienda.sln
+
+# Compilar
+dotnet build SistemaTienda/SistemaTienda.sln
+
+# Ejecutar la aplicación (crea la base en %LOCALAPPDATA%\SistemaTienda\tienda.db)
+dotnet run --project SistemaTienda/SistemaTienda.Presentation/Presentation.csproj
+
+# Ejecutar con otra base de datos
+SISTEMATIENDA_DB=/ruta/a/tienda.db dotnet run --project SistemaTienda/SistemaTienda.Presentation/Presentation.csproj
+
+# Pruebas
+dotnet test SistemaTienda/SistemaTienda.sln
+
+# Formato (cuando se adopte; no bloquea todavía)
+dotnet format SistemaTienda/SistemaTienda.sln
+
+# Migraciones: PENDIENTE — esquema v1 fijado con PRAGMA user_version; sin runner
 ```
 
 Después de cualquier cambio: ejecuta pruebas y lint. No des una tarea por terminada si fallan.
