@@ -27,7 +27,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 
 | Tarea | Agente | Rama | Archivos reservados | Inicio | Estado |
 |-------|--------|------|---------------------|--------|--------|
-| T4 | Bitácora y permisos en servicios | DeepSeek | feat/bitacora-permisos | `Core/Bitacora.cs`, `Application/BitacoraService.cs`, `Application/AutorizacionService.cs`, `Database.cs`, `Migraciones.cs`, `ConfiguracionService.cs`, `InventoryService.cs`, `CorteCajaService.cs`, `VentaService.cs`, `Program.cs`, pruebas nuevas | 2026-10-23 | En revisión (commit ca21564). |
+| T4 | Bitácora y permisos en servicios | DeepSeek | feat/bitacora-permisos | `Core/Bitacora.cs`, `Application/BitacoraService.cs`, `Application/AutorizacionService.cs`, `Database.cs`, `Migraciones.cs`, `ConfiguracionService.cs`, `InventoryService.cs`, `CorteCajaService.cs`, `VentaService.cs`, `Program.cs`, pruebas nuevas | 2026-10-23 | En revisión (commit 9d1dc9f). |
 
 ## Hecho
 
