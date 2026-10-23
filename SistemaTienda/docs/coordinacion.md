@@ -27,7 +27,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 
 | Tarea | Agente | Rama | Archivos reservados | Inicio | Estado |
 |-------|--------|------|---------------------|--------|--------|
-| — | — | — | — | — | Libre |
+| T3 | Qoder | feat/centavos-enteros | `Core/Dinero.cs`, entidades de dinero, `Database.cs`, `Migraciones.cs`, servicios, `Program.cs`, pruebas y docs | 2026-10-23 | Tomada |
 
 ## Hecho
 
@@ -43,7 +43,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 |----|-------|--------|------------|-------|
 | T1 | Migraciones versionadas + respaldo | Hecho | — | En `feat/migraciones-respaldo`. `Database.cs` queda libre para T2. |
 | T2 | Ventas / POS | Hecho | T1 | En `feat/ventas-pos` (parte de `feat/migraciones-respaldo`). `Database.cs` y `Program.cs` quedan libres. |
-| T3 | Dinero en centavos | Libre | T1, T2 | Cross-cutting; toca todas las columnas de dinero y las ventas existentes. |
+| T3 | Dinero en centavos | Tomada | T1, T2 | En `feat/centavos-enteros`. Cross-cutting: toca todas las columnas de dinero y las ventas existentes. |
 | T4 | Bitácora y permisos en servicios | Libre | — | Toca `Application` e `Infrastructure`. |
 | T5 | Reportes de utilidad | Bloqueada | T2 | — |
 | T6 | Importación Excel/CSV | Libre | T2 recomendado | Dependencia nueva requiere ADR. |

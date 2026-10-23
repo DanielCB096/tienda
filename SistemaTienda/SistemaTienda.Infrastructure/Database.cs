@@ -178,7 +178,8 @@ public class DatabaseTools
             insert.Parameters.AddWithValue("@giro", ConfiguracionPorDefecto.GiroPredeterminado);
             insert.Parameters.AddWithValue("@impuesto", ConfiguracionPorDefecto.ImpuestoPredeterminado);
             insert.Parameters.AddWithValue("@comision", ConfiguracionPorDefecto.ComisionTarjetaPredeterminada);
-            insert.Parameters.AddWithValue("@fondo", ConfiguracionPorDefecto.FondoCajaInicialPredeterminado);
+            insert.Parameters.AddWithValue("@fondo",
+                Dinero.APesos(ConfiguracionPorDefecto.FondoCajaInicialPredeterminado));
             insert.Parameters.AddWithValue("@intervalo", ConfiguracionPorDefecto.RespaldoIntervaloDiasPredeterminado);
             insert.ExecuteNonQuery();
         }
@@ -310,6 +311,9 @@ public class DatabaseTools
                 return s == "1" || s.Equals("true", StringComparison.OrdinalIgnoreCase);
             return Convert.ToInt64(value, CultureInfo.InvariantCulture) != 0;
         }
+
+        if (underlying == typeof(long))
+            return Convert.ToInt64(value, CultureInfo.InvariantCulture);
 
         if (underlying == typeof(decimal))
             return Convert.ToDecimal(value, CultureInfo.InvariantCulture);
@@ -473,8 +477,8 @@ public class DatabaseTools
         ExecuteReportObjects<Producto>(
             "SELECT * FROM Productos WHERE Stock <= StockMinimo ORDER BY Stock, Nombre");
 
-    public decimal ObtenerValorizadoInventario() =>
-        ExecuteScalar<decimal>("SELECT COALESCE(SUM(Stock * Costo), 0) FROM Productos");
+    public long ObtenerValorizadoInventario() =>
+        ExecuteScalar<long>("SELECT COALESCE(SUM(Stock * Costo), 0) FROM Productos");
 
     public int ObtenerStock(int productoId) =>
         ExecuteScalar<int>("SELECT COALESCE(SUM(Cantidad), 0) FROM MovimientoInventario WHERE ProductoId = @id",
@@ -482,7 +486,7 @@ public class DatabaseTools
 
     // ---------- Movimientos de inventario ----------
 
-    public bool RegistrarEntrada(int productoId, int cantidad, decimal costoUnitario, string motivo, string usuario)
+    public bool RegistrarEntrada(int productoId, int cantidad, long costoUnitario, string motivo, string usuario)
     {
         if (cantidad <= 0) return false;
         return RegistrarMovimientoSeguro(productoId, MovimientoTipo.Entrada, cantidad, costoUnitario, motivo, usuario);
@@ -544,7 +548,7 @@ public class DatabaseTools
             new SqliteParameter("@id", productoId));
 
     private bool RegistrarMovimientoSeguro(int productoId, string tipo, int cantidad,
-        decimal costoUnitario, string motivo, string usuario)
+        long costoUnitario, string motivo, string usuario)
     {
         using var conn = CreateConnection();
         conn.Open();
@@ -562,7 +566,7 @@ public class DatabaseTools
     }
 
     private static void InsertarMovimiento(SqliteConnection conn, SqliteTransaction tx, int productoId,
-        string tipo, int cantidadFirmada, decimal costoUnitario, string motivo, string usuario)
+        string tipo, int cantidadFirmada, long costoUnitario, string motivo, string usuario)
     {
         using var insert = conn.CreateCommand();
         insert.Transaction = tx;
@@ -643,8 +647,8 @@ public class DatabaseTools
     public List<Gasto> ObtenerGastos() =>
         ExecuteReportObjects<Gasto>("SELECT * FROM Gastos ORDER BY Fecha DESC, Id DESC");
 
-    public decimal ObtenerTotalGastos() =>
-        ExecuteScalar<decimal>("SELECT COALESCE(SUM(Monto), 0) FROM Gastos");
+    public long ObtenerTotalGastos() =>
+        ExecuteScalar<long>("SELECT COALESCE(SUM(Monto), 0) FROM Gastos");
 
     public List<GastoPorConcepto> ObtenerGastosPorConcepto()
     {
@@ -664,7 +668,7 @@ public class DatabaseTools
             lista.Add(new GastoPorConcepto
             {
                 Concepto = reader.GetString(0),
-                Total = Convert.ToDecimal(reader.GetValue(1), CultureInfo.InvariantCulture)
+                Total = Convert.ToInt64(reader.GetValue(1), CultureInfo.InvariantCulture)
             });
         }
         return lista;
@@ -699,7 +703,7 @@ public class DatabaseTools
         ExecuteReportObject<ClienteFiado>("SELECT * FROM ClientesFiado WHERE Id = @id",
             new SqliteParameter("@id", clienteId));
 
-    public bool ActualizarSaldoCliente(int clienteId, decimal nuevoSaldo)
+    public bool ActualizarSaldoCliente(int clienteId, long nuevoSaldo)
     {
         var filas = ExecuteCommand(@"
             UPDATE ClientesFiado
@@ -715,7 +719,7 @@ public class DatabaseTools
     /// Guarda el abono en el historial y actualiza el saldo en la misma transacción.
     /// El historial permite reconstruir el efectivo recibido por periodo.
     /// </summary>
-    public bool RegistrarAbonoFiado(int clienteId, decimal monto, decimal nuevoSaldo,
+    public bool RegistrarAbonoFiado(int clienteId, long monto, long nuevoSaldo,
         string usuario, string metodoPago = MetodoPagoVenta.Efectivo)
     {
         using var conn = CreateConnection();
@@ -785,7 +789,7 @@ public class DatabaseTools
         ExecuteReportObject<Proveedor>("SELECT * FROM Proveedores WHERE Id = @id",
             new SqliteParameter("@id", proveedorId));
 
-    public bool ActualizarSaldoProveedor(int proveedorId, decimal nuevoSaldo)
+    public bool ActualizarSaldoProveedor(int proveedorId, long nuevoSaldo)
     {
         var filas = ExecuteCommand(@"
             UPDATE Proveedores
@@ -900,7 +904,7 @@ public class DatabaseTools
             return "La venta a fiado requiere un cliente";
 
         bool fiadoActivado;
-        decimal limite;
+        long limite;
         using (var cmd = conn.CreateCommand())
         {
             cmd.Transaction = tx;
@@ -909,13 +913,13 @@ public class DatabaseTools
             if (!reader.Read())
                 return "No hay configuración de la tienda";
             fiadoActivado = Convert.ToInt64(reader.GetValue(0), CultureInfo.InvariantCulture) != 0;
-            limite = Convert.ToDecimal(reader.GetValue(1), CultureInfo.InvariantCulture);
+            limite = Convert.ToInt64(reader.GetValue(1), CultureInfo.InvariantCulture);
         }
 
         if (!fiadoActivado)
             return "El fiado está desactivado";
 
-        decimal saldoActual;
+        long saldoActual;
         using (var cmd = conn.CreateCommand())
         {
             cmd.Transaction = tx;
@@ -924,13 +928,13 @@ public class DatabaseTools
             var valor = cmd.ExecuteScalar();
             if (valor == null || valor == DBNull.Value)
                 return "Cliente no encontrado";
-            saldoActual = Convert.ToDecimal(valor, CultureInfo.InvariantCulture);
+            saldoActual = Convert.ToInt64(valor, CultureInfo.InvariantCulture);
         }
 
         var nuevoSaldo = saldoActual + venta.PagoFiado;
         if (limite > 0 && nuevoSaldo > limite)
-            return $"El cliente excede su límite de crédito (${limite:F2}). " +
-                   $"Saldo actual: ${saldoActual:F2}, con la venta: ${nuevoSaldo:F2}";
+            return $"El cliente excede su límite de crédito (${Dinero.Formatear(limite)}). " +
+                   $"Saldo actual: ${Dinero.Formatear(saldoActual)}, con la venta: ${Dinero.Formatear(nuevoSaldo)}";
 
         using var update = conn.CreateCommand();
         update.Transaction = tx;
@@ -981,7 +985,7 @@ public class DatabaseTools
 
         corte.FondoInicial = ultimo != null
             ? ultimo.EfectivoContado
-            : config?.FondoCajaInicial ?? 0m;
+            : config?.FondoCajaInicial ?? 0L;
         corte.EfectivoEsperado = CalcularEfectivoEsperado(corte);
         return corte;
     }
@@ -990,7 +994,7 @@ public class DatabaseTools
     /// Calcula y guarda el corte en una sola transacción para que los totales
     /// correspondan exactamente a lo que queda registrado.
     /// </summary>
-    public ProcessResult<CorteCaja> RegistrarCorteCaja(decimal efectivoContado, decimal fondoInicial,
+    public ProcessResult<CorteCaja> RegistrarCorteCaja(long efectivoContado, long fondoInicial,
         string usuario, string observaciones)
     {
         using var conn = CreateConnection();
@@ -998,10 +1002,10 @@ public class DatabaseTools
         using var tx = conn.BeginTransaction();
 
         var corte = CalcularTotalesCaja(conn, tx);
-        corte.FondoInicial = Math.Round(fondoInicial, 2);
-        corte.EfectivoContado = Math.Round(efectivoContado, 2);
+        corte.FondoInicial = fondoInicial;
+        corte.EfectivoContado = efectivoContado;
         corte.EfectivoEsperado = CalcularEfectivoEsperado(corte);
-        corte.Diferencia = Math.Round(corte.EfectivoContado - corte.EfectivoEsperado, 2);
+        corte.Diferencia = corte.EfectivoContado - corte.EfectivoEsperado;
         corte.Usuario = (usuario ?? string.Empty).Trim();
         corte.Observaciones = (observaciones ?? string.Empty).Trim();
         corte.FechaRegistro = corte.Hasta;
@@ -1010,7 +1014,7 @@ public class DatabaseTools
         {
             tx.Rollback();
             return ProcessResult<CorteCaja>.Error(
-                $"El corte tiene una diferencia de ${corte.Diferencia:F2}; explique el motivo antes de guardarlo");
+                $"El corte tiene una diferencia de ${Dinero.Formatear(corte.Diferencia)}; explique el motivo antes de guardarlo");
         }
 
         using (var cmd = conn.CreateCommand())
@@ -1124,10 +1128,10 @@ public class DatabaseTools
 
             using var reader = cmd.ExecuteReader();
             reader.Read();
-            corte.VentasEfectivo = Math.Round(Convert.ToDecimal(reader.GetValue(0), CultureInfo.InvariantCulture), 2);
-            corte.VentasTarjeta = Math.Round(Convert.ToDecimal(reader.GetValue(1), CultureInfo.InvariantCulture), 2);
-            corte.VentasFiado = Math.Round(Convert.ToDecimal(reader.GetValue(2), CultureInfo.InvariantCulture), 2);
-            corte.TotalVentas = Math.Round(Convert.ToDecimal(reader.GetValue(3), CultureInfo.InvariantCulture), 2);
+            corte.VentasEfectivo = Convert.ToInt64(reader.GetValue(0), CultureInfo.InvariantCulture);
+            corte.VentasTarjeta = Convert.ToInt64(reader.GetValue(1), CultureInfo.InvariantCulture);
+            corte.VentasFiado = Convert.ToInt64(reader.GetValue(2), CultureInfo.InvariantCulture);
+            corte.TotalVentas = Convert.ToInt64(reader.GetValue(3), CultureInfo.InvariantCulture);
             corte.NumeroVentas = Convert.ToInt32(reader.GetValue(4), CultureInfo.InvariantCulture);
             corte.NumeroVentasEfectivo = Convert.ToInt32(reader.GetValue(5), CultureInfo.InvariantCulture);
             corte.NumeroVentasTarjeta = Convert.ToInt32(reader.GetValue(6), CultureInfo.InvariantCulture);
@@ -1144,8 +1148,7 @@ public class DatabaseTools
             cmd.Parameters.AddWithValue("@efectivo", MetodoPagoVenta.Efectivo);
             cmd.Parameters.AddWithValue("@desde", desde);
             cmd.Parameters.AddWithValue("@hasta", hasta);
-            corte.AbonosEfectivo = Math.Round(
-                Convert.ToDecimal(cmd.ExecuteScalar() ?? 0m, CultureInfo.InvariantCulture), 2);
+            corte.AbonosEfectivo = Convert.ToInt64(cmd.ExecuteScalar() ?? 0L, CultureInfo.InvariantCulture);
         }
 
         using (var cmd = conn.CreateCommand())
@@ -1164,8 +1167,8 @@ public class DatabaseTools
 
             using var reader = cmd.ExecuteReader();
             reader.Read();
-            corte.IngresosCaja = Math.Round(Convert.ToDecimal(reader.GetValue(0), CultureInfo.InvariantCulture), 2);
-            corte.RetirosCaja = Math.Round(Convert.ToDecimal(reader.GetValue(1), CultureInfo.InvariantCulture), 2);
+            corte.IngresosCaja = Convert.ToInt64(reader.GetValue(0), CultureInfo.InvariantCulture);
+            corte.RetirosCaja = Convert.ToInt64(reader.GetValue(1), CultureInfo.InvariantCulture);
         }
 
         using (var cmd = conn.CreateCommand())
@@ -1177,8 +1180,7 @@ public class DatabaseTools
             cmd.Parameters.AddWithValue("@origen", OrigenGasto.Caja);
             cmd.Parameters.AddWithValue("@desde", desde);
             cmd.Parameters.AddWithValue("@hasta", hasta);
-            corte.GastosCaja = Math.Round(
-                Convert.ToDecimal(cmd.ExecuteScalar() ?? 0m, CultureInfo.InvariantCulture), 2);
+            corte.GastosCaja = Convert.ToInt64(cmd.ExecuteScalar() ?? 0L, CultureInfo.InvariantCulture);
         }
 
         return corte;
@@ -1213,7 +1215,7 @@ public class DatabaseTools
         return DateTime.Today;
     }
 
-    private static decimal CalcularEfectivoEsperado(CorteCaja corte) =>
-        Math.Round(corte.FondoInicial + corte.VentasEfectivo + corte.AbonosEfectivo +
-                   corte.IngresosCaja - corte.RetirosCaja - corte.GastosCaja, 2);
+    private static long CalcularEfectivoEsperado(CorteCaja corte) =>
+        corte.FondoInicial + corte.VentasEfectivo + corte.AbonosEfectivo +
+        corte.IngresosCaja - corte.RetirosCaja - corte.GastosCaja;
 }

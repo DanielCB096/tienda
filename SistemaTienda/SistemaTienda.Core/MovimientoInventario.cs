@@ -10,7 +10,7 @@ public class MovimientoInventario
     public int ProductoId { get; set; }
     public string Tipo { get; set; } = MovimientoTipo.Entrada;
     public int Cantidad { get; set; }
-    public decimal CostoUnitario { get; set; }
+    public long CostoUnitario { get; set; }
     public string Motivo { get; set; } = string.Empty;
     public string Usuario { get; set; } = string.Empty;
     public DateTime Fecha { get; set; } = DateTime.Now;
@@ -26,5 +26,5 @@ public static class MovimientoTipo
 public class GastoPorConcepto
 {
     public string Concepto { get; set; } = string.Empty;
-    public decimal Total { get; set; }
+    public long Total { get; set; }
 }
