@@ -27,7 +27,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 
 | Tarea | Agente | Rama | Archivos reservados | Inicio | Estado |
 |-------|--------|------|---------------------|--------|--------|
-| — | — | — | — | — | — |
+| T8 | Cobertura adicional de pruebas | DeepSeek | test/cobertura-base | SistemaTienda.Tests/ (solo archivos nuevos) | 2026-10-23 | Tomada |
 
 ## Tareas
 
