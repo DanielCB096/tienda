@@ -27,7 +27,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 
 | Tarea | Agente | Rama | Archivos reservados | Inicio | Estado |
 |-------|--------|------|---------------------|--------|--------|
-| T8 | Cobertura adicional de pruebas | DeepSeek | test/cobertura-base | SistemaTienda.Tests/ (solo archivos nuevos) | 2026-10-23 | Tomada |
+| T8 | Cobertura adicional de pruebas | DeepSeek | test/cobertura-base | SistemaTienda.Tests/ (solo archivos nuevos) | 2026-10-23 | En revisión (commit fd879cc).<br>**Notas:** `AjustarStock` no valida que el producto exista: con stock mayor a cero lanza excepción por llave foránea y con stock cero reporta éxito; se permiten PIN duplicados y `VerificarAcceso` devuelve el primer usuario por nombre, lo que puede asignar el rol equivocado; `AgregarGasto` no recorta el concepto y lo agrupa distinguiendo mayúsculas y espacios; la búsqueda por nombre no ignora mayúsculas en acentos. |
 
 ## Tareas
 
