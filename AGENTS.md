@@ -74,11 +74,11 @@ Cada agente: su carpeta, su rama y su PR.
 
 ## Estado del proyecto (2026-10-23)
 
-- Rama publicada con el trabajo actual: `feat/integracion-t4-t9` (T3+T4 sobre `feat/centavos-enteros`; T9 se integra en la misma rama).
-- `main`: solo el commit base; los PR de `feat/base-compilable`, `feat/migraciones-respaldo`, `feat/ventas-pos`, `feat/corte-caja`, `feat/centavos-enteros` y `feat/integracion-t4-t9` siguen pendientes de integración, en ese orden.
-- Build: 0 errores, 0 advertencias. Pruebas: **157 en verde** (verificadas localmente y por GitHub Actions).
-- Implementado: configuración inicial, usuarios/PIN/roles, gastos, inventario por movimientos, ventas/POS (efectivo, tarjeta, mixto y fiado; costo y precio congelados; comisión), fiado (cliente/abono con historial), proveedores (saldo/pago), corte de caja (efectivo esperado, diferencia justificada, ingresos/retiros e historial), bitácora inmutable y permisos validados en servicios, migraciones versionadas con respaldo, respaldo/restauración local, dinero en centavos enteros (`long`/`INTEGER`, esquema v4), reporte de utilidad por periodo (ventas − costo congelado − comisión − mermas − gastos), consola provisional.
-- No implementado: respaldo automático por intervalo, anulación de ventas, ticket con QR/compartir, UI definitiva y conteo por denominaciones.
+- Rama publicada con el trabajo actual: `feat/respaldo-automatico` (sobre `feat/reportes-utilidad`, que parte de `feat/integracion-t4-t9`).
+- `main`: solo el commit base; los PR de `feat/base-compilable`, `feat/migraciones-respaldo`, `feat/ventas-pos`, `feat/corte-caja`, `feat/centavos-enteros`, `feat/integracion-t4-t9`, `feat/reportes-utilidad` y `feat/respaldo-automatico` siguen pendientes de integración, en ese orden.
+- Build: 0 errores, 0 advertencias. Pruebas: **162 en verde** (verificadas localmente y por GitHub Actions).
+- Implementado: configuración inicial, usuarios/PIN/roles, gastos, inventario por movimientos, ventas/POS (efectivo, tarjeta, mixto y fiado; costo y precio congelados; comisión), fiado (cliente/abono con historial), proveedores (saldo/pago), corte de caja (efectivo esperado, diferencia justificada, ingresos/retiros e historial), bitácora inmutable y permisos validados en servicios, migraciones versionadas con respaldo, respaldo/restauración local y respaldo automático por intervalo al iniciar/cerrar, dinero en centavos enteros (`long`/`INTEGER`, esquema v4), reporte de utilidad por periodo (ventas − costo congelado − comisión − mermas − gastos), consola provisional.
+- No implementado: anulación de ventas, ticket con QR/compartir, copia de respaldos a USB/nube, UI definitiva y conteo por denominaciones.
 - Deuda principal: pagos a proveedores sin historial inmutable, merma sin entidad propia, bitácora no atómica con la operación y corte sin desglose de billetes.
 
 ## Tareas disponibles
@@ -138,6 +138,15 @@ El detalle vive en el tablero. Resumen y criterios de terminado:
 - Las mermas salen del costo congelado en `MovimientoInventario` (motivo `Merma:%`); los gastos suman ambos orígenes.
 - Filtro por día, mes o rango de fechas en la consola; permiso `Consultar` validado en el servicio.
 - Pruebas en `ReportesTests` (7 casos); total 157.
+
+### T10 — Respaldo automático (HECHO)
+
+- Completado en `feat/respaldo-automatico` sobre `feat/reportes-utilidad`.
+- `RespaldoService.EjecutarAutomaticoSiCorresponde` crea un respaldo verificado cuando venció `RespaldoIntervaloDias` (0 deshabilita); cualquier respaldo previo cuenta para el intervalo.
+- La consola revisa al iniciar sesión y al cerrar, avisa cuando crea la copia y advierte si está vencido y no se pudo crear.
+- La creación manual y automática se registra en la bitácora (`AccionBitacora.Respaldo`) con ruta, etiqueta y usuario.
+- Pruebas en `RespaldoAutomaticoTests` (5 casos); total 162.
+- Pendiente fuera de T10: copia a USB/nube y respaldo durante sesiones largas.
 
 ### T6 — Importación Excel/CSV
 

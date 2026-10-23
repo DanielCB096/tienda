@@ -49,7 +49,9 @@ internal static class Program
             if (!IniciarSesion())
                 return 0;
 
+            RevisarRespaldoAutomatico(alCerrar: false);
             BuclePrincipal();
+            RevisarRespaldoAutomatico(alCerrar: true);
             return 0;
         }
         catch (Exception ex)
@@ -1246,6 +1248,24 @@ internal static class Program
         Aviso(resultado.IsSuccess
             ? $"Respaldo creado y verificado:\n  {resultado.Value}"
             : resultado.Message, resultado.IsSuccess);
+    }
+
+    private static void RevisarRespaldoAutomatico(bool alCerrar)
+    {
+        var resultado = _respaldos.EjecutarAutomaticoSiCorresponde();
+
+        if (resultado.IsError)
+        {
+            Console.WriteLine($"\n  ⚠ {resultado.Message}");
+            if (!alCerrar) Pausa();
+            return;
+        }
+
+        if (resultado.Value.Estado != EstadoRespaldoAutomatico.Creado)
+            return;
+
+        Console.WriteLine($"\n  ✓ Respaldo automático creado: {Path.GetFileName(resultado.Value.Ruta)}");
+        if (!alCerrar) Pausa();
     }
 
     private static void VerRespaldos()

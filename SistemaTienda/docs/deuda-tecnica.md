@@ -37,11 +37,17 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 
 ## Media prioridad
 
-### Respaldo automático por intervalo todavía no se agenda
+### Respaldo automático solo se evalúa al iniciar o cerrar
 
-- **Dónde**: `ConfiguracionTienda.RespaldoIntervaloDias` y `RespaldoService`.
-- **Impacto**: ya existen respaldo manual, respaldo previo a migrar y respaldo previo a restaurar, todos verificados; pero si el dueño no crea respaldos manuales, no hay copias recientes. La consola muestra la fecha del último respaldo.
-- **Cierre**: agendar el respaldo según el intervalo configurado (al iniciar o cerrar la app), avisar cuando esté vencido y registrarlo en la bitácora.
+- **Dónde**: `Program.Main` y `RespaldoService.EjecutarAutomaticoSiCorresponde`.
+- **Impacto**: si la aplicación queda abierta varios días, no hay copia nueva hasta el cierre o el siguiente inicio; una sesión larga puede dejar el último respaldo viejo aunque el intervalo ya se cumplió.
+- **Cierre**: temporizador o verificación después de cada N ventas, sin bloquear la caja.
+
+### Restauración sin registro en bitácora
+
+- **Dónde**: `RespaldoService.Restaurar`.
+- **Impacto**: la restauración reemplaza toda la base y no deja registro de quién la ejecutó ni de qué archivo se usó. El respaldo `antes-restaurar` evita la pérdida de datos, pero la acción no queda auditada.
+- **Cierre**: registrar `AccionBitacora.Respaldo` con motivo `Restauracion` y la ruta usada inmediatamente después de restaurar.
 
 ### Interfaz de consola provisional
 

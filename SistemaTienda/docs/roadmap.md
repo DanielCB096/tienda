@@ -15,7 +15,7 @@ Estado al 2026-10-23. Orden sugerido en [CLAUDE-tienda.md §13](../CLAUDE-tienda
 | 7 | Proveedores y cuentas por pagar | 🟡 Parcial | Proveedor, saldo y pago; sin historial de pagos |
 | 8 | Corte de caja | 🟡 Base implementada | Periodo desde el corte anterior, efectivo esperado, diferencia con motivo obligatorio, ingresos/retiros e historial; retiros autorizados y auditados; falta conteo por denominaciones |
 | 9 | Reportes y utilidad | 🟡 Base implementada | Utilidad por periodo (ventas − costo − comisión − mermas − gastos) más valorizado y stock bajo; faltan ventas por día y comparativos |
-| 10 | Respaldo y restauración | 🟡 Parcial | Manual, antes de migrar y antes de restaurar, con verificación; falta agendar el automático y USB/nube |
+| 10 | Respaldo y restauración | 🟡 Base implementada | Manual y automático por intervalo (al iniciar/cerrar), antes de migrar y antes de restaurar, con verificación y bitácora; falta USB/nube y respaldo durante sesiones largas |
 | — | Interfaz definitiva | ⛔ Pendiente | Consola provisional; ADR de UI abierto |
 | — | Migraciones versionadas | ✅ Base implementada | Runner con `PRAGMA user_version`, respaldo previo y rollback; v5 aplicada (ventas, corte de caja, centavos y bitácora) |
 | — | Dinero en centavos | ✅ Implementado | Importes `long`/`INTEGER` en todas las tablas; porcentajes en `decimal`; `Dinero` centraliza conversión y formato |
@@ -24,13 +24,13 @@ Estado al 2026-10-23. Orden sugerido en [CLAUDE-tienda.md §13](../CLAUDE-tienda
 ## Siguiente trabajo recomendado
 
 1. **Anulación de ventas** con movimiento de reverso, permiso y registro en bitácora.
-2. **Respaldo automático** por intervalo configurado.
-3. **Interfaz definitiva** según ADR de UI (MAUI/WPF/PWA), incluido el ticket con QR y compartir.
-4. **Importación Excel/CSV** y plantillas por giro.
+2. **Interfaz definitiva** según ADR de UI (MAUI/WPF/PWA), incluido el ticket con QR y compartir.
+3. **Importación Excel/CSV** y plantillas por giro.
+4. **Copia de respaldos a USB o nube personal** (Fase 2).
 
 ## Riesgos abiertos
 
 - La migración v4 reconstruye todas las tablas de dinero: en bases grandes el primer arranque puede tardar; siempre se crea un respaldo `antes-migrar` verificado antes de tocar datos.
 - La bitácora se escribe después de la operación: una falla al registrarla deja la acción aplicada sin auditoría.
-- El respaldo automático por intervalo aún no se agenda: si el dueño no respalda manualmente, la copia más reciente puede ser vieja.
+- El respaldo automático se evalúa al iniciar o cerrar: en una sesión abierta varios días la copia puede quedar vieja hasta el cierre.
 - La consola no es la interfaz objetivo; puede cambiar por completo.

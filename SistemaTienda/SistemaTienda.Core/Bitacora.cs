@@ -54,4 +54,5 @@ public static class AccionBitacora
     public const string PagoProveedor = "PagoProveedor";
     public const string Usuario = "Usuario";
     public const string Configuracion = "Configuracion";
+    public const string Respaldo = "Respaldo";
 }

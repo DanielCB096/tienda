@@ -13,10 +13,10 @@ En una arquitectura local-first con un solo dispositivo por tienda, **el respald
 | Respaldo de seguridad antes de restaurar | ✅ Implementado (`RespaldoLocal.Restaurar`) |
 | Listar respaldos e indicar el último | ✅ Implementado en consola |
 | Restauración guiada con confirmación | ✅ Implementado (requiere escribir `RESTAURAR` y reiniciar) |
-| Respaldo automático por intervalo configurado | ⛔ Pendiente: `RespaldoIntervaloDias` se guarda pero no se agenda |
+| Respaldo automático por intervalo configurado | ✅ Implementado: al iniciar sesión y al cerrar, si venció `RespaldoIntervaloDias` (0 = deshabilitado) |
 | Copia a USB y nube personal | ⛔ Pendiente (Fase 2) |
 | Cifrado de respaldos | ⛔ Pendiente (Fase 2) |
-| Bitácora de respaldos | ⛔ Pendiente: existe `Bitacora`, pero las acciones de respaldo aún no se registran |
+| Bitácora de respaldos | ✅ Implementado para respaldos manuales y automáticos; la restauración aún no se registra |
 
 Formato real implementado: carpeta `respaldos/` junto a la base, archivos `tienda-yyyyMMdd-HHmmss[-etiqueta].db`, generados con `VACUUM INTO` y verificados con `PRAGMA integrity_check`.
 
@@ -24,11 +24,12 @@ Formato real implementado: carpeta `respaldos/` junto a la base, archivos `tiend
 
 ### 1. Respaldo Automático Programado
 
-- El sistema creará una copia de la base de datos SQLite a intervalos configurables (pendiente de agendar).
-- **Intervalo recomendado**: Cada 1 día (24 horas) o cada 5 ventas, el primero que ocurra.
-- **Archivo generado**: `tienda-yyyyMMdd-HHmmss.db`.
+- Se evalúa **al iniciar sesión y al cerrar la aplicación**: si nunca hubo respaldo o ya pasaron los días configurados en `RespaldoIntervaloDias` (0 = deshabilitado), se crea uno con etiqueta `automatico`.
+- **Archivo generado**: `tienda-yyyyMMdd-HHmmss-automatico.db`, verificado con `PRAGMA integrity_check`.
 - **Ubicación**: `respaldos/` junto al archivo de base de datos.
-- **Indicador en UI**: La pantalla principal muestra: "Último respaldo: hace 2 días" o "⚠️ No hay respaldo hace 5 días (configurar intervalo)".
+- Cualquier respaldo previo cuenta para el intervalo (manual, antes de migrar o antes de restaurar).
+- La consola avisa cuando crea el respaldo y advierte si está vencido y no se pudo crear; la fecha del último respaldo se muestra en Configuración.
+- **Límite actual**: si la aplicación permanece abierta varios días, la copia se crea hasta el cierre o el siguiente inicio.
 
 ### 2. Respaldo Manual
 
@@ -139,13 +140,14 @@ Si una migración falla, se revierte esa migración, la base queda en la última
 
 ## Bitácora de Acciones de Respaldo
 
-Cada operación de respaldo y restauración debe registrarse:
+Cada respaldo creado (manual o automático) se registra en `Bitacora`:
 
-- **Tipo**: Automático, Manual, USB, Nube, Restauración.
-- **Fecha y hora**: Cuándo ocurrió.
-- **Ruta del archivo**: Dónde se guardó o de dónde se restauró.
-- **Resultado**: Éxito, Advertencia (archivo bloqueado), Error (no se pudo guardar).
-- **Usuario**: Quién o qué proceso lo triggered.
+- **Acción**: `Respaldo`; entidad `Respaldo` e identificador con el nombre del archivo.
+- **Fecha y hora**: las del registro; usuario de la sesión que lo originó.
+- **Origen y ruta**: `DatosDespues = Ruta=...;Etiqueta=manual|automatico`.
+- **Resultado**: solo se audita la creación exitosa, porque el respaldo ya quedó verificado.
+
+La restauración todavía no se registra en la bitácora (ver [deuda-técnica](../deuda-tecnica.md)).
 
 ## Cifrado de Respaldo (Opcional)
 

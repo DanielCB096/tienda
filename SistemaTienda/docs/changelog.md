@@ -32,6 +32,16 @@ Próximamente después de completar los módulos críticos.
 - Configuración básica de tienda (nombre, giro, impuestos, métodos de pago).
 - Documentación inicial (glosario, stack, módulos, ADR).
 
+### v0.0.9 - 2026-10-23: Respaldo automático por intervalo
+
+- *Agregado*: `RespaldoService.EjecutarAutomaticoSiCorresponde` crea un respaldo verificado cuando pasó `RespaldoIntervaloDias` desde el último (0 = deshabilitado); cualquier respaldo previo cuenta para el intervalo.
+- *Agregado*: la consola revisa el intervalo al iniciar sesión y al cerrar; avisa cuando crea el respaldo y advierte cuando está vencido y no se pudo crear.
+- *Agregado*: `ResultadoRespaldoAutomatico` y `EstadoRespaldoAutomatico` en Core, y la acción `Respaldo` en la bitácora.
+- *Agregado*: la creación manual y automática queda auditada con ruta, etiqueta y usuario de la sesión.
+- *Agregado*: 5 pruebas de respaldo automático (vencido, vigente, intervalo cumplido, deshabilitado y auditoría del respaldo manual).
+- *Modificado*: el respaldo automático usa la etiqueta `automatico` y el menú de Configuración sigue mostrando la fecha del último respaldo.
+- Total del proyecto: 162 pruebas.
+
 ### v0.0.8 - 2026-10-23: Reporte de utilidad
 
 - *Agregado*: `ReporteUtilidad` y `ReporteUtilidadService` calculan utilidad bruta (ventas − costo congelado − comisión de tarjeta) y neta (bruta − mermas − gastos) por periodo.
@@ -118,5 +128,5 @@ Próximamente después de completar los módulos críticos.
 
 - Reportes y utilidad completos.
 - Asistente de primera configuración mejorado.
-- Respaldo automático por intervalo y copia a USB.
+- Copia de respaldos a USB y nube personal.
 - Distribución optimizada (.exe, .apk, PWA).

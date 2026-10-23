@@ -15,10 +15,11 @@ La base técnica está **compilando y con pruebas automatizadas**. El núcleo im
 - Reporte de utilidad por periodo: ventas, costo congelado, comisión de tarjeta, mermas y gastos.
 - Bitácora inmutable de operaciones sensibles (antes/después, usuario y motivo) y permisos validados en la capa de aplicación.
 - Migraciones de esquema versionadas (`PRAGMA user_version`) y respaldo/restauración local verificado.
+- Respaldo automático por intervalo configurado al iniciar y cerrar la aplicación, con aviso y bitácora.
 - Dinero en centavos enteros (`long`/`INTEGER`, esquema v4) con conversión y formato centralizados en `Dinero`.
 - Interfaz de consola provisional.
 
-Pendiente para el MVP: anulación de ventas, respaldo automático por intervalo, conteo de caja por denominaciones y la interfaz definitiva (ADR pendiente). Ver [roadmap.md](roadmap.md) y [deuda-tecnica.md](deuda-tecnica.md).
+Pendiente para el MVP: anulación de ventas, copia de respaldos a USB/nube, conteo de caja por denominaciones y la interfaz definitiva (ADR pendiente). Ver [roadmap.md](roadmap.md) y [deuda-tecnica.md](deuda-tecnica.md).
 
 ## Índice
 
