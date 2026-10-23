@@ -57,7 +57,7 @@ public class DatabaseTools
         }
 
         var migrador = new MigradorEsquema(RutaBaseDatos, Migraciones.ObtenerTodas(), DirectorioRespaldos);
-        var resultado = migrador.Migrar();
+        var resultado = migrador.Migrar(crearRespaldoPrevio: !esquemaCreado);
         if (resultado.IsError)
             throw new InvalidOperationException(resultado.Message);
 
@@ -750,4 +750,171 @@ public class DatabaseTools
 
         return filas > 0;
     }
+
+    // ---------- Ventas ----------
+
+    /// <summary>
+    /// Guarda la venta, sus líneas, los movimientos de inventario y el saldo de fiado
+    /// en una sola transacción. Si falta stock o se excede el crédito, no se guarda nada.
+    /// </summary>
+    public ProcessResult RegistrarVenta(Venta venta, IReadOnlyList<VentaLinea> lineas)
+    {
+        using var conn = CreateConnection();
+        conn.Open();
+        using var tx = conn.BeginTransaction();
+
+        try
+        {
+            foreach (var linea in lineas)
+            {
+                var stock = ObtenerStockEnTransaccion(conn, tx, linea.ProductoId);
+                if (stock < linea.Cantidad)
+                {
+                    tx.Rollback();
+                    return ProcessResult.Error(
+                        $"Stock insuficiente de \"{linea.Nombre}\". Disponible: {stock}, solicitado: {linea.Cantidad}");
+                }
+            }
+
+            int ventaId;
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.Transaction = tx;
+                cmd.CommandText = @"
+                    INSERT INTO Ventas
+                        (Fecha, Usuario, ClienteId, MetodoPago, Total, CostoTotal,
+                         PagoEfectivo, PagoTarjeta, PagoFiado, ComisionTarjeta)
+                    VALUES
+                        (@fecha, @usuario, @cliente, @metodo, @total, @costo,
+                         @efectivo, @tarjeta, @fiado, @comision);
+                    SELECT last_insert_rowid();";
+                cmd.Parameters.AddWithValue("@fecha", venta.Fecha);
+                cmd.Parameters.AddWithValue("@usuario", venta.Usuario ?? string.Empty);
+                cmd.Parameters.AddWithValue("@cliente", (object)venta.ClienteId ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@metodo", venta.MetodoPago);
+                cmd.Parameters.AddWithValue("@total", venta.Total);
+                cmd.Parameters.AddWithValue("@costo", venta.CostoTotal);
+                cmd.Parameters.AddWithValue("@efectivo", venta.PagoEfectivo);
+                cmd.Parameters.AddWithValue("@tarjeta", venta.PagoTarjeta);
+                cmd.Parameters.AddWithValue("@fiado", venta.PagoFiado);
+                cmd.Parameters.AddWithValue("@comision", venta.ComisionTarjeta);
+                ventaId = Convert.ToInt32(cmd.ExecuteScalar(), CultureInfo.InvariantCulture);
+            }
+
+            foreach (var linea in lineas)
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.Transaction = tx;
+                cmd.CommandText = @"
+                    INSERT INTO VentaLineas
+                        (VentaId, ProductoId, CodigoBarras, Nombre, Cantidad,
+                         PrecioUnitario, CostoUnitario, Importe)
+                    VALUES
+                        (@venta, @producto, @codigo, @nombre, @cantidad,
+                         @precio, @costo, @importe)";
+                cmd.Parameters.AddWithValue("@venta", ventaId);
+                cmd.Parameters.AddWithValue("@producto", linea.ProductoId);
+                cmd.Parameters.AddWithValue("@codigo", linea.CodigoBarras);
+                cmd.Parameters.AddWithValue("@nombre", linea.Nombre);
+                cmd.Parameters.AddWithValue("@cantidad", linea.Cantidad);
+                cmd.Parameters.AddWithValue("@precio", linea.PrecioUnitario);
+                cmd.Parameters.AddWithValue("@costo", linea.CostoUnitario);
+                cmd.Parameters.AddWithValue("@importe", linea.Importe);
+                cmd.ExecuteNonQuery();
+
+                linea.VentaId = ventaId;
+                InsertarMovimiento(conn, tx, linea.ProductoId, MovimientoTipo.Salida,
+                    -linea.Cantidad, linea.CostoUnitario, $"Venta #{ventaId}", venta.Usuario);
+            }
+
+            if (venta.PagoFiado > 0)
+            {
+                var errorFiado = CobrarFiadoEnTransaccion(conn, tx, venta);
+                if (errorFiado != null)
+                {
+                    tx.Rollback();
+                    return ProcessResult.Error(errorFiado);
+                }
+            }
+
+            tx.Commit();
+            venta.Id = ventaId;
+            return ProcessResult.Success($"Venta #{ventaId} registrada");
+        }
+        catch (SqliteException ex)
+        {
+            try { tx.Rollback(); } catch (SqliteException) { }
+            return ProcessResult.Error($"No se pudo registrar la venta: {ex.Message}");
+        }
+    }
+
+    private static string CobrarFiadoEnTransaccion(SqliteConnection conn, SqliteTransaction tx, Venta venta)
+    {
+        if (venta.ClienteId == null)
+            return "La venta a fiado requiere un cliente";
+
+        bool fiadoActivado;
+        decimal limite;
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.Transaction = tx;
+            cmd.CommandText = "SELECT FiadoActivado, LimiCreditoCliente FROM ConfiguracionTienda ORDER BY Id LIMIT 1";
+            using var reader = cmd.ExecuteReader();
+            if (!reader.Read())
+                return "No hay configuración de la tienda";
+            fiadoActivado = Convert.ToInt64(reader.GetValue(0), CultureInfo.InvariantCulture) != 0;
+            limite = Convert.ToDecimal(reader.GetValue(1), CultureInfo.InvariantCulture);
+        }
+
+        if (!fiadoActivado)
+            return "El fiado está desactivado";
+
+        decimal saldoActual;
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.Transaction = tx;
+            cmd.CommandText = "SELECT SaldoActual FROM ClientesFiado WHERE Id = @id";
+            cmd.Parameters.AddWithValue("@id", venta.ClienteId.Value);
+            var valor = cmd.ExecuteScalar();
+            if (valor == null || valor == DBNull.Value)
+                return "Cliente no encontrado";
+            saldoActual = Convert.ToDecimal(valor, CultureInfo.InvariantCulture);
+        }
+
+        var nuevoSaldo = saldoActual + venta.PagoFiado;
+        if (limite > 0 && nuevoSaldo > limite)
+            return $"El cliente excede su límite de crédito (${limite:F2}). " +
+                   $"Saldo actual: ${saldoActual:F2}, con la venta: ${nuevoSaldo:F2}";
+
+        using var update = conn.CreateCommand();
+        update.Transaction = tx;
+        update.CommandText = @"
+            UPDATE ClientesFiado
+            SET SaldoActual = @saldo, UltimaActualizacion = datetime('now')
+            WHERE Id = @id";
+        update.Parameters.AddWithValue("@saldo", nuevoSaldo);
+        update.Parameters.AddWithValue("@id", venta.ClienteId.Value);
+        update.ExecuteNonQuery();
+        return null;
+    }
+
+    public Venta ObtenerVentaPorId(int ventaId) =>
+        ExecuteReportObject<Venta>("SELECT * FROM Ventas WHERE Id = @id",
+            new SqliteParameter("@id", ventaId));
+
+    public List<Venta> ObtenerVentasDelDia(DateTime fecha) =>
+        ExecuteReportObjects<Venta>(
+            "SELECT * FROM Ventas WHERE date(Fecha) = date(@fecha) ORDER BY Fecha DESC, Id DESC",
+            new SqliteParameter("@fecha", fecha.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)));
+
+    public List<Venta> ObtenerVentas(DateTime desde, DateTime hasta) =>
+        ExecuteReportObjects<Venta>(
+            "SELECT * FROM Ventas WHERE date(Fecha) BETWEEN date(@desde) AND date(@hasta) ORDER BY Fecha DESC, Id DESC",
+            new SqliteParameter("@desde", desde.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)),
+            new SqliteParameter("@hasta", hasta.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)));
+
+    public List<VentaLinea> ObtenerLineasVenta(int ventaId) =>
+        ExecuteReportObjects<VentaLinea>(
+            "SELECT * FROM VentaLineas WHERE VentaId = @id ORDER BY Id",
+            new SqliteParameter("@id", ventaId));
 }

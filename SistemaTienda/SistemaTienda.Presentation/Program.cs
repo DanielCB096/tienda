@@ -10,6 +10,7 @@ internal static class Program
     private static DatabaseTools _db;
     private static ConfiguracionService _config;
     private static InventoryService _inventario;
+    private static VentaService _ventas;
     private static RespaldoService _respaldos;
     private static UsuarioSistema _usuarioActual;
     private static ConfiguracionTienda _configTienda;
@@ -34,6 +35,7 @@ internal static class Program
 
             _config = new ConfiguracionService(_db);
             _inventario = new InventoryService(_db);
+            _ventas = new VentaService(_db);
             _respaldos = new RespaldoService(_db);
 
             if (_db.ContarUsuarios() == 0 && !EjecutarAsistenteInicial())
@@ -151,8 +153,7 @@ internal static class Program
             switch (Console.ReadLine())
             {
                 case "1": MenuInventario(); break;
-                case "2": MostrarModuloPendiente("Ventas / punto de venta",
-                    "Falta implementar el registro de ventas, el ticket digital y el descuento automático de stock."); break;
+                case "2": MenuVentas(); break;
                 case "3": MenuMermas(); break;
                 case "4": MenuGastos(); break;
                 case "5": MenuFiado(); break;
@@ -396,6 +397,261 @@ internal static class Program
         var producto = _inventario.BuscarPorId(id);
         if (producto == null) Aviso("Producto no encontrado.");
         return producto;
+    }
+
+    // ---------------- Ventas ----------------
+
+    private static void MenuVentas()
+    {
+        while (true)
+        {
+            LimpiarPantalla();
+            Console.WriteLine("=== VENTAS ===");
+            Console.WriteLine("  [1] Nueva venta");
+            Console.WriteLine("  [2] Ventas del día");
+            Console.WriteLine("  [0] Regresar");
+            Console.Write("\n  Opción: ");
+
+            switch (Console.ReadLine())
+            {
+                case "1": NuevaVenta(); break;
+                case "2": VentasDelDia(); break;
+                case "0": return;
+                case null: return;
+                default: Aviso("Opción no válida."); break;
+            }
+        }
+    }
+
+    private static void NuevaVenta()
+    {
+        var carrito = new List<(Producto Producto, int Cantidad)>();
+
+        while (true)
+        {
+            LimpiarPantalla();
+            Console.WriteLine("=== NUEVA VENTA ===");
+            MostrarCarrito(carrito);
+            Console.Write("\n  Código de barras o nombre (Enter para cobrar, 0 para cancelar): ");
+            var entrada = Console.ReadLine();
+            if (entrada == null) throw new OperationCanceledException("Entrada terminada");
+            entrada = entrada.Trim();
+            if (entrada.Length == 0) break;
+            if (entrada == "0") return;
+
+            var producto = _inventario.BuscarPorCodigo(entrada);
+            if (producto == null)
+            {
+                var coincidencias = _inventario.BuscarPorNombre(entrada);
+                if (coincidencias.Count == 0)
+                {
+                    Aviso($"No se encontró \"{entrada}\".");
+                    continue;
+                }
+
+                producto = ElegirProducto(coincidencias);
+                if (producto == null) continue;
+            }
+
+            var enCarrito = carrito.Where(c => c.Producto.Id == producto.Id).Sum(c => c.Cantidad);
+            var disponible = producto.Stock - enCarrito;
+            if (disponible <= 0)
+            {
+                Aviso($"No hay stock disponible de {producto.Nombre} (stock {producto.Stock}).");
+                continue;
+            }
+
+            var cantidad = LeerEntero($"Cantidad de {producto.Nombre} (disponible {disponible})", 1, disponible, 1);
+            var indice = carrito.FindIndex(c => c.Producto.Id == producto.Id);
+            if (indice >= 0)
+                carrito[indice] = (producto, carrito[indice].Cantidad + cantidad);
+            else
+                carrito.Add((producto, cantidad));
+        }
+
+        if (carrito.Count == 0) return;
+
+        var total = carrito.Sum(c => c.Producto.Precio * c.Cantidad);
+        var pago = CobrarVenta(total);
+        if (pago == null) return;
+
+        var lineas = carrito
+            .Select(c => new LineaVentaSolicitada { ProductoId = c.Producto.Id, Cantidad = c.Cantidad })
+            .ToList();
+
+        var resultado = _ventas.RegistrarVenta(lineas, pago, _usuarioActual.Nombre);
+        if (resultado.IsError)
+        {
+            Aviso(resultado.Message);
+            return;
+        }
+
+        LimpiarPantalla();
+        ImprimirTicket(resultado.Value, carrito);
+        Pausa();
+    }
+
+    private static void MostrarCarrito(List<(Producto Producto, int Cantidad)> carrito)
+    {
+        if (carrito.Count == 0)
+        {
+            Console.WriteLine("\n  Carrito vacío.");
+            return;
+        }
+
+        Console.WriteLine();
+        foreach (var (producto, cantidad) in carrito)
+        {
+            var importe = producto.Precio * cantidad;
+            Console.WriteLine($"  {cantidad} x {producto.Nombre,-30} ${producto.Precio,8:F2} = ${importe,9:F2}");
+        }
+
+        Console.WriteLine($"\n  TOTAL: ${carrito.Sum(c => c.Producto.Precio * c.Cantidad):F2}");
+    }
+
+    private static Producto ElegirProducto(List<Producto> productos)
+    {
+        LimpiarPantalla();
+        Console.WriteLine("=== PRODUCTOS ENCONTRADOS ===");
+        var maximo = Math.Min(productos.Count, 10);
+        for (var i = 0; i < maximo; i++)
+        {
+            var p = productos[i];
+            Console.WriteLine($"  [{i + 1}] {p.Nombre,-32} ${p.Precio,8:F2}  stock {p.Stock}");
+        }
+
+        var indice = LeerEntero("Producto (0 = cancelar)", 0, maximo, 1);
+        return indice == 0 ? null : productos[indice - 1];
+    }
+
+    private static PagoSolicitado CobrarVenta(decimal total)
+    {
+        while (true)
+        {
+            LimpiarPantalla();
+            Console.WriteLine("=== COBRO ===");
+            Console.WriteLine($"  Total: ${total:F2}\n");
+            Console.WriteLine("  [1] Efectivo");
+            Console.WriteLine("  [2] Tarjeta");
+            Console.WriteLine("  [3] Mixto (efectivo + tarjeta)");
+            Console.WriteLine(_configTienda.FiadoActivado
+                ? "  [4] Fiado"
+                : "  [4] Fiado (desactivado en configuración)");
+            Console.WriteLine("  [0] Cancelar");
+            Console.Write("\n  Opción: ");
+
+            switch (Console.ReadLine())
+            {
+                case "1":
+                    var recibido = LeerDecimal("Efectivo recibido", total, total);
+                    Console.WriteLine($"\n  Cambio: ${recibido - total:F2}");
+                    return new PagoSolicitado { Efectivo = total };
+                case "2":
+                    Console.WriteLine($"\n  La comisión de tarjeta ({_configTienda.ComisionTarjeta:F2}%) se descuenta de la utilidad.");
+                    return new PagoSolicitado { Tarjeta = total };
+                case "3":
+                    var efectivo = LeerDecimal("Parte en efectivo", 0, 0);
+                    if (efectivo >= total)
+                    {
+                        Console.WriteLine($"\n  Cambio: ${efectivo - total:F2}");
+                        return new PagoSolicitado { Efectivo = total };
+                    }
+                    return new PagoSolicitado { Efectivo = efectivo, Tarjeta = total - efectivo };
+                case "4":
+                    if (!_configTienda.FiadoActivado)
+                    {
+                        Aviso("El fiado está desactivado en la configuración.");
+                        continue;
+                    }
+
+                    var cliente = ElegirClienteFiado();
+                    if (cliente == null) continue;
+                    return new PagoSolicitado { Fiado = total, ClienteId = cliente.Id };
+                case "0":
+                    return null;
+                case null:
+                    return null;
+                default:
+                    Aviso("Opción no válida.");
+                    break;
+            }
+        }
+    }
+
+    private static ClienteFiado ElegirClienteFiado()
+    {
+        var clientes = _config.ObtenerTodosLosClientes().Value ?? new List<ClienteFiado>();
+        if (clientes.Count == 0)
+        {
+            Aviso("No hay clientes registrados. Agregue uno en Clientes y fiado.");
+            return null;
+        }
+
+        LimpiarPantalla();
+        Console.WriteLine("=== CLIENTE PARA FIADO ===");
+        for (var i = 0; i < clientes.Count; i++)
+            Console.WriteLine($"  [{i + 1}] {clientes[i].Nombre,-28} saldo ${clientes[i].SaldoActual,8:F2}");
+
+        var indice = LeerEntero("Cliente (0 = cancelar)", 0, clientes.Count, 1);
+        return indice == 0 ? null : clientes[indice - 1];
+    }
+
+    private static void ImprimirTicket(Venta venta, List<(Producto Producto, int Cantidad)> carrito)
+    {
+        Console.WriteLine($"  === {_configTienda.NombreTienda} ===");
+        Console.WriteLine($"  Ticket interno (no fiscal)   Venta #{venta.Id}");
+        Console.WriteLine($"  {venta.Fecha:yyyy-MM-dd HH:mm}   Atendió: {venta.Usuario}");
+        Console.WriteLine("  " + new string('-', 52));
+
+        foreach (var (producto, cantidad) in carrito)
+        {
+            Console.WriteLine($"  {cantidad} x {producto.Nombre}");
+            Console.WriteLine($"      ${producto.Precio,8:F2} = ${producto.Precio * cantidad,9:F2}");
+        }
+
+        Console.WriteLine("  " + new string('-', 52));
+        Console.WriteLine($"  TOTAL: ${venta.Total:F2}");
+        Console.WriteLine($"  Pago: {venta.MetodoPago}");
+
+        if (venta.PagoEfectivo > 0 && venta.PagoTarjeta > 0)
+        {
+            Console.WriteLine($"    Efectivo: ${venta.PagoEfectivo:F2}");
+            Console.WriteLine($"    Tarjeta:  ${venta.PagoTarjeta:F2}");
+        }
+
+        if (venta.PagoFiado > 0)
+        {
+            var cliente = venta.ClienteId.HasValue
+                ? _db.ObtenerClienteFiadoPorId(venta.ClienteId.Value)
+                : null;
+            Console.WriteLine($"    Fiado a: {cliente?.Nombre ?? "cliente"}");
+        }
+
+        if (venta.ComisionTarjeta > 0)
+            Console.WriteLine($"  Comisión tarjeta: ${venta.ComisionTarjeta:F2} (afecta la utilidad)");
+
+        Console.WriteLine("\n  Gracias por su compra.");
+    }
+
+    private static void VentasDelDia()
+    {
+        LimpiarPantalla();
+        var ventas = _ventas.ObtenerVentasDelDia(DateTime.Today);
+        Console.WriteLine($"=== VENTAS DE HOY ({DateTime.Today:yyyy-MM-dd}) ===");
+
+        if (ventas.Count == 0)
+        {
+            Console.WriteLine("  No hay ventas registradas hoy.");
+        }
+        else
+        {
+            foreach (var venta in ventas)
+                Console.WriteLine($"  #{venta.Id,-5} {venta.Fecha:HH:mm}  ${venta.Total,9:F2}  {venta.MetodoPago,-8} {venta.Usuario}");
+
+            Console.WriteLine($"\n  Total del día: ${ventas.Sum(v => v.Total):F2}");
+        }
+
+        Pausa();
     }
 
     // ---------------- Mermas ----------------

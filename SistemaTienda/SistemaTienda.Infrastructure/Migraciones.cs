@@ -26,10 +26,54 @@ public static class Migraciones
     public const int VersionEsquemaBase = 1;
 
     /// <summary>
-    /// Migraciones pendientes de producción. La versión 1 es el esquema base.
+    /// Migraciones posteriores al esquema base. La versión 1 es el esquema base.
     /// Al agregar una migración, sube su versión y añade su prueba correspondiente.
     /// </summary>
-    public static IReadOnlyList<Migracion> ObtenerTodas() => Array.Empty<Migracion>();
+    public static IReadOnlyList<Migracion> ObtenerTodas() => new[]
+    {
+        new Migracion(2, "crea ventas y líneas de venta", AplicarVersion2)
+    };
+
+    private static void AplicarVersion2(SqliteConnection conn, SqliteTransaction tx)
+    {
+        using var cmd = conn.CreateCommand();
+        cmd.Transaction = tx;
+        cmd.CommandText = @"
+            CREATE TABLE IF NOT EXISTS Ventas (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                Fecha DATETIME NOT NULL,
+                Usuario TEXT NOT NULL DEFAULT '',
+                ClienteId INTEGER,
+                MetodoPago TEXT NOT NULL,
+                Total DECIMAL NOT NULL,
+                CostoTotal DECIMAL NOT NULL,
+                PagoEfectivo DECIMAL NOT NULL DEFAULT 0,
+                PagoTarjeta DECIMAL NOT NULL DEFAULT 0,
+                PagoFiado DECIMAL NOT NULL DEFAULT 0,
+                ComisionTarjeta DECIMAL NOT NULL DEFAULT 0,
+                FOREIGN KEY (ClienteId) REFERENCES ClientesFiado(Id)
+            );
+
+            CREATE TABLE IF NOT EXISTS VentaLineas (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                VentaId INTEGER NOT NULL,
+                ProductoId INTEGER NOT NULL,
+                CodigoBarras TEXT NOT NULL,
+                Nombre TEXT NOT NULL,
+                Cantidad INTEGER NOT NULL,
+                PrecioUnitario DECIMAL NOT NULL,
+                CostoUnitario DECIMAL NOT NULL,
+                Importe DECIMAL NOT NULL,
+                FOREIGN KEY (VentaId) REFERENCES Ventas(Id),
+                FOREIGN KEY (ProductoId) REFERENCES Productos(Id)
+            );
+
+            CREATE INDEX IF NOT EXISTS IX_Ventas_Fecha ON Ventas(Fecha);
+            CREATE INDEX IF NOT EXISTS IX_VentaLineas_VentaId ON VentaLineas(VentaId);
+            CREATE INDEX IF NOT EXISTS IX_VentaLineas_ProductoId ON VentaLineas(ProductoId);
+        ";
+        cmd.ExecuteNonQuery();
+    }
 
     public static int VersionMaxima(IReadOnlyList<Migracion> migraciones) =>
         migraciones.Count == 0 ? VersionEsquemaBase : migraciones.Max(m => m.Version);
@@ -78,7 +122,10 @@ public sealed class MigradorEsquema
 
     public int VersionObjetivo => Migraciones.VersionMaxima(_migraciones);
 
-    public ProcessResult<ResultadoMigracion> Migrar()
+    /// <param name="crearRespaldoPrevio">
+    /// Las bases recién creadas no tienen datos que perder y no requieren respaldo.
+    /// </param>
+    public ProcessResult<ResultadoMigracion> Migrar(bool crearRespaldoPrevio = true)
     {
         using var conn = new SqliteConnection(_connectionString);
         conn.Open();
@@ -99,7 +146,7 @@ public sealed class MigradorEsquema
             });
 
         var rutaRespaldo = string.Empty;
-        if (versionInicial > 0)
+        if (versionInicial > 0 && crearRespaldoPrevio)
         {
             try
             {
