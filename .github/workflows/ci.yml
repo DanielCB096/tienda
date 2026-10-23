@@ -31,6 +31,22 @@ jobs:
       - name: Ejecutar pruebas
         run: dotnet test SistemaTienda/SistemaTienda.sln --no-build --configuration Release --logger "trx;LogFileName=pruebas.trx" --results-directory TestResults
 
+      - name: Reportar pruebas fallidas
+        if: failure()
+        shell: pwsh
+        run: |
+          $archivos = Get-ChildItem -Path TestResults -Filter *.trx -ErrorAction SilentlyContinue
+          foreach ($archivo in $archivos) {
+            [xml]$trx = Get-Content $archivo.FullName
+            $ns = New-Object System.Xml.XmlNamespaceManager($trx.NameTable)
+            $ns.AddNamespace('t', 'http://microsoft.com/schemas/VisualStudio/TeamTest/2010')
+            foreach ($resultado in $trx.SelectNodes('//t:UnitTestResult[@outcome="Failed"]', $ns)) {
+              $mensaje = [string]$resultado.Output.ErrorInfo.Message
+              $primeraLinea = ($mensaje -split "`r?`n")[0]
+              Write-Host "::error title=$($resultado.testName)::$primeraLinea"
+            }
+          }
+
       - name: Guardar resultados
         if: always()
         uses: actions/upload-artifact@v4
