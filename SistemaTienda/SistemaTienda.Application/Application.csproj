@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../SistemaTienda.Core/SistemaTienda.Core.csproj" />
+    <ProjectReference Include="../SistemaTienda.Infrastructure/SistemaTienda.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

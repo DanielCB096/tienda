@@ -1,0 +1,166 @@
+# ROL
+Actúa como arquitecto de producto, arquitecto de software y diseñador UX/UI senior, con experiencia en sistemas de punto de venta y administración para pequeños comercios en México, y en aplicaciones "local-first" (que funcionan sin internet y sin servidor).
+
+# OBJETIVO
+Diseña un sistema de gestión para TIENDAS PEQUEÑAS de cualquier giro (abarrotes, ropa, papelería, ferretería, etc.) en MÉXICO. Debe permitir registrar compras, ventas, mermas, pagos al personal y gastos de insumos u operación, controlar el inventario con código de barras, llevar fiado a clientes y cuentas por pagar a proveedores, hacer corte de caja diario y mostrar la utilidad real. Diseña CADA ESPACIO (módulo y pantalla) y define cómo funciona cada parte y cada actor.
+
+# RESTRICCIÓN CLAVE: COSTO RECURRENTE CERO
+El dueño NO quiere pagar hosting, servidores ni suscripciones mensuales. El sistema debe correr en una tablet o computadora de la tienda:
+- Arquitectura local-first: la base de datos vive en el dispositivo y todo funciona SIN internet.
+- Compara y recomienda UNA opción, con ventajas y riesgos: (a) PWA instalable con almacenamiento local (IndexedDB o SQLite en WASM), (b) aplicación de escritorio multiplataforma (ej. Tauri o Electron con SQLite), (c) híbrida. Considera Android/Windows/macOS/ChromeOS y tablets de gama baja.
+- **Riesgo principal a resolver**: perder los datos si el dispositivo falla, se borra el navegador o se formatea. Diseña un sistema de respaldos sin costo: respaldo automático periódico a archivo local, exportación a memoria USB, y opcionalmente a un almacenamiento gratuito del propio dueño (ej. Google Drive personal) o a un segundo dispositivo, con restauración guiada paso a paso y recordatorios si hace días que no hay respaldo.
+- Si se necesita usar la app en más de un dispositivo, evalúa opciones gratuitas o de costo mínimo (sincronización manual por archivo, red local de la tienda, o capa gratuita de algún servicio) e indica límites y riesgos. La versión inicial puede ser de un dispositivo principal por tienda.
+- Distribución: cómo se instala y actualiza sin tienda de apps ni servidor propio (ej. archivo instalable, GitHub Releases o GitHub Pages para la PWA).
+
+# PRODUCTO GENÉRICO Y REUTILIZABLE
+El sistema podría usarse en cualquier negocio con una operación similar (compra-venta con inventario, gastos y caja). Debe diseñarse como un producto configurable, no como una solución para una tienda específica:
+- **Sin giro fijo**: nada en el código debe asumir un tipo de negocio. Los nombres visibles (ej. "producto", "cliente", "merma") deben poder configurarse, y las categorías, motivos de merma y categorías de gasto vienen de plantillas editables.
+- **Plantillas iniciales por giro** (abarrotes, ropa, papelería, ferretería, comida preparada, servicios con insumos) que cargan categorías y configuraciones sugeridas, más una opción de "empezar en blanco".
+- **Asistente de primera configuración** (onboarding) que lleve al dueño desde la instalación hasta su primera venta en pocos pasos, incluyendo carga inicial de productos por Excel/CSV.
+- **Cada tienda es una instalación independiente con sus propios datos locales**: no hay nube compartida, por lo que no hay mezcla de datos entre negocios ni responsabilidad por almacenar datos de terceros. Documenta cómo esto simplifica la privacidad (LFPDPPP).
+- **Instalación y actualizaciones sin servidor**: define cómo se distribuye la app a varios negocios, cómo se actualiza sin perder datos (migraciones de base de datos versionadas y automáticas, con respaldo previo obligatorio) y cómo se maneja la compatibilidad entre versiones.
+- **Soporte remoto sin costo**: una opción "exportar diagnóstico" que genere un archivo con versión, errores recientes y estadísticas SIN datos personales ni de clientes, para que el dueño lo envíe al desarrollador.
+- **Licenciamiento y modelo de negocio** (⚠️ pregunta abierta, no implementar todavía): sin servidor es difícil controlar licencias. Presenta opciones (venta única, licencia por archivo/clave offline, versión gratuita con soporte de pago) con ventajas y riesgos, para decidirlo con un ADR.
+- Permite personalizar logo, nombre del negocio, colores y leyendas del ticket.
+
+# CONTEXTO MÉXICO (⚠️ validar con un contador)
+- Moneda MXN. Precios al público normalmente con IVA incluido; permite configurar productos con tasa 16%, 0% o exentos, sin obligar a usarlo.
+- El ticket digital es un comprobante interno NO fiscal. La facturación CFDI queda FUERA del alcance inicial, pero el diseño no debe impedir agregarla después (campos de RFC en clientes, claves de producto/unidad opcionales, desglose de impuestos).
+- Pagos de la tienda: **efectivo (principal) y tarjeta**; al registrar cada venta se elige el método. El sistema NO se integra con la terminal bancaria: solo registra que se cobró con tarjeta. Permite pago mixto (parte efectivo, parte tarjeta) y opcionalmente transferencia. Permite configurar la comisión de la terminal (%) para reflejarla en la utilidad real.
+- Pagos al personal: se registran como egresos (sueldo, día trabajado, comisión, adelanto, propina) SIN cálculo formal de nómina, IMSS ni ISR. Deja la puerta abierta a eso en el futuro.
+- Datos de clientes con fiado: aviso de privacidad sencillo (LFPDPPP) y datos mínimos.
+- Conectividad inestable: el sistema debe ser 100% usable sin internet.
+
+# PLATAFORMA
+Una sola aplicación instalada en UNA tablet por tienda (también debe poder usarse en una computadora). Interfaz táctil, textos grandes, pocos pasos y atajos de teclado si hay teclado.
+- **Un solo dispositivo principal por tienda**: no se requiere sincronización entre equipos. Diseña la base de datos y el respaldo con esa premisa, sin complicar la arquitectura con replicación. Lo que sí debe existir es el cambio de dispositivo mediante restauración de respaldo (si la tablet se descompone, se pierde o se reemplaza).
+- **Ticket digital únicamente**: NO se usará impresora térmica ni cajón de dinero electrónico. El ticket se genera como imagen o PDF y se comparte desde la tablet (WhatsApp mediante la función de compartir del sistema, correo, o mostrado en pantalla para que el cliente lo fotografíe). Considera que sin servidor no hay enlaces alojados: el ticket se comparte como archivo o como texto. Debe poder reenviarse desde el historial de ventas, y el cliente puede no pedirlo.
+- Hardware a recomendar (no hay nada todavía): tablet de gama baja o media adecuada (con almacenamiento y batería suficientes), soporte/base, lector de código de barras USB o Bluetooth que funcione como teclado, y protección contra apagones (batería de la propia tablet o mini UPS opcional). Una opción económica y una recomendada, con costos aproximados en MXN.
+# ACTORES (define permisos, objetivos y flujos)
+- **Dueño/administrador**: ve todo, configura, aprueba cancelaciones, ve utilidad y respaldos.
+- **Encargado/cajero**: vende, cobra, registra compras, mermas y gastos permitidos, hace el corte de caja.
+- **Empleado básico** (opcional): solo vende y consulta precios.
+Acceso con PIN rápido por usuario. Sin cuentas en la nube.
+
+# REQUISITOS NO FUNCIONALES (rendimiento con dispositivos modestos)
+- Supuestos (indica si los cambiarías): hasta 10,000 productos, 300–500 ventas por día, varios años de historial, tablet de gama baja.
+- Tiempos objetivo: escanear un producto y verlo en el carrito en menos de 200 ms; búsqueda de producto por nombre en menos de 300 ms; cobrar una venta en menos de 3 toques; arranque de la app en menos de 5 s.
+- Estrategias: índices, paginación, resúmenes diarios precalculados para reportes, archivado de históricos, operaciones atómicas (una venta nunca queda a medias si se apaga el equipo), protección contra cierre inesperado o corte de luz.
+- Integridad: el stock y la caja deben cuadrar siempre; toda corrección se hace con movimientos (ajustes), no editando el historial.
+- Bitácora de acciones sensibles (cancelaciones, descuentos, ajustes, cambios de precio, borrados, cortes).
+- Con un solo dispositivo y sin servidor, el respaldo es la única protección contra pérdida de datos: haz que sea automático, visible (indicador de "último respaldo hace X días") y fácil de restaurar. Evalúa respaldo programado a una carpeta del dispositivo o a la nube personal del dueño (ej. Google Drive) además de la exportación manual.
+
+# MÓDULOS A DISEÑAR
+
+## 1. Configuración de la tienda y usuarios
+Datos de la tienda, giro, ticket (logo, leyenda), impuestos opcionales, métodos de pago, comisión de tarjeta, categorías de gasto, usuarios con PIN y permisos, formato de ticket y preferencias.
+
+## 2. Catálogo e inventario
+- Productos con código de barras (propio o generado/etiquetable), nombre, categoría, costo, precio, unidad (pieza, kg, litro, caja), variantes (talla/color) opcionales, impuesto y stock mínimo.
+- Venta por peso/fracción cuando aplique; productos "varios" sin código para venta rápida; paquetes o presentaciones (caja vs. pieza) opcionales.
+- Movimientos de inventario (entradas, salidas, ajustes, mermas), conteo físico con escaneo, alertas de stock bajo y, opcionalmente, de caducidad.
+- Importación y exportación masiva (Excel/CSV) para el alta inicial del catálogo.
+- Costeo: recomienda costo promedio ponderado o último costo, con justificación.
+
+## 3. Compras
+Registro de compra a proveedor (de contado o a crédito), entrada automática al inventario, actualización de costos, historial de precios de compra, devoluciones a proveedor y compras sin proveedor registrado (ej. mercado).
+
+## 4. Ventas / punto de venta
+- Escaneo o búsqueda, cantidad, descuentos (por línea o total, con permiso), venta en espera (varias ventas abiertas), cambio calculado y método de pago (efectivo/tarjeta/mixto/fiado).
+- Cancelación y devolución (con motivo y permiso), ticket impreso o digital, reimpresión, y venta a cliente registrado o público general.
+- Funcionamiento 100% offline.
+
+## 5. Mermas
+Registro rápido de merma (caducado, dañado, robo, consumo propio, regalo) con motivo, cantidad, costo perdido, usuario y foto opcional; descuento del inventario y reporte de mermas por motivo y producto.
+
+## 6. Gastos y pagos
+- Pagos al personal (sueldo, adelanto, comisión), insumos de operación (bolsas, limpieza), servicios (luz, renta, agua), mantenimiento y otros, con categoría, método, comprobante opcional (foto) y si salió de la caja o de otra fuente.
+- Gastos recurrentes con recordatorio, y vinculación de un gasto a cuentas por pagar cuando se debe.
+
+## 7. Clientes y fiado (módulo simple, opcional y desactivable)
+- Se activa o desactiva por configuración; si está desactivado, no aparece en la interfaz.
+- Cliente con nombre y teléfono (otros datos opcionales). El cliente se puede crear sobre la marcha al registrar una venta a fiado.
+- Venta a fiado: se elige el cliente, se registra el total y se genera un saldo pendiente. Límite de crédito opcional por cliente (alerta, no bloqueo, por defecto).
+- Abonos parciales o totales con método de pago (efectivo o tarjeta), que entran al corte de caja del día en que se cobran.
+- Estado de cuenta simple por cliente, lista de clientes con saldo y antigüedad, y recordatorio de cobro como mensaje de WhatsApp prellenado (enlace wa.me, sin costo).
+- Reglas: los abonos no se editan, se corrigen con movimientos; la cancelación de una venta a fiado revierte el saldo con registro; el fiado no afecta el efectivo esperado hasta que se cobra.
+- Priorízalo como Fase 2, pero reserva las entidades y los métodos de pago desde el diseño inicial del MVP para no tener que rehacerlos.
+
+## 8. Proveedores y cuentas por pagar
+Proveedores, compras a crédito, saldos, fechas de vencimiento, pagos parciales o totales, estado de cuenta y alertas de pagos próximos.
+
+## 9. Corte de caja
+- Apertura con fondo inicial, retiros e ingresos de efectivo con motivo, y ventas en efectivo/tarjeta separadas.
+- Cierre: efectivo esperado vs. efectivo contado (con desglose opcional por denominación), diferencia, y registro del responsable. Corte por turno o por día.
+- Los pagos con tarjeta aparecen en el corte para conciliar contra el reporte de la terminal; los abonos de fiado y los gastos pagados con efectivo de caja afectan el efectivo esperado.
+- Reporte de corte imprimible o en PDF.
+
+## 10. Reportes y utilidad
+- Utilidad bruta (ventas − costo de lo vendido) y utilidad neta (menos gastos, mermas y comisión de tarjeta), por día/semana/mes.
+- Ventas por producto, categoría, usuario y método de pago; productos más y menos vendidos; inventario valorizado; mermas; gastos por categoría; cuentas por cobrar y por pagar; flujo de efectivo simple.
+- Panel de inicio con lo esencial del día, y exportación a Excel/PDF.
+
+## 11. Respaldo, restauración y migración
+Respaldos automáticos y manuales, cifrado opcional del archivo, restauración guiada, verificación de integridad, migración a otro dispositivo y actualización de la app sin perder datos.
+
+## 12. Seguridad y auditoría (transversal)
+PIN, bloqueo por inactividad, permisos por rol, bitácora, y cifrado de los datos locales sensibles cuando la arquitectura lo permita.
+
+# FUERA DE ALCANCE INICIAL (diseñar sin impedirlo)
+  Facturación CFDI, nómina formal, varias tiendas por dueño, sincronización entre dispositivos, tienda en línea, promociones avanzadas/programa de lealtad, impresión de tickets y cajón de dinero electrónico, y licenciamiento en la nube (diseñar sin impedirlos).
+
+# ENTREGABLES POR MÓDULO (en este orden)
+1. Propósito y alcance. 2. Actores y permisos. 3. Flujos paso a paso (principal, alternos y de error). 4. Pantallas: nombre, objetivo, componentes, acciones y estados (vacío, cargando, error, éxito). 5. Reglas de negocio y casos límite. 6. Entidades de datos, campos clave y relaciones. 7. Integraciones con otros módulos (ej.: una venta descuenta inventario y suma a la caja; una merma baja el stock y reduce la utilidad; un fiado crea cuenta por cobrar). 8. Alertas y automatizaciones. 9. Consideraciones de rendimiento. 10. KPIs. 11. Criterios de aceptación. 12. Casos de prueba críticos. 13. Documento Markdown del módulo.
+
+# ENTREGABLES GLOBALES
+- Mapa general del sistema y diagrama de relaciones entre módulos.
+- Mapa de navegación y diseño de la pantalla de venta (la más importante).
+- Modelo de datos unificado (ER en Mermaid), con migraciones de esquema versionadas.
+- Matriz de roles y permisos.
+- Comparativa y recomendación de arquitectura (PWA vs. escritorio), stack, estrategia de respaldos y distribución, con costo recurrente $0.
+- Recomendación de hardware con costos en MXN.
+- Priorización en MVP / Fase 2 / Fase 3.
+- Riesgos, supuestos y preguntas abiertas.
+- Estructura del repositorio, README raíz, .gitignore, .env.example (si aplica) y GitHub Actions (pruebas, lint y construcción de la versión instalable).
+- Estructura de /docs con contenido inicial, y archivo CLAUDE.md para el agente de programación (stack, convenciones, comandos, reglas de negocio no negociables y documentos a consultar).
+- Guía de arranque, estrategia de pruebas, y manual de usuario simple para el dueño y el cajero (con pasos de respaldo y restauración).
+- Propuesta de instalación y actualización para múltiples negocios, y opciones de licenciamiento con ventajas y riesgos.
+- Plantillas iniciales por giro y flujo del asistente de primera configuración.
+
+# PERFIL DEL DESARROLLADOR Y ENFOQUE
+Una sola persona desarrollará con ayuda de IA. Por eso:
+- Prefiere tecnologías populares, bien documentadas y fáciles de mantener. Evita sobreingeniería: el sistema es pequeño, rápido y simple de usar.
+- Explica brevemente los conceptos técnicos no triviales y por qué los eliges.
+- Indica las partes críticas que conviene revisar con un profesional (cálculo de utilidad e impuestos con un contador; integridad de datos y respaldos).
+
+# DOCUMENTACIÓN CONTINUA (obligatoria)
+Entrega y mantén actualizada, en Markdown, esta estructura:
+
+/docs
+  README.md
+  /00-contexto → vision-y-alcance.md, glosario.md (una definición oficial por término: merma, corte, fiado, abono, costo, etc.), actores-y-permisos.md
+  /01-arquitectura → arquitectura-general.md, stack-tecnologico.md, modelo-de-datos.md, respaldos-y-recuperacion.md, seguridad.md, rendimiento.md
+  /02-modulos → un archivo por módulo
+  /03-procesos → venta, compra, merma, gasto, fiado y abono, cuenta por pagar, corte de caja, conteo físico, respaldo y restauración, cambio de dispositivo
+  /05-decisiones → ADR-001-xxx.md ...
+  /06-operacion → instalacion-y-actualizacion.md, manual-dueno.md, manual-cajero.md, manual-de-incidentes.md
+  /07-pruebas → plan-de-pruebas.md, casos-criticos.md
+  roadmap.md, changelog.md, deuda-tecnica.md
+
+Plantilla de cada módulo: resumen y alcance · actores · flujos · pantallas · reglas y casos límite · entidades · integraciones · alertas · rendimiento · KPIs · preguntas abiertas · criterios de aceptación · estado · historial de cambios.
+
+Reglas: cada decisión importante se documenta como ADR (contexto, opciones, decisión, consecuencias, fecha; las reemplazadas se marcan, no se borran). Cada cambio en reglas, entidades o flujos indica qué documentos actualizar. Al cerrar cada módulo entrega un "resumen de contexto" de una página. Mantén coherencia de nombres con el glosario. Marca con ⚠️ lo supuesto o pendiente de validar.
+
+# REPOSITORIO Y CONTROL DE VERSIONES
+Todo se guardará en este repositorio de GitHub: [PEGAR AQUÍ LA URL DEL REPOSITORIO]
+- Indica la ruta exacta de cada archivo entregado.
+- Ramas por tarea (feat/..., fix/..., docs/...), main siempre estable, commits en español con prefijo (feat, fix, docs, test, refactor, chore) y etiquetas de versión por módulo terminado.
+- Nunca subas secretos, respaldos ni datos reales. Los datos de prueba son ficticios.
+
+# FORMA DE TRABAJO
+- Si algo es ambiguo, haz primero una lista de preguntas; si asumes algo, indícalo.
+- Empieza por la comparativa de arquitectura y el ADR de stack, y luego trabaja módulo por módulo: 1) Configuración y usuarios, 2) Catálogo e inventario, 3) Ventas/POS, y confirma conmigo antes de avanzar.
+- Al terminar cada módulo entrega: diseño, documento Markdown, resumen de contexto, ADR generados y documentos modificados.
+- Usa tablas, listas y diagramas Mermaid.
+- Prioriza la simplicidad: quien lo usa no es técnico y atiende clientes con prisa.
+- Responde en español.

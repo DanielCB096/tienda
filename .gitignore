@@ -1,0 +1,40 @@
+# .NET
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+[xX][Dd]ebug/
+[xX][Rr]elease/
+publish/
+TestResults/
+
+# Base de datos local y respaldos (nunca se versionan)
+*.db
+*.db-shm
+*.db-wal
+*.localdb
+*.sqlite
+*.sqlite3
+*.bak
+*.backup
+backups/
+respaldos/
+
+# Secretos y configuración local
+.env
+.env.*
+secrets.json
+appsettings.local.json
+*.pfx
+*.p12
+*.key
+
+# Sistema operativo / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+*.swp
