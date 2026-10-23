@@ -34,7 +34,8 @@ public static class Migraciones
         new Migracion(2, "crea ventas y líneas de venta", AplicarVersion2),
         new Migracion(3, "crea cortes de caja, movimientos de caja y abonos de fiado", AplicarVersion3),
         new Migracion(4, "convierte los importes a centavos enteros", AplicarVersion4),
-        new Migracion(5, "crea la bitácora inmutable", AplicarVersion5)
+        new Migracion(5, "crea la bitácora inmutable", AplicarVersion5),
+        new Migracion(6, "crea las anulaciones de venta", AplicarVersion6)
     };
 
     private static void AplicarVersion2(SqliteConnection conn, SqliteTransaction tx)
@@ -455,6 +456,40 @@ public static class Migraciones
             BEFORE DELETE ON Bitacora
             BEGIN
                 SELECT RAISE(ABORT, 'La bitácora es inmutable: no se puede borrar');
+            END;
+        ";
+        cmd.ExecuteNonQuery();
+    }
+
+    /// <summary>
+    /// Registra las anulaciones de venta. La venta original y sus líneas no se editan ni se borran.
+    /// </summary>
+    private static void AplicarVersion6(SqliteConnection conn, SqliteTransaction tx)
+    {
+        using var cmd = conn.CreateCommand();
+        cmd.Transaction = tx;
+        cmd.CommandText = @"
+            CREATE TABLE IF NOT EXISTS AnulacionesVenta (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                VentaId INTEGER NOT NULL UNIQUE,
+                Fecha DATETIME NOT NULL,
+                Usuario TEXT NOT NULL,
+                Motivo TEXT NOT NULL,
+                FOREIGN KEY (VentaId) REFERENCES Ventas(Id)
+            );
+
+            CREATE INDEX IF NOT EXISTS IX_AnulacionesVenta_Fecha ON AnulacionesVenta(Fecha);
+
+            CREATE TRIGGER IF NOT EXISTS TR_AnulacionesVenta_NoUpdate
+            BEFORE UPDATE ON AnulacionesVenta
+            BEGIN
+                SELECT RAISE(ABORT, 'Las anulaciones son inmutables: no se pueden modificar');
+            END;
+
+            CREATE TRIGGER IF NOT EXISTS TR_AnulacionesVenta_NoDelete
+            BEFORE DELETE ON AnulacionesVenta
+            BEGIN
+                SELECT RAISE(ABORT, 'Las anulaciones son inmutables: no se pueden borrar');
             END;
         ";
         cmd.ExecuteNonQuery();

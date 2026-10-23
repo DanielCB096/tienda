@@ -34,6 +34,7 @@ public static class AutorizacionService
         {
             RolUsuario.Encargado => permiso is
                 PermisoSistema.Vender or
+                PermisoSistema.AnularVenta or
                 PermisoSistema.Consultar or
                 PermisoSistema.RegistrarMerma or
                 PermisoSistema.RegistrarGasto or
@@ -64,6 +65,7 @@ public static class AutorizacionService
     private static string Describir(PermisoSistema permiso) => permiso switch
     {
         PermisoSistema.Vender => "vender",
+        PermisoSistema.AnularVenta => "anular ventas",
         PermisoSistema.Consultar => "consultar",
         PermisoSistema.RegistrarMerma => "registrar mermas",
         PermisoSistema.RegistrarGasto => "registrar gastos",

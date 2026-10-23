@@ -419,6 +419,7 @@ internal static class Program
             Console.WriteLine("=== VENTAS ===");
             Console.WriteLine("  [1] Nueva venta");
             Console.WriteLine("  [2] Ventas del día");
+            Console.WriteLine("  [3] Anular venta (dueño/encargado)");
             Console.WriteLine("  [0] Regresar");
             Console.Write("\n  Opción: ");
 
@@ -426,6 +427,7 @@ internal static class Program
             {
                 case "1": NuevaVenta(); break;
                 case "2": VentasDelDia(); break;
+                case "3": AnularVenta(); break;
                 case "0": return;
                 case null: return;
                 default: Aviso("Opción no válida."); break;
@@ -656,12 +658,60 @@ internal static class Program
         else
         {
             foreach (var venta in ventas)
-                Console.WriteLine($"  #{venta.Id,-5} {venta.Fecha:HH:mm}  ${Dinero.Formatear(venta.Total),9}  {venta.MetodoPago,-8} {venta.Usuario}");
+                Console.WriteLine($"  #{venta.Id,-5} {venta.Fecha:HH:mm}  ${Dinero.Formatear(venta.Total),9}  {venta.MetodoPago,-8} {venta.Usuario}{(venta.Anulada ? "  [ANULADA]" : string.Empty)}");
 
-            Console.WriteLine($"\n  Total del día: ${Dinero.Formatear(ventas.Sum(v => v.Total))}");
+            Console.WriteLine($"\n  Total del día: ${Dinero.Formatear(ventas.Where(v => !v.Anulada).Sum(v => v.Total))}");
         }
 
         Pausa();
+    }
+
+    private static void AnularVenta()
+    {
+        if (!EsAdministrador)
+        {
+            Aviso("Solo dueño o encargado pueden anular ventas.");
+            return;
+        }
+
+        LimpiarPantalla();
+        Console.WriteLine("=== ANULAR VENTA ===");
+        Console.WriteLine("  Solo se anula la venta completa. El reembolso en efectivo se entrega");
+        Console.WriteLine("  manualmente y debe reflejarse en el siguiente corte de caja.\n");
+
+        var ventaId = LeerEntero("Número de venta (0 = cancelar)", 0, int.MaxValue, 0);
+        if (ventaId == 0)
+            return;
+
+        var venta = _ventas.ObtenerVentaPorId(ventaId);
+        if (venta == null)
+        {
+            Aviso($"La venta #{ventaId} no existe.");
+            return;
+        }
+
+        if (venta.Anulada)
+        {
+            Aviso($"La venta #{ventaId} ya está anulada.");
+            return;
+        }
+
+        Console.WriteLine($"\n  Venta #{venta.Id}  {venta.Fecha:yyyy-MM-dd HH:mm}  " +
+                          $"${Dinero.Formatear(venta.Total)}  {venta.MetodoPago}");
+        foreach (var linea in _ventas.ObtenerLineas(venta.Id))
+            Console.WriteLine($"    {linea.Cantidad} x {linea.Nombre}  ${Dinero.Formatear(linea.Importe)}");
+
+        var motivo = LeerTexto("Motivo de la anulación");
+
+        Console.Write("\n  Escriba ANULAR para confirmar: ");
+        if (!string.Equals(Console.ReadLine()?.Trim(), "ANULAR", StringComparison.Ordinal))
+        {
+            Aviso("Anulación cancelada.");
+            return;
+        }
+
+        var resultado = _ventas.AnularVenta(venta.Id, motivo, _usuarioActual.Nombre);
+        Aviso(resultado.Message, resultado.IsSuccess);
     }
 
     // ---------------- Mermas ----------------

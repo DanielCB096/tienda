@@ -998,19 +998,158 @@ public class DatabaseTools
     }
 
     public Venta ObtenerVentaPorId(int ventaId) =>
-        ExecuteReportObject<Venta>("SELECT * FROM Ventas WHERE Id = @id",
+        ExecuteReportObject<Venta>(@"
+            SELECT v.*, EXISTS (SELECT 1 FROM AnulacionesVenta a WHERE a.VentaId = v.Id) AS Anulada
+            FROM Ventas v WHERE v.Id = @id",
             new SqliteParameter("@id", ventaId));
 
     public List<Venta> ObtenerVentasDelDia(DateTime fecha) =>
-        ExecuteReportObjects<Venta>(
-            "SELECT * FROM Ventas WHERE date(Fecha) = date(@fecha) ORDER BY Fecha DESC, Id DESC",
+        ExecuteReportObjects<Venta>(@"
+            SELECT v.*, EXISTS (SELECT 1 FROM AnulacionesVenta a WHERE a.VentaId = v.Id) AS Anulada
+            FROM Ventas v
+            WHERE date(v.Fecha) = date(@fecha)
+            ORDER BY v.Fecha DESC, v.Id DESC",
             new SqliteParameter("@fecha", fecha.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)));
 
     public List<Venta> ObtenerVentas(DateTime desde, DateTime hasta) =>
-        ExecuteReportObjects<Venta>(
-            "SELECT * FROM Ventas WHERE date(Fecha) BETWEEN date(@desde) AND date(@hasta) ORDER BY Fecha DESC, Id DESC",
+        ExecuteReportObjects<Venta>(@"
+            SELECT v.*, EXISTS (SELECT 1 FROM AnulacionesVenta a WHERE a.VentaId = v.Id) AS Anulada
+            FROM Ventas v
+            WHERE date(v.Fecha) BETWEEN date(@desde) AND date(@hasta)
+            ORDER BY v.Fecha DESC, v.Id DESC",
             new SqliteParameter("@desde", desde.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)),
             new SqliteParameter("@hasta", hasta.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)));
+
+    public AnulacionVenta ObtenerAnulacionVenta(int ventaId) =>
+        ExecuteReportObject<AnulacionVenta>(
+            "SELECT * FROM AnulacionesVenta WHERE VentaId = @id",
+            new SqliteParameter("@id", ventaId));
+
+    /// <summary>
+    /// Anula una venta completa en una sola transacción: registra la anulación, devuelve
+    /// el stock con el costo congelado y revierte el fiado. No permite anular una venta
+    /// que ya quedó incluida en un corte de caja cerrado.
+    /// </summary>
+    public ProcessResult AnularVenta(int ventaId, string usuario, string motivo)
+    {
+        using var conn = CreateConnection();
+        conn.Open();
+        using var tx = conn.BeginTransaction();
+
+        try
+        {
+            Venta venta;
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.Transaction = tx;
+                cmd.CommandText = @"
+                    SELECT v.Id, v.Fecha, v.ClienteId, v.Total, v.PagoFiado,
+                           EXISTS (SELECT 1 FROM AnulacionesVenta a WHERE a.VentaId = v.Id) AS Anulada
+                    FROM Ventas v WHERE v.Id = @id";
+                cmd.Parameters.AddWithValue("@id", ventaId);
+
+                using var reader = cmd.ExecuteReader();
+                if (!reader.Read())
+                {
+                    tx.Rollback();
+                    return ProcessResult.Error($"La venta #{ventaId} no existe");
+                }
+
+                venta = new Venta
+                {
+                    Id = Convert.ToInt32(reader.GetValue(0), CultureInfo.InvariantCulture),
+                    Fecha = Convert.ToDateTime(reader.GetValue(1), CultureInfo.InvariantCulture),
+                    ClienteId = reader.IsDBNull(2) ? null : Convert.ToInt32(reader.GetValue(2), CultureInfo.InvariantCulture),
+                    Total = Convert.ToInt64(reader.GetValue(3), CultureInfo.InvariantCulture),
+                    PagoFiado = Convert.ToInt64(reader.GetValue(4), CultureInfo.InvariantCulture),
+                    Anulada = Convert.ToInt64(reader.GetValue(5), CultureInfo.InvariantCulture) != 0
+                };
+            }
+
+            if (venta.Anulada)
+            {
+                tx.Rollback();
+                return ProcessResult.Error($"La venta #{ventaId} ya está anulada");
+            }
+
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.Transaction = tx;
+                cmd.CommandText = @"
+                    SELECT COUNT(*) FROM CortesCaja
+                    WHERE datetime(@fecha) > datetime(Desde) AND datetime(@fecha) <= datetime(Hasta)";
+                cmd.Parameters.AddWithValue("@fecha", venta.Fecha);
+
+                if (Convert.ToInt32(cmd.ExecuteScalar(), CultureInfo.InvariantCulture) > 0)
+                {
+                    tx.Rollback();
+                    return ProcessResult.Error(
+                        $"La venta #{ventaId} ya está incluida en un corte de caja cerrado y no se puede anular");
+                }
+            }
+
+            var lineas = new List<(int ProductoId, int Cantidad, long CostoUnitario)>();
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.Transaction = tx;
+                cmd.CommandText = @"
+                    SELECT ProductoId, Cantidad, CostoUnitario FROM VentaLineas
+                    WHERE VentaId = @id ORDER BY Id";
+                cmd.Parameters.AddWithValue("@id", ventaId);
+
+                using var reader = cmd.ExecuteReader();
+                while (reader.Read())
+                {
+                    lineas.Add((
+                        Convert.ToInt32(reader.GetValue(0), CultureInfo.InvariantCulture),
+                        Convert.ToInt32(reader.GetValue(1), CultureInfo.InvariantCulture),
+                        Convert.ToInt64(reader.GetValue(2), CultureInfo.InvariantCulture)));
+                }
+            }
+
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.Transaction = tx;
+                cmd.CommandText = @"
+                    INSERT INTO AnulacionesVenta (VentaId, Fecha, Usuario, Motivo)
+                    VALUES (@venta, @fecha, @usuario, @motivo)";
+                cmd.Parameters.AddWithValue("@venta", ventaId);
+                cmd.Parameters.AddWithValue("@fecha", DateTime.Now);
+                cmd.Parameters.AddWithValue("@usuario", (usuario ?? string.Empty).Trim());
+                cmd.Parameters.AddWithValue("@motivo", (motivo ?? string.Empty).Trim());
+                cmd.ExecuteNonQuery();
+            }
+
+            foreach (var linea in lineas)
+            {
+                InsertarMovimiento(conn, tx, linea.ProductoId, MovimientoTipo.Entrada,
+                    linea.Cantidad, linea.CostoUnitario,
+                    $"Anulación venta #{ventaId}: {motivo}", usuario);
+            }
+
+            if (venta.PagoFiado > 0 && venta.ClienteId.HasValue)
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.Transaction = tx;
+                cmd.CommandText = @"
+                    UPDATE ClientesFiado
+                    SET SaldoActual = SaldoActual - @fiado, UltimaActualizacion = datetime('now')
+                    WHERE Id = @id";
+                cmd.Parameters.AddWithValue("@fiado", venta.PagoFiado);
+                cmd.Parameters.AddWithValue("@id", venta.ClienteId.Value);
+                cmd.ExecuteNonQuery();
+            }
+
+            tx.Commit();
+            return ProcessResult.Success(
+                $"Venta #{ventaId} anulada: stock devuelto y fiado revertido");
+        }
+        catch (SqliteException ex)
+        {
+            try { tx.Rollback(); } catch (SqliteException) { }
+            return ProcessResult.Error($"No se pudo anular la venta: {ex.Message}");
+        }
+    }
 
     public List<VentaLinea> ObtenerLineasVenta(int ventaId) =>
         ExecuteReportObjects<VentaLinea>(
@@ -1032,7 +1171,8 @@ public class DatabaseTools
                 SELECT COUNT(*), COALESCE(SUM(Total), 0),
                        COALESCE(SUM(CostoTotal), 0), COALESCE(SUM(ComisionTarjeta), 0)
                 FROM Ventas
-                WHERE date(Fecha) BETWEEN date(@desde) AND date(@hasta)";
+                WHERE date(Fecha) BETWEEN date(@desde) AND date(@hasta)
+                  AND NOT EXISTS (SELECT 1 FROM AnulacionesVenta a WHERE a.VentaId = Ventas.Id)";
             cmd.Parameters.AddWithValue("@desde", desde.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
             cmd.Parameters.AddWithValue("@hasta", hasta.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
 
@@ -1224,7 +1364,8 @@ public class DatabaseTools
                     COALESCE(SUM(CASE WHEN MetodoPago = @mixto THEN 1 ELSE 0 END), 0),
                     COALESCE(SUM(CASE WHEN MetodoPago = @fiado THEN 1 ELSE 0 END), 0)
                 FROM Ventas
-                WHERE Fecha > @desde AND Fecha <= @hasta";
+                WHERE Fecha > @desde AND Fecha <= @hasta
+                  AND NOT EXISTS (SELECT 1 FROM AnulacionesVenta a WHERE a.VentaId = Ventas.Id)";
             cmd.Parameters.AddWithValue("@desde", desde);
             cmd.Parameters.AddWithValue("@hasta", hasta);
             cmd.Parameters.AddWithValue("@efectivo", MetodoPagoVenta.Efectivo);

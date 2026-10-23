@@ -164,4 +164,45 @@ public class VentaService
     public List<Venta> ObtenerVentas(DateTime desde, DateTime hasta) => _db.ObtenerVentas(desde, hasta);
 
     public List<VentaLinea> ObtenerLineas(int ventaId) => _db.ObtenerLineasVenta(ventaId);
+
+    public Venta ObtenerVentaPorId(int ventaId) => _db.ObtenerVentaPorId(ventaId);
+
+    /// <summary>
+    /// Anula una venta completa con motivo obligatorio. El historial no se edita:
+    /// se registra la anulación, se devuelve el stock y se revierte el fiado.
+    /// </summary>
+    public ProcessResult AnularVenta(int ventaId, string motivo, string usuario)
+    {
+        var autorizacion = Autorizar(PermisoSistema.AnularVenta);
+        if (autorizacion.IsError)
+            return autorizacion;
+
+        if (ventaId <= 0)
+            return ProcessResult.Error("Indique la venta a anular");
+
+        if (string.IsNullOrWhiteSpace(motivo))
+            return ProcessResult.Error("Indique el motivo de la anulación");
+
+        if (string.IsNullOrWhiteSpace(usuario))
+            return ProcessResult.Error("La anulación requiere un usuario");
+
+        var venta = _db.ObtenerVentaPorId(ventaId);
+        if (venta == null)
+            return ProcessResult.Error($"La venta #{ventaId} no existe");
+
+        if (venta.Anulada)
+            return ProcessResult.Error($"La venta #{ventaId} ya está anulada");
+
+        var resultado = _db.AnularVenta(ventaId, usuario.Trim(), motivo.Trim());
+        if (resultado.IsError)
+            return resultado;
+
+        _bitacora.Registrar(AccionBitacora.AnulacionVenta, "Venta", ventaId.ToString(),
+            $"Total={Dinero.Formatear(venta.Total)};Metodo={venta.MetodoPago};" +
+            $"PagoFiado={Dinero.Formatear(venta.PagoFiado)}" +
+            (venta.ClienteId.HasValue ? $";Cliente={venta.ClienteId.Value}" : string.Empty),
+            "Anulada",
+            motivo.Trim());
+        return resultado;
+    }
 }

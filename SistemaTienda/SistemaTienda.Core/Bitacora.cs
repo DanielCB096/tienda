@@ -23,6 +23,7 @@ public class RegistroBitacora
 public enum PermisoSistema
 {
     Vender,
+    AnularVenta,
     Consultar,
     RegistrarMerma,
     RegistrarGasto,
@@ -50,6 +51,7 @@ public static class AccionBitacora
     public const string CorteCaja = "CorteCaja";
     public const string MovimientoCaja = "MovimientoCaja";
     public const string Venta = "Venta";
+    public const string AnulacionVenta = "AnulacionVenta";
     public const string Abono = "Abono";
     public const string PagoProveedor = "PagoProveedor";
     public const string Usuario = "Usuario";

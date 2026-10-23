@@ -17,6 +17,19 @@ public class Venta
     public long PagoTarjeta { get; set; }
     public long PagoFiado { get; set; }
     public long ComisionTarjeta { get; set; }
+    public bool Anulada { get; set; }
+}
+
+/// <summary>
+/// Registro inmutable de la anulación de una venta completa. La venta original no se modifica.
+/// </summary>
+public class AnulacionVenta
+{
+    public int Id { get; set; }
+    public int VentaId { get; set; }
+    public DateTime Fecha { get; set; } = DateTime.Now;
+    public string Usuario { get; set; } = string.Empty;
+    public string Motivo { get; set; } = string.Empty;
 }
 
 public class VentaLinea
