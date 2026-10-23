@@ -11,12 +11,6 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 - **Impacto**: riesgo de diferencias por redondeo y comparaciones de decimales frágiles. SQLite no tiene tipo decimal nativo: los valores se guardan como texto/numérico con afinidad.
 - **Cierre**: migración a `long Centavos` en entidades y `INTEGER` en base, con utilidades de formato/parseo y pruebas de aritmética.
 
-### Sin migraciones versionadas ni respaldo previo
-
-- **Dónde**: `DatabaseTools.InicializarBaseDeDatos` crea tablas con `IF NOT EXISTS` y fija `PRAGMA user_version = 1`.
-- **Impacto**: cualquier cambio de esquema sobre una base existente no se aplica; habría que recrear el archivo y perder datos.
-- **Cierre**: runner de migraciones idempotentes 1→N con respaldo automático antes de migrar (regla #11).
-
 ### Sin bitácora ni validación de permisos en servicios
 
 - **Dónde**: `ConfiguracionService` e `InventoryService`.
@@ -30,6 +24,12 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 - **Cierre**: tablas `AbonosFiado` y `PagosProveedor` inmutables; el saldo se deriva o se actualiza dentro de la misma transacción.
 
 ## Media prioridad
+
+### Respaldo automático por intervalo todavía no se agenda
+
+- **Dónde**: `ConfiguracionTienda.RespaldoIntervaloDias` y `RespaldoService`.
+- **Impacto**: ya existen respaldo manual, respaldo previo a migrar y respaldo previo a restaurar, todos verificados; pero si el dueño no crea respaldos manuales, no hay copias recientes. La consola muestra la fecha del último respaldo.
+- **Cierre**: agendar el respaldo según el intervalo configurado (al iniciar o cerrar la app), avisar cuando esté vencido y registrarlo en la bitácora.
 
 ### Interfaz de consola provisional
 

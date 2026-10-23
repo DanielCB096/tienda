@@ -110,8 +110,11 @@ dotnet test SistemaTienda/SistemaTienda.sln
 | `InventarioTests` | Alta, duplicados, venta, merma, entrada, ajuste, stock bajo, búsqueda, valorizado |
 | `FiadoProveedoresTests` | Cliente, abono, saldo, proveedor, pago, validaciones |
 | `BaseDatosTests` | Inicialización idempotente, tablas, mapeo de tipos |
+| `MigracionesRespaldoTests` | Migración v1→v2 con respaldo previo, idempotencia, fallo con rollback, rechazo de base más nueva, respaldo verificado, restauración exacta con respaldo de seguridad, confirmación obligatoria |
 
-Total actual: 59 casos, todos en verde. Los puntos 1, 3, 5, 6 y 7 del listado de áreas críticas tienen cobertura parcial; faltan corte de caja, costo congelado, respaldo/restauración, ticket y rendimiento porque los módulos no existen todavía.
+Total actual: 68 casos, todos en verde. Los puntos 1, 3, 5, 6, 7 y 8 del listado de áreas críticas tienen cobertura parcial; faltan corte de caja, costo congelado, ticket y rendimiento porque los módulos no existen todavía. La restauración se prueba sobre una base temporal: se verifica que el contenido vuelve al del respaldo (no byte a byte).
+
+La verificación se ejecuta en GitHub Actions (`windows-latest`) en cada push; ver el aviso de Smart App Control en `CLAUDE-tienda.md` sobre por qué no siempre corre localmente.
 
 ## Herramientas de Prueba
 

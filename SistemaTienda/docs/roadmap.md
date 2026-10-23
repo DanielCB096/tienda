@@ -15,23 +15,23 @@ Estado al 2026-10-23. Orden sugerido en [CLAUDE-tienda.md §13](../CLAUDE-tienda
 | 7 | Proveedores y cuentas por pagar | 🟡 Parcial | Proveedor, saldo y pago; sin historial de pagos |
 | 8 | Corte de caja | ⛔ No implementado | — |
 | 9 | Reportes y utilidad | ⛔ No implementado | Solo valorizado y stock bajo |
-| 10 | Respaldo y restauración | ⛔ No implementado | Riesgo alto antes de uso real |
+| 10 | Respaldo y restauración | 🟡 Parcial | Manual, antes de migrar y antes de restaurar, con verificación; falta agendar el automático y USB/nube |
 | — | Interfaz definitiva | ⛔ Pendiente | Consola provisional; ADR de UI abierto |
-| — | Migraciones versionadas | ⛔ No implementado | Esquema v1 fijado con `PRAGMA user_version` |
+| — | Migraciones versionadas | ✅ Base implementada | Runner con `PRAGMA user_version`, respaldo previo y rollback; sin migraciones pendientes aún |
 | — | Bitácora / auditoría | ⛔ No implementado | Requerida por regla de negocio #9 |
 
 ## Siguiente trabajo recomendado
 
-1. **Migraciones versionadas + respaldo** antes de tocar el esquema otra vez. Sin esto, cada cambio de modelo exige recrear la base.
-2. **Ventas / POS** con líneas, pagos, costo congelado y descuento atómico de stock.
-3. **Corte de caja** sobre ventas y abonos.
-4. **Reportería de utilidad** (ventas − costo − mermas − gastos − comisión).
-5. **Bitácora** de operaciones sensibles y validación de permisos en servicios, no solo en menús.
+1. **Ventas / POS** con líneas, pagos, costo congelado y descuento atómico de stock (introduce el esquema v2 con el runner ya disponible).
+2. **Corte de caja** sobre ventas y abonos.
+3. **Reportería de utilidad** (ventas − costo − mermas − gastos − comisión).
+4. **Bitácora** de operaciones sensibles y validación de permisos en servicios, no solo en menús.
+5. **Respaldo automático** por intervalo configurado.
 6. **Interfaz definitiva** según ADR de UI (MAUI/WPF/PWA).
 7. **Importación Excel/CSV** y plantillas por giro.
 
 ## Riesgos abiertos
 
 - Dinero modelado con `decimal`, no en centavos enteros. Ver [deuda-tecnica.md](deuda-tecnica.md).
-- No hay respaldo: un borrado accidental del archivo `.db` implica pérdida total.
+- El respaldo automático por intervalo aún no se agenda: si el dueño no respalda manualmente, la copia más reciente puede ser vieja.
 - La consola no es la interfaz objetivo; puede cambiar por completo.

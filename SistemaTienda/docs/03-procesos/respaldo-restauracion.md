@@ -4,14 +4,30 @@
 
 En una arquitectura local-first con un solo dispositivo por tienda, **el respaldo es la única protección contra pérdida de datos**. Si la tablet se daña, se pierde, se robo o se formatea, los datos desaparecen si no hay respaldo.
 
+## Estado de implementación (2026-10-23)
+
+| Función | Estado |
+|---------|--------|
+| Crear respaldo manual y verificado | ✅ Implementado (`RespaldoService`, menú Configuración) |
+| Respaldo automático antes de migrar | ✅ Implementado (`MigradorEsquema`) |
+| Respaldo de seguridad antes de restaurar | ✅ Implementado (`RespaldoLocal.Restaurar`) |
+| Listar respaldos e indicar el último | ✅ Implementado en consola |
+| Restauración guiada con confirmación | ✅ Implementado (requiere escribir `RESTAURAR` y reiniciar) |
+| Respaldo automático por intervalo configurado | ⛔ Pendiente: `RespaldoIntervaloDias` se guarda pero no se agenda |
+| Copia a USB y nube personal | ⛔ Pendiente (Fase 2) |
+| Cifrado de respaldos | ⛔ Pendiente (Fase 2) |
+| Bitácora de respaldos | ⛔ Pendiente: no hay tabla de bitácora |
+
+Formato real implementado: carpeta `respaldos/` junto a la base, archivos `tienda-yyyyMMdd-HHmmss[-etiqueta].db`, generados con `VACUUM INTO` y verificados con `PRAGMA integrity_check`.
+
 ## Estrategia de Respaldo
 
 ### 1. Respaldo Automático Programado
 
-- El sistema crea una copia de la base de datos SQLite (`tienda.localdb`) a intervalos configurables.
+- El sistema creará una copia de la base de datos SQLite a intervalos configurables (pendiente de agendar).
 - **Intervalo recomendado**: Cada 1 día (24 horas) o cada 5 ventas, el primero que ocurra.
-- **Archivo generado**: `tienda.localdb.copy` o `tienda.localdb.YYYYMMDD.db`.
-- **Ubicación**: En el mismo dispositivo, en una carpeta designada `Respaldos/`.
+- **Archivo generado**: `tienda-yyyyMMdd-HHmmss.db`.
+- **Ubicación**: `respaldos/` junto al archivo de base de datos.
 - **Indicador en UI**: La pantalla principal muestra: "Último respaldo: hace 2 días" o "⚠️ No hay respaldo hace 5 días (configurar intervalo)".
 
 ### 2. Respaldo Manual
@@ -112,14 +128,14 @@ A medida que el sistema evoluciona (nuevos módulos, nuevos campos), la estructu
 
 ### Respaldo Obligatorio Antes de Migrar
 
-**NUNCA** se deben aplicar migraciones sin antes haber creado un respaldo. El sistema debe:
+**NUNCA** se deben aplicar migraciones sin antes haber creado un respaldo. El sistema:
 
-1. Mostrar un aviso: "Se detectó una actualización que requiere migrar la base de datos. Se creará un respaldo automáticamente antes de continuar."
-2. Crear el respaldo automáticamente.
-3. Ejecutar las migraciones.
-4. Reiniciar la app.
+1. Detecta migraciones pendientes al iniciar y crea un respaldo etiquetado `antes-migrar`.
+2. Verifica el respaldo con `PRAGMA integrity_check`; si no pasa, aborta sin aplicar cambios.
+3. Ejecuta cada migración dentro de su propia transacción y actualiza `PRAGMA user_version`.
+4. Verifica la integridad de la base al terminar.
 
-Si el usuario cancela, la app continúa con la versión antigua y los datos intactos.
+Si una migración falla, se revierte esa migración, la base queda en la última versión aplicada y el mensaje indica la ruta del respaldo. En la interfaz de consola no hay cancelación interactiva: la migración ocurre al arrancar, antes de mostrar menús.
 
 ## Bitácora de Acciones de Respaldo
 

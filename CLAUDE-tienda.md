@@ -77,10 +77,16 @@ dotnet test SistemaTienda/SistemaTienda.sln
 # Formato (cuando se adopte; no bloquea todavía)
 dotnet format SistemaTienda/SistemaTienda.sln
 
-# Migraciones: PENDIENTE — esquema v1 fijado con PRAGMA user_version; sin runner
+# Migraciones: se aplican solas al iniciar la app (runner en Infrastructure/Migraciones.cs).
+# Para agregar una: añade un Migracion(2, "...", ...) en Migraciones.ObtenerTodas() y su prueba.
+
+# Respaldos: se crean en respaldos/ junto a la base; desde la consola:
+#   Configuración → [4] Crear respaldo ahora / [5] Ver respaldos / [6] Restaurar respaldo
 ```
 
 Después de cualquier cambio: ejecuta pruebas y lint. No des una tarea por terminada si fallan.
+
+> **Entorno de este equipo (2026-10-23)**: Windows Smart App Control bloquea la carga de cualquier ensamblado compilado localmente (`0x800711C7`), así que `dotnet test` no puede ejecutarse aquí. La verificación oficial es el flujo de GitHub Actions (`.github/workflows/ci.yml`), que compila y corre las pruebas en `windows-latest` en cada push. Si se desactiva Smart App Control (requiere administrador y es irreversible), vuelve a funcionar `dotnet test` local.
 
 ## 5. Convenciones de código
 

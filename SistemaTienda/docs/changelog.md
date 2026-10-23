@@ -32,6 +32,18 @@ Próximamente después de completar los módulos críticos.
 - Configuración básica de tienda (nombre, giro, impuestos, métodos de pago).
 - Documentación inicial (glosario, stack, módulos, ADR).
 
+### v0.0.3 - 2026-10-23: Migraciones versionadas y respaldo local
+
+- *Agregado*: runner de migraciones basado en `PRAGMA user_version` (`Infrastructure/Migraciones.cs`), con respaldo previo verificado, transacción por migración, rollback y verificación de integridad final.
+- *Agregado*: `RespaldoLocal` (crear, verificar, listar, restaurar) con `VACUUM INTO`, nombres `tienda-yyyyMMdd-HHmmss[-etiqueta].db` y carpeta `respaldos/` junto a la base.
+- *Agregado*: restauración con respaldo de seguridad `antes-restaurar`, limpieza de `-wal`/`-shm` y confirmación explícita.
+- *Agregado*: `RespaldoService` y menú en Configuración: crear respaldo, ver respaldos con fecha y tamaño, restaurar (solo dueño, escribiendo `RESTAURAR`).
+- *Agregado*: 9 pruebas de migraciones y respaldo; total del proyecto: 68.
+- *Agregado*: flujo de GitHub Actions que compila y ejecuta las pruebas en cada push.
+- *Modificado*: la base marca `user_version = 1` al crearse y también al abrir bases anteriores al versionado.
+- *Modificado*: cada prueba usa un directorio temporal único, incluida su carpeta de respaldos.
+- *Corregido*: la inicialización ya no puede dejar una base sin versión ni aplicar cambios sin respaldo previo.
+
 ### v0.0.2 - 2026-10-23: Base compilable, segura y con pruebas
 
 - *Agregado*: proyecto `SistemaTienda.Tests` (xUnit, 59 pruebas) sobre base SQLite temporal por prueba.
@@ -52,5 +64,5 @@ Próximamente después de completar los módulos críticos.
 
 - Reportes y utilidad completos.
 - Asistente de primera configuración mejorado.
-- Migraciones de esquema versionadas.
+- Respaldo automático por intervalo y copia a USB.
 - Distribución optimizada (.exe, .apk, PWA).

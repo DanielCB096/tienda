@@ -74,24 +74,24 @@ Cada agente: su carpeta, su rama y su PR.
 
 ## Estado del proyecto (2026-10-23)
 
-- Rama publicada con el trabajo actual: `feat/base-compilable` (3 commits sobre `main`).
-- `main`: solo el commit base; el PR sigue pendiente de integración.
-- Build: 0 errores, 0 advertencias. Pruebas: **59 en verde**.
-- Implementado: configuración inicial, usuarios/PIN/roles, gastos, inventario por movimientos, fiado (cliente/abono), proveedores (saldo/pago), consola provisional.
-- No implementado: ventas/POS, corte de caja, respaldo/restauración, migraciones versionadas, bitácora, reportes de utilidad, UI definitiva.
+- Rama publicada con el trabajo actual: `feat/migraciones-respaldo` (T1, sobre `feat/base-compilable`).
+- `main`: solo el commit base; el PR de `feat/base-compilable` sigue pendiente de integración.
+- Build: 0 errores, 0 advertencias. Pruebas: **68 en verde** (verificadas por GitHub Actions).
+- Implementado: configuración inicial, usuarios/PIN/roles, gastos, inventario por movimientos, fiado (cliente/abono), proveedores (saldo/pago), migraciones versionadas con respaldo, respaldo/restauración local, consola provisional.
+- No implementado: ventas/POS, corte de caja, respaldo automático por intervalo, bitácora, reportes de utilidad, UI definitiva.
 - Deuda principal: dinero en `decimal`, abonos/pagos sin historial inmutable, merma sin entidad propia.
 
 ## Tareas disponibles
 
 El detalle vive en el tablero. Resumen y criterios de terminado:
 
-### T1 — Migraciones versionadas + respaldo (prioridad alta)
+### T1 — Migraciones versionadas + respaldo (HECHO)
 
-- Runner idempotente basado en `PRAGMA user_version`; migraciones 1→N.
-- Respaldo obligatorio antes de aplicar una migración y verificación de integridad.
-- Servicio de respaldo/restauración local (copiar el `.db`; sin nube).
-- Pruebas: base v1 migra a v2; respaldo creado y restaurado idéntico; falla de migración deja intacto el original.
-- Toca: `Infrastructure/Database.cs`, nuevo `Infrastructure/Migraciones.cs`, `Application/RespaldoService.cs`, pruebas.
+- Completado en `feat/migraciones-respaldo` (8ead191, 54901bd, 50b35be).
+- Runner con `PRAGMA user_version`, respaldo `antes-migrar` verificado, transacción por migración y rollback.
+- `RespaldoLocal` + `RespaldoService` con crear/verificar/listar/restaurar; restauración con respaldo `antes-restaurar`.
+- Pruebas en `MigracionesRespaldoTests` (9 casos).
+- **T2 ya puede usar el esquema v2**: agrega `new Migracion(2, "...", ...)` en `Migraciones.ObtenerTodas()`.
 
 ### T2 — Ventas / POS (crítico)
 
@@ -152,6 +152,8 @@ SISTEMATIENDA_DB=/ruta/a/tienda.db dotnet run --project SistemaTienda/SistemaTie
 ```
 
 Entorno conocido: el equipo tiene runtime **.NET 10** y SDK 10; los proyectos `net8.0` usan `RollForward=Major` para ejecutarse. Si creas un nuevo ejecutable o proyecto de pruebas, agrega la misma propiedad o fallará al arrancar.
+
+**Bloqueo local (2026-10-23)**: Windows Smart App Control está activo y rechaza cualquier ensamblado compilado localmente al cargarlo (`0x800711C7`, política WDAC `0283ac0f-…`). Por eso `dotnet test` y la consola no pueden ejecutarse en este equipo, aunque `dotnet build` sí funciona. La verificación es el flujo de GitHub Actions (`.github/workflows/ci.yml`, job "Compilar y probar"). Si tienes permisos de administrador y aceptas el cambio irreversible, desactivar Smart App Control (Seguridad de Windows → Control de aplicaciones y navegador) vuelve a habilitar la ejecución local.
 
 ## Convención de pruebas
 

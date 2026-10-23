@@ -1,8 +1,29 @@
 # Modelo de Datos (esquema v1)
 
-Base local SQLite, un solo archivo. `PRAGMA user_version = 1`; no hay runner de migraciones todavía (ver [deuda-tecnica.md](../deuda-tecnica.md)).
+Base local SQLite, un solo archivo. `PRAGMA user_version = 1`.
 
 El acceso vive en `SistemaTienda.Infrastructure/Database.cs` (`DatabaseTools`). Todas las consultas son parametrizadas.
+
+## Versionado del esquema
+
+- La versión vigente se guarda en `PRAGMA user_version`. La **versión 1** es el esquema base que crea `DatabaseTools` en una base nueva o vacía.
+- `SistemaTienda.Infrastructure/Migraciones.cs` define la lista ordenada de migraciones pendientes (`Migracion(Version, Descripcion, Aplicar)`). Hoy está vacía: la app solo conoce la v1.
+- `MigradorEsquema.Migrar()` se ejecuta dentro de `InicializarBaseDeDatos()` al arrancar:
+  1. Lee `user_version`; si la base es más nueva que la app, aborta sin tocar nada.
+  2. Si hay migraciones pendientes y la base ya existía, crea un respaldo `antes-migrar` y lo verifica con `PRAGMA integrity_check`; si falla, no aplica cambios.
+  3. Aplica cada migración en su propia transacción y actualiza `user_version` dentro de la misma.
+  4. Si una migración falla, hace rollback de esa migración y reporta el respaldo disponible.
+  5. Al terminar, verifica la integridad de la base.
+- Una base anterior al versionado (con tablas pero `user_version = 0`) se marca como v1 al abrirse; sus datos no se tocan.
+- Para agregar una migración: crear `new Migracion(2, "descripción", (conn, tx) => { ... })` en `Migraciones.ObtenerTodas()`, con SQL idempotente (`IF NOT EXISTS`, etc.), y añadir su prueba.
+
+## Respaldos
+
+- Carpeta por defecto: `respaldos/` junto al archivo `.db` (ignorada por git).
+- Nombre: `tienda-yyyyMMdd-HHmmss[-etiqueta].db`, con sufijo numérico si coincide en el mismo segundo.
+- Se crean con `VACUUM INTO`, que produce una copia consistente sin bloquear la base, y se validan con `PRAGMA integrity_check` antes de darse por buenos.
+- Etiquetas en uso: `antes-migrar`, `antes-restaurar`, `manual`.
+- Restaurar verifica el respaldo, crea uno de seguridad `antes-restaurar`, cierra conexiones (`SqliteConnection.ClearAllPools()`), reemplaza el archivo y elimina `-wal`/`-shm`. Requiere confirmación explícita del dueño y reiniciar la app.
 
 ## Tablas
 
