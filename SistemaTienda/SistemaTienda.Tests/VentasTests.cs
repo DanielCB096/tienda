@@ -304,7 +304,10 @@ public sealed class VentasTests
                 Stock = 4
             }) > 0);
 
-            // Simula una base creada antes de existir las ventas.
+            // Simula una base creada antes de existir las ventas y el corte de caja.
+            original.ExecuteCommand("DROP TABLE AbonosFiado");
+            original.ExecuteCommand("DROP TABLE MovimientosCaja");
+            original.ExecuteCommand("DROP TABLE CortesCaja");
             original.ExecuteCommand("DROP TABLE VentaLineas");
             original.ExecuteCommand("DROP TABLE Ventas");
             original.ExecuteCommand("PRAGMA user_version = 1");

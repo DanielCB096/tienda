@@ -26,7 +26,7 @@ public sealed class BaseDatosTests
         {
             "ConfiguracionTienda", "UsuariosSistema", "Productos",
             "MovimientoInventario", "Gastos", "ClientesFiado", "Proveedores",
-            "Ventas", "VentaLineas"
+            "Ventas", "VentaLineas", "CortesCaja", "MovimientosCaja", "AbonosFiado"
         })
         {
             var existe = bd.Db.ExecuteScalar<int>(
