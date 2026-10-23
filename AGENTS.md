@@ -76,9 +76,9 @@ Cada agente: su carpeta, su rama y su PR.
 
 - Rama publicada con el trabajo actual: `feat/integracion-t4-t9` (T3+T4 sobre `feat/centavos-enteros`; T9 se integra en la misma rama).
 - `main`: solo el commit base; los PR de `feat/base-compilable`, `feat/migraciones-respaldo`, `feat/ventas-pos`, `feat/corte-caja`, `feat/centavos-enteros` y `feat/integracion-t4-t9` siguen pendientes de integración, en ese orden.
-- Build: 0 errores, 0 advertencias. Pruebas: **150 en verde** (verificadas localmente y por GitHub Actions).
-- Implementado: configuración inicial, usuarios/PIN/roles, gastos, inventario por movimientos, ventas/POS (efectivo, tarjeta, mixto y fiado; costo y precio congelados; comisión), fiado (cliente/abono con historial), proveedores (saldo/pago), corte de caja (efectivo esperado, diferencia justificada, ingresos/retiros e historial), bitácora inmutable y permisos validados en servicios, migraciones versionadas con respaldo, respaldo/restauración local, dinero en centavos enteros (`long`/`INTEGER`, esquema v4), consola provisional.
-- No implementado: respaldo automático por intervalo, reportes de utilidad, anulación de ventas, ticket con QR/compartir, UI definitiva y conteo por denominaciones.
+- Build: 0 errores, 0 advertencias. Pruebas: **157 en verde** (verificadas localmente y por GitHub Actions).
+- Implementado: configuración inicial, usuarios/PIN/roles, gastos, inventario por movimientos, ventas/POS (efectivo, tarjeta, mixto y fiado; costo y precio congelados; comisión), fiado (cliente/abono con historial), proveedores (saldo/pago), corte de caja (efectivo esperado, diferencia justificada, ingresos/retiros e historial), bitácora inmutable y permisos validados en servicios, migraciones versionadas con respaldo, respaldo/restauración local, dinero en centavos enteros (`long`/`INTEGER`, esquema v4), reporte de utilidad por periodo (ventas − costo congelado − comisión − mermas − gastos), consola provisional.
+- No implementado: respaldo automático por intervalo, anulación de ventas, ticket con QR/compartir, UI definitiva y conteo por denominaciones.
 - Deuda principal: pagos a proveedores sin historial inmutable, merma sin entidad propia, bitácora no atómica con la operación y corte sin desglose de billetes.
 
 ## Tareas disponibles
@@ -125,15 +125,19 @@ El detalle vive en el tablero. Resumen y criterios de terminado:
 
 ### T4 — Bitácora y permisos en servicios (HECHO)
 
-- Completado en `feat/bitacora-permisos` (ca21564).
-- Esquema v4 con `Bitacora` inmutable (disparadores contra `UPDATE`/`DELETE`), `BitacoraService` y `AutorizacionService`.
+- Integrado por Qoder en `feat/integracion-t4-t9` (9d1dc9f, e009af4) sobre el dinero en centavos.
+- Esquema v5 con `Bitacora` inmutable (disparadores contra `UPDATE`/`DELETE`), `BitacoraService` y `AutorizacionService`.
 - Permisos validados en `ConfiguracionService`, `InventoryService`, `VentaService` y `CorteCajaService`; `SesionActual` se inicia al autenticar.
-- Pruebas en `BitacoraPermisosTests` (11 casos); total 105.
+- Los detalles auditados formatean el dinero con `Dinero.Formatear`.
+- Pruebas en `BitacoraPermisosTests` (11 casos).
 
-### T5 — Reportes de utilidad
+### T5 — Reportes de utilidad (HECHO)
 
-- Utilidad = ventas − costo congelado − mermas − gastos − comisión.
-- Filtros por fecha, paginación e índices. Depende de T2.
+- Completado en `feat/reportes-utilidad` sobre `feat/integracion-t4-t9`.
+- Utilidad bruta = ventas − costo congelado − comisión de tarjeta; utilidad neta = bruta − mermas − gastos.
+- Las mermas salen del costo congelado en `MovimientoInventario` (motivo `Merma:%`); los gastos suman ambos orígenes.
+- Filtro por día, mes o rango de fechas en la consola; permiso `Consultar` validado en el servicio.
+- Pruebas en `ReportesTests` (7 casos); total 157.
 
 ### T6 — Importación Excel/CSV
 

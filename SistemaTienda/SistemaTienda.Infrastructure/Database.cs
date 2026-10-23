@@ -1017,6 +1017,63 @@ public class DatabaseTools
             "SELECT * FROM VentaLineas WHERE VentaId = @id ORDER BY Id",
             new SqliteParameter("@id", ventaId));
 
+    // ---------- Reporte de utilidad ----------
+
+    public ReporteUtilidad ObtenerReporteUtilidad(DateTime desde, DateTime hasta)
+    {
+        var reporte = new ReporteUtilidad { Desde = desde.Date, Hasta = hasta.Date };
+
+        using var conn = CreateConnection();
+        conn.Open();
+
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.CommandText = @"
+                SELECT COUNT(*), COALESCE(SUM(Total), 0),
+                       COALESCE(SUM(CostoTotal), 0), COALESCE(SUM(ComisionTarjeta), 0)
+                FROM Ventas
+                WHERE date(Fecha) BETWEEN date(@desde) AND date(@hasta)";
+            cmd.Parameters.AddWithValue("@desde", desde.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+            cmd.Parameters.AddWithValue("@hasta", hasta.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+
+            using var reader = cmd.ExecuteReader();
+            if (reader.Read())
+            {
+                reporte.NumeroVentas = Convert.ToInt32(reader.GetValue(0), CultureInfo.InvariantCulture);
+                reporte.VentasTotal = Convert.ToInt64(reader.GetValue(1), CultureInfo.InvariantCulture);
+                reporte.CostoVentas = Convert.ToInt64(reader.GetValue(2), CultureInfo.InvariantCulture);
+                reporte.ComisionTarjeta = Convert.ToInt64(reader.GetValue(3), CultureInfo.InvariantCulture);
+            }
+        }
+
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.CommandText = @"
+                SELECT COALESCE(SUM(-Cantidad * CostoUnitario), 0)
+                FROM MovimientoInventario
+                WHERE Tipo = @tipo AND Motivo LIKE 'Merma:%'
+                  AND date(Fecha) BETWEEN date(@desde) AND date(@hasta)";
+            cmd.Parameters.AddWithValue("@tipo", MovimientoTipo.Salida);
+            cmd.Parameters.AddWithValue("@desde", desde.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+            cmd.Parameters.AddWithValue("@hasta", hasta.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+
+            reporte.Mermas = Convert.ToInt64(cmd.ExecuteScalar() ?? 0L, CultureInfo.InvariantCulture);
+        }
+
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.CommandText = @"
+                SELECT COALESCE(SUM(Monto), 0) FROM Gastos
+                WHERE date(Fecha) BETWEEN date(@desde) AND date(@hasta)";
+            cmd.Parameters.AddWithValue("@desde", desde.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+            cmd.Parameters.AddWithValue("@hasta", hasta.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+
+            reporte.Gastos = Convert.ToInt64(cmd.ExecuteScalar() ?? 0L, CultureInfo.InvariantCulture);
+        }
+
+        return reporte;
+    }
+
     // ---------- Corte de caja ----------
 
     /// <summary>

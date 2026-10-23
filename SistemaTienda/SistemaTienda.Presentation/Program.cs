@@ -1,4 +1,5 @@
 // Punto de entrada de la aplicación (interfaz de consola provisional)
+using System.Globalization;
 using SistemaTienda.Application.Services;
 using SistemaTienda.Core;
 using SistemaTienda.Infrastructure;
@@ -12,6 +13,7 @@ internal static class Program
     private static InventoryService _inventario;
     private static VentaService _ventas;
     private static CorteCajaService _cortes;
+    private static ReporteUtilidadService _reportes;
     private static RespaldoService _respaldos;
     private static UsuarioSistema _usuarioActual;
     private static ConfiguracionTienda _configTienda;
@@ -38,6 +40,7 @@ internal static class Program
             _inventario = new InventoryService(_db);
             _ventas = new VentaService(_db);
             _cortes = new CorteCajaService(_db);
+            _reportes = new ReporteUtilidadService(_db);
             _respaldos = new RespaldoService(_db);
 
             if (_db.ContarUsuarios() == 0 && !EjecutarAsistenteInicial())
@@ -962,7 +965,7 @@ internal static class Program
             Console.WriteLine("  [2] Productos con stock bajo");
             Console.WriteLine("  [3] Resumen de gastos");
             Console.WriteLine("  [4] Saldo total con proveedores");
-            Console.WriteLine("  [5] Ventas y utilidad (pendiente)");
+            Console.WriteLine("  [5] Ventas y utilidad");
             Console.WriteLine("  [0] Regresar");
             Console.Write("\n  Opción: ");
 
@@ -977,10 +980,7 @@ internal static class Program
                 case "2": ListarProductosPaginado(_inventario.ProductosStockBajo()); break;
                 case "3": ReporteGastos(); break;
                 case "4": ReporteSaldoProveedores(); break;
-                case "5":
-                    MostrarModuloPendiente("Ventas y utilidad",
-                        "Las ventas y su costo ya se guardan; falta el reporte de utilidad.");
-                    break;
+                case "5": ReporteUtilidad(); break;
                 case "0": return;
                 case null: return;
                 default: Aviso("Opción no válida."); break;
@@ -997,6 +997,74 @@ internal static class Program
             Console.WriteLine($"  {p.Nombre,-30} ${Dinero.Formatear(p.SaldoPendiente),9}");
         Console.WriteLine($"\n  Total por pagar: ${Dinero.Formatear(proveedores.Sum(p => p.SaldoPendiente))}");
         Pausa();
+    }
+
+    private static void ReporteUtilidad()
+    {
+        LimpiarPantalla();
+        Console.WriteLine("=== VENTAS Y UTILIDAD ===");
+        Console.WriteLine("  [1] Hoy");
+        Console.WriteLine("  [2] Este mes");
+        Console.WriteLine("  [3] Rango de fechas");
+        Console.WriteLine("  [0] Regresar");
+        Console.Write("\n  Opción: ");
+
+        DateTime desde;
+        DateTime hasta;
+
+        switch (Console.ReadLine())
+        {
+            case "1":
+                desde = hasta = DateTime.Today;
+                break;
+            case "2":
+                desde = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+                hasta = DateTime.Today;
+                break;
+            case "3":
+                desde = LeerFecha("Desde (dd/mm/aaaa)", DateTime.Today);
+                hasta = LeerFecha("Hasta (dd/mm/aaaa)", DateTime.Today);
+                break;
+            default:
+                return;
+        }
+
+        var resultado = _reportes.Obtener(desde, hasta);
+        if (resultado.IsError)
+        {
+            Aviso(resultado.Message);
+            return;
+        }
+
+        var reporte = resultado.Value;
+        LimpiarPantalla();
+        Console.WriteLine("=== VENTAS Y UTILIDAD ===");
+        Console.WriteLine($"  Periodo: {reporte.Desde:dd/MM/yyyy} a {reporte.Hasta:dd/MM/yyyy}");
+        Console.WriteLine($"  Ventas: {reporte.NumeroVentas} por ${Dinero.Formatear(reporte.VentasTotal)}");
+        Console.WriteLine($"  Costo de ventas: ${Dinero.Formatear(reporte.CostoVentas)}");
+        Console.WriteLine($"  Comisión de tarjeta: ${Dinero.Formatear(reporte.ComisionTarjeta)}");
+        Console.WriteLine($"  Utilidad bruta: ${Dinero.Formatear(reporte.UtilidadBruta)}");
+        Console.WriteLine($"  Mermas: ${Dinero.Formatear(reporte.Mermas)}");
+        Console.WriteLine($"  Gastos: ${Dinero.Formatear(reporte.Gastos)}");
+        Console.WriteLine($"  Utilidad neta: ${Dinero.Formatear(reporte.UtilidadNeta)}");
+        Pausa();
+    }
+
+    private static DateTime LeerFecha(string etiqueta, DateTime porDefecto)
+    {
+        while (true)
+        {
+            Console.Write($"  {etiqueta} [{porDefecto:dd/MM/yyyy}]: ");
+            var valor = Console.ReadLine();
+            if (valor == null) throw new OperationCanceledException("Entrada terminada");
+            if (string.IsNullOrWhiteSpace(valor)) return porDefecto.Date;
+
+            if (DateTime.TryParseExact(valor.Trim(), "dd/MM/yyyy", CultureInfo.InvariantCulture,
+                    DateTimeStyles.None, out var fecha))
+                return fecha.Date;
+
+            Console.WriteLine("  ⚠ Use el formato dd/mm/aaaa.");
+        }
     }
 
     // ---------------- Corte de caja ----------------

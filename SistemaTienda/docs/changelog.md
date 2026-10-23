@@ -32,6 +32,14 @@ Próximamente después de completar los módulos críticos.
 - Configuración básica de tienda (nombre, giro, impuestos, métodos de pago).
 - Documentación inicial (glosario, stack, módulos, ADR).
 
+### v0.0.8 - 2026-10-23: Reporte de utilidad
+
+- *Agregado*: `ReporteUtilidad` y `ReporteUtilidadService` calculan utilidad bruta (ventas − costo congelado − comisión de tarjeta) y neta (bruta − mermas − gastos) por periodo.
+- *Agregado*: `DatabaseTools.ObtenerReporteUtilidad` agrega ventas, comisión, mermas desde `MovimientoInventario` (motivo `Merma:%`, costo congelado) y gastos de ambos orígenes en un solo reporte.
+- *Agregado*: menú [7] → [5] Ventas y utilidad con filtros de hoy, mes actual o rango de fechas; permiso `Consultar` validado en el servicio.
+- *Agregado*: 7 pruebas de utilidad, costo congelado, comisión, mermas, gastos, rango y validación de fechas.
+- Total del proyecto: 157 pruebas.
+
 ### v0.0.7 - 2026-10-23: Bitácora inmutable y permisos en servicios
 
 - *Agregado*: esquema v5 con tabla `Bitacora` (usuario, fecha, acción, entidad, antes/después, motivo), índices y disparadores que impiden `UPDATE` y `DELETE`.

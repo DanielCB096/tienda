@@ -63,9 +63,9 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 
 ### Reportes incompletos
 
-- **Dónde**: `MenuReportes`.
-- **Impacto**: solo valorizado, stock bajo, gastos, saldos e historial de cortes. Las ventas ya guardan `CostoTotal` y `ComisionTarjeta`, pero no hay reporte de utilidad (`MenuReportes` opción 5) ni ventas por día o comparativos.
-- **Cierre**: consultas agregadas con índices por fecha (ya existen en `Ventas(Fecha)`) y paginación.
+- **Dónde**: `MenuReportes` y `ReporteUtilidadService`.
+- **Impacto**: ya existe la utilidad por periodo (ventas, costo congelado, comisión, mermas y gastos), pero faltan ventas por día, comparativos entre periodos, utilidad por producto y exportación.
+- **Cierre**: consultas agregadas por producto y periodo con índices por fecha (ya existen en `Ventas(Fecha)`).
 
 ## Baja prioridad
 
