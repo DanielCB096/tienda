@@ -76,7 +76,7 @@ Cada agente: su carpeta, su rama y su PR.
 
 - Rama publicada con el trabajo actual: `feat/integracion-t4-t9` (T3+T4 sobre `feat/centavos-enteros`; T9 se integra en la misma rama).
 - `main`: solo el commit base; los PR de `feat/base-compilable`, `feat/migraciones-respaldo`, `feat/ventas-pos`, `feat/corte-caja`, `feat/centavos-enteros` y `feat/integracion-t4-t9` siguen pendientes de integración, en ese orden.
-- Build: 0 errores, 0 advertencias. Pruebas: **125 en verde** (verificadas localmente y por GitHub Actions).
+- Build: 0 errores, 0 advertencias. Pruebas: **150 en verde** (verificadas localmente y por GitHub Actions).
 - Implementado: configuración inicial, usuarios/PIN/roles, gastos, inventario por movimientos, ventas/POS (efectivo, tarjeta, mixto y fiado; costo y precio congelados; comisión), fiado (cliente/abono con historial), proveedores (saldo/pago), corte de caja (efectivo esperado, diferencia justificada, ingresos/retiros e historial), bitácora inmutable y permisos validados en servicios, migraciones versionadas con respaldo, respaldo/restauración local, dinero en centavos enteros (`long`/`INTEGER`, esquema v4), consola provisional.
 - No implementado: respaldo automático por intervalo, reportes de utilidad, anulación de ventas, ticket con QR/compartir, UI definitiva y conteo por denominaciones.
 - Deuda principal: pagos a proveedores sin historial inmutable, merma sin entidad propia, bitácora no atómica con la operación y corte sin desglose de billetes.

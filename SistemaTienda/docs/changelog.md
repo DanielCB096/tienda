@@ -40,7 +40,8 @@ Próximamente después de completar los módulos críticos.
 - *Agregado*: 11 pruebas de bitácora y permisos.
 - *Modificado*: la consola inicia `SesionActual` al autenticar; `BaseDatosPrueba` usa un dueño de sistema por defecto para las pruebas que no evalúan permisos.
 - *Modificado*: los detalles de la bitácora formatean el dinero en centavos con `Dinero.Formatear`.
-- Total del proyecto: 125 pruebas.
+- *Agregado*: 25 pruebas de borde (gastos, saldos, inventario, usuarios y mapeo de tipos) integradas desde T9 y adaptadas a centavos.
+- Total del proyecto: 150 pruebas.
 
 ### v0.0.6 - 2026-10-23: Dinero en centavos enteros
 

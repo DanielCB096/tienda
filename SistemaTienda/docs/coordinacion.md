@@ -27,7 +27,9 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 
 | Tarea | Agente | Rama | Archivos reservados | Inicio | Estado |
 |-------|--------|------|---------------------|--------|--------|
-| T4 | Bitácora y permisos en servicios | DeepSeek | feat/bitacora-permisos | `Core/Bitacora.cs`, `Application/BitacoraService.cs`, `Application/AutorizacionService.cs`, `Database.cs`, `Migraciones.cs`, `ConfiguracionService.cs`, `InventoryService.cs`, `CorteCajaService.cs`, `VentaService.cs`, `Program.cs`, pruebas nuevas | 2026-10-23 | En revisión (commit 9d1dc9f). |
+| Tarea | Agente | Rama | Archivos reservados | Inicio | Estado |
+|-------|--------|------|---------------------|--------|--------|
+| — | — | — | — | — | Sin tareas en curso |
 
 ## Hecho
 
@@ -37,6 +39,8 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 | T2 | Qoder | feat/ventas-pos | Esquema v2 (Ventas/VentaLineas), venta atómica multi-línea, pagos efectivo/tarjeta/mixto/fiado, comisión, menú POS y 13 pruebas | 040e77d, d28c223 |
 | T8 | Qoder | feat/corte-caja | Esquema v3 (CortesCaja, MovimientosCaja, AbonosFiado), corte atómico con efectivo esperado y diferencia justificada, ingresos/retiros, historial, menú [8] y 13 pruebas | fc6436b, a172e39, ef96af7, d58f391 |
 | T3 | Qoder | feat/centavos-enteros | Esquema v4 con importes `long`/`INTEGER`, utilidades `Dinero`, consola sin `Math.Round`, migración v3 → v4 con integridad de FKs y 114 pruebas | d26debc..20894d6 |
+| T4 | DeepSeek → Qoder | feat/integracion-t4-t9 | Integración sobre centavos: bitácora pasa a esquema v5, detalles con `Dinero.Formatear`, permisos y bitácora en todos los servicios; 125 pruebas | 9d1dc9f, e009af4 |
+| T9 | DeepSeek → Qoder | feat/integracion-t4-t9 | 25 pruebas de borde integradas y convertidas a centavos: gastos, saldos, inventario, usuarios y mapeo de tipos; 150 pruebas | fd879cc |
 
 ## Tareas
 
@@ -50,6 +54,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 | T6 | Importación Excel/CSV | Libre | T2 recomendado | Dependencia nueva requiere ADR. |
 | T7 | Interfaz definitiva | Bloqueada | ADR | Primero el ADR de UI. |
 | T8 | Corte de caja | Hecho | T2 | En `feat/corte-caja` (parte de `feat/ventas-pos`). Esquema v3: cortes, movimientos de caja y abonos con historial. |
+| T9 | Cobertura adicional de pruebas | Hecho | T1–T3 | En `feat/integracion-t4-t9`. 25 pruebas de borde en gastos, saldos, inventario, usuarios y mapeo de tipos. Hallazgos sin corregir: `AjustarStock` no valida que el producto exista; se permiten PIN duplicados y `VerificarAcceso` devuelve el primer usuario por nombre; `AgregarGasto` no recorta el concepto; la búsqueda por nombre no ignora acentos. Ver [deuda-tecnica.md](deuda-tecnica.md). |
 
 ## Plantilla para reclamar
 

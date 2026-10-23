@@ -55,6 +55,12 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 - **Impacto**: el costo perdido se calcula al momento y se muestra en el mensaje; no queda guardado como merma con su costo. Los reportes no pueden sumar pérdidas por merma sin recalcular.
 - **Cierre**: tabla `Mermas` o columnas de costo en el movimiento que permitan reportes directos.
 
+### Validaciones de borde sin corregir (hallazgos de T9)
+
+- **Dónde**: `InventoryService.AjustarStock`, `ConfiguracionService.AgregarUsuario` y `VerificarAcceso`, `ConfiguracionService.AgregarGasto`, `InventoryService.BuscarPorNombre`.
+- **Impacto**: `AjustarStock` no valida que el producto exista (con stock mayor a cero falla por llave foránea; con stock cero reporta éxito sin haber ajustado). Se permiten PIN duplicados y `VerificarAcceso` devuelve el primer usuario por nombre, lo que puede asignar el rol equivocado. `AgregarGasto` no recorta el concepto, así que agrupa distinguiendo mayúsculas y espacios. La búsqueda por nombre no ignora acentos.
+- **Cierre**: validar existencia antes de ajustar, exigir PIN único (o verificar por usuario y PIN), recortar el concepto al guardar y normalizar la búsqueda (mayúsculas/acentos).
+
 ### Reportes incompletos
 
 - **Dónde**: `MenuReportes`.
