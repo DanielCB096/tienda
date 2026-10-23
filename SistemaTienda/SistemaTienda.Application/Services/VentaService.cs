@@ -26,12 +26,24 @@ public sealed class PagoSolicitado
 public class VentaService
 {
     private readonly DatabaseTools _db;
+    private readonly BitacoraService _bitacora;
 
-    public VentaService(DatabaseTools db) => _db = db;
+    public VentaService(DatabaseTools db)
+    {
+        _db = db;
+        _bitacora = new BitacoraService(db);
+    }
+
+    private static ProcessResult Autorizar(PermisoSistema permiso) =>
+        AutorizacionService.Exigir(SesionActual.Usuario, permiso);
 
     public ProcessResult<Venta> RegistrarVenta(
         IReadOnlyList<LineaVentaSolicitada> lineas, PagoSolicitado pago, string usuario)
     {
+        var autorizacion = Autorizar(PermisoSistema.Vender);
+        if (autorizacion.IsError)
+            return ProcessResult<Venta>.Error(autorizacion.Message);
+
         if (lineas == null || lineas.Count == 0)
             return ProcessResult<Venta>.Error("La venta debe tener al menos un producto");
 
@@ -139,6 +151,11 @@ public class VentaService
         if (guardado.IsError)
             return ProcessResult<Venta>.Error(guardado.Message);
 
+        _bitacora.Registrar(AccionBitacora.Venta, "Venta", venta.Id.ToString(),
+            string.Empty,
+            $"Total={Dinero.Formatear(venta.Total)};Costo={Dinero.Formatear(venta.CostoTotal)};" +
+            $"Metodo={venta.MetodoPago};Comision={Dinero.Formatear(venta.ComisionTarjeta)}",
+            venta.ClienteId.HasValue ? $"Cliente={venta.ClienteId.Value}" : string.Empty);
         return ProcessResult<Venta>.OK(venta, guardado.Message);
     }
 

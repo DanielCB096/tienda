@@ -32,6 +32,16 @@ Próximamente después de completar los módulos críticos.
 - Configuración básica de tienda (nombre, giro, impuestos, métodos de pago).
 - Documentación inicial (glosario, stack, módulos, ADR).
 
+### v0.0.7 - 2026-10-23: Bitácora inmutable y permisos en servicios
+
+- *Agregado*: esquema v5 con tabla `Bitacora` (usuario, fecha, acción, entidad, antes/después, motivo), índices y disparadores que impiden `UPDATE` y `DELETE`.
+- *Agregado*: `BitacoraService` para registrar y consultar la auditoría; se escribe en altas de producto, cambios de precio, ajustes de inventario, entradas, mermas, gastos, abonos, pagos a proveedores, ventas, movimientos y cortes de caja.
+- *Agregado*: `AutorizacionService` con matriz por rol y `SesionActual` para identificar al usuario firmado; los servicios validan permisos antes de ejecutar operaciones sensibles.
+- *Agregado*: 11 pruebas de bitácora y permisos.
+- *Modificado*: la consola inicia `SesionActual` al autenticar; `BaseDatosPrueba` usa un dueño de sistema por defecto para las pruebas que no evalúan permisos.
+- *Modificado*: los detalles de la bitácora formatean el dinero en centavos con `Dinero.Formatear`.
+- Total del proyecto: 125 pruebas.
+
 ### v0.0.6 - 2026-10-23: Dinero en centavos enteros
 
 - *Agregado*: `Dinero` en Core con conversión pesos ↔ centavos (`AwayFromZero`), multiplicación, porcentaje y formato invariante a dos decimales.

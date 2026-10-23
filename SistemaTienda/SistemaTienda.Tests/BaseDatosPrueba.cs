@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
 using SistemaTienda.Application.Services;
+using SistemaTienda.Core;
 using SistemaTienda.Infrastructure;
 
 namespace SistemaTienda.Tests;
@@ -26,6 +27,9 @@ public sealed class BaseDatosPrueba : IDisposable
         Db.InicializarBaseDeDatos();
         Config = new ConfiguracionService(Db);
         Inventario = new InventoryService(Db);
+
+        // Las pruebas que no ejercitan permisos corren como dueño del sistema.
+        SesionActual.Iniciar(new UsuarioSistema { Nombre = "Sistema", Rol = RolUsuario.Dueño });
     }
 
     public void ConfigurarTienda(string pin = "1234", bool fiado = true)
@@ -34,10 +38,22 @@ public sealed class BaseDatosPrueba : IDisposable
             "Tienda de prueba", "Abarrotes", 16m, 3.5m, 20_000, fiado, 50_000, 1, pin);
 
         Assert.True(resultado.IsSuccess, resultado.Message);
+
+        var dueno = Config.ObtenerUsuarios().Value.FirstOrDefault(u => u.Rol == RolUsuario.Dueño);
+        if (dueno != null)
+            SesionActual.Iniciar(dueno);
+    }
+
+    public UsuarioSistema IniciarSesion(RolUsuario rol, string nombre = "Usuario de prueba")
+    {
+        var usuario = new UsuarioSistema { Nombre = nombre, Rol = rol };
+        SesionActual.Iniciar(usuario);
+        return usuario;
     }
 
     public void Dispose()
     {
+        SesionActual.Cerrar();
         SqliteConnection.ClearAllPools();
         try
         {

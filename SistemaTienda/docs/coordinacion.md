@@ -27,7 +27,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 
 | Tarea | Agente | Rama | Archivos reservados | Inicio | Estado |
 |-------|--------|------|---------------------|--------|--------|
-| — | — | — | — | — | Libre |
+| T4 | Bitácora y permisos en servicios | DeepSeek | feat/bitacora-permisos | `Core/Bitacora.cs`, `Application/BitacoraService.cs`, `Application/AutorizacionService.cs`, `Database.cs`, `Migraciones.cs`, `ConfiguracionService.cs`, `InventoryService.cs`, `CorteCajaService.cs`, `VentaService.cs`, `Program.cs`, pruebas nuevas | 2026-10-23 | En revisión (commit 9d1dc9f). |
 
 ## Hecho
 
@@ -44,9 +44,9 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 |----|-------|--------|------------|-------|
 | T1 | Migraciones versionadas + respaldo | Hecho | — | En `feat/migraciones-respaldo`. `Database.cs` queda libre para T2. |
 | T2 | Ventas / POS | Hecho | T1 | En `feat/ventas-pos` (parte de `feat/migraciones-respaldo`). `Database.cs` y `Program.cs` quedan libres. |
-| T3 | Dinero en centavos | Hecho | T1, T2 | En `feat/centavos-enteros` (parte de `feat/corte-caja`). Esquema v4: importes `long`/`INTEGER`; porcentajes siguen en `decimal`. `Database.cs` y `Program.cs` quedan libres. |
-| T4 | Bitácora y permisos en servicios | Libre | — | Toca `Application` e `Infrastructure`. |
-| T5 | Reportes de utilidad | Bloqueada | T2 | — |
+| T3 | Dinero en centavos | Hecho | T1, T2 | En `feat/integracion-t4-t9` (parte de `feat/centavos-enteros`). Esquema v4: importes `long`/`INTEGER`; porcentajes siguen en `decimal`. `Database.cs` y `Program.cs` quedan libres. |
+| T4 | Bitácora y permisos en servicios | Hecho | — | En `feat/integracion-t4-t9`. Esquema v5: bitácora inmutable, matriz de permisos y validación en servicios. |
+| T5 | Reportes de utilidad | Libre | T2 | Ventas − costo congelado − mermas − gastos − comisión. |
 | T6 | Importación Excel/CSV | Libre | T2 recomendado | Dependencia nueva requiere ADR. |
 | T7 | Interfaz definitiva | Bloqueada | ADR | Primero el ADR de UI. |
 | T8 | Corte de caja | Hecho | T2 | En `feat/corte-caja` (parte de `feat/ventas-pos`). Esquema v3: cortes, movimientos de caja y abonos con historial. |

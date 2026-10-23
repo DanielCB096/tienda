@@ -2,7 +2,7 @@
 
 ## Estado de implementación (2026-10-23)
 
-Base implementada en consola sobre el esquema vigente (v4, importes en centavos). El corte cierra un periodo, concilia el efectivo y queda inmutable.
+Base implementada en consola sobre el esquema vigente (v5, importes en centavos y bitácora de cortes y movimientos). El corte cierra un periodo, concilia el efectivo y queda inmutable.
 
 | Elemento | Estado |
 |----------|--------|
@@ -14,7 +14,7 @@ Base implementada en consola sobre el esquema vigente (v4, importes en centavos)
 | Gastos de caja | ✅ Solo los gastos con origen `Caja` restan; los `Externo` no |
 | Diferencia | ✅ Si no es cero, el motivo es obligatorio y el corte no se guarda sin él |
 | Inmutabilidad | ✅ No hay edición ni borrado: se corrige con un movimiento o corte nuevo |
-| Permisos y aprobación de retiros | ⛔ Pendiente (validación en servicios, T4) |
+| Permisos y aprobación de retiros | ✅ Corte e ingreso para dueño/encargado; retiro solo dueño; validado en `CorteCajaService` |
 | Denominaciones de billetes/monedas | ⛔ Pendiente; hoy solo se captura el total contado |
 
 ## Fórmula implementada
@@ -95,7 +95,7 @@ Los totales y el registro del corte se calculan y guardan dentro de una sola tra
 - **Qué**: Resultado (sin diferencia, positiva, negativa).
 - **Motivo** (si hay diferencia): Descripción de las causas investigadas.
 
-Implementado en `CortesCaja`: `Usuario`, `FechaRegistro`, `Diferencia` y `Observaciones`. Falta que los movimientos de caja y abonos se repliquen en una bitácora general de operaciones (T4).
+Implementado en `CortesCaja`: `Usuario`, `FechaRegistro`, `Diferencia` y `Observaciones`. Los cortes y movimientos de caja también se registran en la bitácora general (`Bitacora`) con antes/después.
 
 ### Integración con otros módulos
 

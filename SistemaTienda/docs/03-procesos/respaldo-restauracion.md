@@ -16,7 +16,7 @@ En una arquitectura local-first con un solo dispositivo por tienda, **el respald
 | Respaldo automático por intervalo configurado | ⛔ Pendiente: `RespaldoIntervaloDias` se guarda pero no se agenda |
 | Copia a USB y nube personal | ⛔ Pendiente (Fase 2) |
 | Cifrado de respaldos | ⛔ Pendiente (Fase 2) |
-| Bitácora de respaldos | ⛔ Pendiente: no hay tabla de bitácora |
+| Bitácora de respaldos | ⛔ Pendiente: existe `Bitacora`, pero las acciones de respaldo aún no se registran |
 
 Formato real implementado: carpeta `respaldos/` junto a la base, archivos `tienda-yyyyMMdd-HHmmss[-etiqueta].db`, generados con `VACUUM INTO` y verificados con `PRAGMA integrity_check`.
 

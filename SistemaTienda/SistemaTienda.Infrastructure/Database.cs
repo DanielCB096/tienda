@@ -622,6 +622,55 @@ public class DatabaseTools
         return producto;
     }
 
+    // ---------- Bitácora ----------
+
+    public int AgregarBitacora(RegistroBitacora registro)
+    {
+        using var conn = CreateConnection();
+        conn.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = @"
+            INSERT INTO Bitacora
+                (Fecha, Usuario, Accion, Entidad, EntidadId, DatosAntes, DatosDespues, Motivo)
+            VALUES (@fecha, @usuario, @accion, @entidad, @entidadId, @antes, @despues, @motivo);
+            SELECT last_insert_rowid();";
+        cmd.Parameters.AddWithValue("@fecha", registro.Fecha);
+        cmd.Parameters.AddWithValue("@usuario", registro.Usuario);
+        cmd.Parameters.AddWithValue("@accion", registro.Accion);
+        cmd.Parameters.AddWithValue("@entidad", registro.Entidad ?? string.Empty);
+        cmd.Parameters.AddWithValue("@entidadId", registro.EntidadId ?? string.Empty);
+        cmd.Parameters.AddWithValue("@antes", registro.DatosAntes ?? string.Empty);
+        cmd.Parameters.AddWithValue("@despues", registro.DatosDespues ?? string.Empty);
+        cmd.Parameters.AddWithValue("@motivo", registro.Motivo ?? string.Empty);
+
+        registro.Id = Convert.ToInt32(cmd.ExecuteScalar(), CultureInfo.InvariantCulture);
+        return registro.Id;
+    }
+
+    public List<RegistroBitacora> ObtenerBitacora(int limite = 100,
+        string usuario = null, string accion = null)
+    {
+        var sql = "SELECT * FROM Bitacora WHERE 1 = 1";
+        var parametros = new List<SqliteParameter>();
+
+        if (!string.IsNullOrWhiteSpace(usuario))
+        {
+            sql += " AND Usuario = @usuario";
+            parametros.Add(new SqliteParameter("@usuario", usuario.Trim()));
+        }
+
+        if (!string.IsNullOrWhiteSpace(accion))
+        {
+            sql += " AND Accion = @accion";
+            parametros.Add(new SqliteParameter("@accion", accion.Trim()));
+        }
+
+        sql += " ORDER BY Fecha DESC, Id DESC LIMIT @limite";
+        parametros.Add(new SqliteParameter("@limite", Math.Clamp(limite, 1, 500)));
+
+        return ExecuteReportObjects<RegistroBitacora>(sql, parametros.ToArray());
+    }
+
     // ---------- Gastos ----------
 
     public int AgregarGasto(Gasto gasto)

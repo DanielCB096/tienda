@@ -11,6 +11,7 @@ El acceso vive en `SistemaTienda.Infrastructure/Database.cs` (`DatabaseTools`). 
   - **v2** — crea `Ventas` y `VentaLineas` con sus índices (módulo de ventas).
   - **v3** — crea `CortesCaja`, `MovimientosCaja` y `AbonosFiado` con sus índices (corte de caja e historial de abonos).
   - **v4** — convierte todos los importes de `DECIMAL` (pesos) a `INTEGER` (centavos enteros). Como SQLite no permite cambiar el tipo de una columna, reconstruye cada tabla con `CREATE ... _Nueva`, `INSERT ... SELECT CAST(ROUND(col * 100) AS INTEGER)`, `DROP` y `RENAME`, conservando Id, FKs e índices. Los porcentajes (`Impuesto`, `ImpuestoPredeterminado`, `ComisionTarjeta`) siguen en `DECIMAL`.
+  - **v5** — crea `Bitacora` con sus índices y disparadores que impiden `UPDATE` y `DELETE` (auditoría inmutable).
 - Una base nueva se crea directamente en la versión máxima (`Migraciones.VersionMaxima`): no se crea respaldo previo porque aún no hay datos.
 - `MigradorEsquema.Migrar()` se ejecuta dentro de `InicializarBaseDeDatos()` al arrancar:
   1. Lee `user_version`; si la base es más nueva que la app, aborta sin tocar nada.
@@ -226,6 +227,24 @@ Entradas y salidas manuales de efectivo que no son ventas, abonos ni gastos.
 | Monto | INTEGER | Centavos; > 0 |
 | Motivo | TEXT | Obligatorio |
 | Usuario | TEXT | Quien lo registró |
+
+### Bitacora
+
+Auditoría inmutable de acciones sensibles (migración v5). Solo se inserta; los disparadores `TR_Bitacora_NoUpdate` y `TR_Bitacora_NoDelete` rechazan modificaciones y borrados.
+
+| Columna | Tipo | Notas |
+|---------|------|-------|
+| Id | INTEGER PK | |
+| Fecha | DATETIME | Hora local del registro |
+| Usuario | TEXT | Nombre del usuario de la sesión |
+| Accion | TEXT | Constante de `AccionBitacora` |
+| Entidad | TEXT | Tabla o entidad afectada |
+| EntidadId | TEXT | Identificador del registro afectado |
+| DatosAntes | TEXT | Estado previo resumido |
+| DatosDespues | TEXT | Estado resultante resumido |
+| Motivo | TEXT | Motivo u observaciones |
+
+La bitácora se escribe después de la operación de negocio; si el registro falla, la operación ya quedó aplicada. La atomicidad entre acción y bitácora queda como deuda técnica.
 
 ## Invariante: stock = suma de movimientos
 

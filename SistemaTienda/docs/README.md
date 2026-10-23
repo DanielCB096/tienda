@@ -12,11 +12,12 @@ La base técnica está **compilando y con pruebas automatizadas**. El núcleo im
 - Clientes con fiado (saldo y abonos con historial) y proveedores (saldo y pagos).
 - Ventas / POS: venta atómica multi-línea con costo y precio congelados, pagos en efectivo, tarjeta (comisión), mixto y fiado, y ticket de texto.
 - Corte de caja: periodo desde el corte anterior, efectivo esperado, diferencia con motivo obligatorio, ingresos/retiros e historial.
+- Bitácora inmutable de operaciones sensibles (antes/después, usuario y motivo) y permisos validados en la capa de aplicación.
 - Migraciones de esquema versionadas (`PRAGMA user_version`) y respaldo/restauración local verificado.
 - Dinero en centavos enteros (`long`/`INTEGER`, esquema v4) con conversión y formato centralizados en `Dinero`.
 - Interfaz de consola provisional.
 
-Pendiente para el MVP: anulación de ventas, respaldo automático por intervalo, reportes de utilidad, bitácora, autorización de retiros de caja y la interfaz definitiva (ADR pendiente). Ver [roadmap.md](roadmap.md) y [deuda-tecnica.md](deuda-tecnica.md).
+Pendiente para el MVP: anulación de ventas, respaldo automático por intervalo, reportes de utilidad, conteo de caja por denominaciones y la interfaz definitiva (ADR pendiente). Ver [roadmap.md](roadmap.md) y [deuda-tecnica.md](deuda-tecnica.md).
 
 ## Índice
 
