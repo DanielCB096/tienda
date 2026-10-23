@@ -29,7 +29,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 |-------|--------|------|---------------------|--------|--------|
 | Tarea | Agente | Rama | Archivos reservados | Inicio | Estado |
 |-------|--------|------|---------------------|--------|--------|
-| T5 | Reportes de utilidad | Qoder | feat/reportes-utilidad | `Core/ReporteUtilidad.cs`, `Application/ReporteUtilidadService.cs`, `Database.cs`, `Program.cs`, `ReportesTests.cs`, docs | 2026-10-23 | En revisión |
+| — | — | — | — | — | Sin tareas en curso |
 
 ## Hecho
 
@@ -41,6 +41,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 | T3 | Qoder | feat/centavos-enteros | Esquema v4 con importes `long`/`INTEGER`, utilidades `Dinero`, consola sin `Math.Round`, migración v3 → v4 con integridad de FKs y 114 pruebas | d26debc..20894d6 |
 | T4 | DeepSeek → Qoder | feat/integracion-t4-t9 | Integración sobre centavos: bitácora pasa a esquema v5, detalles con `Dinero.Formatear`, permisos y bitácora en todos los servicios; 125 pruebas | 9d1dc9f, e009af4 |
 | T9 | DeepSeek → Qoder | feat/integracion-t4-t9 | 25 pruebas de borde integradas y convertidas a centavos: gastos, saldos, inventario, usuarios y mapeo de tipos; 150 pruebas | fd879cc |
+| T5 | Qoder | feat/reportes-utilidad | Reporte de utilidad bruta y neta por periodo (costo congelado, comisión, mermas y gastos), filtro por fecha, permiso `Consultar` y 7 pruebas; 157 pruebas | 1f3152b |
 
 ## Tareas
 
@@ -50,7 +51,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 | T2 | Ventas / POS | Hecho | T1 | En `feat/ventas-pos` (parte de `feat/migraciones-respaldo`). `Database.cs` y `Program.cs` quedan libres. |
 | T3 | Dinero en centavos | Hecho | T1, T2 | En `feat/integracion-t4-t9` (parte de `feat/centavos-enteros`). Esquema v4: importes `long`/`INTEGER`; porcentajes siguen en `decimal`. `Database.cs` y `Program.cs` quedan libres. |
 | T4 | Bitácora y permisos en servicios | Hecho | — | En `feat/integracion-t4-t9`. Esquema v5: bitácora inmutable, matriz de permisos y validación en servicios. |
-| T5 | Reportes de utilidad | En revisión | T2 | En `feat/reportes-utilidad` (sobre `feat/integracion-t4-t9`). Utilidad bruta y neta por periodo con filtros por fecha; permiso `Consultar`. |
+| T5 | Reportes de utilidad | Hecho | T2 | En `feat/reportes-utilidad` (sobre `feat/integracion-t4-t9`). Utilidad bruta y neta por periodo con filtros por fecha; permiso `Consultar`. |
 | T6 | Importación Excel/CSV | Libre | T2 recomendado | Dependencia nueva requiere ADR. |
 | T7 | Interfaz definitiva | Bloqueada | ADR | Primero el ADR de UI. |
 | T8 | Corte de caja | Hecho | T2 | En `feat/corte-caja` (parte de `feat/ventas-pos`). Esquema v3: cortes, movimientos de caja y abonos con historial. |
