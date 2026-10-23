@@ -32,7 +32,8 @@ public static class Migraciones
     public static IReadOnlyList<Migracion> ObtenerTodas() => new[]
     {
         new Migracion(2, "crea ventas y líneas de venta", AplicarVersion2),
-        new Migracion(3, "crea cortes de caja, movimientos de caja y abonos de fiado", AplicarVersion3)
+        new Migracion(3, "crea cortes de caja, movimientos de caja y abonos de fiado", AplicarVersion3),
+        new Migracion(4, "crea la bitácora inmutable", AplicarVersion4)
     };
 
     private static void AplicarVersion2(SqliteConnection conn, SqliteTransaction tx)
@@ -130,6 +131,42 @@ public static class Migraciones
             CREATE INDEX IF NOT EXISTS IX_MovimientosCaja_Fecha ON MovimientosCaja(Fecha);
             CREATE INDEX IF NOT EXISTS IX_AbonosFiado_Fecha ON AbonosFiado(Fecha);
             CREATE INDEX IF NOT EXISTS IX_AbonosFiado_ClienteId ON AbonosFiado(ClienteId);
+        ";
+        cmd.ExecuteNonQuery();
+    }
+
+    private static void AplicarVersion4(SqliteConnection conn, SqliteTransaction tx)
+    {
+        using var cmd = conn.CreateCommand();
+        cmd.Transaction = tx;
+        cmd.CommandText = @"
+            CREATE TABLE IF NOT EXISTS Bitacora (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                Fecha DATETIME NOT NULL,
+                Usuario TEXT NOT NULL,
+                Accion TEXT NOT NULL,
+                Entidad TEXT NOT NULL DEFAULT '',
+                EntidadId TEXT NOT NULL DEFAULT '',
+                DatosAntes TEXT NOT NULL DEFAULT '',
+                DatosDespues TEXT NOT NULL DEFAULT '',
+                Motivo TEXT NOT NULL DEFAULT ''
+            );
+
+            CREATE INDEX IF NOT EXISTS IX_Bitacora_Fecha ON Bitacora(Fecha);
+            CREATE INDEX IF NOT EXISTS IX_Bitacora_Usuario ON Bitacora(Usuario);
+            CREATE INDEX IF NOT EXISTS IX_Bitacora_Accion ON Bitacora(Accion);
+
+            CREATE TRIGGER IF NOT EXISTS TR_Bitacora_NoUpdate
+            BEFORE UPDATE ON Bitacora
+            BEGIN
+                SELECT RAISE(ABORT, 'La bitácora es inmutable: no se puede modificar');
+            END;
+
+            CREATE TRIGGER IF NOT EXISTS TR_Bitacora_NoDelete
+            BEFORE DELETE ON Bitacora
+            BEGIN
+                SELECT RAISE(ABORT, 'La bitácora es inmutable: no se puede borrar');
+            END;
         ";
         cmd.ExecuteNonQuery();
     }

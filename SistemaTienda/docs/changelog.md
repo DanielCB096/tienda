@@ -32,6 +32,15 @@ Próximamente después de completar los módulos críticos.
 - Configuración básica de tienda (nombre, giro, impuestos, métodos de pago).
 - Documentación inicial (glosario, stack, módulos, ADR).
 
+### v0.0.6 - 2026-10-23: Bitácora inmutable y permisos en servicios
+
+- *Agregado*: esquema v4 con tabla `Bitacora` (usuario, fecha, acción, entidad, antes/después, motivo), índices y disparadores que impiden `UPDATE` y `DELETE`.
+- *Agregado*: `BitacoraService` para registrar y consultar la auditoría; se escribe en altas de producto, cambios de precio, ajustes de inventario, entradas, mermas, gastos, abonos, pagos a proveedores, ventas, movimientos y cortes de caja.
+- *Agregado*: `AutorizacionService` con matriz por rol y `SesionActual` para identificar al usuario firmado; los servicios validan permisos antes de ejecutar operaciones sensibles.
+- *Agregado*: 11 pruebas de bitácora y permisos; total del proyecto: 105.
+- *Modificado*: la consola inicia `SesionActual` al autenticar; BaseDatosPrueba usa un dueño de sistema por defecto para las pruebas que no evalúan permisos.
+- *Corregido*: la prueba de periodos de corte vendía una cantidad que no correspondía al pago registrado.
+
 ### v0.0.5 - 2026-10-23: Corte de caja
 
 - *Agregado*: esquema v3 con `CortesCaja`, `MovimientosCaja` y `AbonosFiado` (migración con respaldo previo), índices por fecha y cliente.

@@ -11,8 +11,16 @@ public class ConfiguracionService
     private const int Pbkdf2Iteraciones = 100_000;
     private const int Pbkdf2LongitudHash = 32;
     private readonly DatabaseTools _db;
+    private readonly BitacoraService _bitacora;
 
-    public ConfiguracionService(DatabaseTools db) => _db = db;
+    public ConfiguracionService(DatabaseTools db)
+    {
+        _db = db;
+        _bitacora = new BitacoraService(db);
+    }
+
+    private static ProcessResult Autorizar(PermisoSistema permiso) =>
+        AutorizacionService.Exigir(SesionActual.Usuario, permiso);
 
     /// <summary>
     /// Ejecuta el asistente de primera configuración. Solo se permite una vez por instalación.
@@ -85,6 +93,10 @@ public class ConfiguracionService
 
     public ProcessResult ActualizarConfiguracion(ConfiguracionTienda nuevaConfig)
     {
+        var autorizacion = Autorizar(PermisoSistema.Configurar);
+        if (autorizacion.IsError)
+            return autorizacion;
+
         var configActual = _db.ObtenerConfiguracion();
         if (configActual == null)
             return ProcessResult.Error("No se encontró la configuración de la tienda");
@@ -101,13 +113,21 @@ public class ConfiguracionService
         nuevaConfig.VersionApp = configActual.VersionApp;
         nuevaConfig.FechaCreacion = configActual.FechaCreacion;
 
-        return _db.ActualizarConfiguracion(nuevaConfig)
-            ? ProcessResult.Success("Configuración actualizada")
-            : ProcessResult.Error("No se pudo actualizar la configuración");
+        if (!_db.ActualizarConfiguracion(nuevaConfig))
+            return ProcessResult.Error("No se pudo actualizar la configuración");
+
+        _bitacora.Registrar(AccionBitacora.Configuracion, "Configuracion", nuevaConfig.Id.ToString(),
+            $"Nombre={configActual.NombreTienda};Comision={configActual.ComisionTarjeta:F2}",
+            $"Nombre={nuevaConfig.NombreTienda};Comision={nuevaConfig.ComisionTarjeta:F2}");
+        return ProcessResult.Success("Configuración actualizada");
     }
 
     public ProcessResult<AgregarUsuarioResponse> AgregarUsuario(string nombre, string pin, RolUsuario rol)
     {
+        var autorizacion = Autorizar(PermisoSistema.GestionarUsuarios);
+        if (autorizacion.IsError)
+            return ProcessResult<AgregarUsuarioResponse>.Error(autorizacion.Message);
+
         if (string.IsNullOrWhiteSpace(nombre))
             return ProcessResult<AgregarUsuarioResponse>.Error("El nombre del usuario es obligatorio");
 
@@ -124,6 +144,8 @@ public class ConfiguracionService
             };
 
             _db.AgregarUsuario(usuario);
+            _bitacora.Registrar(AccionBitacora.Usuario, "Usuario", usuario.Id.ToString(),
+                string.Empty, $"Alta: {usuario.Nombre};Rol={usuario.Rol}");
             return ProcessResult<AgregarUsuarioResponse>.OK(new AgregarUsuarioResponse
             {
                 UsuarioId = usuario.Id,
@@ -203,6 +225,10 @@ public class ConfiguracionService
 
     public ProcessResult<AgregarGastoResponse> AgregarGasto(Gasto nuevoGasto)
     {
+        var autorizacion = Autorizar(PermisoSistema.RegistrarGasto);
+        if (autorizacion.IsError)
+            return ProcessResult<AgregarGastoResponse>.Error(autorizacion.Message);
+
         if (string.IsNullOrWhiteSpace(nuevoGasto.Concepto))
             return ProcessResult<AgregarGastoResponse>.Error("El concepto del gasto es obligatorio");
 
@@ -212,6 +238,9 @@ public class ConfiguracionService
         try
         {
             _db.AgregarGasto(nuevoGasto);
+            _bitacora.Registrar(AccionBitacora.Gasto, "Gasto", nuevoGasto.Id.ToString(),
+                string.Empty,
+                $"Concepto={nuevoGasto.Concepto};Monto={nuevoGasto.Monto:F2};Origen={nuevoGasto.Origen}");
             return ProcessResult<AgregarGastoResponse>.OK(new AgregarGastoResponse
             {
                 GastoId = nuevoGasto.Id,
@@ -265,6 +294,10 @@ public class ConfiguracionService
     public ProcessResult<RegistrarAbonoResponse> RegistrarAbonoCliente(int clienteId, decimal montoAbono,
         string usuario = "")
     {
+        var autorizacion = Autorizar(PermisoSistema.RegistrarAbono);
+        if (autorizacion.IsError)
+            return ProcessResult<RegistrarAbonoResponse>.Error(autorizacion.Message);
+
         if (montoAbono <= 0)
             return ProcessResult<RegistrarAbonoResponse>.Error("El abono debe ser mayor a cero");
 
@@ -280,6 +313,8 @@ public class ConfiguracionService
         if (!_db.RegistrarAbonoFiado(cliente.Id, montoAbono, nuevoSaldo, usuario))
             return ProcessResult<RegistrarAbonoResponse>.Error("No se pudo registrar el abono");
 
+        _bitacora.Registrar(AccionBitacora.Abono, "ClienteFiado", cliente.Id.ToString(),
+            $"Saldo={cliente.SaldoActual:F2}", $"Saldo={nuevoSaldo:F2};Abono={montoAbono:F2}");
         return ProcessResult<RegistrarAbonoResponse>.OK(new RegistrarAbonoResponse
         {
             ClienteId = cliente.Id,
@@ -316,6 +351,10 @@ public class ConfiguracionService
 
     public ProcessResult<RegistrarPagoProveedorResponse> RegistrarPagoProveedor(int proveedorId, decimal montoPago)
     {
+        var autorizacion = Autorizar(PermisoSistema.PagarProveedor);
+        if (autorizacion.IsError)
+            return ProcessResult<RegistrarPagoProveedorResponse>.Error(autorizacion.Message);
+
         if (montoPago <= 0)
             return ProcessResult<RegistrarPagoProveedorResponse>.Error("El pago debe ser mayor a cero");
 
@@ -331,6 +370,8 @@ public class ConfiguracionService
         if (!_db.ActualizarSaldoProveedor(proveedor.Id, nuevoSaldo))
             return ProcessResult<RegistrarPagoProveedorResponse>.Error("No se pudo registrar el pago");
 
+        _bitacora.Registrar(AccionBitacora.PagoProveedor, "Proveedor", proveedor.Id.ToString(),
+            $"Saldo={proveedor.SaldoPendiente:F2}", $"Saldo={nuevoSaldo:F2};Pago={montoPago:F2}");
         return ProcessResult<RegistrarPagoProveedorResponse>.OK(new RegistrarPagoProveedorResponse
         {
             ProveedorId = proveedor.Id,

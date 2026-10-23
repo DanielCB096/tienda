@@ -11,11 +11,12 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 - **Impacto**: riesgo de diferencias por redondeo y comparaciones de decimales frágiles, ahora sobre historial de ventas que no se corrige. SQLite no tiene tipo decimal nativo: los valores se guardan como texto/numérico con afinidad.
 - **Cierre**: migración a `long Centavos` en entidades y `INTEGER` en base, con utilidades de formato/parseo, pruebas de aritmética y conversión de las ventas existentes. Hacerlo antes de operar con ventas reales.
 
-### Sin bitácora ni validación de permisos en servicios
+### Bitácora no atómica con la operación
 
-- **Dónde**: `ConfiguracionService`, `InventoryService`, `VentaService` y `CorteCajaService`.
-- **Impacto**: los roles solo se validan en los menús de consola; un cambio de interfaz podría saltarse restricciones. No hay registro de quién cambió precios, ajustó stock, vendió a fiado, retiró efectivo de caja o cerró el corte.
-- **Cierre**: servicio de bitácora (usuario, fecha, acción, antes/después) y autorización en la capa de aplicación.
+- **Dónde**: `BitacoraService.Registrar` se llama después de que la operación de negocio ya se confirmó.
+- **Por qué**: los métodos de `DatabaseTools` abren su propia transacción y no exponen un punto de extensión; unificarlo exigía refactorizar cada operación sensible.
+- **Impacto**: si falla la escritura de la bitácora (por ejemplo, disco lleno), la operación ya quedó aplicada y falta su registro. La tabla sigue siendo inmutable y la operación normal sí queda auditada.
+- **Cierre**: pasar la transacción o un `UnitOfWork` a los servicios para insertar acción y bitácora en la misma transacción.
 
 ### Pagos a proveedores sin historial inmutable
 
@@ -35,11 +36,11 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 - **Impacto**: el ticket actual es texto en consola. No se genera PDF/imagen, no lleva QR y no se puede compartir por WhatsApp o correo.
 - **Cierre**: generación de ticket con QR al construir la interfaz definitiva (requiere decisión de UI).
 
-### Corte de caja sin autorización de retiros ni conteo por denominaciones
+### Corte de caja sin conteo por denominaciones
 
-- **Dónde**: `CorteCajaService.RegistrarMovimiento`, `Program.CerrarCorte`.
-- **Impacto**: cualquier usuario de la consola puede retirar efectivo y cerrar el corte; no hay aprobación de encargado/dueño ni bitácora. El conteo se captura como un solo importe, sin desglose de billetes y monedas, y el abono de fiado siempre se registra como efectivo (no se pregunta el método).
-- **Cierre**: permiso de retiro en la capa de aplicación, registro en bitácora, captura por denominaciones y método de pago en abonos.
+- **Dónde**: `Program.CerrarCorte` y registro de abonos.
+- **Impacto**: el retiro ya requiere permiso de dueño y queda en bitácora; el conteo se captura como un solo importe, sin desglose de billetes y monedas, y el abono de fiado siempre se registra como efectivo (no se pregunta el método).
+- **Cierre**: captura por denominaciones y método de pago en abonos.
 
 ## Media prioridad
 

@@ -27,7 +27,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 
 | Tarea | Agente | Rama | Archivos reservados | Inicio | Estado |
 |-------|--------|------|---------------------|--------|--------|
-| — | — | — | — | — | Libre |
+| T4 | Bitácora y permisos en servicios | DeepSeek | feat/bitacora-permisos | `Core/Bitacora.cs`, `Application/BitacoraService.cs`, `Application/AutorizacionService.cs`, `Database.cs`, `Migraciones.cs`, `ConfiguracionService.cs`, `InventoryService.cs`, `CorteCajaService.cs`, `VentaService.cs`, `Program.cs`, pruebas nuevas | 2026-10-23 | En revisión (commit 9d1dc9f). |
 
 ## Hecho
 
@@ -44,7 +44,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 | T1 | Migraciones versionadas + respaldo | Hecho | — | En `feat/migraciones-respaldo`. `Database.cs` queda libre para T2. |
 | T2 | Ventas / POS | Hecho | T1 | En `feat/ventas-pos` (parte de `feat/migraciones-respaldo`). `Database.cs` y `Program.cs` quedan libres. |
 | T3 | Dinero en centavos | Libre | T1, T2 | Cross-cutting; toca todas las columnas de dinero y las ventas existentes. |
-| T4 | Bitácora y permisos en servicios | Libre | — | Toca `Application` e `Infrastructure`. |
+| T4 | Bitácora y permisos en servicios | En revisión | — | En `feat/bitacora-permisos` (sobre T8). Bitácora inmutable, matriz de permisos y validación en servicios. |
 | T5 | Reportes de utilidad | Bloqueada | T2 | — |
 | T6 | Importación Excel/CSV | Libre | T2 recomendado | Dependencia nueva requiere ADR. |
 | T7 | Interfaz definitiva | Bloqueada | ADR | Primero el ADR de UI. |

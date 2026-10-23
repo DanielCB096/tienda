@@ -1,6 +1,6 @@
-# Modelo de Datos (esquema v3)
+# Modelo de Datos (esquema v4)
 
-Base local SQLite, un solo archivo. `PRAGMA user_version = 3`.
+Base local SQLite, un solo archivo. `PRAGMA user_version = 4`.
 
 El acceso vive en `SistemaTienda.Infrastructure/Database.cs` (`DatabaseTools`). Todas las consultas son parametrizadas.
 
@@ -10,6 +10,7 @@ El acceso vive en `SistemaTienda.Infrastructure/Database.cs` (`DatabaseTools`). 
 - `SistemaTienda.Infrastructure/Migraciones.cs` define la lista ordenada de migraciones (`Migracion(Version, Descripcion, Aplicar)`). Versiones registradas:
   - **v2** — crea `Ventas` y `VentaLineas` con sus índices (módulo de ventas).
   - **v3** — crea `CortesCaja`, `MovimientosCaja` y `AbonosFiado` con sus índices (corte de caja e historial de abonos).
+  - **v4** — crea `Bitacora` con sus índices y disparadores que impiden `UPDATE` y `DELETE` (auditoría inmutable).
 - Una base nueva se crea directamente en la versión máxima (`Migraciones.VersionMaxima`): no se crea respaldo previo porque aún no hay datos.
 - `MigradorEsquema.Migrar()` se ejecuta dentro de `InicializarBaseDeDatos()` al arrancar:
   1. Lee `user_version`; si la base es más nueva que la app, aborta sin tocar nada.
@@ -216,6 +217,24 @@ Entradas y salidas manuales de efectivo que no son ventas, abonos ni gastos.
 | Monto | DECIMAL | > 0 |
 | Motivo | TEXT | Obligatorio |
 | Usuario | TEXT | Quien lo registró |
+
+### Bitacora
+
+Auditoría inmutable de acciones sensibles (migración v4). Solo se inserta; los disparadores `TR_Bitacora_NoUpdate` y `TR_Bitacora_NoDelete` rechazan modificaciones y borrados.
+
+| Columna | Tipo | Notas |
+|---------|------|-------|
+| Id | INTEGER PK | |
+| Fecha | DATETIME | Hora local del registro |
+| Usuario | TEXT | Nombre del usuario de la sesión |
+| Accion | TEXT | Constante de `AccionBitacora` |
+| Entidad | TEXT | Tabla o entidad afectada |
+| EntidadId | TEXT | Identificador del registro afectado |
+| DatosAntes | TEXT | Estado previo resumido |
+| DatosDespues | TEXT | Estado resultante resumido |
+| Motivo | TEXT | Motivo u observaciones |
+
+La bitácora se escribe después de la operación de negocio; si el registro falla, la operación ya quedó aplicada. La atomicidad entre acción y bitácora queda como deuda técnica.
 
 ## Invariante: stock = suma de movimientos
 
