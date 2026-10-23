@@ -34,6 +34,7 @@ Pendiente para el MVP: anulación de ventas, respaldo automático por intervalo,
 | [03-procesos/proveedores.md](03-procesos/proveedores.md) | Proveedores y cuentas por pagar |
 | [03-procesos/venta.md](03-procesos/venta.md) | Venta / POS (base implementada en consola) |
 | [03-procesos/corte-caja.md](03-procesos/corte-caja.md) | Corte de caja (implementado en consola) |
+| [03-procesos/reportes.md](03-procesos/reportes.md) | Reportes y utilidad por periodo (implementado en consola) |
 | [03-procesos/respaldo-restauracion.md](03-procesos/respaldo-restauracion.md) | Respaldo y restauración (implementado) |
 | [05-decisiones/ADR-stack.md](05-decisiones/ADR-stack.md) | Decisión de stack |
 | [06-operacion/instalacion-y-actualizacion.md](06-operacion/instalacion-y-actualizacion.md) | Instalación |
