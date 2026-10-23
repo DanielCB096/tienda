@@ -38,7 +38,7 @@ Sistema para tiendas pequeñas de **cualquier giro** en México. Registra ventas
 - **Interfaz:** consola (`SistemaTienda.Presentation`), menús por rol y sesión con PIN.
 - **Pruebas:** xUnit 2.9 + Microsoft.NET.Test.Sdk, con base SQLite temporal por prueba (`SistemaTienda.Tests`).
 - **Distribución e instalación:** pendiente de definir; por ahora `dotnet run`. Requiere SDK .NET 8+; los ejecutables usan `RollForward=Major` para correr sobre runtimes mayores.
-- **Dinero:** hoy en `decimal` (deuda registrada: migrar a centavos enteros, ver `SistemaTienda/docs/deuda-tecnica.md`).
+- **Dinero:** centavos enteros (`long` en C#, `INTEGER` en SQLite) desde el esquema v4; `Core/Dinero.cs` centraliza conversión, porcentajes y formato. Los porcentajes (impuesto, comisión) siguen en `decimal`.
 
 Estructura de carpetas:
 

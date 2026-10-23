@@ -110,11 +110,12 @@ dotnet test SistemaTienda/SistemaTienda.sln
 | `InventarioTests` | Alta, duplicados, venta, merma, entrada, ajuste, stock bajo, búsqueda, valorizado |
 | `FiadoProveedoresTests` | Cliente, abono, saldo, proveedor, pago, validaciones |
 | `BaseDatosTests` | Inicialización idempotente, tablas, mapeo de tipos |
-| `MigracionesRespaldoTests` | Runner de migraciones con respaldo previo, idempotencia, fallo con rollback, rechazo de base más nueva, respaldo verificado, restauración exacta con respaldo de seguridad, confirmación obligatoria |
+| `DineroTests` | Conversión pesos ↔ centavos con redondeo `AwayFromZero`, multiplicación con desbordamiento, porcentaje a centavos y formato invariante |
+| `MigracionesRespaldoTests` | Runner de migraciones con respaldo previo, idempotencia, fallo con rollback, rechazo de base más nueva, respaldo verificado, restauración exacta con respaldo de seguridad, confirmación obligatoria, migración v3 → v4 a centavos con integridad de FKs |
 | `VentasTests` | Venta atómica, stock insuficiente revierte todo, costo y precio congelados, fiado (saldo, desactivado, límite, exclusivo), pagos que no coinciden, comisión en mixto, líneas duplicadas, ventas del día, migración v1→v2 con datos |
 | `CorteCajaTests` | Efectivo esperado con todas las fuentes, faltante/sobrante, motivo obligatorio, gasto externo excluido, mixto solo suma efectivo, periodo entre cortes, fondo sugerido, corte sin actividad, validaciones, abono con historial, orden del historial, migración v2→v3 con respaldo |
 
-Total actual: 94 casos, todos en verde. Los puntos 1, 2, 3, 5, 6, 7 y 8 del listado de áreas críticas tienen cobertura parcial; faltan anulación de ventas, reporte de utilidad, ticket con QR, autorización de retiros y rendimiento. La restauración se prueba sobre una base temporal: se verifica que el contenido vuelve al del respaldo (no byte a byte).
+Total actual: 114 casos, todos en verde. Los puntos 1, 2, 3, 5, 6, 7 y 8 del listado de áreas críticas tienen cobertura parcial; faltan anulación de ventas, reporte de utilidad, ticket con QR, autorización de retiros y rendimiento. La restauración se prueba sobre una base temporal: se verifica que el contenido vuelve al del respaldo (no byte a byte).
 
 La verificación se ejecuta en GitHub Actions (`windows-latest`) en cada push; ver el aviso de Smart App Control en `CLAUDE-tienda.md` sobre por qué no siempre corre localmente.
 

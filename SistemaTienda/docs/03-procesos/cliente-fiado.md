@@ -35,7 +35,7 @@ El módulo de clientes y fiado permite a la tienda ofrecer ventas a crédito a s
 | Id | INTEGER PRIMARY KEY | Identificador único |
 | Nombre | TEXT | Nombre del cliente |
 | Telefono | TEXT | Teléfono de contacto (opcional) |
-| SaldoActual | DECIMAL | Saldo pendiente actual |
+| SaldoActual | INTEGER | Saldo pendiente actual en centavos |
 | FechaRegistro | DATETIME | Fecha en que se registró el cliente |
 | UltimaActualizacion | DATETIME | Última fecha de movimiento |
 

@@ -22,7 +22,7 @@ Punto de entrada para cualquier IA o persona que trabaje en este repositorio. L�
 - **El historial no se edita ni se borra**: se corrige con un movimiento nuevo (motivo, usuario, fecha).
 - PIN siempre hasheado (PBKDF2-SHA256); nunca texto plano. Permisos validados en la lógica, no solo ocultando menús.
 - **100 % offline.** Sin servicios de pago, nube ni dependencias que requieran servidor.
-- Dinero: el objetivo son **centavos enteros**. Hoy hay deuda en `decimal`; no la amplíes sin plan (ver deuda técnica).
+- Dinero: **siempre centavos enteros** (`long` en C#, `INTEGER` en SQLite). Usa `Core/Dinero.cs` para convertir, multiplicar, calcular porcentajes y formatear; los porcentajes (impuesto, comisión) sí van en `decimal`.
 - Si una regla de negocio no está clara, **pregunta**. No inventes reglas ni cálculos fiscales.
 - Antes de commit final: `git diff --stat`, build y pruebas en verde.
 - Operaciones destructivas (`reset --hard`, `push --force`, `clean -fd`, borrar ramas): pide confirmación.
@@ -74,12 +74,12 @@ Cada agente: su carpeta, su rama y su PR.
 
 ## Estado del proyecto (2026-10-23)
 
-- Rama publicada con el trabajo actual: `feat/corte-caja` (T8, sobre `feat/ventas-pos` → `feat/migraciones-respaldo` → `feat/base-compilable`).
-- `main`: solo el commit base; los PR de `feat/base-compilable`, `feat/migraciones-respaldo`, `feat/ventas-pos` y `feat/corte-caja` siguen pendientes de integración, en ese orden.
-- Build: 0 errores, 0 advertencias. Pruebas: **94 en verde** (verificadas por GitHub Actions).
-- Implementado: configuración inicial, usuarios/PIN/roles, gastos, inventario por movimientos, ventas/POS (efectivo, tarjeta, mixto y fiado; costo y precio congelados; comisión), fiado (cliente/abono con historial), proveedores (saldo/pago), corte de caja (efectivo esperado, diferencia justificada, ingresos/retiros e historial), migraciones versionadas con respaldo, respaldo/restauración local, consola provisional.
+- Rama publicada con el trabajo actual: `feat/centavos-enteros` (T3, sobre `feat/corte-caja` → `feat/ventas-pos` → `feat/migraciones-respaldo` → `feat/base-compilable`).
+- `main`: solo el commit base; los PR de `feat/base-compilable`, `feat/migraciones-respaldo`, `feat/ventas-pos`, `feat/corte-caja` y `feat/centavos-enteros` siguen pendientes de integración, en ese orden.
+- Build: 0 errores, 0 advertencias. Pruebas: **114 en verde** (verificadas localmente y por GitHub Actions).
+- Implementado: configuración inicial, usuarios/PIN/roles, gastos, inventario por movimientos, ventas/POS (efectivo, tarjeta, mixto y fiado; costo y precio congelados; comisión), fiado (cliente/abono con historial), proveedores (saldo/pago), corte de caja (efectivo esperado, diferencia justificada, ingresos/retiros e historial), migraciones versionadas con respaldo, respaldo/restauración local, dinero en centavos enteros (`long`/`INTEGER`, esquema v4), consola provisional.
 - No implementado: respaldo automático por intervalo, bitácora, reportes de utilidad, anulación de ventas, ticket con QR/compartir, UI definitiva, autorización de retiros y conteo por denominaciones.
-- Deuda principal: dinero en `decimal`, pagos a proveedores sin historial inmutable, merma sin entidad propia, corte sin permisos ni desglose de billetes.
+- Deuda principal: pagos a proveedores sin historial inmutable, merma sin entidad propia, corte sin permisos ni desglose de billetes.
 
 ## Tareas disponibles
 
@@ -114,11 +114,14 @@ El detalle vive en el tablero. Resumen y criterios de terminado:
 - Pruebas en `CorteCajaTests` (13 casos); total: 94.
 - Pendiente fuera de T8: autorización de retiros, bitácora y conteo por denominaciones.
 
-### T3 — Dinero en centavos enteros
+### T3 — Dinero en centavos enteros (HECHO)
 
-- Migrar entidades y columnas `DECIMAL` a `long`/`INTEGER` en centavos, con utilidades de formato/parseo.
-- Requiere T1. **No ejecutar en paralelo con T2 ni T8** (tocan esquema y columnas de dinero).
-- Pruebas de aritmética, redondeo y compatibilidad de la migración.
+- Completado en `feat/centavos-enteros`.
+- `Core/Dinero.cs` centraliza conversión pesos ↔ centavos, multiplicación, porcentaje y formato invariante.
+- Entidades y columnas de dinero pasan a `long`/`INTEGER`; los porcentajes siguen en `decimal`.
+- Esquema v4 reconstruye las tablas con conversión `CAST(ROUND(col * 100) AS INTEGER)`, conservando Id, FKs e índices.
+- Pruebas en `DineroTests` (5 casos) y migración v3 → v4 en `MigracionesRespaldoTests`; total: 114.
+- Pendiente fuera de T3: cantidades fraccionarias (kg/litros), que requieren otra unidad mínima.
 
 ### T4 — Bitácora y permisos en servicios
 

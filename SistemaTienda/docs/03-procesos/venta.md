@@ -89,7 +89,7 @@ Decisiones aplicadas: el precio de catálogo incluye impuesto y no se recalcula;
 - **Stock justo**: Si quedan exactamente las unidades necesarias, la venta se permite y el stock queda en 0.
 - **Error de escaneo**: Si el código de barras no existe, el sistema ofrece buscar por nombre manualmente.
 - **Corte de energía**: Si se corta la energía durante una venta, al restablecerse la energía, la aplicación vuelve al último estado consistente. La venta en progreso se marcará como "no completada" y el cajor deberá decidir: finalizarla o anularla.
-- **Precio con decimales**: El sistema maneja el precio con 2 decimales para el público.
+- **Precio con decimales**: El cajero captura pesos con hasta dos decimales; el sistema los convierte a centavos enteros y opera siempre con `long`.
 
 ### Pantallas Clave (Simplificadas)
 

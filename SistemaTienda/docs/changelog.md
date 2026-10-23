@@ -32,6 +32,18 @@ Próximamente después de completar los módulos críticos.
 - Configuración básica de tienda (nombre, giro, impuestos, métodos de pago).
 - Documentación inicial (glosario, stack, módulos, ADR).
 
+### v0.0.6 - 2026-10-23: Dinero en centavos enteros
+
+- *Agregado*: `Dinero` en Core con conversión pesos ↔ centavos (`AwayFromZero`), multiplicación, porcentaje y formato invariante a dos decimales.
+- *Agregado*: esquema v4 que reconstruye todas las tablas de dinero con columnas `INTEGER` (centavos) y multiplica por 100 los importes existentes con `CAST(ROUND(col * 100) AS INTEGER)`, conservando Id, FKs e índices.
+- *Agregado*: el migrador desactiva `PRAGMA foreign_keys` durante las reconstrucciones, valida `PRAGMA foreign_key_check` y vuelve a activar las claves foráneas al terminar.
+- *Agregado*: `LeerDinero` en la consola para capturar pesos y guardar centavos; todos los importes se muestran con `Dinero.Formatear`, sin depender de la cultura.
+- *Agregado*: pruebas de `Dinero` (redondeo, multiplicación, porcentaje y formato) y de la migración v3 → v4 con datos en todas las tablas.
+- *Modificado*: entidades y servicios de producto, venta, corte, gasto, fiado y proveedores usan `long` para dinero; los porcentajes (`Impuesto`, `ImpuestoPredeterminado`, `ComisionTarjeta`) siguen en `decimal`.
+- *Modificado*: la comisión de tarjeta se calcula con `Dinero.Porcentaje` y se guarda en centavos.
+- *Corregido*: se elimina el redondeo implícito de `decimal` al guardar y comparar importes; el dinero ya no depende de la afinidad numérica de SQLite.
+- Total del proyecto: 114 pruebas.
+
 ### v0.0.5 - 2026-10-23: Corte de caja
 
 - *Agregado*: esquema v3 con `CortesCaja`, `MovimientosCaja` y `AbonosFiado` (migración con respaldo previo), índices por fecha y cliente.

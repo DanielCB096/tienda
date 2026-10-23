@@ -4,13 +4,6 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 
 ## Alta prioridad
 
-### Dinero en `decimal` en lugar de centavos enteros
-
-- **Dónde**: entidades `Producto`, `Venta`, `VentaLinea`, `Gasto`, `ClienteFiado`, `Proveedor`, `ConfiguracionTienda` y columnas `DECIMAL` de SQLite.
-- **Por qué**: la regla del proyecto pide centavos enteros; la base actual usa `decimal` para no rehacer el modelo antes de tener ventas. Las ventas ya redondean totales, costo y comisión a 2 decimales al guardar.
-- **Impacto**: riesgo de diferencias por redondeo y comparaciones de decimales frágiles, ahora sobre historial de ventas que no se corrige. SQLite no tiene tipo decimal nativo: los valores se guardan como texto/numérico con afinidad.
-- **Cierre**: migración a `long Centavos` en entidades y `INTEGER` en base, con utilidades de formato/parseo, pruebas de aritmética y conversión de las ventas existentes. Hacerlo antes de operar con ventas reales.
-
 ### Sin bitácora ni validación de permisos en servicios
 
 - **Dónde**: `ConfiguracionService`, `InventoryService`, `VentaService` y `CorteCajaService`.

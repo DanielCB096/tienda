@@ -17,21 +17,21 @@ Estado al 2026-10-23. Orden sugerido en [CLAUDE-tienda.md §13](../CLAUDE-tienda
 | 9 | Reportes y utilidad | ⛔ No implementado | Solo valorizado y stock bajo |
 | 10 | Respaldo y restauración | 🟡 Parcial | Manual, antes de migrar y antes de restaurar, con verificación; falta agendar el automático y USB/nube |
 | — | Interfaz definitiva | ⛔ Pendiente | Consola provisional; ADR de UI abierto |
-| — | Migraciones versionadas | ✅ Base implementada | Runner con `PRAGMA user_version`, respaldo previo y rollback; v3 aplicada (ventas y corte de caja) |
+| — | Migraciones versionadas | ✅ Base implementada | Runner con `PRAGMA user_version`, respaldo previo y rollback; v4 aplicada (ventas, corte de caja y centavos) |
+| — | Dinero en centavos | ✅ Implementado | Importes `long`/`INTEGER` en todas las tablas; porcentajes en `decimal`; `Dinero` centraliza conversión y formato |
 | — | Bitácora / auditoría | ⛔ No implementado | Requerida por regla de negocio #9 |
 
 ## Siguiente trabajo recomendado
 
 1. **Reportería de utilidad** (ventas − costo congelado − mermas − gastos − comisión de tarjeta).
-2. **Dinero en centavos enteros** (deuda T3, antes de acumular ventas reales).
-3. **Bitácora** de operaciones sensibles y validación de permisos en servicios, no solo en menús (incluye autorizar retiros de caja).
-4. **Anulación de ventas** con movimiento de reverso, permiso y registro en bitácora.
-5. **Respaldo automático** por intervalo configurado.
-6. **Interfaz definitiva** según ADR de UI (MAUI/WPF/PWA), incluido el ticket con QR y compartir.
-7. **Importación Excel/CSV** y plantillas por giro.
+2. **Bitácora** de operaciones sensibles y validación de permisos en servicios, no solo en menús (incluye autorizar retiros de caja).
+3. **Anulación de ventas** con movimiento de reverso, permiso y registro en bitácora.
+4. **Respaldo automático** por intervalo configurado.
+5. **Interfaz definitiva** según ADR de UI (MAUI/WPF/PWA), incluido el ticket con QR y compartir.
+6. **Importación Excel/CSV** y plantillas por giro.
 
 ## Riesgos abiertos
 
-- Dinero modelado con `decimal`, no en centavos enteros. Ver [deuda-tecnica.md](deuda-tecnica.md).
+- La migración v4 reconstruye todas las tablas de dinero: en bases grandes el primer arranque puede tardar; siempre se crea un respaldo `antes-migrar` verificado antes de tocar datos.
 - El respaldo automático por intervalo aún no se agenda: si el dueño no respalda manualmente, la copia más reciente puede ser vieja.
 - La consola no es la interfaz objetivo; puede cambiar por completo.

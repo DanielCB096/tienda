@@ -58,9 +58,9 @@ Después del asistente, el dueño puede modificar en cualquier momento:
 | Giro | varchar(50) | Abarrotes, ropa, etc. |
 | ImpuestoPredeterminado | decimal(5,2) | Tasa por defecto (ej. 16.00) |
 | ComisionTarjeta | decimal(5,2) | % comisión tarjeta (ej. 3.50) |
-| FondoCajaInicial | decimal(15,2) | Monto inicial de caja diario |
+| FondoCajaInicial | INTEGER | Monto inicial de caja diario en centavos (20 000 = $200.00) |
 | FiadoActivado | bit | 1 = sí, 0 = no |
-| LimiCreditoCliente | decimal(15,2) | Límite de crédito por cliente (0 = sin límite) |
+| LimiCreditoCliente | INTEGER | Límite de crédito por cliente en centavos (0 = sin límite) |
 | RespaldoIntervalo | int | Días entre respaldos automáticos (0 = deshabilitado) |
 | UsuarioDueñoPINHash | varchar(64) | Hash del PIN del dueño (nunca texto plano) |
 | FechaCreacion | datetime | Cuándo se creó la configuración |

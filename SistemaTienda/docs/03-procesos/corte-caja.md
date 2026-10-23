@@ -2,7 +2,7 @@
 
 ## Estado de implementación (2026-10-23)
 
-Base implementada en consola sobre el esquema v3. El corte cierra un periodo, concilia el efectivo y queda inmutable.
+Base implementada en consola sobre el esquema vigente (v4, importes en centavos). El corte cierra un periodo, concilia el efectivo y queda inmutable.
 
 | Elemento | Estado |
 |----------|--------|
@@ -30,7 +30,7 @@ Efectivo Esperado = Fondo Inicial
 Diferencia = Efectivo Contado - Efectivo Esperado
 ```
 
-Los totales y el registro del corte se calculan y guardan dentro de una sola transacción, de modo que el corte corresponde exactamente a los datos guardados. Todo importe se redondea a 2 decimales.
+Los totales y el registro del corte se calculan y guardan dentro de una sola transacción, de modo que el corte corresponde exactamente a los datos guardados. Todos los importes se guardan en centavos enteros y se suman sin redondeos intermedios.
 
 ### Reglas de negocio implementadas
 
