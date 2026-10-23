@@ -1,3 +1,5 @@
+using SistemaTienda.Infrastructure;
+
 namespace SistemaTienda.Tests;
 
 public sealed class BaseDatosTests
@@ -11,7 +13,8 @@ public sealed class BaseDatosTests
         bd.Db.InicializarBaseDeDatos();
 
         Assert.Equal(1, bd.Db.ExecuteScalar<int>("SELECT COUNT(*) FROM ConfiguracionTienda"));
-        Assert.Equal(1, bd.Db.ExecuteScalar<int>("PRAGMA user_version"));
+        Assert.Equal(Migraciones.VersionMaxima(Migraciones.ObtenerTodas()),
+            bd.Db.ExecuteScalar<int>("PRAGMA user_version"));
     }
 
     [Fact]
@@ -22,7 +25,8 @@ public sealed class BaseDatosTests
         foreach (var tabla in new[]
         {
             "ConfiguracionTienda", "UsuariosSistema", "Productos",
-            "MovimientoInventario", "Gastos", "ClientesFiado", "Proveedores"
+            "MovimientoInventario", "Gastos", "ClientesFiado", "Proveedores",
+            "Ventas", "VentaLineas"
         })
         {
             var existe = bd.Db.ExecuteScalar<int>(
