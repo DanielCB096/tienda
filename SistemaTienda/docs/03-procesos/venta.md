@@ -1,8 +1,30 @@
 # Módulo 3: Ventas / Punto de Venta
 
+## Estado de implementación (2026-10-23)
+
+Base implementada en `feat/ventas-pos` (esquema v2). La interfaz es la consola provisional.
+
+| Función | Estado |
+|---------|--------|
+| Venta con varias líneas en una transacción | ✅ Implementado (`VentaService`, `DatabaseTools.RegistrarVenta`) |
+| Precio y costo congelados por línea | ✅ Implementado (`VentaLineas.PrecioUnitario`, `CostoUnitario`) |
+| Descuento de stock y movimiento de inventario atómicos | ✅ Implementado; stock insuficiente revierte todo |
+| Pago en efectivo (con cambio calculado en pantalla) | ✅ Implementado |
+| Pago con tarjeta y comisión configurable | ✅ Implementado; la comisión se guarda en la venta |
+| Pago mixto (efectivo + tarjeta) | ✅ Implementado |
+| Venta a fiado (exclusiva, valida límite de crédito) | ✅ Implementado |
+| Ticket interno en pantalla | ✅ Implementado (texto) |
+| Ticket con QR y compartir (WhatsApp, correo, galería) | ⛔ Pendiente |
+| Descuentos | ⛔ Fase 2 (no incluidos en MVP) |
+| Anulación posterior de una venta | ⛔ Pendiente: requiere movimiento de reversión, permiso y bitácora (T4) |
+| Reporte de utilidad por venta | ⛔ Pendiente (T5) |
+| Integración con corte de caja | ⛔ Pendiente (módulo 8) |
+
+Decisiones aplicadas: el precio de catálogo incluye impuesto y no se recalcula; el fiado no se combina con otros métodos; no hay ventas en espera (una a la vez); el sistema no se integra con la terminal bancaria.
+
 ## Flujo Simplificado de Venta (Decisiones Confirmadas)
 
-### Estado del Módulo: MVP Implementado
+### Estado del Módulo: Base implementada en consola
 
 ### Decisiones Clave (Confirmadas con el usuario)
 
@@ -101,4 +123,4 @@
 
 ---
 
-**Próximo paso en código**: Actualizar `InventoryService.ReducirStockVenta` para el cálculo simplificado y `Program.RegistrarVenta` con el flujo de pago simplificado.
+**Próximos pasos en código**: corte de caja (efectivo esperado a partir de `Ventas.PagoEfectivo`), reporte de utilidad con costo congelado y comisión, y ticket con QR cuando exista interfaz gráfica.

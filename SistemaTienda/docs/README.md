@@ -10,10 +10,11 @@ La base técnica está **compilando y con pruebas automatizadas**. El núcleo im
 - Catálogo de productos e inventario por movimientos (entradas, ventas, mermas, ajustes).
 - Gastos simples y su totalización.
 - Clientes con fiado (saldo y abonos) y proveedores (saldo y pagos).
+- Ventas / POS: venta atómica multi-línea con costo y precio congelados, pagos en efectivo, tarjeta (comisión), mixto y fiado, y ticket de texto.
 - Migraciones de esquema versionadas (`PRAGMA user_version`) y respaldo/restauración local verificado.
 - Interfaz de consola provisional.
 
-Pendiente para el MVP: ventas/POS, corte de caja, respaldo automático por intervalo, reportes de utilidad, bitácora y la interfaz definitiva (ADR pendiente). Ver [roadmap.md](roadmap.md) y [deuda-tecnica.md](deuda-tecnica.md).
+Pendiente para el MVP: corte de caja, anulación de ventas, respaldo automático por intervalo, reportes de utilidad, bitácora y la interfaz definitiva (ADR pendiente). Ver [roadmap.md](roadmap.md) y [deuda-tecnica.md](deuda-tecnica.md).
 
 ## Índice
 
@@ -27,9 +28,9 @@ Pendiente para el MVP: ventas/POS, corte de caja, respaldo automático por inter
 | [02-modulos/modulo-inventario.md](02-modulos/modulo-inventario.md) | Catálogo e inventario |
 | [03-procesos/cliente-fiado.md](03-procesos/cliente-fiado.md) | Fiado y abonos |
 | [03-procesos/proveedores.md](03-procesos/proveedores.md) | Proveedores y cuentas por pagar |
-| [03-procesos/venta.md](03-procesos/venta.md) | Venta (diseño, sin implementar) |
+| [03-procesos/venta.md](03-procesos/venta.md) | Venta / POS (base implementada en consola) |
 | [03-procesos/corte-caja.md](03-procesos/corte-caja.md) | Corte de caja (diseño) |
-| [03-procesos/respaldo-restauracion.md](03-procesos/respaldo-restauracion.md) | Respaldo y restauración (diseño) |
+| [03-procesos/respaldo-restauracion.md](03-procesos/respaldo-restauracion.md) | Respaldo y restauración (implementado) |
 | [05-decisiones/ADR-stack.md](05-decisiones/ADR-stack.md) | Decisión de stack |
 | [06-operacion/instalacion-y-actualizacion.md](06-operacion/instalacion-y-actualizacion.md) | Instalación |
 | [07-pruebas/plan-de-pruebas.md](07-pruebas/plan-de-pruebas.md) | Estrategia y cobertura de pruebas |

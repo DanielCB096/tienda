@@ -1,13 +1,15 @@
-# Modelo de Datos (esquema v1)
+# Modelo de Datos (esquema v2)
 
-Base local SQLite, un solo archivo. `PRAGMA user_version = 1`.
+Base local SQLite, un solo archivo. `PRAGMA user_version = 2`.
 
 El acceso vive en `SistemaTienda.Infrastructure/Database.cs` (`DatabaseTools`). Todas las consultas son parametrizadas.
 
 ## Versionado del esquema
 
 - La versión vigente se guarda en `PRAGMA user_version`. La **versión 1** es el esquema base que crea `DatabaseTools` en una base nueva o vacía.
-- `SistemaTienda.Infrastructure/Migraciones.cs` define la lista ordenada de migraciones pendientes (`Migracion(Version, Descripcion, Aplicar)`). Hoy está vacía: la app solo conoce la v1.
+- `SistemaTienda.Infrastructure/Migraciones.cs` define la lista ordenada de migraciones (`Migracion(Version, Descripcion, Aplicar)`). Versiones registradas:
+  - **v2** — crea `Ventas` y `VentaLineas` con sus índices (módulo de ventas).
+- Una base nueva se crea directamente en la versión máxima (`Migraciones.VersionMaxima`): no se crea respaldo previo porque aún no hay datos.
 - `MigradorEsquema.Migrar()` se ejecuta dentro de `InicializarBaseDeDatos()` al arrancar:
   1. Lee `user_version`; si la base es más nueva que la app, aborta sin tocar nada.
   2. Si hay migraciones pendientes y la base ya existía, crea un respaldo `antes-migrar` y lo verifica con `PRAGMA integrity_check`; si falla, no aplica cambios.
@@ -15,7 +17,7 @@ El acceso vive en `SistemaTienda.Infrastructure/Database.cs` (`DatabaseTools`). 
   4. Si una migración falla, hace rollback de esa migración y reporta el respaldo disponible.
   5. Al terminar, verifica la integridad de la base.
 - Una base anterior al versionado (con tablas pero `user_version = 0`) se marca como v1 al abrirse; sus datos no se tocan.
-- Para agregar una migración: crear `new Migracion(2, "descripción", (conn, tx) => { ... })` en `Migraciones.ObtenerTodas()`, con SQL idempotente (`IF NOT EXISTS`, etc.), y añadir su prueba.
+- Para agregar una migración: crear `new Migracion(n, "descripción", (conn, tx) => { ... })` en `Migraciones.ObtenerTodas()`, con SQL idempotente (`IF NOT EXISTS`, etc.), y añadir su prueba.
 
 ## Respaldos
 
@@ -88,6 +90,40 @@ Historial inmutable de inventario.
 | Usuario | TEXT | Nombre del usuario |
 | Fecha | DATETIME | |
 
+### Ventas
+
+Cabecera inmutable de cada venta (migración v2). No se edita ni se borra: un error se corrige con una venta nueva.
+
+| Columna | Tipo | Notas |
+|---------|------|-------|
+| Id | INTEGER PK | |
+| Fecha | DATETIME | Fecha y hora del cobro |
+| Usuario | TEXT | Cajero que registró la venta |
+| ClienteId | INTEGER FK → ClientesFiado | Nulo salvo en venta a fiado |
+| MetodoPago | TEXT | `Efectivo`, `Tarjeta`, `Mixto`, `Fiado` |
+| Total | DECIMAL | Suma de importes de las líneas |
+| CostoTotal | DECIMAL | Suma de costo congelado × cantidad |
+| PagoEfectivo | DECIMAL | Monto aplicado en efectivo |
+| PagoTarjeta | DECIMAL | Monto aplicado con tarjeta |
+| PagoFiado | DECIMAL | Monto cargado al cliente |
+| ComisionTarjeta | DECIMAL | `PagoTarjeta × ComisionTarjeta%` al momento de la venta |
+
+### VentaLineas
+
+Detalle de productos vendidos con precio y costo congelados.
+
+| Columna | Tipo | Notas |
+|---------|------|-------|
+| Id | INTEGER PK | |
+| VentaId | INTEGER FK → Ventas | |
+| ProductoId | INTEGER FK → Productos | |
+| CodigoBarras | TEXT | Copia del código al vender |
+| Nombre | TEXT | Copia del nombre al vender |
+| Cantidad | INTEGER | > 0 |
+| PrecioUnitario | DECIMAL | Precio de catálogo al vender |
+| CostoUnitario | DECIMAL | Costo al vender |
+| Importe | DECIMAL | `PrecioUnitario × Cantidad` |
+
 ### Gastos
 
 | Columna | Tipo | Notas |
@@ -138,9 +174,15 @@ Reglas implementadas:
 - Venta o merma → movimiento `Salida` con cantidad negativa, validando stock dentro de la transacción.
 - Ajuste a valor absoluto → se registra únicamente la diferencia; si es cero, no hay movimiento.
 
+## Invariante: venta atómica
+
+`DatabaseTools.RegistrarVenta` escribe en una sola transacción: cabecera, líneas, un movimiento de salida por línea (motivo `Venta #N`) y, si aplica, el cargo al cliente en `ClientesFiado`. Si el stock de cualquier línea es insuficiente, se revierte todo y no queda registro de la venta.
+
+El precio y el costo de cada línea se copian al vender; cambios posteriores en el catálogo no alteran ventas históricas.
+
 ## Índices
 
-`Productos(CodigoBarras)`, `Productos(Nombre)`, `Productos(Stock)`, `MovimientoInventario(ProductoId)`, `MovimientoInventario(Fecha)`, `Gastos(Fecha)`, `ClientesFiado(Nombre)`, `Proveedores(Nombre)`.
+`Productos(CodigoBarras)`, `Productos(Nombre)`, `Productos(Stock)`, `MovimientoInventario(ProductoId)`, `MovimientoInventario(Fecha)`, `Gastos(Fecha)`, `ClientesFiado(Nombre)`, `Proveedores(Nombre)`, `Ventas(Fecha)`, `VentaLineas(VentaId)`, `VentaLineas(ProductoId)`.
 
 ## Notas de tipado
 

@@ -74,11 +74,11 @@ Cada agente: su carpeta, su rama y su PR.
 
 ## Estado del proyecto (2026-10-23)
 
-- Rama publicada con el trabajo actual: `feat/migraciones-respaldo` (T1, sobre `feat/base-compilable`).
-- `main`: solo el commit base; el PR de `feat/base-compilable` sigue pendiente de integración.
-- Build: 0 errores, 0 advertencias. Pruebas: **68 en verde** (verificadas por GitHub Actions).
-- Implementado: configuración inicial, usuarios/PIN/roles, gastos, inventario por movimientos, fiado (cliente/abono), proveedores (saldo/pago), migraciones versionadas con respaldo, respaldo/restauración local, consola provisional.
-- No implementado: ventas/POS, corte de caja, respaldo automático por intervalo, bitácora, reportes de utilidad, UI definitiva.
+- Rama publicada con el trabajo actual: `feat/ventas-pos` (T2, sobre `feat/migraciones-respaldo`, que a su vez va sobre `feat/base-compilable`).
+- `main`: solo el commit base; los PR de `feat/base-compilable`, `feat/migraciones-respaldo` y `feat/ventas-pos` siguen pendientes de integración, en ese orden.
+- Build: 0 errores, 0 advertencias. Pruebas: **81 en verde** (verificadas por GitHub Actions).
+- Implementado: configuración inicial, usuarios/PIN/roles, gastos, inventario por movimientos, ventas/POS (efectivo, tarjeta, mixto y fiado; costo y precio congelados; comisión), fiado (cliente/abono), proveedores (saldo/pago), migraciones versionadas con respaldo, respaldo/restauración local, consola provisional.
+- No implementado: corte de caja, respaldo automático por intervalo, bitácora, reportes de utilidad, anulación de ventas, ticket con QR/compartir, UI definitiva.
 - Deuda principal: dinero en `decimal`, abonos/pagos sin historial inmutable, merma sin entidad propia.
 
 ## Tareas disponibles
@@ -93,13 +93,15 @@ El detalle vive en el tablero. Resumen y criterios de terminado:
 - Pruebas en `MigracionesRespaldoTests` (9 casos).
 - **T2 ya puede usar el esquema v2**: agrega `new Migracion(2, "...", ...)` en `Migraciones.ObtenerTodas()`.
 
-### T2 — Ventas / POS (crítico)
+### T2 — Ventas / POS (HECHO)
 
-- Tablas `Ventas`, `VentaLineas` (y pagos si aplica); esquema v2 vía T1.
-- Una venta: líneas con costo y precio **congelados**, total, método de pago, descuento de stock atómico, comisión de tarjeta si aplica.
-- Fiado: genera saldo del cliente en la misma transacción.
-- Pruebas: venta descuenta stock; stock insuficiente revierte todo; costo congelado; venta a fiado crea saldo.
-- Toca: `Core/`, `Application/VentaService.cs`, `Infrastructure/Database.cs`, `Presentation/Program.cs`.
+- Completado en `feat/ventas-pos` (040e77d, d28c223).
+- Esquema v2 con `Ventas` y `VentaLineas`; venta atómica multi-línea con movimiento de salida por producto y cargo de fiado en la misma transacción.
+- Precio y costo congelados por línea; `ComisionTarjeta` calculada y guardada en la cabecera.
+- `VentaService` valida pagos (suma = total), duplicados, cantidades y reglas de fiado (exclusivo, cliente, límite).
+- Menú de consola: carrito, cobro, cambio, ticket de texto y ventas del día.
+- Pruebas en `VentasTests` (13 casos); total 81.
+- Pendiente fuera de T2: anulación con reverso, descuentos, QR/compartir, integración con corte de caja.
 
 ### T3 — Dinero en centavos enteros
 
