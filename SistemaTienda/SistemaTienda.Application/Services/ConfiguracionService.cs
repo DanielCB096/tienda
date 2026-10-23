@@ -19,8 +19,8 @@ public class ConfiguracionService
     /// </summary>
     public ProcessResult EjecutarAsistenteInicial(string nombreTienda, string giro,
         decimal impuestoPredeterminado, decimal comisionTarjeta,
-        decimal fondoCajaInicial, bool fiadoActivado,
-        decimal limiteCredito, int respaldoIntervaloDias, string pinDueño)
+        long fondoCajaInicial, bool fiadoActivado,
+        long limiteCredito, int respaldoIntervaloDias, string pinDueño)
     {
         if (_db.ContarUsuarios() > 0)
             return ProcessResult.Error("El sistema ya tiene usuarios configurados");
@@ -224,8 +224,8 @@ public class ConfiguracionService
         }
     }
 
-    public ProcessResult<decimal> ObtenerTotalGastos() =>
-        ProcessResult<decimal>.OK(_db.ObtenerTotalGastos());
+    public ProcessResult<long> ObtenerTotalGastos() =>
+        ProcessResult<long>.OK(_db.ObtenerTotalGastos());
 
     public ProcessResult<List<GastoPorConcepto>> ObtenerGastosPorConcepto() =>
         ProcessResult<List<GastoPorConcepto>>.OK(_db.ObtenerGastosPorConcepto());
@@ -262,7 +262,7 @@ public class ConfiguracionService
     public ProcessResult<List<ClienteFiado>> ObtenerClientesConSaldo() =>
         ProcessResult<List<ClienteFiado>>.OK(_db.ObtenerClientesConSaldo());
 
-    public ProcessResult<RegistrarAbonoResponse> RegistrarAbonoCliente(int clienteId, decimal montoAbono,
+    public ProcessResult<RegistrarAbonoResponse> RegistrarAbonoCliente(int clienteId, long montoAbono,
         string usuario = "")
     {
         if (montoAbono <= 0)
@@ -274,7 +274,7 @@ public class ConfiguracionService
 
         if (montoAbono > cliente.SaldoActual)
             return ProcessResult<RegistrarAbonoResponse>.Error(
-                $"El abono (${montoAbono:F2}) supera el saldo pendiente (${cliente.SaldoActual:F2})");
+                $"El abono (${Dinero.Formatear(montoAbono)}) supera el saldo pendiente (${Dinero.Formatear(cliente.SaldoActual)})");
 
         var nuevoSaldo = cliente.SaldoActual - montoAbono;
         if (!_db.RegistrarAbonoFiado(cliente.Id, montoAbono, nuevoSaldo, usuario))
@@ -314,7 +314,7 @@ public class ConfiguracionService
     public ProcessResult<List<Proveedor>> ObtenerTodosLosProveedores() =>
         ProcessResult<List<Proveedor>>.OK(_db.ObtenerTodosLosProveedores());
 
-    public ProcessResult<RegistrarPagoProveedorResponse> RegistrarPagoProveedor(int proveedorId, decimal montoPago)
+    public ProcessResult<RegistrarPagoProveedorResponse> RegistrarPagoProveedor(int proveedorId, long montoPago)
     {
         if (montoPago <= 0)
             return ProcessResult<RegistrarPagoProveedorResponse>.Error("El pago debe ser mayor a cero");
@@ -325,7 +325,7 @@ public class ConfiguracionService
 
         if (montoPago > proveedor.SaldoPendiente)
             return ProcessResult<RegistrarPagoProveedorResponse>.Error(
-                $"El pago (${montoPago:F2}) supera el saldo pendiente (${proveedor.SaldoPendiente:F2})");
+                $"El pago (${Dinero.Formatear(montoPago)}) supera el saldo pendiente (${Dinero.Formatear(proveedor.SaldoPendiente)})");
 
         var nuevoSaldo = proveedor.SaldoPendiente - montoPago;
         if (!_db.ActualizarSaldoProveedor(proveedor.Id, nuevoSaldo))
@@ -349,7 +349,7 @@ public class AgregarClienteFiadoResponse
 public class RegistrarAbonoResponse
 {
     public int ClienteId { get; set; }
-    public decimal SaldoRestante { get; set; }
+    public long SaldoRestante { get; set; }
     public string Mensaje { get; set; } = string.Empty;
 }
 
@@ -362,7 +362,7 @@ public class AgregarProveedorResponse
 public class RegistrarPagoProveedorResponse
 {
     public int ProveedorId { get; set; }
-    public decimal SaldoRestante { get; set; }
+    public long SaldoRestante { get; set; }
     public string Mensaje { get; set; } = string.Empty;
 }
 

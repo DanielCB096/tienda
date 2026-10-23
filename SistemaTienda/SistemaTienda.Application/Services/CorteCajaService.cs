@@ -23,7 +23,7 @@ public class CorteCajaService
     /// Cierra el periodo abierto. Si el contado no coincide con el esperado,
     /// el motivo es obligatorio: el corte no se guarda sin explicación.
     /// </summary>
-    public ProcessResult<CorteCaja> RegistrarCorte(decimal efectivoContado, decimal fondoInicial,
+    public ProcessResult<CorteCaja> RegistrarCorte(long efectivoContado, long fondoInicial,
         string usuario, string observaciones = "")
     {
         if (efectivoContado < 0)
@@ -38,7 +38,7 @@ public class CorteCajaService
         return _db.RegistrarCorteCaja(efectivoContado, fondoInicial, usuario.Trim(), observaciones);
     }
 
-    public ProcessResult<MovimientoCaja> RegistrarMovimiento(string tipo, decimal monto,
+    public ProcessResult<MovimientoCaja> RegistrarMovimiento(string tipo, long monto,
         string motivo, string usuario)
     {
         if (tipo != TipoMovimientoCaja.Ingreso && tipo != TipoMovimientoCaja.Retiro)
@@ -57,13 +57,13 @@ public class CorteCajaService
         {
             Fecha = DateTime.Now,
             Tipo = tipo,
-            Monto = Math.Round(monto, 2),
+            Monto = monto,
             Motivo = motivo.Trim(),
             Usuario = usuario.Trim()
         };
 
         _db.RegistrarMovimientoCaja(movimiento);
         return ProcessResult<MovimientoCaja>.OK(movimiento,
-            $"{tipo} de ${movimiento.Monto:F2} registrado");
+            $"{tipo} de ${Dinero.Formatear(movimiento.Monto)} registrado");
     }
 }

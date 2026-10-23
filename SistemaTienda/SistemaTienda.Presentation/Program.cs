@@ -71,9 +71,9 @@ internal static class Program
         var giro = LeerTextoConDefecto("Giro del negocio", ConfiguracionPorDefecto.GiroPredeterminado);
         var impuesto = LeerDecimal("Impuesto predeterminado (%)", 0, ConfiguracionPorDefecto.ImpuestoPredeterminado);
         var comision = LeerDecimal("Comisión de tarjeta (%)", 0, ConfiguracionPorDefecto.ComisionTarjetaPredeterminada);
-        var fondo = LeerDecimal("Fondo de caja inicial ($)", 0, ConfiguracionPorDefecto.FondoCajaInicialPredeterminado);
+        var fondo = LeerDinero("Fondo de caja inicial ($)", 0, ConfiguracionPorDefecto.FondoCajaInicialPredeterminado);
         var fiado = LeerSiNo("¿Activar fiado a clientes?", false);
-        var limite = fiado ? LeerDecimal("Límite de crédito por cliente (0 = sin límite)", 0, 0) : 0;
+        var limite = fiado ? LeerDinero("Límite de crédito por cliente (0 = sin límite)", 0, 0) : 0;
         var intervalo = LeerEntero("Días entre respaldos (0 = deshabilitado)", 0, 365,
             ConfiguracionPorDefecto.RespaldoIntervaloDiasPredeterminado);
         var pin = LeerPin("PIN del dueño (4 a 6 dígitos)");
@@ -230,7 +230,7 @@ internal static class Program
             for (var i = inicio; i < fin; i++)
             {
                 var p = productos[i];
-                Console.WriteLine($"  {p.Id,-5} {p.CodigoBarras,-17} {p.Nombre,-31} {p.Stock,-8} ${p.Precio,8:F2}");
+                Console.WriteLine($"  {p.Id,-5} {p.CodigoBarras,-17} {p.Nombre,-31} {p.Stock,-8} ${Dinero.Formatear(p.Precio),8}");
             }
 
             Console.WriteLine("\n  [Enter] siguiente página   [q] salir");
@@ -279,8 +279,8 @@ internal static class Program
         Console.WriteLine($"  Código:    {producto.CodigoBarras}");
         Console.WriteLine($"  Nombre:    {producto.Nombre}");
         Console.WriteLine($"  Categoría: {producto.Categoria}");
-        Console.WriteLine($"  Costo:     ${producto.Costo:F2}");
-        Console.WriteLine($"  Precio:    ${producto.Precio:F2}");
+        Console.WriteLine($"  Costo:     ${Dinero.Formatear(producto.Costo)}");
+        Console.WriteLine($"  Precio:    ${Dinero.Formatear(producto.Precio)}");
         Console.WriteLine($"  Stock:     {producto.Stock} (mínimo {producto.StockMinimo})");
         Console.WriteLine($"  Impuesto:  {producto.Impuesto:F2}%");
         Pausa();
@@ -321,8 +321,8 @@ internal static class Program
             CodigoBarras = LeerTexto("Código de barras"),
             Nombre = LeerTexto("Nombre"),
             Categoria = LeerTextoConDefecto("Categoría", string.Empty),
-            Costo = LeerDecimal("Costo ($)", 0, 0),
-            Precio = LeerDecimal("Precio de venta ($)", 0, 0),
+            Costo = LeerDinero("Costo ($)", 0, 0),
+            Precio = LeerDinero("Precio de venta ($)", 0, 0),
             Stock = LeerEntero("Stock inicial", 0, 1_000_000, 0),
             StockMinimo = LeerEntero("Stock mínimo", 0, 1_000_000, 5),
             Impuesto = _configTienda.ImpuestoPredeterminado
@@ -349,8 +349,8 @@ internal static class Program
 
         producto.Nombre = LeerTextoConDefecto("Nombre", producto.Nombre);
         producto.Categoria = LeerTextoConDefecto("Categoría", producto.Categoria);
-        producto.Costo = LeerDecimal("Costo ($)", 0, producto.Costo);
-        producto.Precio = LeerDecimal("Precio de venta ($)", 0, producto.Precio);
+        producto.Costo = LeerDinero("Costo ($)", 0, producto.Costo);
+        producto.Precio = LeerDinero("Precio de venta ($)", 0, producto.Precio);
         producto.StockMinimo = LeerEntero("Stock mínimo", 0, 1_000_000, producto.StockMinimo);
         producto.Impuesto = LeerDecimal("Impuesto (%)", 0, producto.Impuesto);
 
@@ -475,7 +475,7 @@ internal static class Program
 
         if (carrito.Count == 0) return;
 
-        var total = carrito.Sum(c => c.Producto.Precio * c.Cantidad);
+        var total = carrito.Sum(c => Dinero.Multiplicar(c.Producto.Precio, c.Cantidad));
         var pago = CobrarVenta(total);
         if (pago == null) return;
 
@@ -506,11 +506,11 @@ internal static class Program
         Console.WriteLine();
         foreach (var (producto, cantidad) in carrito)
         {
-            var importe = producto.Precio * cantidad;
-            Console.WriteLine($"  {cantidad} x {producto.Nombre,-30} ${producto.Precio,8:F2} = ${importe,9:F2}");
+            var importe = Dinero.Multiplicar(producto.Precio, cantidad);
+            Console.WriteLine($"  {cantidad} x {producto.Nombre,-30} ${Dinero.Formatear(producto.Precio),8} = ${Dinero.Formatear(importe),9}");
         }
 
-        Console.WriteLine($"\n  TOTAL: ${carrito.Sum(c => c.Producto.Precio * c.Cantidad):F2}");
+        Console.WriteLine($"\n  TOTAL: ${Dinero.Formatear(carrito.Sum(c => Dinero.Multiplicar(c.Producto.Precio, c.Cantidad)))}");
     }
 
     private static Producto ElegirProducto(List<Producto> productos)
@@ -521,20 +521,20 @@ internal static class Program
         for (var i = 0; i < maximo; i++)
         {
             var p = productos[i];
-            Console.WriteLine($"  [{i + 1}] {p.Nombre,-32} ${p.Precio,8:F2}  stock {p.Stock}");
+            Console.WriteLine($"  [{i + 1}] {p.Nombre,-32} ${Dinero.Formatear(p.Precio),8}  stock {p.Stock}");
         }
 
         var indice = LeerEntero("Producto (0 = cancelar)", 0, maximo, 1);
         return indice == 0 ? null : productos[indice - 1];
     }
 
-    private static PagoSolicitado CobrarVenta(decimal total)
+    private static PagoSolicitado CobrarVenta(long total)
     {
         while (true)
         {
             LimpiarPantalla();
             Console.WriteLine("=== COBRO ===");
-            Console.WriteLine($"  Total: ${total:F2}\n");
+            Console.WriteLine($"  Total: ${Dinero.Formatear(total)}\n");
             Console.WriteLine("  [1] Efectivo");
             Console.WriteLine("  [2] Tarjeta");
             Console.WriteLine("  [3] Mixto (efectivo + tarjeta)");
@@ -547,17 +547,17 @@ internal static class Program
             switch (Console.ReadLine())
             {
                 case "1":
-                    var recibido = LeerDecimal("Efectivo recibido", total, total);
-                    Console.WriteLine($"\n  Cambio: ${recibido - total:F2}");
+                    var recibido = LeerDinero("Efectivo recibido", total, total);
+                    Console.WriteLine($"\n  Cambio: ${Dinero.Formatear(recibido - total)}");
                     return new PagoSolicitado { Efectivo = total };
                 case "2":
                     Console.WriteLine($"\n  La comisión de tarjeta ({_configTienda.ComisionTarjeta:F2}%) se descuenta de la utilidad.");
                     return new PagoSolicitado { Tarjeta = total };
                 case "3":
-                    var efectivo = LeerDecimal("Parte en efectivo", 0, 0);
+                    var efectivo = LeerDinero("Parte en efectivo", 0, 0);
                     if (efectivo >= total)
                     {
-                        Console.WriteLine($"\n  Cambio: ${efectivo - total:F2}");
+                        Console.WriteLine($"\n  Cambio: ${Dinero.Formatear(efectivo - total)}");
                         return new PagoSolicitado { Efectivo = total };
                     }
                     return new PagoSolicitado { Efectivo = efectivo, Tarjeta = total - efectivo };
@@ -594,7 +594,7 @@ internal static class Program
         LimpiarPantalla();
         Console.WriteLine("=== CLIENTE PARA FIADO ===");
         for (var i = 0; i < clientes.Count; i++)
-            Console.WriteLine($"  [{i + 1}] {clientes[i].Nombre,-28} saldo ${clientes[i].SaldoActual,8:F2}");
+            Console.WriteLine($"  [{i + 1}] {clientes[i].Nombre,-28} saldo ${Dinero.Formatear(clientes[i].SaldoActual),8}");
 
         var indice = LeerEntero("Cliente (0 = cancelar)", 0, clientes.Count, 1);
         return indice == 0 ? null : clientes[indice - 1];
@@ -610,17 +610,17 @@ internal static class Program
         foreach (var (producto, cantidad) in carrito)
         {
             Console.WriteLine($"  {cantidad} x {producto.Nombre}");
-            Console.WriteLine($"      ${producto.Precio,8:F2} = ${producto.Precio * cantidad,9:F2}");
+            Console.WriteLine($"      ${Dinero.Formatear(producto.Precio),8} = ${Dinero.Formatear(Dinero.Multiplicar(producto.Precio, cantidad)),9}");
         }
 
         Console.WriteLine("  " + new string('-', 52));
-        Console.WriteLine($"  TOTAL: ${venta.Total:F2}");
+        Console.WriteLine($"  TOTAL: ${Dinero.Formatear(venta.Total)}");
         Console.WriteLine($"  Pago: {venta.MetodoPago}");
 
         if (venta.PagoEfectivo > 0 && venta.PagoTarjeta > 0)
         {
-            Console.WriteLine($"    Efectivo: ${venta.PagoEfectivo:F2}");
-            Console.WriteLine($"    Tarjeta:  ${venta.PagoTarjeta:F2}");
+            Console.WriteLine($"    Efectivo: ${Dinero.Formatear(venta.PagoEfectivo)}");
+            Console.WriteLine($"    Tarjeta:  ${Dinero.Formatear(venta.PagoTarjeta)}");
         }
 
         if (venta.PagoFiado > 0)
@@ -632,7 +632,7 @@ internal static class Program
         }
 
         if (venta.ComisionTarjeta > 0)
-            Console.WriteLine($"  Comisión tarjeta: ${venta.ComisionTarjeta:F2} (afecta la utilidad)");
+            Console.WriteLine($"  Comisión tarjeta: ${Dinero.Formatear(venta.ComisionTarjeta)} (afecta la utilidad)");
 
         Console.WriteLine("\n  Gracias por su compra.");
     }
@@ -650,9 +650,9 @@ internal static class Program
         else
         {
             foreach (var venta in ventas)
-                Console.WriteLine($"  #{venta.Id,-5} {venta.Fecha:HH:mm}  ${venta.Total,9:F2}  {venta.MetodoPago,-8} {venta.Usuario}");
+                Console.WriteLine($"  #{venta.Id,-5} {venta.Fecha:HH:mm}  ${Dinero.Formatear(venta.Total),9}  {venta.MetodoPago,-8} {venta.Usuario}");
 
-            Console.WriteLine($"\n  Total del día: ${ventas.Sum(v => v.Total):F2}");
+            Console.WriteLine($"\n  Total del día: ${Dinero.Formatear(ventas.Sum(v => v.Total))}");
         }
 
         Pausa();
@@ -719,7 +719,7 @@ internal static class Program
         var gasto = new Gasto
         {
             Concepto = LeerTexto("Concepto"),
-            Monto = LeerDecimal("Monto ($)", 0, 0),
+            Monto = LeerDinero("Monto ($)", 0, 0),
             MetodoPago = LeerTextoConDefecto("Método de pago (Efectivo/Tarjeta/Transferencia)", "Efectivo"),
             Origen = LeerSiNo("¿Salió del efectivo de la caja?", true) ? OrigenGasto.Caja : OrigenGasto.Externo,
             Observaciones = LeerTextoConDefecto("Observaciones", string.Empty),
@@ -742,7 +742,7 @@ internal static class Program
         else
         {
             foreach (var g in gastos.Take(100))
-                Console.WriteLine($"  {g.Fecha:d}  {g.Concepto,-25} ${g.Monto,9:F2}  {g.MetodoPago}  ({g.Origen})");
+                Console.WriteLine($"  {g.Fecha:d}  {g.Concepto,-25} ${Dinero.Formatear(g.Monto),9}  {g.MetodoPago}  ({g.Origen})");
         }
         Pausa();
     }
@@ -751,9 +751,9 @@ internal static class Program
     {
         LimpiarPantalla();
         Console.WriteLine("=== RESUMEN DE GASTOS ===");
-        Console.WriteLine($"  Total: ${_config.ObtenerTotalGastos().Value:F2}\n");
+        Console.WriteLine($"  Total: ${Dinero.Formatear(_config.ObtenerTotalGastos().Value)}\n");
         foreach (var grupo in _config.ObtenerGastosPorConcepto().Value ?? new List<GastoPorConcepto>())
-            Console.WriteLine($"  {grupo.Concepto,-30} ${grupo.Total,9:F2}");
+            Console.WriteLine($"  {grupo.Concepto,-30} ${Dinero.Formatear(grupo.Total),9}");
         Pausa();
     }
 
@@ -799,7 +799,7 @@ internal static class Program
         {
             Nombre = LeerTexto("Nombre"),
             Telefono = LeerTextoConDefecto("Teléfono", string.Empty),
-            SaldoActual = LeerDecimal("Saldo inicial ($)", 0, 0)
+            SaldoActual = LeerDinero("Saldo inicial ($)", 0, 0)
         };
 
         var resultado = _config.AgregarClienteFiado(cliente);
@@ -821,7 +821,7 @@ internal static class Program
         else
         {
             foreach (var c in clientes.Take(100))
-                Console.WriteLine($"  [{c.Id}] {c.Nombre,-25} ${c.SaldoActual,9:F2}  {c.Telefono}");
+                Console.WriteLine($"  [{c.Id}] {c.Nombre,-25} ${Dinero.Formatear(c.SaldoActual),9}  {c.Telefono}");
         }
         Pausa();
     }
@@ -838,7 +838,7 @@ internal static class Program
         LimpiarPantalla();
         Console.WriteLine("=== REGISTRAR ABONO ===");
         foreach (var c in clientes.Take(50))
-            Console.WriteLine($"  [{c.Id}] {c.Nombre,-25} ${c.SaldoActual,9:F2}");
+            Console.WriteLine($"  [{c.Id}] {c.Nombre,-25} ${Dinero.Formatear(c.SaldoActual),9}");
 
         var id = LeerEntero("\n  ID del cliente (0 = cancelar)", 0, int.MaxValue, 0);
         if (id == 0) return;
@@ -850,10 +850,10 @@ internal static class Program
             return;
         }
 
-        var monto = LeerDecimal($"Monto del abono (saldo ${cliente.SaldoActual:F2})", 0.01m, 0);
+        var monto = LeerDinero($"Monto del abono (saldo ${Dinero.Formatear(cliente.SaldoActual)})", 1, 0);
         var resultado = _config.RegistrarAbonoCliente(cliente.Id, monto, _usuarioActual.Nombre);
         Aviso(resultado.IsSuccess
-            ? $"Abono registrado. Nuevo saldo: ${resultado.Value.SaldoRestante:F2}"
+            ? $"Abono registrado. Nuevo saldo: ${Dinero.Formatear(resultado.Value.SaldoRestante)}"
             : resultado.Message, resultado.IsSuccess);
     }
 
@@ -893,7 +893,7 @@ internal static class Program
             Clave = LeerTextoConDefecto("RFC o razón social", string.Empty),
             Telefono = LeerTextoConDefecto("Teléfono", string.Empty),
             Direccion = LeerTextoConDefecto("Dirección", string.Empty),
-            SaldoPendiente = LeerDecimal("Saldo inicial pendiente ($)", 0, 0)
+            SaldoPendiente = LeerDinero("Saldo inicial pendiente ($)", 0, 0)
         };
 
         var resultado = _config.AgregarProveedor(proveedor);
@@ -912,7 +912,7 @@ internal static class Program
         else
         {
             foreach (var p in proveedores.Take(100))
-                Console.WriteLine($"  [{p.Id}] {p.Nombre,-25} ${p.SaldoPendiente,9:F2}  {p.Telefono}");
+                Console.WriteLine($"  [{p.Id}] {p.Nombre,-25} ${Dinero.Formatear(p.SaldoPendiente),9}  {p.Telefono}");
         }
         Pausa();
     }
@@ -930,7 +930,7 @@ internal static class Program
         LimpiarPantalla();
         Console.WriteLine("=== REGISTRAR PAGO A PROVEEDOR ===");
         foreach (var p in conSaldo.Take(50))
-            Console.WriteLine($"  [{p.Id}] {p.Nombre,-25} ${p.SaldoPendiente,9:F2}");
+            Console.WriteLine($"  [{p.Id}] {p.Nombre,-25} ${Dinero.Formatear(p.SaldoPendiente),9}");
 
         var id = LeerEntero("\n  ID del proveedor (0 = cancelar)", 0, int.MaxValue, 0);
         if (id == 0) return;
@@ -942,10 +942,10 @@ internal static class Program
             return;
         }
 
-        var monto = LeerDecimal($"Monto del pago (saldo ${proveedor.SaldoPendiente:F2})", 0.01m, 0);
+        var monto = LeerDinero($"Monto del pago (saldo ${Dinero.Formatear(proveedor.SaldoPendiente)})", 1, 0);
         var resultado = _config.RegistrarPagoProveedor(proveedor.Id, monto);
         Aviso(resultado.IsSuccess
-            ? $"Pago registrado. Nuevo saldo: ${resultado.Value.SaldoRestante:F2}"
+            ? $"Pago registrado. Nuevo saldo: ${Dinero.Formatear(resultado.Value.SaldoRestante)}"
             : resultado.Message, resultado.IsSuccess);
     }
 
@@ -970,7 +970,7 @@ internal static class Program
                 case "1":
                     LimpiarPantalla();
                     Console.WriteLine("=== VALORIZADO DE INVENTARIO ===");
-                    Console.WriteLine($"  Valor total al costo: ${_inventario.ObtenerValorizadoInventario():F2}");
+                    Console.WriteLine($"  Valor total al costo: ${Dinero.Formatear(_inventario.ObtenerValorizadoInventario())}");
                     Pausa();
                     break;
                 case "2": ListarProductosPaginado(_inventario.ProductosStockBajo()); break;
@@ -993,8 +993,8 @@ internal static class Program
         var proveedores = _config.ObtenerTodosLosProveedores().Value ?? new List<Proveedor>();
         Console.WriteLine("=== SALDO CON PROVEEDORES ===");
         foreach (var p in proveedores.Where(p => p.SaldoPendiente > 0))
-            Console.WriteLine($"  {p.Nombre,-30} ${p.SaldoPendiente,9:F2}");
-        Console.WriteLine($"\n  Total por pagar: ${proveedores.Sum(p => p.SaldoPendiente):F2}");
+            Console.WriteLine($"  {p.Nombre,-30} ${Dinero.Formatear(p.SaldoPendiente),9}");
+        Console.WriteLine($"\n  Total por pagar: ${Dinero.Formatear(proveedores.Sum(p => p.SaldoPendiente))}");
         Pausa();
     }
 
@@ -1009,7 +1009,7 @@ internal static class Program
             var ultimo = _cortes.ObtenerUltimoCorte().Value;
             Console.WriteLine(ultimo == null
                 ? "  Aún no hay cortes registrados.\n"
-                : $"  Último corte: #{ultimo.Id}  {ultimo.Hasta:g}  diferencia ${ultimo.Diferencia:F2}\n");
+                : $"  Último corte: #{ultimo.Id}  {ultimo.Hasta:g}  diferencia ${Dinero.Formatear(ultimo.Diferencia)}\n");
             Console.WriteLine("  [1] Resumen y cerrar corte");
             Console.WriteLine("  [2] Registrar ingreso de efectivo");
             Console.WriteLine("  [3] Registrar retiro de efectivo");
@@ -1044,22 +1044,22 @@ internal static class Program
         Console.WriteLine("=== CORTE DE CAJA: PERIODO ABIERTO ===");
         Console.WriteLine($"  Desde: {r.Desde:g}");
         Console.WriteLine($"  Hasta: {r.Hasta:g}\n");
-        Console.WriteLine($"  Ventas en efectivo:  ${r.VentasEfectivo,10:F2}  ({r.NumeroVentasEfectivo})");
-        Console.WriteLine($"  Ventas con tarjeta:  ${r.VentasTarjeta,10:F2}  ({r.NumeroVentasTarjeta})");
-        Console.WriteLine($"  Ventas a fiado:      ${r.VentasFiado,10:F2}  ({r.NumeroVentasFiado})");
+        Console.WriteLine($"  Ventas en efectivo:  ${Dinero.Formatear(r.VentasEfectivo),10}  ({r.NumeroVentasEfectivo})");
+        Console.WriteLine($"  Ventas con tarjeta:  ${Dinero.Formatear(r.VentasTarjeta),10}  ({r.NumeroVentasTarjeta})");
+        Console.WriteLine($"  Ventas a fiado:      ${Dinero.Formatear(r.VentasFiado),10}  ({r.NumeroVentasFiado})");
         Console.WriteLine($"  Ventas mixtas:       {r.NumeroVentasMixto} transacción(es)");
-        Console.WriteLine($"  Total vendido:       ${r.TotalVentas,10:F2}  ({r.NumeroVentas})");
-        Console.WriteLine($"  Abonos en efectivo:  ${r.AbonosEfectivo,10:F2}");
-        Console.WriteLine($"  Ingresos de caja:    ${r.IngresosCaja,10:F2}");
-        Console.WriteLine($"  Retiros de caja:    -${r.RetirosCaja,10:F2}");
-        Console.WriteLine($"  Gastos de caja:     -${r.GastosCaja,10:F2}\n");
+        Console.WriteLine($"  Total vendido:       ${Dinero.Formatear(r.TotalVentas),10}  ({r.NumeroVentas})");
+        Console.WriteLine($"  Abonos en efectivo:  ${Dinero.Formatear(r.AbonosEfectivo),10}");
+        Console.WriteLine($"  Ingresos de caja:    ${Dinero.Formatear(r.IngresosCaja),10}");
+        Console.WriteLine($"  Retiros de caja:    -${Dinero.Formatear(r.RetirosCaja),10}");
+        Console.WriteLine($"  Gastos de caja:     -${Dinero.Formatear(r.GastosCaja),10}\n");
 
-        var fondo = LeerDecimal("Fondo inicial del periodo ($)", 0, r.FondoInicial);
-        var esperado = Math.Round(r.EfectivoEsperado - r.FondoInicial + fondo, 2);
-        Console.WriteLine($"  Efectivo esperado:   ${esperado,10:F2}");
-        var contado = LeerDecimal("Efectivo contado en caja ($)", 0, esperado);
-        var diferencia = Math.Round(contado - esperado, 2);
-        Console.WriteLine($"  Diferencia:          ${diferencia,10:F2}");
+        var fondo = LeerDinero("Fondo inicial del periodo ($)", 0, r.FondoInicial);
+        var esperado = r.EfectivoEsperado - r.FondoInicial + fondo;
+        Console.WriteLine($"  Efectivo esperado:   ${Dinero.Formatear(esperado),10}");
+        var contado = LeerDinero("Efectivo contado en caja ($)", 0, esperado);
+        var diferencia = contado - esperado;
+        Console.WriteLine($"  Diferencia:          ${Dinero.Formatear(diferencia),10}");
 
         string observaciones;
         if (diferencia != 0)
@@ -1086,16 +1086,16 @@ internal static class Program
         Console.WriteLine($"=== CORTE #{c.Id} REGISTRADO ===");
         Console.WriteLine($"  Responsable: {c.Usuario}");
         Console.WriteLine($"  Fecha: {c.FechaRegistro:g}");
-        Console.WriteLine($"  Efectivo esperado: ${c.EfectivoEsperado:F2}");
-        Console.WriteLine($"  Efectivo contado:  ${c.EfectivoContado:F2}");
-        Console.WriteLine($"  Diferencia:        ${c.Diferencia:F2}  {EstadoDiferencia(c.Diferencia)}");
+        Console.WriteLine($"  Efectivo esperado: ${Dinero.Formatear(c.EfectivoEsperado)}");
+        Console.WriteLine($"  Efectivo contado:  ${Dinero.Formatear(c.EfectivoContado)}");
+        Console.WriteLine($"  Diferencia:        ${Dinero.Formatear(c.Diferencia)}  {EstadoDiferencia(c.Diferencia)}");
         if (!string.IsNullOrWhiteSpace(c.Observaciones))
             Console.WriteLine($"  Observaciones: {c.Observaciones}");
-        Console.WriteLine($"\n  El próximo periodo inicia con ${c.EfectivoContado:F2} en caja.");
+        Console.WriteLine($"\n  El próximo periodo inicia con ${Dinero.Formatear(c.EfectivoContado)} en caja.");
         Pausa();
     }
 
-    private static string EstadoDiferencia(decimal diferencia) =>
+    private static string EstadoDiferencia(long diferencia) =>
         diferencia == 0 ? "(cuadra)" : diferencia > 0 ? "(sobrante)" : "(faltante)";
 
     private static void RegistrarMovimientoCaja(string tipo)
@@ -1105,7 +1105,7 @@ internal static class Program
             ? "=== INGRESO DE EFECTIVO ==="
             : "=== RETIRO DE EFECTIVO ===");
 
-        var monto = LeerDecimal("Monto ($)", 0, 0);
+        var monto = LeerDinero("Monto ($)", 0, 0);
         if (monto <= 0)
         {
             Aviso("El monto debe ser mayor a cero.");
@@ -1130,8 +1130,8 @@ internal static class Program
         {
             foreach (var c in cortes)
                 Console.WriteLine($"  #{c.Id,-4} {c.Hasta:g}  {c.Usuario,-12} " +
-                                  $"esperado ${c.EfectivoEsperado,8:F2}  contado ${c.EfectivoContado,8:F2}  " +
-                                  $"dif. ${c.Diferencia,7:F2}");
+                                  $"esperado ${Dinero.Formatear(c.EfectivoEsperado),8}  contado ${Dinero.Formatear(c.EfectivoContado),8}  " +
+                                  $"dif. ${Dinero.Formatear(c.Diferencia),7}");
         }
         Pausa();
     }
@@ -1265,9 +1265,9 @@ internal static class Program
         Console.WriteLine($"  Giro:              {c.Giro}");
         Console.WriteLine($"  Impuesto:          {c.ImpuestoPredeterminado:F2}%");
         Console.WriteLine($"  Comisión tarjeta:  {c.ComisionTarjeta:F2}%");
-        Console.WriteLine($"  Fondo de caja:     ${c.FondoCajaInicial:F2}");
+        Console.WriteLine($"  Fondo de caja:     ${Dinero.Formatear(c.FondoCajaInicial)}");
         Console.WriteLine($"  Fiado:             {(c.FiadoActivado ? "Activado" : "Desactivado")}");
-        Console.WriteLine($"  Límite de crédito: ${c.LimiCreditoCliente:F2}");
+        Console.WriteLine($"  Límite de crédito: ${Dinero.Formatear(c.LimiCreditoCliente)}");
         Console.WriteLine($"  Respaldo cada:     {c.RespaldoIntervaloDias} día(s)");
         Console.WriteLine($"  Versión:           {c.VersionApp}");
         Pausa();
@@ -1289,10 +1289,10 @@ internal static class Program
         c.Giro = LeerTextoConDefecto("Giro", c.Giro);
         c.ImpuestoPredeterminado = LeerDecimal("Impuesto predeterminado (%)", 0, c.ImpuestoPredeterminado);
         c.ComisionTarjeta = LeerDecimal("Comisión de tarjeta (%)", 0, c.ComisionTarjeta);
-        c.FondoCajaInicial = LeerDecimal("Fondo de caja inicial ($)", 0, c.FondoCajaInicial);
+        c.FondoCajaInicial = LeerDinero("Fondo de caja inicial ($)", 0, c.FondoCajaInicial);
         c.FiadoActivado = LeerSiNo("¿Activar fiado?", c.FiadoActivado);
         c.LimiCreditoCliente = c.FiadoActivado
-            ? LeerDecimal("Límite de crédito por cliente (0 = sin límite)", 0, c.LimiCreditoCliente)
+            ? LeerDinero("Límite de crédito por cliente (0 = sin límite)", 0, c.LimiCreditoCliente)
             : 0;
         c.RespaldoIntervaloDias = LeerEntero("Días entre respaldos (0 = deshabilitado)", 0, 365, c.RespaldoIntervaloDias);
 
@@ -1406,6 +1406,28 @@ internal static class Program
                 return numero;
 
             Console.WriteLine($"  ⚠ Escriba un número mayor o igual a {minimo:F2}.");
+        }
+    }
+
+    /// <summary>
+    /// Lee un importe en pesos y lo devuelve en centavos. El mínimo también va en centavos.
+    /// </summary>
+    private static long LeerDinero(string etiqueta, long minimoCentavos, long porDefectoCentavos)
+    {
+        while (true)
+        {
+            Console.Write($"  {etiqueta} [{Dinero.Formatear(porDefectoCentavos)}]: ");
+            var valor = Console.ReadLine();
+            if (valor == null) throw new OperationCanceledException("Entrada terminada");
+            if (string.IsNullOrWhiteSpace(valor)) return porDefectoCentavos;
+
+            if (decimal.TryParse(valor, out var pesos))
+            {
+                var centavos = Dinero.DePesos(pesos);
+                if (centavos >= minimoCentavos) return centavos;
+            }
+
+            Console.WriteLine($"  ⚠ Escriba un importe mayor o igual a ${Dinero.Formatear(minimoCentavos)}.");
         }
     }
 

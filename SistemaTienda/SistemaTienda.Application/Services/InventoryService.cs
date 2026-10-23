@@ -78,7 +78,7 @@ public class InventoryService
             : ProcessResult.Error("Stock insuficiente para completar la venta");
     }
 
-    public ProcessResult RegistrarEntrada(int productoId, int cantidad, decimal costoUnitario,
+    public ProcessResult RegistrarEntrada(int productoId, int cantidad, long costoUnitario,
         string usuario, string motivo = "Compra")
     {
         if (cantidad <= 0)
@@ -110,9 +110,9 @@ public class InventoryService
         if (!_db.RegistrarSalida(productoId, cantidad, $"Merma: {motivo.Trim()}", usuario))
             return ProcessResult.Error("Stock insuficiente para registrar la merma");
 
-        var costoPerdido = producto.Costo * cantidad;
+        var costoPerdido = Dinero.Multiplicar(producto.Costo, cantidad);
         return ProcessResult.Success(
-            $"Merma registrada: {cantidad} unidades, costo perdido ${costoPerdido:F2}");
+            $"Merma registrada: {cantidad} unidades, costo perdido ${Dinero.Formatear(costoPerdido)}");
     }
 
     /// <summary>
@@ -136,5 +136,5 @@ public class InventoryService
     public List<MovimientoInventario> HistorialMovimientos(int productoId) =>
         _db.ObtenerHistorialMovimientos(productoId);
 
-    public decimal ObtenerValorizadoInventario() => _db.ObtenerValorizadoInventario();
+    public long ObtenerValorizadoInventario() => _db.ObtenerValorizadoInventario();
 }

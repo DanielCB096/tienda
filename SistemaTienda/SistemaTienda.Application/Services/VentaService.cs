@@ -16,9 +16,10 @@ public sealed class LineaVentaSolicitada
 /// </summary>
 public sealed class PagoSolicitado
 {
-    public decimal Efectivo { get; set; }
-    public decimal Tarjeta { get; set; }
-    public decimal Fiado { get; set; }
+    /// <summary>Importes en centavos.</summary>
+    public long Efectivo { get; set; }
+    public long Tarjeta { get; set; }
+    public long Fiado { get; set; }
     public int? ClienteId { get; set; }
 }
 
@@ -69,18 +70,18 @@ public class VentaService
                 Cantidad = solicitada.Cantidad,
                 PrecioUnitario = producto.Precio,
                 CostoUnitario = producto.Costo,
-                Importe = Math.Round(producto.Precio * solicitada.Cantidad, 2)
+                Importe = Dinero.Multiplicar(producto.Precio, solicitada.Cantidad)
             });
         }
 
-        var total = Math.Round(lineasVenta.Sum(l => l.Importe), 2);
+        var total = lineasVenta.Sum(l => l.Importe);
         if (total <= 0)
             return ProcessResult<Venta>.Error("El total de la venta debe ser mayor a cero");
 
-        var pagado = Math.Round(pago.Efectivo + pago.Tarjeta + pago.Fiado, 2);
+        var pagado = pago.Efectivo + pago.Tarjeta + pago.Fiado;
         if (pagado != total)
             return ProcessResult<Venta>.Error(
-                $"Los pagos (${pagado:F2}) no coinciden con el total de la venta (${total:F2})");
+                $"Los pagos (${Dinero.Formatear(pagado)}) no coinciden con el total de la venta (${Dinero.Formatear(total)})");
 
         if (pago.Fiado > 0)
         {
@@ -100,8 +101,8 @@ public class VentaService
             var nuevoSaldo = cliente.SaldoActual + pago.Fiado;
             if (config.LimiCreditoCliente > 0 && nuevoSaldo > config.LimiCreditoCliente)
                 return ProcessResult<Venta>.Error(
-                    $"La venta excede el límite de crédito (${config.LimiCreditoCliente:F2}). " +
-                    $"Saldo actual: ${cliente.SaldoActual:F2}, con la venta: ${nuevoSaldo:F2}");
+                    $"La venta excede el límite de crédito (${Dinero.Formatear(config.LimiCreditoCliente)}). " +
+                    $"Saldo actual: ${Dinero.Formatear(cliente.SaldoActual)}, con la venta: ${Dinero.Formatear(nuevoSaldo)}");
         }
         else if (pago.ClienteId != null)
         {
@@ -127,11 +128,11 @@ public class VentaService
             ClienteId = pago.ClienteId,
             MetodoPago = metodoPago,
             Total = total,
-            CostoTotal = Math.Round(lineasVenta.Sum(l => l.CostoUnitario * l.Cantidad), 2),
+            CostoTotal = lineasVenta.Sum(l => Dinero.Multiplicar(l.CostoUnitario, l.Cantidad)),
             PagoEfectivo = pago.Efectivo,
             PagoTarjeta = pago.Tarjeta,
             PagoFiado = pago.Fiado,
-            ComisionTarjeta = Math.Round(pago.Tarjeta * config.ComisionTarjeta / 100m, 2)
+            ComisionTarjeta = Dinero.Porcentaje(pago.Tarjeta, config.ComisionTarjeta)
         };
 
         var guardado = _db.RegistrarVenta(venta, lineasVenta);
