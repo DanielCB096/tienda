@@ -27,7 +27,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 
 | Tarea | Agente | Rama | Archivos reservados | Inicio | Estado |
 |-------|--------|------|---------------------|--------|--------|
-| — | — | — | — | — | Libre |
+| T8 | Corte de caja | Qoder | feat/corte-caja | `Database.cs`, `Program.cs`, `Migraciones.cs`, `Core/CorteCaja.cs`, `Application/CorteCajaService.cs`, `ConfiguracionService.cs`, pruebas de corte | 2026-10-23 | Tomada |
 
 ## Hecho
 
@@ -47,6 +47,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 | T5 | Reportes de utilidad | Bloqueada | T2 | — |
 | T6 | Importación Excel/CSV | Libre | T2 recomendado | Dependencia nueva requiere ADR. |
 | T7 | Interfaz definitiva | Bloqueada | ADR | Primero el ADR de UI. |
+| T8 | Corte de caja | Tomada | T2 | Esquema v3: cortes, movimientos de caja y abonos con historial. En `feat/corte-caja`. |
 
 ## Plantilla para reclamar
 

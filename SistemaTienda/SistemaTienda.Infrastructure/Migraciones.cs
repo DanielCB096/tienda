@@ -31,7 +31,8 @@ public static class Migraciones
     /// </summary>
     public static IReadOnlyList<Migracion> ObtenerTodas() => new[]
     {
-        new Migracion(2, "crea ventas y líneas de venta", AplicarVersion2)
+        new Migracion(2, "crea ventas y líneas de venta", AplicarVersion2),
+        new Migracion(3, "crea cortes de caja, movimientos de caja y abonos de fiado", AplicarVersion3)
     };
 
     private static void AplicarVersion2(SqliteConnection conn, SqliteTransaction tx)
@@ -71,6 +72,64 @@ public static class Migraciones
             CREATE INDEX IF NOT EXISTS IX_Ventas_Fecha ON Ventas(Fecha);
             CREATE INDEX IF NOT EXISTS IX_VentaLineas_VentaId ON VentaLineas(VentaId);
             CREATE INDEX IF NOT EXISTS IX_VentaLineas_ProductoId ON VentaLineas(ProductoId);
+        ";
+        cmd.ExecuteNonQuery();
+    }
+
+    private static void AplicarVersion3(SqliteConnection conn, SqliteTransaction tx)
+    {
+        using var cmd = conn.CreateCommand();
+        cmd.Transaction = tx;
+        cmd.CommandText = @"
+            CREATE TABLE IF NOT EXISTS CortesCaja (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                Desde DATETIME NOT NULL,
+                Hasta DATETIME NOT NULL,
+                FondoInicial DECIMAL NOT NULL DEFAULT 0,
+                VentasEfectivo DECIMAL NOT NULL DEFAULT 0,
+                VentasTarjeta DECIMAL NOT NULL DEFAULT 0,
+                VentasFiado DECIMAL NOT NULL DEFAULT 0,
+                TotalVentas DECIMAL NOT NULL DEFAULT 0,
+                NumeroVentas INTEGER NOT NULL DEFAULT 0,
+                NumeroVentasEfectivo INTEGER NOT NULL DEFAULT 0,
+                NumeroVentasTarjeta INTEGER NOT NULL DEFAULT 0,
+                NumeroVentasMixto INTEGER NOT NULL DEFAULT 0,
+                NumeroVentasFiado INTEGER NOT NULL DEFAULT 0,
+                AbonosEfectivo DECIMAL NOT NULL DEFAULT 0,
+                IngresosCaja DECIMAL NOT NULL DEFAULT 0,
+                RetirosCaja DECIMAL NOT NULL DEFAULT 0,
+                GastosCaja DECIMAL NOT NULL DEFAULT 0,
+                EfectivoEsperado DECIMAL NOT NULL DEFAULT 0,
+                EfectivoContado DECIMAL NOT NULL DEFAULT 0,
+                Diferencia DECIMAL NOT NULL DEFAULT 0,
+                Usuario TEXT NOT NULL DEFAULT '',
+                Observaciones TEXT NOT NULL DEFAULT '',
+                FechaRegistro DATETIME NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS MovimientosCaja (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                Fecha DATETIME NOT NULL,
+                Tipo TEXT NOT NULL,
+                Monto DECIMAL NOT NULL,
+                Motivo TEXT NOT NULL DEFAULT '',
+                Usuario TEXT NOT NULL DEFAULT ''
+            );
+
+            CREATE TABLE IF NOT EXISTS AbonosFiado (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ClienteId INTEGER NOT NULL,
+                Fecha DATETIME NOT NULL,
+                Monto DECIMAL NOT NULL,
+                MetodoPago TEXT NOT NULL DEFAULT 'Efectivo',
+                Usuario TEXT NOT NULL DEFAULT '',
+                FOREIGN KEY (ClienteId) REFERENCES ClientesFiado(Id)
+            );
+
+            CREATE INDEX IF NOT EXISTS IX_CortesCaja_Hasta ON CortesCaja(Hasta);
+            CREATE INDEX IF NOT EXISTS IX_MovimientosCaja_Fecha ON MovimientosCaja(Fecha);
+            CREATE INDEX IF NOT EXISTS IX_AbonosFiado_Fecha ON AbonosFiado(Fecha);
+            CREATE INDEX IF NOT EXISTS IX_AbonosFiado_ClienteId ON AbonosFiado(ClienteId);
         ";
         cmd.ExecuteNonQuery();
     }
