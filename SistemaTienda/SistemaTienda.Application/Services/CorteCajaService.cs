@@ -7,8 +7,16 @@ namespace SistemaTienda.Application.Services;
 public class CorteCajaService
 {
     private readonly DatabaseTools _db;
+    private readonly BitacoraService _bitacora;
 
-    public CorteCajaService(DatabaseTools db) => _db = db;
+    public CorteCajaService(DatabaseTools db)
+    {
+        _db = db;
+        _bitacora = new BitacoraService(db);
+    }
+
+    private static ProcessResult Autorizar(PermisoSistema permiso) =>
+        AutorizacionService.Exigir(SesionActual.Usuario, permiso);
 
     public ProcessResult<CorteCaja> ObtenerResumenPendiente() =>
         ProcessResult<CorteCaja>.OK(_db.ObtenerResumenCajaPendiente());
@@ -26,6 +34,10 @@ public class CorteCajaService
     public ProcessResult<CorteCaja> RegistrarCorte(decimal efectivoContado, decimal fondoInicial,
         string usuario, string observaciones = "")
     {
+        var autorizacion = Autorizar(PermisoSistema.CorteCaja);
+        if (autorizacion.IsError)
+            return ProcessResult<CorteCaja>.Error(autorizacion.Message);
+
         if (efectivoContado < 0)
             return ProcessResult<CorteCaja>.Error("El efectivo contado no puede ser negativo");
 
@@ -35,7 +47,16 @@ public class CorteCajaService
         if (string.IsNullOrWhiteSpace(usuario))
             return ProcessResult<CorteCaja>.Error("El corte requiere el usuario responsable");
 
-        return _db.RegistrarCorteCaja(efectivoContado, fondoInicial, usuario.Trim(), observaciones);
+        var resultado = _db.RegistrarCorteCaja(efectivoContado, fondoInicial, usuario.Trim(), observaciones);
+        if (resultado.IsSuccess)
+        {
+            _bitacora.Registrar(AccionBitacora.CorteCaja, "CorteCaja", resultado.Value.Id.ToString(),
+                string.Empty,
+                $"Esperado={resultado.Value.EfectivoEsperado:F2};Contado={resultado.Value.EfectivoContado:F2};Diferencia={resultado.Value.Diferencia:F2}",
+                observaciones);
+        }
+
+        return resultado;
     }
 
     public ProcessResult<MovimientoCaja> RegistrarMovimiento(string tipo, decimal monto,
@@ -43,6 +64,12 @@ public class CorteCajaService
     {
         if (tipo != TipoMovimientoCaja.Ingreso && tipo != TipoMovimientoCaja.Retiro)
             return ProcessResult<MovimientoCaja>.Error("El tipo de movimiento debe ser Ingreso o Retiro");
+
+        var autorizacion = Autorizar(tipo == TipoMovimientoCaja.Retiro
+            ? PermisoSistema.RetiroCaja
+            : PermisoSistema.IngresoCaja);
+        if (autorizacion.IsError)
+            return ProcessResult<MovimientoCaja>.Error(autorizacion.Message);
 
         if (monto <= 0)
             return ProcessResult<MovimientoCaja>.Error("El monto debe ser mayor a cero");
@@ -63,6 +90,8 @@ public class CorteCajaService
         };
 
         _db.RegistrarMovimientoCaja(movimiento);
+        _bitacora.Registrar(AccionBitacora.MovimientoCaja, "MovimientoCaja", movimiento.Id.ToString(),
+            string.Empty, $"Tipo={movimiento.Tipo};Monto={movimiento.Monto:F2}", movimiento.Motivo);
         return ProcessResult<MovimientoCaja>.OK(movimiento,
             $"{tipo} de ${movimiento.Monto:F2} registrado");
     }

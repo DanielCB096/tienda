@@ -28,6 +28,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 | Tarea | Agente | Rama | Archivos reservados | Inicio | Estado |
 |-------|--------|------|---------------------|--------|--------|
 | T8 | Corte de caja | Qoder | feat/corte-caja | `Database.cs`, `Program.cs`, `Migraciones.cs`, `Core/CorteCaja.cs`, `Application/CorteCajaService.cs`, `ConfiguracionService.cs`, pruebas de corte | 2026-10-23 | Tomada |
+| T4 | Bitácora y permisos en servicios | DeepSeek | feat/bitacora-permisos | `Core/Bitacora.cs`, `Application/BitacoraService.cs`, `Application/AutorizacionService.cs`, `Database.cs`, `Migraciones.cs`, `ConfiguracionService.cs`, `InventoryService.cs`, `CorteCajaService.cs`, `VentaService.cs`, `Program.cs`, pruebas nuevas | 2026-10-23 | Tomada |
 
 ## Hecho
 

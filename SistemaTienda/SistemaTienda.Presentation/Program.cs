@@ -114,6 +114,7 @@ internal static class Program
             if (resultado.IsSuccess)
             {
                 _usuarioActual = resultado.Value;
+                SesionActual.Iniciar(_usuarioActual);
                 _configTienda = _config.ObtenerConfiguracion().Value;
                 return true;
             }

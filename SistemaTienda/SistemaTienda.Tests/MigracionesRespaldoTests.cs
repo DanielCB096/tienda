@@ -7,8 +7,10 @@ namespace SistemaTienda.Tests;
 
 public sealed class MigracionesRespaldoTests
 {
-    private static Migracion MigracionCreaTabla(int version = 4) =>
-        new(version, "crea TablaPrueba", (conn, tx) =>
+    private static int VersionActual => Migraciones.VersionMaxima(Migraciones.ObtenerTodas());
+
+    private static Migracion MigracionCreaTabla(int version = 0) =>
+        new(version == 0 ? VersionActual + 1 : version, "crea TablaPrueba", (conn, tx) =>
         {
             using var cmd = conn.CreateCommand();
             cmd.Transaction = tx;
@@ -25,14 +27,14 @@ public sealed class MigracionesRespaldoTests
         var resultado = migrador.Migrar();
 
         Assert.True(resultado.IsSuccess, resultado.Message);
-        Assert.Equal(3, resultado.Value.VersionInicial);
-        Assert.Equal(4, resultado.Value.VersionFinal);
-        Assert.Equal(new[] { 4 }, resultado.Value.VersionesAplicadas);
+        Assert.Equal(VersionActual, resultado.Value.VersionInicial);
+        Assert.Equal(VersionActual + 1, resultado.Value.VersionFinal);
+        Assert.Equal(new[] { VersionActual + 1 }, resultado.Value.VersionesAplicadas);
         Assert.True(resultado.Value.HuboCambios);
 
         Assert.True(File.Exists(resultado.Value.RutaRespaldo));
         Assert.True(RespaldoLocal.Verificar(resultado.Value.RutaRespaldo));
-        Assert.Equal(4, entorno.Db.ExecuteScalar<int>("PRAGMA user_version"));
+        Assert.Equal(VersionActual + 1, entorno.Db.ExecuteScalar<int>("PRAGMA user_version"));
         Assert.Equal(1, entorno.Db.ExecuteScalar<int>(
             "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'TablaPrueba'"));
     }
@@ -52,7 +54,7 @@ public sealed class MigracionesRespaldoTests
         Assert.False(segunda.Value.HuboCambios);
         Assert.Empty(segunda.Value.VersionesAplicadas);
         Assert.Equal(respaldosTrasPrimera, RespaldoLocal.Listar(entorno.DirectorioRespaldos).Count);
-        Assert.Equal(4, entorno.Db.ExecuteScalar<int>("PRAGMA user_version"));
+        Assert.Equal(VersionActual + 1, entorno.Db.ExecuteScalar<int>("PRAGMA user_version"));
     }
 
     [Fact]
@@ -60,7 +62,7 @@ public sealed class MigracionesRespaldoTests
     {
         using var entorno = new EntornoMigracion();
 
-        var migracionQueFalla = new Migracion(4, "falla a propósito", (conn, tx) =>
+        var migracionQueFalla = new Migracion(VersionActual + 1, "falla a propósito", (conn, tx) =>
         {
             using var cmd = conn.CreateCommand();
             cmd.Transaction = tx;
@@ -74,7 +76,7 @@ public sealed class MigracionesRespaldoTests
         var resultado = migrador.Migrar();
 
         Assert.True(resultado.IsError);
-        Assert.Equal(3, entorno.Db.ExecuteScalar<int>("PRAGMA user_version"));
+        Assert.Equal(VersionActual, entorno.Db.ExecuteScalar<int>("PRAGMA user_version"));
         Assert.Equal(0, entorno.Db.ExecuteScalar<int>(
             "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'TablaParcial'"));
         Assert.Equal(1, entorno.Db.ExecuteScalar<int>("SELECT COUNT(*) FROM ConfiguracionTienda"));
@@ -107,7 +109,7 @@ public sealed class MigracionesRespaldoTests
             new MigradorEsquema(ruta, new[] { MigracionCreaTabla(version: 1) }));
 
         Assert.Throws<ArgumentException>(() =>
-            new MigradorEsquema(ruta, new[] { MigracionCreaTabla(4), MigracionCreaTabla(4) }));
+            new MigradorEsquema(ruta, new[] { MigracionCreaTabla(VersionActual + 1), MigracionCreaTabla(VersionActual + 1) }));
     }
 
     [Fact]

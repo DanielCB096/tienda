@@ -188,7 +188,7 @@ public sealed class CorteCajaTests
         bd.Db.ExecuteCommand("UPDATE CortesCaja SET Hasta = datetime('now', '-1 day') WHERE Id = @id",
             new SqliteParameter("@id", primero.Value.Id));
 
-        Assert.True(Vender(bd, new PagoSolicitado { Efectivo = 30m }, (producto, 1)).IsSuccess);
+        Assert.True(Vender(bd, new PagoSolicitado { Efectivo = 30m }, (producto, 3)).IsSuccess);
 
         var segundo = servicio.RegistrarCorte(240m, 210m, "Cajero");
 
