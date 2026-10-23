@@ -26,8 +26,8 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 ### Ventas sin ticket QR ni compartir
 
 - **Dónde**: `Program.ImprimirTicket`.
-- **Impacto**: el ticket actual es texto en consola. No se genera PDF/imagen, no lleva QR y no se puede compartir por WhatsApp o correo.
-- **Cierre**: generación de ticket con QR al construir la interfaz definitiva (requiere decisión de UI).
+- **Impacto**: el ticket actual es texto en consola y la app MAUI no muestra ticket. No se genera PDF/imagen, no lleva QR y no se puede compartir por WhatsApp o correo.
+- **Cierre**: generación de ticket con QR en la app MAUI.
 
 ### Corte de caja sin conteo por denominaciones
 
@@ -56,11 +56,31 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 - **Impacto**: la restauración reemplaza toda la base y no deja registro de quién la ejecutó ni de qué archivo se usó. El respaldo `antes-restaurar` evita la pérdida de datos, pero la acción no queda auditada.
 - **Cierre**: registrar `AccionBitacora.Respaldo` con motivo `Restauracion` y la ruta usada inmediatamente después de restaurar.
 
-### Interfaz de consola provisional
+### La app MAUI todavía no permite operar la tienda
 
-- **Dónde**: `SistemaTienda.Presentation`.
-- **Impacto**: no usable por el cajero objetivo. La lógica está separada, lo que permite reemplazarla sin tocar servicios.
-- **Cierre**: ADR de UI y pantallas reales (MAUI/WPF/PWA).
+- **Dónde**: `SistemaTienda.Maui/Pages`.
+- **Por qué**: esta entrega entrega la base de navegación, sesión y tablero; las operaciones de escritura se harán en tareas posteriores.
+- **Impacto**: desde la app solo se consultan ventas y caja, se crea respaldo y se cierra sesión. Vender, anular, cerrar corte, inventario, clientes y proveedores siguen en la consola, que no es usable por el cajero.
+- **Cierre**: pantallas de punto de venta, caja e inventario en MAUI, módulo por módulo y con sus pruebas.
+
+### App MAUI sin pruebas automatizadas
+
+- **Dónde**: `SistemaTienda.Maui`.
+- **Impacto**: CI solo compila para Windows y Android. Una regresión de navegación, sesión o formato no se detecta hasta la verificación manual.
+- **Cierre**: extraer la lógica de cada página a modelos de vista probables y agregar pruebas; valorar pruebas de interfaz más adelante.
+
+### Android sin validación en dispositivo
+
+- **Dónde**: job `app-maui` de GitHub Actions.
+- **Impacto**: la app compila para Android, pero no se ha instalado ni probado en la tablet objetivo. Puede haber diferencias de diseño, rendimiento o rutas de almacenamiento.
+- **Cierre**: instalar el APK en la tablet real y ejecutar el checklist de primera configuración, login, tablero, respaldo y cierre de sesión.
+
+### App MAUI en .NET 10 con bibliotecas en .NET 8
+
+- **Dónde**: `SistemaTienda.Maui.csproj` frente a `Core`, `Infrastructure` y `Application`.
+- **Por qué**: las cargas de trabajo MAUI disponibles en este equipo son para el SDK 10; las bibliotecas se mantienen en `net8.0` para no tocar el resto del stack.
+- **Impacto**: compilar la app exige SDK 10 y sus cargas de trabajo. Una máquina con solo SDK 8 puede compilar la solución y las pruebas, pero no la app.
+- **Cierre**: unificar todos los proyectos en el mismo framework cuando se decida actualizar el stack completo.
 
 ### Mermas sin entidad propia
 

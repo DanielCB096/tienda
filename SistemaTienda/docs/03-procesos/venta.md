@@ -2,7 +2,7 @@
 
 ## Estado de implementación (2026-10-23)
 
-Base implementada en `feat/ventas-pos` (esquema v2; la anulación se agregó en v6). La interfaz es la consola provisional.
+Base implementada en `feat/ventas-pos` (esquema v2; la anulación se agregó en v6). La venta y la anulación se operan en la consola provisional; la app MAUI solo muestra las ventas del día.
 
 | Función | Estado |
 |---------|--------|

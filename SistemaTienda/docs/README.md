@@ -17,9 +17,10 @@ La base técnica está **compilando y con pruebas automatizadas**. El núcleo im
 - Migraciones de esquema versionadas (`PRAGMA user_version`) y respaldo/restauración local verificado.
 - Respaldo automático por intervalo configurado al iniciar y cerrar la aplicación, con aviso y bitácora.
 - Dinero en centavos enteros (`long`/`INTEGER`, esquema v4) con conversión y formato centralizados en `Dinero`.
-- Interfaz de consola provisional.
+- App MAUI para Windows y Android con asistente de primera configuración, login por PIN, tablero (Inicio, Ventas, Caja y Ajustes), respaldo manual y automático, y cierre de sesión. Ventas y Caja son de solo lectura.
+- Interfaz de consola provisional para las operaciones que todavía no están en la app (vender, anular, cerrar corte, inventario, clientes y proveedores).
 
-Pendiente para el MVP: copia de respaldos a USB/nube, conteo de caja por denominaciones y la interfaz definitiva (ADR pendiente). Ver [roadmap.md](roadmap.md) y [deuda-tecnica.md](deuda-tecnica.md).
+Pendiente para el MVP: punto de venta y cierre de corte en MAUI, ticket con QR/compartir, copia de respaldos a USB/nube, conteo de caja por denominaciones y validación de Android en dispositivo. Ver [roadmap.md](roadmap.md) y [deuda-tecnica.md](deuda-tecnica.md).
 
 ## Índice
 
@@ -31,6 +32,7 @@ Pendiente para el MVP: copia de respaldos a USB/nube, conteo de caja por denomin
 | [02-modulos/resumen.md](02-modulos/resumen.md) | Mapa de módulos y prioridad |
 | [02-modulos/modulo-configuracion.md](02-modulos/modulo-configuracion.md) | Configuración y usuarios |
 | [02-modulos/modulo-inventario.md](02-modulos/modulo-inventario.md) | Catálogo e inventario |
+| [02-modulos/interfaz-maui.md](02-modulos/interfaz-maui.md) | App MAUI: navegación, pantallas y límites |
 | [03-procesos/cliente-fiado.md](03-procesos/cliente-fiado.md) | Fiado y abonos |
 | [03-procesos/proveedores.md](03-procesos/proveedores.md) | Proveedores y cuentas por pagar |
 | [03-procesos/venta.md](03-procesos/venta.md) | Venta / POS (base implementada en consola) |
@@ -47,10 +49,14 @@ Pendiente para el MVP: copia de respaldos a USB/nube, conteo de caja por denomin
 
 ## Inicio rápido
 
-Requisitos: SDK de .NET 8 o superior (`dotnet --version`).
+Requisitos:
+
+- SDK de .NET 8 o superior para la solución, las pruebas y la consola.
+- SDK de .NET 10 con las cargas de trabajo `maui-windows` y `maui-android` para la app MAUI (`dotnet workload install maui-windows maui-android`).
+- Android SDK y JDK 17 solo si vas a compilar para Android en local.
 
 ```bash
-# Compilar la solución
+# Compilar la solución (Core, Infrastructure, Application, consola y pruebas)
 dotnet build SistemaTienda/SistemaTienda.sln
 
 # Ejecutar pruebas
@@ -58,15 +64,26 @@ dotnet test SistemaTienda/SistemaTienda.sln
 
 # Ejecutar la aplicación de consola
 dotnet run --project SistemaTienda/SistemaTienda.Presentation/Presentation.csproj
+
+# Compilar y ejecutar la app MAUI en Windows
+dotnet build SistemaTienda/SistemaTienda.Maui/SistemaTienda.Maui.csproj -f net10.0-windows10.0.19041.0
+dotnet run --project SistemaTienda/SistemaTienda.Maui/SistemaTienda.Maui.csproj -f net10.0-windows10.0.19041.0
 ```
 
-La base de datos se crea en `%LOCALAPPDATA%\SistemaTienda\tienda.db`. Para usar otra ruta:
+La consola crea la base en `%LOCALAPPDATA%\SistemaTienda\tienda.db`. Para usar otra ruta:
 
 ```bash
 SISTEMATIENDA_DB=/ruta/a/tienda.db dotnet run --project SistemaTienda/SistemaTienda.Presentation/Presentation.csproj
 ```
 
-El primer arranque ejecuta el asistente de configuración y solicita el PIN del dueño.
+La app MAUI usa el almacenamiento privado de la aplicación y muestra las rutas en Ajustes. En Windows, con el identificador actual:
+
+```
+%LOCALAPPDATA%\SistemaTienda\com.sistematienda.tienda\Data\tienda.db
+%LOCALAPPDATA%\SistemaTienda\com.sistematienda.tienda\Data\respaldos\
+```
+
+El primer arranque de cualquiera de las dos interfaces ejecuta el asistente de configuración y solicita el PIN del dueño, siempre que la base no tenga usuarios.
 
 ## Reglas que rigen el proyecto
 

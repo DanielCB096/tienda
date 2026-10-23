@@ -32,6 +32,20 @@ Próximamente después de completar los módulos críticos.
 - Configuración básica de tienda (nombre, giro, impuestos, métodos de pago).
 - Documentación inicial (glosario, stack, módulos, ADR).
 
+### v0.0.11 - 2026-10-23: App MAUI con login y tablero
+
+- *Agregado*: proyecto `SistemaTienda.Maui` para Windows y Android (`net10.0-windows10.0.19041.0` y `net10.0-android`) con inyección de dependencias, ruta de base en `FileSystem.AppDataDirectory` y arranque que elige entre asistente y login.
+- *Agregado*: asistente de primera configuración con los mismos datos y validaciones que la consola; al terminar abre el login.
+- *Agregado*: login por PIN con 3 intentos, bloqueo hasta reabrir la app y reaplicación de la sesión en cada evento de interfaz mediante `SesionApp`.
+- *Agregado*: tablero con pestañas Inicio (ventas del día, efectivo esperado, stock bajo y último respaldo), Ventas (lista del día con anuladas marcadas), Caja (corte pendiente y último corte) y Ajustes (datos, rutas, respaldo manual y cierre de sesión).
+- *Agregado*: respaldo automático al iniciar y cerrar sesión desde la app, con aviso cuando falla; Ajustes permite crear un respaldo y muestra la ruta.
+- *Agregado*: página de error de arranque con el mensaje y las rutas de base y respaldos, y botón para cerrar la aplicación.
+- *Modificado*: `SQLitePCLRaw.bundle_e_sqlite3` 2.1.14 en Infrastructure para corregir la vulnerabilidad alta GHSA-2m69-gcr7-jv3q que traía 2.1.6.
+- *Modificado*: el manifiesto de Android ya no pide permisos de red y desactiva el respaldo del sistema operativo; en Windows se corrigió el nombre visible del publicador para que la carpeta de datos sea `SistemaTienda`.
+- *Agregado*: job `app-maui` en GitHub Actions que compila la app para Windows y Android en cada push.
+- *Limitación*: las pestañas Ventas y Caja son informativas; todavía no hay punto de venta, cierre de corte, inventario ni ticket en la app. Android solo se ha compilado en CI, no probado en dispositivo.
+- Total del proyecto: 170 pruebas (sin cambios; la interfaz se verificó manualmente).
+
 ### v0.0.10 - 2026-10-23: Anulación de ventas
 
 - *Agregado*: esquema v6 con `AnulacionesVenta` (una por venta, `UNIQUE`), índice por fecha y disparadores que impiden `UPDATE` y `DELETE`; la venta original y sus líneas no se modifican.

@@ -74,12 +74,12 @@ Cada agente: su carpeta, su rama y su PR.
 
 ## Estado del proyecto (2026-10-23)
 
-- Rama publicada con el trabajo actual: `feat/anulacion-ventas` (sobre `feat/respaldo-automatico`, que parte de `feat/reportes-utilidad`).
-- `main`: solo el commit base; los PR de `feat/base-compilable`, `feat/migraciones-respaldo`, `feat/ventas-pos`, `feat/corte-caja`, `feat/centavos-enteros`, `feat/integracion-t4-t9`, `feat/reportes-utilidad`, `feat/respaldo-automatico` y `feat/anulacion-ventas` siguen pendientes de integración, en ese orden.
-- Build: 0 errores, 0 advertencias. Pruebas: **170 en verde** (verificadas por GitHub Actions; local bloqueado por Smart App Control).
-- Implementado: configuración inicial, usuarios/PIN/roles, gastos, inventario por movimientos, ventas/POS (efectivo, tarjeta, mixto y fiado; costo y precio congelados; comisión; anulación completa con reverso), fiado (cliente/abono con historial), proveedores (saldo/pago), corte de caja (efectivo esperado, diferencia justificada, ingresos/retiros e historial), bitácora inmutable y permisos validados en servicios, migraciones versionadas con respaldo, respaldo/restauración local y respaldo automático por intervalo al iniciar/cerrar, dinero en centavos enteros (`long`/`INTEGER`, esquema v4), reporte de utilidad por periodo (ventas − costo congelado − comisión − mermas − gastos), consola provisional.
-- No implementado: ticket con QR/compartir, copia de respaldos a USB/nube, UI definitiva y conteo por denominaciones.
-- Deuda principal: pagos a proveedores sin historial inmutable, merma sin entidad propia, bitácora no atómica con la operación y corte sin desglose de billetes.
+- Rama publicada con el trabajo actual: `feat/ui-maui` (sobre `feat/anulacion-ventas`, que parte de `feat/respaldo-automatico`).
+- `main`: solo el commit base; los PR de `feat/base-compilable`, `feat/migraciones-respaldo`, `feat/ventas-pos`, `feat/corte-caja`, `feat/centavos-enteros`, `feat/integracion-t4-t9`, `feat/reportes-utilidad`, `feat/respaldo-automatico`, `feat/anulacion-ventas` y `feat/ui-maui` siguen pendientes de integración, en ese orden.
+- Build: 0 errores, 0 advertencias. Pruebas: **170 en verde** (verificadas por GitHub Actions; local bloqueado por Smart App Control). La app MAUI compila para Windows en local y para Windows y Android en CI.
+- Implementado: configuración inicial, usuarios/PIN/roles, gastos, inventario por movimientos, ventas/POS (efectivo, tarjeta, mixto y fiado; costo y precio congelados; comisión; anulación completa con reverso), fiado (cliente/abono con historial), proveedores (saldo/pago), corte de caja (efectivo esperado, diferencia justificada, ingresos/retiros e historial), bitácora inmutable y permisos validados en servicios, migraciones versionadas con respaldo, respaldo/restauración local y respaldo automático por intervalo al iniciar/cerrar, dinero en centavos enteros (`long`/`INTEGER`, esquema v4), reporte de utilidad por periodo (ventas − costo congelado − comisión − mermas − gastos), app MAUI para Windows y Android (asistente, login, tablero, respaldo y cierre de sesión) y consola provisional.
+- No implementado: operaciones de escritura en la app MAUI (vender, cerrar corte, inventario, clientes/proveedores), ticket con QR/compartir, copia de respaldos a USB/nube y conteo por denominaciones.
+- Deuda principal: pagos a proveedores sin historial inmutable, merma sin entidad propia, bitácora no atómica con la operación, corte sin desglose de billetes y validación de Android en dispositivo.
 
 ## Tareas disponibles
 
@@ -164,9 +164,20 @@ El detalle vive en el tablero. Resumen y criterios de terminado:
 - Validar y sanear antes de grabar; códigos duplicados reportados por fila.
 - Cualquier dependencia nueva requiere justificación y ADR.
 
-### T7 — Interfaz definitiva
+### T12 — App MAUI con login y tablero (HECHO)
 
-- **Primero el ADR** (MAUI/WPF/PWA); sin ADR no se escribe UI. La consola es provisional y reemplazable.
+- Completado en `feat/ui-maui` sobre `feat/anulacion-ventas`.
+- Proyecto `SistemaTienda.Maui` para `net10.0-windows10.0.19041.0` y `net10.0-android`, fuera de la solución para no frenar el job de pruebas.
+- Asistente de primera configuración, login con 3 intentos, tablero con Inicio/Ventas/Caja/Ajustes, respaldo automático al iniciar y cerrar sesión, respaldo manual y cierre de sesión.
+- `SesionApp` reaplica `SesionActual` en cada evento porque `AsyncLocal` no persiste entre eventos de interfaz.
+- Job `app-maui` en CI compila Windows y Android.
+- Verificado manualmente en Windows; Android pendiente de probar en dispositivo.
+- Detalle en [SistemaTienda/docs/02-modulos/interfaz-maui.md](SistemaTienda/docs/02-modulos/interfaz-maui.md).
+
+### T7 — Pantallas de operación en MAUI
+
+- El ADR de UI ya está decidido (MAUI). Falta llevar a la app el punto de venta, el cierre de corte y el inventario; hoy esas operaciones siguen en la consola provisional.
+- Trabaja una pantalla a la vez, con sus pruebas y documentación, y espera confirmación antes de la siguiente.
 
 ## No rehacer
 
@@ -175,6 +186,8 @@ El detalle vive en el tablero. Resumen y criterios de terminado:
 - No cambies el formato de hash (`pbkdf2-sha256$iteraciones$salt$hash`) ni bajes las iteraciones.
 - No muevas las pruebas a una base compartida: cada prueba usa su archivo temporal (`BaseDatosPrueba`).
 - No edites el tablero fuera de tu sección ni borres filas del registro.
+- No agregues `SistemaTienda.Maui` a `SistemaTienda.sln`: el job de pruebas no debe cargar las cargas de trabajo MAUI. La app se compila en su propio job de CI.
+- No pongas lógica de negocio en las páginas MAUI: usa los servicios de `Application` y reaplica la sesión con `SesionApp.Aplicar()` antes de llamarlos desde eventos.
 
 ## Comandos
 
@@ -190,9 +203,16 @@ dotnet run --project SistemaTienda/SistemaTienda.Presentation/Presentation.cspro
 
 # Usar otra base de datos
 SISTEMATIENDA_DB=/ruta/a/tienda.db dotnet run --project SistemaTienda/SistemaTienda.Presentation/Presentation.csproj
+
+# Compilar y ejecutar la app MAUI en Windows
+dotnet build SistemaTienda/SistemaTienda.Maui/SistemaTienda.Maui.csproj -f net10.0-windows10.0.19041.0
+dotnet run --project SistemaTienda/SistemaTienda.Maui/SistemaTienda.Maui.csproj -f net10.0-windows10.0.19041.0
+
+# Compilar para Android (requiere Android SDK y JDK 17)
+dotnet build SistemaTienda/SistemaTienda.Maui/SistemaTienda.Maui.csproj -f net10.0-android
 ```
 
-Entorno conocido: el equipo tiene runtime **.NET 10** y SDK 10; los proyectos `net8.0` usan `RollForward=Major` para ejecutarse. Si creas un nuevo ejecutable o proyecto de pruebas, agrega la misma propiedad o fallará al arrancar.
+Entorno conocido: el equipo tiene runtime **.NET 10** y SDK 10; los proyectos `net8.0` usan `RollForward=Major` para ejecutarse. Si creas un nuevo ejecutable o proyecto de pruebas, agrega la misma propiedad o fallará al arrancar. La app MAUI usa los frameworks `net10.0-android` y `net10.0-windows10.0.19041.0` y requiere las cargas de trabajo `maui-windows` y `maui-android` instaladas.
 
 **Bloqueo local (2026-10-23)**: Windows Smart App Control está activo y rechaza cualquier ensamblado compilado localmente al cargarlo (`0x800711C7`, política WDAC `0283ac0f-…`). Por eso `dotnet test` y la consola no pueden ejecutarse en este equipo, aunque `dotnet build` sí funciona. La verificación es el flujo de GitHub Actions (`.github/workflows/ci.yml`, job "Compilar y probar"). Si tienes permisos de administrador y aceptas el cambio irreversible, desactivar Smart App Control (Seguridad de Windows → Control de aplicaciones y navegador) vuelve a habilitar la ejecución local.
 

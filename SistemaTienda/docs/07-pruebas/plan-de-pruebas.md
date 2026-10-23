@@ -128,6 +128,33 @@ Total actual: 170 casos, todos en verde. Los puntos 1, 2, 3, 5, 6, 7 y 8 del lis
 
 La verificación se ejecuta en GitHub Actions (`windows-latest`) en cada push; ver el aviso de Smart App Control en `CLAUDE-tienda.md` sobre por qué no siempre corre localmente.
 
+## Verificación manual de la app MAUI (2026-10-23)
+
+La interfaz no está cubierta por pruebas automatizadas. Esta tabla registra la verificación hecha en Windows con una base temporal de prueba; los datos se borraron al terminar.
+
+| Caso | Resultado |
+|------|-----------|
+| Primer arranque sin base: crea el esquema v6 y muestra el asistente | Pasó |
+| Asistente con PIN distinto en la confirmación | Pasó (muestra “Los PIN no coinciden”) |
+| Asistente completo y transición al login | Pasó |
+| Login con PIN incorrecto y contador de intentos | Pasó |
+| Bloqueo tras 3 intentos hasta reabrir la app | Pasó |
+| Login correcto y apertura del tablero | Pasó |
+| Inicio: ventas del día, efectivo esperado, stock bajo y último respaldo | Pasó |
+| Ventas: lista del día y estado de anulación | Pasó (estado vacío y venta anulada) |
+| Caja: periodo abierto, desglose por método y último corte cerrado | Pasó |
+| Ajustes: datos, reglas, rutas reales y conteo de respaldos | Pasó |
+| Crear respaldo manual desde Ajustes | Pasó (copia verificada y ruta mostrada) |
+| Respaldo automático al iniciar sesión | Pasó (se creó una copia) |
+| Cerrar sesión y volver al login | Pasó |
+| Arranque sin conexión y sin permisos de red | Pasó |
+
+Pendiente:
+
+- Instalar y ejecutar la app Android en la tablet objetivo (hoy solo compila en CI).
+- Repetir el flujo con una base restaurada desde respaldo.
+- Medir arranque, cambio de pestaña y respuesta del tablero con 500 ventas y 500 productos ficticios.
+
 ## Herramientas de Prueba
 
 - **Datos de prueba ficticios**: Un script o conjunto de datos iniciales que incluir:
