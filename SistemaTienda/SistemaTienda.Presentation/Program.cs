@@ -676,8 +676,9 @@ internal static class Program
 
         LimpiarPantalla();
         Console.WriteLine("=== ANULAR VENTA ===");
-        Console.WriteLine("  Solo se anula la venta completa. El reembolso en efectivo se entrega");
-        Console.WriteLine("  manualmente y debe reflejarse en el siguiente corte de caja.\n");
+        Console.WriteLine("  Solo se anula la venta completa. La venta se excluye del corte pendiente.");
+        Console.WriteLine("  Entrega el reembolso manualmente; si lo pagas después del corte,");
+        Console.WriteLine("  regístralo como retiro en el corte siguiente.\n");
 
         var ventaId = LeerEntero("Número de venta (0 = cancelar)", 0, int.MaxValue, 0);
         if (ventaId == 0)
