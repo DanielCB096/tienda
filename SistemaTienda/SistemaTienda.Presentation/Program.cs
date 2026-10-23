@@ -10,6 +10,7 @@ internal static class Program
     private static DatabaseTools _db;
     private static ConfiguracionService _config;
     private static InventoryService _inventario;
+    private static RespaldoService _respaldos;
     private static UsuarioSistema _usuarioActual;
     private static ConfiguracionTienda _configTienda;
 
@@ -33,6 +34,7 @@ internal static class Program
 
             _config = new ConfiguracionService(_db);
             _inventario = new InventoryService(_db);
+            _respaldos = new RespaldoService(_db);
 
             if (_db.ContarUsuarios() == 0 && !EjecutarAsistenteInicial())
                 return 1;
@@ -742,11 +744,17 @@ internal static class Program
     {
         while (true)
         {
+            var ultimo = _respaldos.ObtenerUltimoRespaldo();
             LimpiarPantalla();
             Console.WriteLine("=== CONFIGURACIÓN ===");
+            Console.WriteLine($"  Último respaldo: {(ultimo.IsSuccess && ultimo.Value.HasValue ? ultimo.Value.Value.ToString("yyyy-MM-dd HH:mm") : "ninguno")}");
+            Console.WriteLine();
             Console.WriteLine("  [1] Ver configuración");
             Console.WriteLine("  [2] Editar configuración (dueño)");
             Console.WriteLine("  [3] Usuarios (dueño)");
+            Console.WriteLine("  [4] Crear respaldo ahora");
+            Console.WriteLine("  [5] Ver respaldos");
+            Console.WriteLine("  [6] Restaurar respaldo (dueño)");
             Console.WriteLine("  [0] Regresar");
             Console.Write("\n  Opción: ");
 
@@ -755,11 +763,99 @@ internal static class Program
                 case "1": VerConfiguracion(); break;
                 case "2": EditarConfiguracion(); break;
                 case "3": MenuUsuarios(); break;
+                case "4": CrearRespaldoManual(); break;
+                case "5": VerRespaldos(); break;
+                case "6": RestaurarRespaldo(); break;
                 case "0": return;
                 case null: return;
                 default: Aviso("Opción no válida."); break;
             }
         }
+    }
+
+    private static void CrearRespaldoManual()
+    {
+        var resultado = _respaldos.CrearRespaldo("manual");
+        Aviso(resultado.IsSuccess
+            ? $"Respaldo creado y verificado:\n  {resultado.Value}"
+            : resultado.Message, resultado.IsSuccess);
+    }
+
+    private static void VerRespaldos()
+    {
+        LimpiarPantalla();
+        var resultado = _respaldos.ListarRespaldos();
+        Console.WriteLine("=== RESPALDOS ===");
+
+        if (!resultado.IsSuccess)
+        {
+            Aviso(resultado.Message);
+            return;
+        }
+
+        if (resultado.Value.Count == 0)
+        {
+            Console.WriteLine("  No hay respaldos todavía.");
+        }
+        else
+        {
+            Console.WriteLine($"  Carpeta: {_respaldos.DirectorioRespaldos}\n");
+            foreach (var r in resultado.Value)
+                Console.WriteLine($"  {r.Nombre}  {r.Fecha:yyyy-MM-dd HH:mm}  {r.TamanoBytes / 1024.0:F1} KB");
+        }
+
+        Pausa();
+    }
+
+    private static void RestaurarRespaldo()
+    {
+        if (!EsDueño)
+        {
+            Aviso("Solo el dueño puede restaurar un respaldo.");
+            return;
+        }
+
+        var respaldos = _respaldos.ListarRespaldos();
+        if (!respaldos.IsSuccess || respaldos.Value.Count == 0)
+        {
+            Aviso("No hay respaldos disponibles para restaurar.");
+            return;
+        }
+
+        LimpiarPantalla();
+        Console.WriteLine("=== RESTAURAR RESPALDO ===");
+        Console.WriteLine("  ⚠ Se reemplazarán TODOS los datos actuales por los del respaldo.\n");
+
+        for (var i = 0; i < respaldos.Value.Count; i++)
+        {
+            var r = respaldos.Value[i];
+            Console.WriteLine($"  [{i + 1}] {r.Nombre}  {r.Fecha:yyyy-MM-dd HH:mm}  {r.TamanoBytes / 1024.0:F1} KB");
+        }
+
+        var indice = LeerEntero("Número de respaldo (0 = cancelar)", 0, respaldos.Value.Count, 0);
+        if (indice == 0)
+            return;
+
+        var elegido = respaldos.Value[indice - 1];
+
+        Console.Write($"\n  Escriba RESTAURAR para confirmar la restauración de {elegido.Nombre}: ");
+        if (!string.Equals(Console.ReadLine()?.Trim(), "RESTAURAR", StringComparison.Ordinal))
+        {
+            Aviso("Restauración cancelada.");
+            return;
+        }
+
+        var resultado = _respaldos.Restaurar(elegido.Ruta, confirmado: true);
+        Console.WriteLine($"\n  {(resultado.IsSuccess ? "✓" : "⚠")} {resultado.Message}");
+
+        if (resultado.IsSuccess)
+        {
+            Console.WriteLine("\n  La aplicación se cerrará para que los cambios tengan efecto.");
+            Console.ReadLine();
+            Environment.Exit(0);
+        }
+
+        Pausa();
     }
 
     private static void VerConfiguracion()

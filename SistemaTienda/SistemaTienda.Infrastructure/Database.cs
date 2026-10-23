@@ -7,19 +7,24 @@ namespace SistemaTienda.Infrastructure;
 
 public class DatabaseTools
 {
-    private const int VersionEsquemaActual = 1;
     private readonly string _connectionString;
+
+    public string RutaBaseDatos { get; }
+    public string DirectorioRespaldos { get; }
+    public string UltimoRespaldoCreado { get; private set; } = string.Empty;
 
     public DatabaseTools(string databasePath)
     {
-        var fullPath = Path.GetFullPath(databasePath);
-        var directory = Path.GetDirectoryName(fullPath);
+        RutaBaseDatos = Path.GetFullPath(databasePath);
+        var directory = Path.GetDirectoryName(RutaBaseDatos);
         if (!string.IsNullOrEmpty(directory))
             Directory.CreateDirectory(directory);
 
+        DirectorioRespaldos = RespaldoLocal.DirectorioPorDefecto(RutaBaseDatos);
+
         _connectionString = new SqliteConnectionStringBuilder
         {
-            DataSource = fullPath,
+            DataSource = RutaBaseDatos,
             ForeignKeys = true,
             DefaultTimeout = 30
         }.ToString();
@@ -27,13 +32,49 @@ public class DatabaseTools
 
     public SqliteConnection CreateConnection() => new(_connectionString);
 
+    /// <summary>
+    /// Crea el esquema base si no existe y aplica las migraciones pendientes.
+    /// Antes de migrar se crea un respaldo; si algo falla, la base queda en su versión anterior.
+    /// </summary>
     public void InicializarBaseDeDatos()
     {
-        using var conn = CreateConnection();
-        conn.Open();
+        var esquemaCreado = false;
 
-        using var cmd = conn.CreateCommand();
-        cmd.CommandText = @"
+        using (var conn = CreateConnection())
+        {
+            conn.Open();
+
+            if (!ExisteTabla(conn, "ConfiguracionTienda"))
+            {
+                CrearEsquemaBase(conn);
+                esquemaCreado = true;
+            }
+            else if (LeerVersion(conn) == 0)
+            {
+                // Bases anteriores al versionado: ya tienen todas las tablas de la v1.
+                EscribirVersion(conn, null, Migraciones.VersionEsquemaBase);
+            }
+        }
+
+        var migrador = new MigradorEsquema(RutaBaseDatos, Migraciones.ObtenerTodas(), DirectorioRespaldos);
+        var resultado = migrador.Migrar();
+        if (resultado.IsError)
+            throw new InvalidOperationException(resultado.Message);
+
+        UltimoRespaldoCreado = resultado.Value?.RutaRespaldo ?? string.Empty;
+
+        if ((esquemaCreado || resultado.Value?.HuboCambios == true) && !IntegridadOk())
+            throw new InvalidOperationException("La base de datos no pasó la verificación de integridad.");
+    }
+
+    private static void CrearEsquemaBase(SqliteConnection conn)
+    {
+        using var tx = conn.BeginTransaction();
+
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.Transaction = tx;
+            cmd.CommandText = @"
             CREATE TABLE IF NOT EXISTS ConfiguracionTienda (
                 Id INTEGER PRIMARY KEY AUTOINCREMENT,
                 NombreTienda TEXT NOT NULL DEFAULT '',
@@ -123,12 +164,12 @@ public class DatabaseTools
             CREATE INDEX IF NOT EXISTS IX_ClientesFiado_Nombre ON ClientesFiado(Nombre);
             CREATE INDEX IF NOT EXISTS IX_Proveedores_Nombre ON Proveedores(Nombre);
         ";
-        cmd.ExecuteNonQuery();
+            cmd.ExecuteNonQuery();
+        }
 
-        var existente = ExecuteReportObject<ConfiguracionTienda>(conn, "SELECT * FROM ConfiguracionTienda LIMIT 1");
-        if (existente == null)
+        using (var insert = conn.CreateCommand())
         {
-            using var insert = conn.CreateCommand();
+            insert.Transaction = tx;
             insert.CommandText = @"
                 INSERT INTO ConfiguracionTienda
                     (NombreTienda, Giro, ImpuestoPredeterminado, ComisionTarjeta, FondoCajaInicial,
@@ -142,9 +183,40 @@ public class DatabaseTools
             insert.ExecuteNonQuery();
         }
 
-        using var version = conn.CreateCommand();
-        version.CommandText = $"PRAGMA user_version = {VersionEsquemaActual}";
-        version.ExecuteNonQuery();
+        EscribirVersion(conn, tx, Migraciones.VersionEsquemaBase);
+        tx.Commit();
+    }
+
+    private static bool ExisteTabla(SqliteConnection conn, string nombre)
+    {
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = @nombre";
+        cmd.Parameters.AddWithValue("@nombre", nombre);
+        return Convert.ToInt32(cmd.ExecuteScalar()) > 0;
+    }
+
+    private static int LeerVersion(SqliteConnection conn)
+    {
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "PRAGMA user_version";
+        return Convert.ToInt32(cmd.ExecuteScalar());
+    }
+
+    private static void EscribirVersion(SqliteConnection conn, SqliteTransaction tx, int version)
+    {
+        using var cmd = conn.CreateCommand();
+        cmd.Transaction = tx;
+        cmd.CommandText = $"PRAGMA user_version = {version}";
+        cmd.ExecuteNonQuery();
+    }
+
+    private bool IntegridadOk()
+    {
+        using var conn = CreateConnection();
+        conn.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "PRAGMA integrity_check";
+        return string.Equals(Convert.ToString(cmd.ExecuteScalar()), "ok", StringComparison.OrdinalIgnoreCase);
     }
 
     // ---------- Consultas genéricas ----------
