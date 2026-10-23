@@ -35,6 +35,7 @@ Pendiente para el MVP: ventas/POS, corte de caja, respaldo/restauración, report
 | [changelog.md](changelog.md) | Cambios por versión |
 | [roadmap.md](roadmap.md) | Avance y siguiente trabajo |
 | [deuda-tecnica.md](deuda-tecnica.md) | Atajos y pendientes técnicos |
+| [coordinacion.md](coordinacion.md) | Tablero para agentes que trabajan en paralelo |
 
 ## Inicio rápido
 

@@ -1,0 +1,161 @@
+# AGENTS.md — Instrucciones para agentes de IA
+
+Punto de entrada para cualquier IA o persona que trabaje en este repositorio. Léelo completo antes de tocar código. Las reglas del dueño están en [CLAUDE-tienda.md](CLAUDE-tienda.md); este archivo las resume y añade el protocolo para trabajar en paralelo sin pisarse.
+
+## Lectura obligatoria (en orden)
+
+1. [CLAUDE-tienda.md](CLAUDE-tienda.md) — reglas del dueño.
+2. [SistemaTienda/docs/README.md](SistemaTienda/docs/README.md) — índice y estado.
+3. [SistemaTienda/docs/coordinacion.md](SistemaTienda/docs/coordinacion.md) — tablero: qué está tomado y por quién.
+4. [SistemaTienda/docs/roadmap.md](SistemaTienda/docs/roadmap.md) — prioridades.
+5. [SistemaTienda/docs/deuda-tecnica.md](SistemaTienda/docs/deuda-tecnica.md) — atajos aceptados.
+6. El documento del módulo o proceso que vas a tocar (`SistemaTienda/docs/02-modulos/`, `03-procesos/`).
+
+## Reglas duras (resumen)
+
+- Responde y documenta en **español (México)**. Código en inglés; textos de interfaz en español.
+- **Nunca trabajes sobre `main`.** Una rama por tarea: `feat/...`, `fix/...`, `docs/...`, `test/...`.
+- Commits pequeños, en español, imperativo y con prefijo: `feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `chore:`.
+- No hagas commit de `bin/`, `obj/`, `*.db`, respaldos, secretos ni datos reales. `.gitignore` ya los cubre.
+- **El stock es la suma de movimientos.** Nunca edites `Productos.Stock` directamente; usa las operaciones de inventario.
+- Ventas, abonos, compras y ajustes son **atómicos**: todo en una transacción o nada.
+- **El historial no se edita ni se borra**: se corrige con un movimiento nuevo (motivo, usuario, fecha).
+- PIN siempre hasheado (PBKDF2-SHA256); nunca texto plano. Permisos validados en la lógica, no solo ocultando menús.
+- **100 % offline.** Sin servicios de pago, nube ni dependencias que requieran servidor.
+- Dinero: el objetivo son **centavos enteros**. Hoy hay deuda en `decimal`; no la amplíes sin plan (ver deuda técnica).
+- Si una regla de negocio no está clara, **pregunta**. No inventes reglas ni cálculos fiscales.
+- Antes de commit final: `git diff --stat`, build y pruebas en verde.
+- Operaciones destructivas (`reset --hard`, `push --force`, `clean -fd`, borrar ramas): pide confirmación.
+
+## Protocolo de coordinación (obligatorio)
+
+Puede haber otra IA trabajando en paralelo. El tablero es [SistemaTienda/docs/coordinacion.md](SistemaTienda/docs/coordinacion.md).
+
+### Antes de empezar
+
+1. `git fetch origin` y `git status`. Si hay cambios sin guardar, no los descartes: avisa.
+2. Abre el tablero y verifica que tu tarea no esté tomada.
+3. Crea tu rama desde `feat/base-compilable` (o desde `main` cuando el PR esté integrado).
+4. Reclama la tarea en el tablero: agente, rama, fecha y archivos que vas a tocar.
+5. Haz el reclamo en tu primer commit, junto con el cambio.
+
+### Mientras trabajas
+
+- **No edites archivos reservados por otro agente.** Si los necesitas, acuerda el orden.
+- `SistemaTienda.Infrastructure/Database.cs` y `SistemaTienda.Presentation/Program.cs` son puntos calientes: **un solo agente a la vez** en cada uno.
+- Sincroniza con la rama base con frecuencia para reducir conflictos.
+- No refactorices lo que no se te pidió ni reescribas trabajo ajeno.
+
+### Al terminar
+
+1. `dotnet build` y `dotnet test` en verde.
+2. Actualiza el tablero (estado Hecho + hash), `changelog.md`, `roadmap.md` y `deuda-tecnica.md` si aplica.
+3. Push de tu rama y abre un PR contra `main`. No hagas merge sin revisión.
+4. No borres trabajo de otros ni reescribas commits ajenos.
+
+## Cómo trabajar sin pisarse (misma máquina)
+
+No compartas la misma carpeta de trabajo con otra IA. Usa un clon o un worktree:
+
+```bash
+# Opción A: clon independiente
+git clone https://github.com/DanielCB096/tienda.git tienda-ia2
+cd tienda-ia2
+git checkout feat/base-compilable
+git checkout -b feat/mi-tarea
+```
+
+```bash
+# Opción B: worktree desde el repo existente
+git worktree add ../tienda-ia2 -b feat/mi-tarea feat/base-compilable
+```
+
+Cada agente: su carpeta, su rama y su PR.
+
+## Estado del proyecto (2026-10-23)
+
+- Rama publicada con el trabajo actual: `feat/base-compilable` (3 commits sobre `main`).
+- `main`: solo el commit base; el PR sigue pendiente de integración.
+- Build: 0 errores, 0 advertencias. Pruebas: **59 en verde**.
+- Implementado: configuración inicial, usuarios/PIN/roles, gastos, inventario por movimientos, fiado (cliente/abono), proveedores (saldo/pago), consola provisional.
+- No implementado: ventas/POS, corte de caja, respaldo/restauración, migraciones versionadas, bitácora, reportes de utilidad, UI definitiva.
+- Deuda principal: dinero en `decimal`, abonos/pagos sin historial inmutable, merma sin entidad propia.
+
+## Tareas disponibles
+
+El detalle vive en el tablero. Resumen y criterios de terminado:
+
+### T1 — Migraciones versionadas + respaldo (prioridad alta)
+
+- Runner idempotente basado en `PRAGMA user_version`; migraciones 1→N.
+- Respaldo obligatorio antes de aplicar una migración y verificación de integridad.
+- Servicio de respaldo/restauración local (copiar el `.db`; sin nube).
+- Pruebas: base v1 migra a v2; respaldo creado y restaurado idéntico; falla de migración deja intacto el original.
+- Toca: `Infrastructure/Database.cs`, nuevo `Infrastructure/Migraciones.cs`, `Application/RespaldoService.cs`, pruebas.
+
+### T2 — Ventas / POS (crítico)
+
+- Tablas `Ventas`, `VentaLineas` (y pagos si aplica); esquema v2 vía T1.
+- Una venta: líneas con costo y precio **congelados**, total, método de pago, descuento de stock atómico, comisión de tarjeta si aplica.
+- Fiado: genera saldo del cliente en la misma transacción.
+- Pruebas: venta descuenta stock; stock insuficiente revierte todo; costo congelado; venta a fiado crea saldo.
+- Toca: `Core/`, `Application/VentaService.cs`, `Infrastructure/Database.cs`, `Presentation/Program.cs`.
+
+### T3 — Dinero en centavos enteros
+
+- Migrar entidades y columnas `DECIMAL` a `long`/`INTEGER` en centavos, con utilidades de formato/parseo.
+- Requiere T1. **No ejecutar en paralelo con T2** (ambas tocan el esquema).
+- Pruebas de aritmética, redondeo y compatibilidad de la migración.
+
+### T4 — Bitácora y permisos en servicios
+
+- Tabla de bitácora inmutable (usuario, fecha, acción, antes/después).
+- Validar permisos en `Application`, no solo en menús.
+- Pruebas por rol para operaciones sensibles (ajustes, precios, cancelaciones, gastos).
+
+### T5 — Reportes de utilidad
+
+- Utilidad = ventas − costo congelado − mermas − gastos − comisión.
+- Filtros por fecha, paginación e índices. Depende de T2.
+
+### T6 — Importación Excel/CSV
+
+- Validar y sanear antes de grabar; códigos duplicados reportados por fila.
+- Cualquier dependencia nueva requiere justificación y ADR.
+
+### T7 — Interfaz definitiva
+
+- **Primero el ADR** (MAUI/WPF/PWA); sin ADR no se escribe UI. La consola es provisional y reemplazable.
+
+## No rehacer
+
+- La reparación de la solución, referencias y capas ya está hecha y probada.
+- No reintroduzcas `SistemaTienda.Core/Entities.cs` (se eliminó por duplicar entidades).
+- No cambies el formato de hash (`pbkdf2-sha256$iteraciones$salt$hash`) ni bajes las iteraciones.
+- No muevas las pruebas a una base compartida: cada prueba usa su archivo temporal (`BaseDatosPrueba`).
+- No edites el tablero fuera de tu sección ni borres filas del registro.
+
+## Comandos
+
+```bash
+# Compilar
+dotnet build SistemaTienda/SistemaTienda.sln
+
+# Probar
+dotnet test SistemaTienda/SistemaTienda.sln
+
+# Ejecutar la consola
+dotnet run --project SistemaTienda/SistemaTienda.Presentation/Presentation.csproj
+
+# Usar otra base de datos
+SISTEMATIENDA_DB=/ruta/a/tienda.db dotnet run --project SistemaTienda/SistemaTienda.Presentation/Presentation.csproj
+```
+
+Entorno conocido: el equipo tiene runtime **.NET 10** y SDK 10; los proyectos `net8.0` usan `RollForward=Major` para ejecutarse. Si creas un nuevo ejecutable o proyecto de pruebas, agrega la misma propiedad o fallará al arrancar.
+
+## Convención de pruebas
+
+- xUnit, proyecto `SistemaTienda.Tests`.
+- Cada prueba crea `BaseDatosPrueba` (SQLite temporal) y lo elimina en `Dispose`; no compartas estado entre pruebas.
+- Nombra en español: `Metodo_Escenario_ResultadoEsperado`.
+- Un bug se corrige primero con la prueba que lo reproduce.
