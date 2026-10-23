@@ -37,7 +37,7 @@ Próximamente después de completar los módulos críticos.
 - *Agregado*: esquema v4 con tabla `Bitacora` (usuario, fecha, acción, entidad, antes/después, motivo), índices y disparadores que impiden `UPDATE` y `DELETE`.
 - *Agregado*: `BitacoraService` para registrar y consultar la auditoría; se escribe en altas de producto, cambios de precio, ajustes de inventario, entradas, mermas, gastos, abonos, pagos a proveedores, ventas, movimientos y cortes de caja.
 - *Agregado*: `AutorizacionService` con matriz por rol y `SesionActual` para identificar al usuario firmado; los servicios validan permisos antes de ejecutar operaciones sensibles.
-- *Agregado*: 10 pruebas de bitácora y permisos; total del proyecto: 104.
+- *Agregado*: 11 pruebas de bitácora y permisos; total del proyecto: 105.
 - *Modificado*: la consola inicia `SesionActual` al autenticar; BaseDatosPrueba usa un dueño de sistema por defecto para las pruebas que no evalúan permisos.
 - *Corregido*: la prueba de periodos de corte vendía una cantidad que no correspondía al pago registrado.
 

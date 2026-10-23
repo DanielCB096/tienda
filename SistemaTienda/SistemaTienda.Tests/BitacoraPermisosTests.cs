@@ -147,6 +147,26 @@ public sealed class BitacoraPermisosTests
     }
 
     [Fact]
+    public void RegistrarPagoProveedor_ComoEncargado_SePermiteYRegistraBitacora()
+    {
+        using var bd = new BaseDatosPrueba();
+        bd.ConfigurarTienda();
+        var alta = bd.Config.AgregarProveedor(new Proveedor
+        {
+            Nombre = "Proveedor", SaldoPendiente = 100m
+        });
+        bd.IniciarSesion(RolUsuario.Encargado, "Marta");
+
+        var pago = bd.Config.RegistrarPagoProveedor(alta.Value.ProveedorId, 40m);
+
+        Assert.True(pago.IsSuccess, pago.Message);
+        Assert.Equal(60m, bd.Db.ObtenerProveedorPorId(alta.Value.ProveedorId).SaldoPendiente);
+        var registro = Assert.Single(bd.Db.ObtenerBitacora(accion: AccionBitacora.PagoProveedor));
+        Assert.Equal("Marta", registro.Usuario);
+        Assert.Contains("Pago=40", registro.DatosDespues);
+    }
+
+    [Fact]
     public void Bitacora_NoPermiteModificarNiBorrarRegistros()
     {
         using var bd = new BaseDatosPrueba();

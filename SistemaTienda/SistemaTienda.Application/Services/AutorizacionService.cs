@@ -38,6 +38,7 @@ public static class AutorizacionService
                 PermisoSistema.RegistrarMerma or
                 PermisoSistema.RegistrarGasto or
                 PermisoSistema.RegistrarAbono or
+                PermisoSistema.PagarProveedor or
                 PermisoSistema.EditarProducto or
                 PermisoSistema.RegistrarEntrada or
                 PermisoSistema.CorteCaja or
