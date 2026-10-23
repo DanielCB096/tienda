@@ -42,8 +42,11 @@ jobs:
             $ns.AddNamespace('t', 'http://microsoft.com/schemas/VisualStudio/TeamTest/2010')
             foreach ($resultado in $trx.SelectNodes('//t:UnitTestResult[@outcome="Failed"]', $ns)) {
               $mensaje = [string]$resultado.Output.ErrorInfo.Message
-              $primeraLinea = ($mensaje -split "`r?`n")[0]
-              Write-Host "::error title=$($resultado.testName)::$primeraLinea"
+              $traza = [string]$resultado.Output.ErrorInfo.StackTrace
+              $primerFrame = ($traza -split "`r?`n" | Where-Object { $_ -match '\.cs:line' } | Select-Object -First 1)
+              $detalle = "$mensaje $primerFrame".Trim()
+              $detalle = $detalle.Replace('%', '%25').Replace("`r", '').Replace("`n", '%0A')
+              Write-Host "::error title=$($resultado.testName)::$detalle"
             }
           }
 
