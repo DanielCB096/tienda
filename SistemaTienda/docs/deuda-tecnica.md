@@ -13,15 +13,15 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 
 ### Sin bitácora ni validación de permisos en servicios
 
-- **Dónde**: `ConfiguracionService`, `InventoryService` y `VentaService`.
-- **Impacto**: los roles solo se validan en los menús de consola; un cambio de interfaz podría saltarse restricciones. No hay registro de quién cambió precios, ajustó stock, vendió a fiado o canceló.
+- **Dónde**: `ConfiguracionService`, `InventoryService`, `VentaService` y `CorteCajaService`.
+- **Impacto**: los roles solo se validan en los menús de consola; un cambio de interfaz podría saltarse restricciones. No hay registro de quién cambió precios, ajustó stock, vendió a fiado, retiró efectivo de caja o cerró el corte.
 - **Cierre**: servicio de bitácora (usuario, fecha, acción, antes/después) y autorización en la capa de aplicación.
 
-### Abonos y pagos no quedan como historial inmutable
+### Pagos a proveedores sin historial inmutable
 
-- **Dónde**: `ActualizarSaldoCliente`, `ActualizarSaldoProveedor`.
-- **Impacto**: se actualiza el saldo, pero no se guarda el movimiento de abono/pago. No se puede auditar ni reconstruir el saldo. Contradice "el historial no se edita".
-- **Cierre**: tablas `AbonosFiado` y `PagosProveedor` inmutables; el saldo se deriva o se actualiza dentro de la misma transacción.
+- **Dónde**: `ActualizarSaldoProveedor`.
+- **Impacto**: se actualiza el saldo, pero no se guarda el movimiento de pago. No se puede auditar ni reconstruir el saldo. Contradice "el historial no se edita". Los abonos de fiado ya tienen historial (`AbonosFiado`), los pagos a proveedores no.
+- **Cierre**: tabla `PagosProveedor` inmutable; el saldo se actualiza dentro de la misma transacción.
 
 ### Ventas sin anulación ni descuentos
 
@@ -35,11 +35,11 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 - **Impacto**: el ticket actual es texto en consola. No se genera PDF/imagen, no lleva QR y no se puede compartir por WhatsApp o correo.
 - **Cierre**: generación de ticket con QR al construir la interfaz definitiva (requiere decisión de UI).
 
-### Ventas sin integrar a corte de caja
+### Corte de caja sin autorización de retiros ni conteo por denominaciones
 
-- **Dónde**: `Ventas.PagoEfectivo` se guarda, pero no hay módulo de corte.
-- **Impacto**: el efectivo esperado todavía se calcula a mano.
-- **Cierre**: corte de caja que tome fondo inicial, ventas en efectivo, abonos y gastos de caja.
+- **Dónde**: `CorteCajaService.RegistrarMovimiento`, `Program.CerrarCorte`.
+- **Impacto**: cualquier usuario de la consola puede retirar efectivo y cerrar el corte; no hay aprobación de encargado/dueño ni bitácora. El conteo se captura como un solo importe, sin desglose de billetes y monedas, y el abono de fiado siempre se registra como efectivo (no se pregunta el método).
+- **Cierre**: permiso de retiro en la capa de aplicación, registro en bitácora, captura por denominaciones y método de pago en abonos.
 
 ## Media prioridad
 
@@ -64,7 +64,7 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 ### Reportes incompletos
 
 - **Dónde**: `MenuReportes`.
-- **Impacto**: solo valorizado, stock bajo, gastos y saldos. Las ventas ya guardan `CostoTotal` y `ComisionTarjeta`, pero no hay reporte de utilidad, ventas por día ni comparativos.
+- **Impacto**: solo valorizado, stock bajo, gastos, saldos e historial de cortes. Las ventas ya guardan `CostoTotal` y `ComisionTarjeta`, pero no hay reporte de utilidad (`MenuReportes` opción 5) ni ventas por día o comparativos.
 - **Cierre**: consultas agregadas con índices por fecha (ya existen en `Ventas(Fecha)`) y paginación.
 
 ## Baja prioridad

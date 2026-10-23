@@ -123,12 +123,12 @@ Nueva Venta a Fiado
 - No hay límites de crédito personalizados por cliente (se usa el configurado en ajustes)
 - No hay cálculo de intereses automáticos
 - No hay recordatorios automáticos por WhatsApp/SMS
-- No hay historial de pagos detallado por cliente (solo saldo actual)
+- No hay historial de abonos en la interfaz por cliente (la tabla `AbonosFiado` ya guarda fecha, monto, método y usuario)
 - Los saldos son informativos y no tienen consecuencias legales dentro del sistema
 
 ## 6.9. Estado de implementación (2026-10-23)
 
-- *Implementado*: alta de cliente con nombre, teléfono y saldo inicial; consulta de clientes con saldo; abono con validación de monto positivo y de no exceder el saldo; el menú de fiado solo aparece si `FiadoActivado` es verdadero.
-- *Pendiente*: venta a fiado (depende del módulo de ventas), historial de abonos y ventas por cliente, cancelación de venta a fiado, límite de crédito por cliente.
-- *Deuda*: el abono actualiza el saldo sin registrar un movimiento inmutable (ver [deuda-técnica](../deuda-tecnica.md)).
-- *Pruebas*: `FiadoProveedoresTests`.
+- *Implementado*: alta de cliente con nombre, teléfono y saldo inicial; consulta de clientes con saldo; venta a fiado desde el POS (cliente obligatorio, saldo y límite de crédito); abono con validación de monto positivo y de no exceder el saldo; historial inmutable en `AbonosFiado` (fecha, monto, método, usuario) escrito en la misma transacción que descuenta el saldo; el menú de fiado solo aparece si `FiadoActivado` es verdadero.
+- *Pendiente*: pantalla de estado de cuenta por cliente (ventas y abonos), cancelación de venta a fiado, límite de crédito por cliente y recordatorios.
+- *Deuda*: el abono se registra siempre como efectivo porque la consola aún no pregunta el método (ver [deuda-técnica](../deuda-tecnica.md)).
+- *Pruebas*: `FiadoProveedoresTests`, `VentasTests` y `CorteCajaTests`.
