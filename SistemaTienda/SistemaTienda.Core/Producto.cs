@@ -1,4 +1,4 @@
-using System;
+namespace SistemaTienda.Core;
 
 public class Producto
 {
@@ -8,9 +8,9 @@ public class Producto
     public decimal Costo { get; set; }
     public decimal Precio { get; set; }
     public int Stock { get; set; }
-    public int StockMinimo { get; set; } = 5; // alerta cuando Stock <= StockMinimo
+    public int StockMinimo { get; set; } = 5;
     public string Categoria { get; set; } = string.Empty;
-    public decimal Impuesto { get; set; } // Impuesto específico por producto; si 0, usa config global
+    public decimal Impuesto { get; set; }
     public DateTime FechaCreacion { get; set; } = DateTime.Now;
     public DateTime? UltimaActualizacion { get; set; }
 }

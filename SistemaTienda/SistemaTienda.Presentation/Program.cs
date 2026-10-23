@@ -1,609 +1,954 @@
-// Punto de entrada de la aplicación - Versión Mejorada
-using SistemaTienda.Infrastructure;
+// Punto de entrada de la aplicación (interfaz de consola provisional)
 using SistemaTienda.Application.Services;
-using System;
-using System.Threading.Tasks;
+using SistemaTienda.Core;
+using SistemaTienda.Infrastructure;
 
-namespace SistemaTienda.Presentation
+namespace SistemaTienda.Presentation;
+
+internal static class Program
 {
-    class Program
+    private static DatabaseTools _db;
+    private static ConfiguracionService _config;
+    private static InventoryService _inventario;
+    private static UsuarioSistema _usuarioActual;
+    private static ConfiguracionTienda _configTienda;
+
+    private static bool EsDueño => _usuarioActual?.Rol == RolUsuario.Dueño;
+    private static bool EsAdministrador => _usuarioActual?.Rol is RolUsuario.Dueño or RolUsuario.Encargado;
+
+    private static int Main(string[] args)
     {
-        static async Task Main(string args)
+        try
         {
-            // Inicializar base de datos local
-            string dbPath = "tienda.localdb";
-            var db = new DatabaseTools(dbPath);
-
-            // Asegurar tablas de configuración e inventario
-            db.InicializarTablasConfiguracionYGastos();
-
-            // Verificar si ya hay configuración inicial
-            var configResult = db.ObtenerConfiguracion();
-            bool configuracionInicial = configResult.IsSuccess && configResult.Value.VersionApp == "v1.0.0" &&
-                                        configResult.Value.FechaCreacion != DateTime.MinValue;
-
-            if (!configuracionInicial)
+            var dbPath = Environment.GetEnvironmentVariable("SISTEMATIENDA_DB");
+            if (string.IsNullOrWhiteSpace(dbPath))
             {
-                // Ejecutar asistente de primera configuración
-                Console.WriteLine("=== Asistente de Primera Configuración ===");
-                Console.WriteLine("Sistema de Gestión para Tiendas Pequeñas - México");
-                Console.WriteLine("Costo recurrente $0 | 100% offline | Un dispositivo por tienda\n");
-
-                Console.Write("Nombre de la tienda: ");
-                string nombre = Console.ReadLine() ?? "Mi Tienda";
-
-                Console.Write("Giro de negocio: ");
-                string giro = Console.ReadLine() ?? "Abarrotes";
-
-                Console.Write("Impuesto predeterminado (%.2f por defecto): ", 16.00m);
-                if (decimal.TryParse(Console.ReadLine(), out decimal impuesto) && impuesto >= 0)
-                    impuestoPredeterminado = impuesto;
-                else
-                    impuestoPredeterminado = 16.00m;
-
-                Console.Write("Comisión de tarjeta %.2f% por defecto: ", 3.50m);
-                if (decimal.TryParse(Console.ReadLine(), out decimal comision) && comision >= 0)
-                    comisionTarjeta = comision;
-                else
-                    comisionTarjeta = 3.50m;
-
-                Console.Write("Fondo de caja inicial: ");
-                if (decimal.TryParse(Console.ReadLine(), out decimal fondo) && fondo >= 0)
-                    fondoCajaInicial = fondo;
-                else
-                    fondoCajaInicial = 200.00m;
-
-                Console.Write("¿Activar fiado? (s/n): ");
-                bool fiado = Console.ReadLine()?.ToLower() == "s";
-
-                Console.Write("Límite de crédito (0 = sin límite): ");
-                if (decimal.TryParse(Console.ReadLine(), out decimal limite) && limite >= 0)
-                    limiteCredito = limite;
-                else
-                    limiteCredito = 0;
-
-                Console.Write("Intervalo de respaldo automático (días, 0 = deshabilitado): ");
-                if (int.TryParse(Console.ReadLine(), out int intervalo) && intervalo >= 0)
-                    respaldoIntervaloDias = intervalo;
-                else
-                    respaldoIntervaloDias = 1;
-
-                Console.Write("PIN para el dueño (4-6 dígitos): ");
-                string pin = Console.ReadLine() ?? "1234";
-
-                var configService = new ConfiguracionService(db);
-                var resultado = await configService.EjecutarAsistenteInicial(nombre, giro, impuestoPredeterminado,
-                    comisionTarjeta, fondoCajaInicial, fiado, limiteCredito, respaldoIntervaloDias, pin);
-
-                if (resultado.IsSuccess)
-                {
-                    Console.WriteLine($"\n✓ Configuración completada. Bienvenido/a, {nombre}.");
-                    Console.WriteLine("El sistema está listo para operar.\n");
-                    Console.WriteLine("Presione cualquier tecla para continuar...");
-                    Console.ReadKey();
-                }
-                else
-                {
-                    Console.WriteLine($"\n✗ Error: {resultado.Message}");
-                    Console.WriteLine("Presione cualquier tecla para salir...");
-                    Console.ReadKey();
-                    return;
-                }
+                dbPath = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "SistemaTienda", "tienda.db");
             }
 
-            // Bucle principal
-            await BuclePrincipal(db);
+            _db = new DatabaseTools(dbPath);
+            _db.InicializarBaseDeDatos();
+
+            _config = new ConfiguracionService(_db);
+            _inventario = new InventoryService(_db);
+
+            if (_db.ContarUsuarios() == 0 && !EjecutarAsistenteInicial())
+                return 1;
+
+            if (!IniciarSesion())
+                return 0;
+
+            BuclePrincipal();
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"\nError fatal: {ex.Message}");
+            return 1;
+        }
+    }
+
+    // ---------------- Primer arranque y sesión ----------------
+
+    private static bool EjecutarAsistenteInicial()
+    {
+        LimpiarPantalla();
+        Console.WriteLine("==============================================");
+        Console.WriteLine("  ASISTENTE DE PRIMERA CONFIGURACIÓN");
+        Console.WriteLine("  Sistema de Gestión para Tiendas Pequeñas");
+        Console.WriteLine("  Costo recurrente $0 | 100% offline");
+        Console.WriteLine("==============================================\n");
+
+        var nombre = LeerTexto("Nombre de la tienda");
+        var giro = LeerTextoConDefecto("Giro del negocio", ConfiguracionPorDefecto.GiroPredeterminado);
+        var impuesto = LeerDecimal("Impuesto predeterminado (%)", 0, ConfiguracionPorDefecto.ImpuestoPredeterminado);
+        var comision = LeerDecimal("Comisión de tarjeta (%)", 0, ConfiguracionPorDefecto.ComisionTarjetaPredeterminada);
+        var fondo = LeerDecimal("Fondo de caja inicial ($)", 0, ConfiguracionPorDefecto.FondoCajaInicialPredeterminado);
+        var fiado = LeerSiNo("¿Activar fiado a clientes?", false);
+        var limite = fiado ? LeerDecimal("Límite de crédito por cliente (0 = sin límite)", 0, 0) : 0;
+        var intervalo = LeerEntero("Días entre respaldos (0 = deshabilitado)", 0, 365,
+            ConfiguracionPorDefecto.RespaldoIntervaloDiasPredeterminado);
+        var pin = LeerPin("PIN del dueño (4 a 6 dígitos)");
+        var pinConfirmacion = LeerPin("Confirme el PIN");
+
+        if (pin != pinConfirmacion)
+        {
+            Console.WriteLine("\n✗ Los PIN no coinciden. Vuelva a ejecutar el asistente.");
+            Pausa();
+            return false;
         }
 
-        static decimal impuestoPredeterminado = 16.00m;
-        static decimal comisionTarjeta = 3.50m;
-        static decimal fondoCajaInicial = 200.00m;
-        static bool fiado = false;
-        static decimal limiteCredito = 0;
-        static int respaldoIntervaloDias = 1;
+        var resultado = _config.EjecutarAsistenteInicial(nombre, giro, impuesto, comision,
+            fondo, fiado, limite, intervalo, pin);
 
-        static async Task BuclePrincipal(DatabaseTools db)
+        Console.WriteLine();
+        Console.WriteLine(resultado.IsSuccess ? $"✓ {resultado.Message}" : $"✗ {resultado.Message}");
+        Pausa();
+        return resultado.IsSuccess;
+    }
+
+    private static bool IniciarSesion()
+    {
+        for (var intento = 1; intento <= 3; intento++)
         {
-            var configService = new ConfiguracionService(db);
-            var inventoryService = new InventoryService(db);
+            LimpiarPantalla();
+            var config = _config.ObtenerConfiguracion();
+            Console.WriteLine("==============================================");
+            Console.WriteLine($"  {config.Value?.NombreTienda ?? "Mi Tienda"}");
+            Console.WriteLine("  Acceso al sistema");
+            Console.WriteLine("==============================================\n");
+            Console.Write("  PIN: ");
 
-            while (true)
+            var pin = Console.ReadLine();
+            if (pin == null) return false;
+
+            var resultado = _config.VerificarAcceso(pin);
+            if (resultado.IsSuccess)
             {
-                // Menú principal con diseño mejorado
-                Console.Clear();
-                Console.WriteLine("=================================");
-                Console.WriteLine("  SISTEMA GESTIÓN TIENDA");
-                Console.WriteLine("=================================");
-                Console.WriteLine($"  Tienda: {configService.ObtenerConfiguracion().Value.NombreTienda}");
-                Console.WriteLine($"  Productos en catálogo: {inventoryService.ObtenerProductos().Count}");
-                Console.WriteLine();
-                Console.WriteLine("  Opciones principales:");
-                Console.WriteLine("  [1] Inventario y Catálogo");
-                Console.WriteLine("  [2] Registrar Venta");
-                Console.WriteLine("  [3] Registrar Merma");
-                Console.WriteLine("  [4] Registrar Gasto");
-                Console.WriteLine("  [5] Reportes y Utilidad");
-                Console.WriteLine("  [6] Clientes y Fiado");
-                Console.WriteLine("  [7] Proveedores y Cuentas por Pagar");
-                Console.WriteLine("  [8] Configuración");
-                Console.WriteLine("  [0] Salir de la Aplicación");
-                Console.WriteLine("=================================");
-                Console.Write("\n  Seleccione una opción (0-8): ");
-
-                var op = Console.ReadLine();
-
-                switch (op)
-                {
-                    case "1":
-                        await MenuInventario(inventoryService);
-                        break;
-                    case "2":
-                        await MenuVentas(inventoryService, configService);
-                        break;
-                    case "3":
-                        await MenuMermas(inventoryService);
-                        break;
-                    case "4":
-                        await MenuGastos(configService);
-                        break;
-                    case "5":
-                        await MenuReportes(inventoryService, configService);
-                        break;
-                    case "6":
-                        await MenuClientesFiado(configService);
-                        break;
-                    case "7":
-                        await MenuProveedores(configService);
-                        break;
-                    case "8":
-                        await MenuConfiguracion(configService);
-                        break;
-                    case "0":
-                        Console.WriteLine("\n¡Gracias por usar el Sistema de Gestión!");
-                        Console.WriteLine("Los datos se guardarán automáticamente en la base de datos local.");
-                        return;
-                    default:
-                        Console.WriteLine("\n⚠ Opción no válida. Por favor seleccione una opción del 0 al 8.");
-                        Console.ReadKey();
-                        break;
-                }
-            }
-        }
-
-        // ----- MENÚ INVENTARIO (consolidado) -----
-        static async Task MenuInventario(InventoryService inventorySvc)
-        {
-            while (true)
-            {
-                Console.Clear();
-                Console.WriteLine("=== INVENTARIO Y CATÁLOGO ===");
-                Console.WriteLine($"Total productos: {inventorySvc.ObtenerProductos().Count}");
-                Console.WriteLine();
-                Console.WriteLine("  [1] Ver todos los productos");
-                Console.WriteLine("  [2] Buscar producto por código de barras");
-                Console.WriteLine("  [3] Buscar producto por nombre");
-                Console.WriteLine("  [4] Productos con stock bajo");
-                Console.WriteLine("  [5] Historial de movimientos de un producto");
-                Console.WriteLine("  [0] Regresar al menú principal");
-                Console.Write("\n  Opción: ");
-
-                var op = Console.ReadLine();
-
-                switch (op)
-                {
-                    case "1":
-                        await VerProductos(inventorySvc);
-                        break;
-                    case "2":
-                        await BuscarPorCodigo(inventorySvc);
-                        break;
-                    case "3":
-                        await BuscarPorNombre(inventorySvc);
-                        break;
-                    case "4":
-                        await StockBajo(inventorySvc);
-                        break;
-                    case "5":
-                        await HistorialMovimientos(inventorySvc);
-                        break;
-                    case "0":
-                        return;
-                    default:
-                        Console.WriteLine("⚠ Opción no válida.");
-                        Console.ReadKey();
-                        break;
-                }
-            }
-        }
-
-        // Métodos auxiliares del menú de inventario (simplificados)
-        static async Task VerProductos(InventoryService s) { Console.WriteLine("Ver productos"); await Task.Delay(1); }
-        static async Task BuscarPorCodigo(InventoryService s) { Console.WriteLine("Buscar por código"); await Task.Delay(1); }
-        static async Task BuscarPorNombre(InventoryService s) { Console.WriteLine("Buscar por nombre"); await Task.Delay(1); }
-        static async Task StockBajo(InventoryService s) { Console.WriteLine("Stock bajo"); await Task.Delay(1); }
-        static async Task HistorialMovimientos(InventoryService s) { Console.WriteLine("Historial"); await Task.Delay(1); }
-
-        // ----- MENÚ VENTAS (flujo simplificado) -----
-        static async Task MenuVentas(InventoryService inventorySvc, ConfiguracionService configService)
-        {
-            while (true)
-            {
-                Console.Clear();
-                Console.WriteLine("=== VENTAS / PUNTO DE VENTA ===");
-                Console.WriteLine("  Flujo: Escanear → Cantidad → Total → Pagar → Ticket");
-                Console.WriteLine();
-                Console.WriteLine("  [1] Nueva venta");
-                Console.WriteLine("  [0] Regresar al menú principal");
-                Console.Write("\n  Opción: ");
-
-                var op = Console.ReadLine();
-
-                switch (op)
-                {
-                    case "1":
-                        await RegistrarVenta(inventorySvc, configService);
-                        break;
-                    case "0":
-                        return;
-                    default:
-                        Console.WriteLine("⚠ Opción no válida.");
-                        Console.ReadKey();
-                        break;
-                }
-            }
-        }
-
-        // ----- NUEVO MENÚ PROVEEDORES Y CUENTAS POR PAGAR -----
-        static async Task MenuProveedores(ConfiguracionService configService)
-        {
-            while (true)
-            {
-                Console.Clear();
-                Console.WriteLine("=== PROVEEDORES Y CUENTAS POR PAGAR ===");
-                Console.WriteLine("  Gestión de proveedores y pagos a crédito");
-                Console.WriteLine();
-                Console.WriteLine("  [1] Nuevo proveedor");
-                Console.WriteLine("  [2] Ver lista de proveedores");
-                Console.WriteLine("  [3] Registrar pago a proveedor");
-                Console.WriteLine("  [0] Regresar al menú principal");
-                Console.Write("\n  Opción: ");
-
-                var op = Console.ReadLine();
-
-                switch (op)
-                {
-                    case "1":
-                        await NuevoProveedor(configService);
-                        break;
-                    case "2":
-                        var proveedores = await configService.ObtenerTodosLosProveedores();
-                        Console.Clear();
-                        Console.WriteLine("=== LISTA DE PROVEEDORES ===");
-                        if (proveedores.Count == 0)
-                            Console.WriteLine("  No hay proveedores registrados.");
-                        else
-                            foreach (var p in proveedores)
-                                Console.WriteLine($"  {p.Nombre} (RFC: {p.Clave}) - Saldo: ${p.SaldoPendiente:F2}");
-                        Console.WriteLine();
-                        Console.WriteLine("  Presione cualquier tecla...");
-                        Console.ReadKey();
-                        break;
-                    case "3":
-                        await RegistrarPagoProveedor(configService);
-                        break;
-                    case "0":
-                        return;
-                    default:
-                        Console.WriteLine("⚠ Opción no válida.");
-                        Console.ReadKey();
-                        break;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Registra un nuevo proveedor en el sistema
-        /// </summary>
-        static async Task NuevoProveedor(ConfiguracionService configService)
-        {
-            Console.Clear();
-            Console.Write("  Nombre del proveedor: ");
-            string nombre = Console.ReadLine() ?? "";
-
-            Console.Write("  RFC o razón social: ");
-            string rfc = Console.ReadLine() ?? "";
-
-            Console.Write("  Teléfono de contacto (opcional): ");
-            string telefono = Console.ReadLine() ?? "";
-
-            Console.Write("  Dirección (opcional): ");
-            string direccion = Console.ReadLine() ?? "";
-
-            var nuevoProveedor = new Proveedor
-            {
-                Nombre = nombre,
-                Clave = rfc,
-                Telefono = telefono,
-                Direccion = direccion,
-                SaldoPendiente = 0,
-                FechaRegistro = DateTime.Now
-            };
-
-            var resultado = await configService.AgregarProveedor(nuevoProveedor);
-            Console.Clear();
-            Console.WriteLine(resultado.IsSuccess ? "✓ " + resultado.Message : "✗ " + resultado.Message);
-
-            Console.WriteLine();
-            Console.WriteLine("  Presione cualquier tecla...");
-            Console.ReadKey();
-        }
-
-        /// <summary>
-        /// Registra un pago a un proveedor (reduce el saldo cuentas por pagar)
-        /// </summary>
-        static async Task RegistrarPagoProveedor(ConfiguracionService configService)
-        {
-            Console.Clear();
-            Console.Write("  Nombre del proveedor: ");
-            string nombre = Console.ReadLine() ?? "";
-
-            // Buscar proveedor (búsqueda simplificada)
-            var proveedores = await configService.ObtenerTodosLosProveedores();
-            var proveedorEncontrado = proveedores.FirstOrDefault(p => p.Nombre.Equals(nombre, StringComparison.OrdinalIgnoreCase));
-
-            if (proveedorEncontrado == null)
-            {
-                Console.Clear();
-                Console.WriteLine($"⚠ Proveedor '{nombre}' no encontrado.");
-                Console.WriteLine("  ¿Desea crear este proveedor? (s/n)");
-                if (Console.ReadLine()?.ToLower() == "s")
-                {
-                    proveedorEncontrado = new Proveedor { Nombre = nombre, Clave = "", SaldoPendiente = 0 };
-                    await configService.AgregarProveedor(proveedorEncontrado);
-                }
-                else
-                {
-                    Console.WriteLine("  Presione cualquier tecla...");
-                    Console.ReadKey();
-                    return;
-                }
+                _usuarioActual = resultado.Value;
+                _configTienda = _config.ObtenerConfiguracion().Value;
+                return true;
             }
 
-            Console.Write("  Monto del pago: ");
-            if (decimal.TryParse(Console.ReadLine(), out decimal montoPago) && montoPago > 0)
-            {
-                var resultado = await configService.RegistrarPagoProveedor(proveedorEncontrado.Id, montoPago);
-                Console.Clear();
-                Console.WriteLine(resultado.IsSuccess ? "✓ " + resultado.Message : "✗ " + resultado.Message);
-
-                if (resultado.IsSuccess && proveedorEncontrado != null)
-                {
-                    proveedorEncontrado.SaldoPendiente = resultado.Value.SaldoRestante;
-                    Console.WriteLine($"  Saldo pendiente actualizado: ${resultado.Value.SaldoRestante:F2}");
-
-                    if (resultado.Value.SaldoRestante <= 0)
-                    {
-                        Console.WriteLine("  ¡Saldo cero! El proveedor está al día.");
-                    }
-                }
-
-                Console.WriteLine();
-                Console.WriteLine("  Presione cualquier tecla...");
-                Console.ReadKey();
-            }
-            else
-            {
-                Console.Clear();
-                Console.WriteLine("⚠ El monto del pago debe ser mayor a cero.");
-                Console.WriteLine();
-                Console.WriteLine("  Presione cualquier tecla...");
-                Console.ReadKey();
-            }
+            Console.WriteLine($"\n  ✗ {resultado.Message}. Intento {intento} de 3.");
+            Pausa();
         }
 
-        // ----- NUEVO MENÚ PROVEEDOR (clase Proveedor) -----
-        class Proveedor
-        {
-            public int Id { get; set; }
-            public string Nombre { get; set; } = string.Empty;
-            public string Clave { get; set; } = string.Empty; // RFC
-            public string Telefono { get; set; } = string.Empty;
-            public string Direccion { get; set; } = string.Empty;
-            public decimal SaldoPendiente { get; set; }
-            public DateTime FechaRegistro { get; set; } = DateTime.Now;
-        }
+        Console.WriteLine("\n  Demasiados intentos. La aplicación se cerrará.");
+        Pausa();
+        return false;
+    }
 
-        // ----- MENÚ MERMAS -----
-        static async Task MenuMermas(InventoryService inventorySvc)
+    // ---------------- Menú principal ----------------
+
+    private static void BuclePrincipal()
+    {
+        while (true)
         {
-            while (true)
+            _configTienda = _config.ObtenerConfiguracion().Value;
+
+            LimpiarPantalla();
+            Console.WriteLine("==============================================");
+            Console.WriteLine($"  {_configTienda.NombreTienda}  |  {_configTienda.Giro}");
+            Console.WriteLine($"  Usuario: {_usuarioActual.Nombre} ({_usuarioActual.Rol})");
+            Console.WriteLine("==============================================");
+            Console.WriteLine("  [1] Inventario y catálogo");
+            Console.WriteLine("  [2] Ventas / punto de venta");
+            Console.WriteLine("  [3] Mermas");
+            Console.WriteLine("  [4] Gastos");
+            Console.WriteLine("  [5] Clientes y fiado");
+            Console.WriteLine("  [6] Proveedores y cuentas por pagar");
+            Console.WriteLine("  [7] Reportes");
+            Console.WriteLine("  [8] Configuración");
+            Console.WriteLine("  [0] Salir");
+            Console.WriteLine("==============================================");
+            Console.Write("  Opción: ");
+
+            switch (Console.ReadLine())
             {
-                Console.Clear();
-                Console.WriteLine("=== REGISTRAR MERMA ===");
-                Console.WriteLine("  Registro de pérdidas por deterioro, robo, etc.");
-                Console.WriteLine();
-                Console.WriteLine("  [1] Registrar nueva merma");
-                Console.WriteLine("  [2] Ver historial de mermas");
-                Console.WriteLine("  [0] Regresar al menú principal");
-                Console.Write("\n  Opción: ");
-
-                var op = Console.ReadLine();
-
-                switch (op)
-                {
-                    case "1":
-                        await RegistrarMerma(inventorySvc);
-                        break;
-                    case "2":
-                        var mermas = await inventoryService.ObtenerHistorialMermas();
-                        Console.Clear();
-                        Console.WriteLine("=== HISTORIAL MERMAS ===");
-                        foreach (var m in mermas)
-                            Console.WriteLine($"  {m.Motivo}: ${m.MontoPerdido:F2} - {m.Fecha:d}");
-                        Console.WriteLine();
-                        Console.WriteLine("  Presione cualquier tecla...");
-                        Console.ReadKey();
-                        break;
-                    case "0":
-                        return;
-                    default:
-                        Console.WriteLine("⚠ Opción no válida.");
-                        Console.ReadKey();
-                        break;
-                }
+                case "1": MenuInventario(); break;
+                case "2": MostrarModuloPendiente("Ventas / punto de venta",
+                    "Falta implementar el registro de ventas, el ticket digital y el descuento automático de stock."); break;
+                case "3": MenuMermas(); break;
+                case "4": MenuGastos(); break;
+                case "5": MenuFiado(); break;
+                case "6": MenuProveedores(); break;
+                case "7": MenuReportes(); break;
+                case "8": MenuConfiguracion(); break;
+                case "0": return;
+                case null: return;
+                default: Aviso("Opción no válida."); break;
             }
         }
+    }
 
-        /// <summary>
-        /// Registra una nueva merma
-        /// </summary>
-        static async Task RegistrarMerma(InventoryService inventorySvc)
+    // ---------------- Inventario ----------------
+
+    private static void MenuInventario()
+    {
+        while (true)
         {
-            Console.Clear();
-            Console.Write("  Producto: ");
-            var productos = inventorySvc.ObtenerProductos();
-            if (productos.Count == 0)
+            LimpiarPantalla();
+            Console.WriteLine("=== INVENTARIO Y CATÁLOGO ===");
+            Console.WriteLine($"  Productos registrados: {_inventario.ObtenerProductos().Count}\n");
+            Console.WriteLine("  [1] Ver productos");
+            Console.WriteLine("  [2] Buscar por código de barras");
+            Console.WriteLine("  [3] Buscar por nombre");
+            Console.WriteLine("  [4] Productos con stock bajo");
+            Console.WriteLine("  [5] Historial de movimientos");
+            Console.WriteLine("  [6] Agregar producto");
+            Console.WriteLine("  [7] Editar producto");
+            Console.WriteLine("  [8] Ajustar stock");
+            Console.WriteLine("  [0] Regresar");
+            Console.Write("\n  Opción: ");
+
+            switch (Console.ReadLine())
             {
-                Console.WriteLine("  No hay productos en el catálogo.");
-                Console.WriteLine("  Presione cualquier tecla...");
-                Console.ReadKey();
+                case "1": ListarProductosPaginado(_inventario.ObtenerProductos()); break;
+                case "2": BuscarPorCodigo(); break;
+                case "3": BuscarPorNombre(); break;
+                case "4": ListarProductosPaginado(_inventario.ProductosStockBajo()); break;
+                case "5": VerMovimientos(); break;
+                case "6": AgregarProducto(); break;
+                case "7": EditarProducto(); break;
+                case "8": AjustarStock(); break;
+                case "0": return;
+                case null: return;
+                default: Aviso("Opción no válida."); break;
+            }
+        }
+    }
+
+    private static void ListarProductosPaginado(List<Producto> productos)
+    {
+        LimpiarPantalla();
+        if (productos.Count == 0)
+        {
+            Aviso("No hay productos para mostrar.");
+            return;
+        }
+
+        const int tamanoPagina = 20;
+        var pagina = 0;
+
+        while (true)
+        {
+            LimpiarPantalla();
+            var inicio = pagina * tamanoPagina;
+            var fin = Math.Min(inicio + tamanoPagina, productos.Count);
+            Console.WriteLine($"=== PRODUCTOS ({inicio + 1}-{fin} de {productos.Count}) ===");
+            Console.WriteLine("  ID    Código            Nombre                          Stock    Precio");
+            for (var i = inicio; i < fin; i++)
+            {
+                var p = productos[i];
+                Console.WriteLine($"  {p.Id,-5} {p.CodigoBarras,-17} {p.Nombre,-31} {p.Stock,-8} ${p.Precio,8:F2}");
+            }
+
+            Console.WriteLine("\n  [Enter] siguiente página   [q] salir");
+            var entrada = Console.ReadLine();
+            if (entrada == null || entrada.Trim().Equals("q", StringComparison.OrdinalIgnoreCase))
                 return;
-            }
-            foreach (var p in productos)
-                Console.WriteLine($"  [{p.Id}] {p.Nombre} (Stock: {p.Stock})");
 
-            Console.Write("  Seleccione producto: ");
-            if (int.TryParse(Console.ReadLine(), out int prodId) && prodId > 0 && prodId <= productos.Count)
-            {
-                var prod = productos[prodId - 1];
-                Console.Write("  Motivo: ");
-                string motivo = Console.ReadLine() ?? "";
-                Console.Write("  Cantidad perdida: ");
-                if (int.TryParse(Console.ReadLine(), out int cantidad) && cantidad > 0)
-                {
-                    Console.Write("  Costo unitario perdido: ");
-                    if (decimal.TryParse(Console.ReadLine(), out decimal costoUnitario) && costoUnitario >= 0)
-                    {
-                        var merma = new Merma
-                        {
-                            ProductoId = prodId,
-                            ProductoNombre = prod.Nombre,
-                            Motivo = motivo,
-                            Cantidad = cantidad,
-                            CostoUnitario = costoUnitario,
-                            Fecha = DateTime.Now
-                        };
+            if (fin >= productos.Count)
+                return;
 
-                        var resultado = await inventoryService.RegistrarMerma(merma);
-                        Console.Clear();
-                        Console.WriteLine(resultado.IsSuccess ? "✓ " + resultado.Message : "✗ " + resultado.Message);
-
-                        if (resultado.IsSuccess)
-                        {
-                            Console.WriteLine($"  Stock reducido en: {cantidad}");
-                            Console.WriteLine($"  Costo total perdido: ${costoUnitario * cantidad:F2}");
-                        }
-
-                        Console.WriteLine();
-                        Console.WriteLine("  Presione cualquier tecla...");
-                        Console.ReadKey();
-                    }
-                    else
-                    {
-                        Console.Clear();
-                        Console.WriteLine("⚠ El costo unitario debe ser mayor o igual a cero.");
-                        Console.WriteLine();
-                        Console.WriteLine("  Presione cualquier tecla...");
-                        Console.ReadKey();
-                    }
-                }
-                else
-                {
-                    Console.Clear();
-                    Console.WriteLine("⚠ La cantidad debe ser mayor a cero.");
-                    Console.WriteLine();
-                    Console.WriteLine("  Presione cualquier tecla...");
-                    Console.ReadKey();
-                }
-            }
-            else
-            {
-                Console.Clear();
-                Console.WriteLine("⚠ Opción de producto no válida.");
-                Console.WriteLine();
-                Console.WriteLine("  Presione cualquier tecla...");
-                Console.ReadKey();
-            }
+            pagina++;
         }
+    }
 
-        // ----- MENÚ REPORTES Y UTILIDAD -----
-        static async Task MenuReportes(InventoryService inventorySvc, ConfiguracionService configService)
+    private static void BuscarPorCodigo()
+    {
+        LimpiarPantalla();
+        Console.Write("  Código de barras: ");
+        var codigo = Console.ReadLine();
+        if (string.IsNullOrWhiteSpace(codigo)) return;
+
+        MostrarProducto(_inventario.BuscarPorCodigo(codigo.Trim()));
+    }
+
+    private static void BuscarPorNombre()
+    {
+        LimpiarPantalla();
+        Console.Write("  Texto a buscar: ");
+        var texto = Console.ReadLine();
+        if (string.IsNullOrWhiteSpace(texto)) return;
+
+        ListarProductosPaginado(_inventario.BuscarPorNombre(texto));
+    }
+
+    private static void MostrarProducto(Producto producto)
+    {
+        LimpiarPantalla();
+        if (producto == null)
         {
-            while (true)
-            {
-                Console.Clear();
-                Console.WriteLine("=== REPORTES Y UTILIDAD ===");
-                Console.WriteLine();
-                Console.WriteLine("  [1] Ver reporte de utilidad neta");
-                Console.WriteLine("  [2] Ver reporte de ventas");
-                Console.WriteLine("  [3] Ver reporte de mermas");
-                Console.WriteLine("  [4] Ver reporte de gastos");
-                Console.WriteLine("  [5] Ver reporte de valorizado de inventario");
-                Console.WriteLine("  [6] Ver reporte de proveedores");
-                Console.WriteLine("  [0] Regresar al menú principal");
-                Console.Write("\n  Opción: ");
-
-                var op = Console.ReadLine();
-
-                switch (op)
-                {
-                    case "1":
-                        await ReporteUtilidadNeta(inventorySvc, configService);
-                        break;
-                    case "2":
-                        await ReporteVentas(inventorySvc, configService);
-                        break;
-                    case "3":
-                        await ReporteMermas(inventorySvc);
-                        break;
-                    case "4":
-                        await ReporteGastos(configService);
-                        break;
-                    case "5":
-                        await ReporteValorizado(inventorySvc);
-                        break;
-                    case "6":
-                        await ReporteProveedores(configService);
-                        break;
-                    case "0":
-                        return;
-                    default:
-                        Console.WriteLine("⚠ Opción no válida.");
-                        Console.ReadKey();
-                        break;
-                }
-            }
+            Aviso("Producto no encontrado.");
+            return;
         }
 
-        static async Task ReporteProveedores(ConfiguracionService configService)
+        Console.WriteLine("=== PRODUCTO ===");
+        Console.WriteLine($"  ID:        {producto.Id}");
+        Console.WriteLine($"  Código:    {producto.CodigoBarras}");
+        Console.WriteLine($"  Nombre:    {producto.Nombre}");
+        Console.WriteLine($"  Categoría: {producto.Categoria}");
+        Console.WriteLine($"  Costo:     ${producto.Costo:F2}");
+        Console.WriteLine($"  Precio:    ${producto.Precio:F2}");
+        Console.WriteLine($"  Stock:     {producto.Stock} (mínimo {producto.StockMinimo})");
+        Console.WriteLine($"  Impuesto:  {producto.Impuesto:F2}%");
+        Pausa();
+    }
+
+    private static void VerMovimientos()
+    {
+        var producto = SeleccionarProducto();
+        if (producto == null) return;
+
+        LimpiarPantalla();
+        var movimientos = _inventario.HistorialMovimientos(producto.Id);
+        Console.WriteLine($"=== MOVIMIENTOS: {producto.Nombre} ===");
+        if (movimientos.Count == 0)
         {
-            Console.Clear();
-            Console.WriteLine("=== REPORTE DE PROVEEDORES ===");
-            var proveedores = await configService.ObtenerTodosLosProveedores();
-            Console.WriteLine($"  Total proveedores: {proveedores.Count}");
-            decimal totalSaldo = 0;
-            foreach (var p in proveedores)
-            {
-                Console.WriteLine($"  {p.Nombre}: Saldo ${p.SaldoPendiente:F2}");
-                totalSaldo += p.SaldoPendiente;
-            }
-            Console.WriteLine($"\n  Total saldo pendiente a proveedores: ${totalSaldo:F2}");
+            Console.WriteLine("  Sin movimientos registrados.");
+        }
+        else
+        {
+            foreach (var m in movimientos)
+                Console.WriteLine($"  {m.Fecha:g}  {m.Tipo,-8} {m.Cantidad,5}  {m.Motivo}  ({m.Usuario})");
+        }
+        Pausa();
+    }
 
-            Console.WriteLine();
-            Console.WriteLine("  Presione cualquier tecla...");
-            Console.ReadKey();
+    private static void AgregarProducto()
+    {
+        if (!EsAdministrador)
+        {
+            Aviso("Solo dueño o encargado pueden agregar productos.");
+            return;
         }
 
-        // ... (resto de métodos existentes simplificados)
+        LimpiarPantalla();
+        Console.WriteLine("=== AGREGAR PRODUCTO ===");
+        var producto = new Producto
+        {
+            CodigoBarras = LeerTexto("Código de barras"),
+            Nombre = LeerTexto("Nombre"),
+            Categoria = LeerTextoConDefecto("Categoría", string.Empty),
+            Costo = LeerDecimal("Costo ($)", 0, 0),
+            Precio = LeerDecimal("Precio de venta ($)", 0, 0),
+            Stock = LeerEntero("Stock inicial", 0, 1_000_000, 0),
+            StockMinimo = LeerEntero("Stock mínimo", 0, 1_000_000, 5),
+            Impuesto = _configTienda.ImpuestoPredeterminado
+        };
+
+        var resultado = _inventario.AgregarProducto(producto);
+        Aviso(resultado.Message, resultado.IsSuccess);
+    }
+
+    private static void EditarProducto()
+    {
+        if (!EsAdministrador)
+        {
+            Aviso("Solo dueño o encargado pueden editar productos.");
+            return;
+        }
+
+        var producto = SeleccionarProducto();
+        if (producto == null) return;
+
+        LimpiarPantalla();
+        Console.WriteLine($"=== EDITAR PRODUCTO #{producto.Id} ===");
+        Console.WriteLine("  (El stock no se edita aquí; use Ajustar stock)\n");
+
+        producto.Nombre = LeerTextoConDefecto("Nombre", producto.Nombre);
+        producto.Categoria = LeerTextoConDefecto("Categoría", producto.Categoria);
+        producto.Costo = LeerDecimal("Costo ($)", 0, producto.Costo);
+        producto.Precio = LeerDecimal("Precio de venta ($)", 0, producto.Precio);
+        producto.StockMinimo = LeerEntero("Stock mínimo", 0, 1_000_000, producto.StockMinimo);
+        producto.Impuesto = LeerDecimal("Impuesto (%)", 0, producto.Impuesto);
+
+        var resultado = _inventario.ActualizarProducto(producto);
+        Aviso(resultado.Message, resultado.IsSuccess);
+    }
+
+    private static void AjustarStock()
+    {
+        if (!EsAdministrador)
+        {
+            Aviso("Solo dueño o encargado pueden ajustar stock.");
+            return;
+        }
+
+        var producto = SeleccionarProducto();
+        if (producto == null) return;
+
+        LimpiarPantalla();
+        Console.WriteLine($"=== AJUSTAR STOCK: {producto.Nombre} (actual {producto.Stock}) ===");
+        var nuevoStock = LeerEntero("Stock real contado", 0, 1_000_000, producto.Stock);
+        var motivo = LeerTexto("Motivo del ajuste");
+
+        var resultado = _inventario.AjustarStock(producto.Id, nuevoStock, motivo, _usuarioActual.Nombre);
+        Aviso(resultado.Message, resultado.IsSuccess);
+    }
+
+    private static Producto SeleccionarProducto()
+    {
+        LimpiarPantalla();
+        var productos = _inventario.ObtenerProductos();
+        if (productos.Count == 0)
+        {
+            Aviso("No hay productos en el catálogo.");
+            return null;
+        }
+
+        Console.WriteLine("=== SELECCIONAR PRODUCTO ===");
+        foreach (var p in productos.Take(50))
+            Console.WriteLine($"  [{p.Id}] {p.Nombre} (stock {p.Stock})");
+
+        if (productos.Count > 50)
+            Console.WriteLine("  ... use la búsqueda para encontrar otros productos.");
+
+        var id = LeerEntero("\n  ID del producto (0 = cancelar)", 0, int.MaxValue, 0);
+        if (id == 0) return null;
+
+        var producto = _inventario.BuscarPorId(id);
+        if (producto == null) Aviso("Producto no encontrado.");
+        return producto;
+    }
+
+    // ---------------- Mermas ----------------
+
+    private static void MenuMermas()
+    {
+        if (!EsAdministrador)
+        {
+            Aviso("Solo dueño o encargado pueden registrar mermas.");
+            return;
+        }
+
+        var producto = SeleccionarProducto();
+        if (producto == null) return;
+
+        if (producto.Stock <= 0)
+        {
+            Aviso("El producto no tiene stock disponible.");
+            return;
+        }
+
+        LimpiarPantalla();
+        Console.WriteLine($"=== REGISTRAR MERMA: {producto.Nombre} (stock {producto.Stock}) ===");
+        var cantidad = LeerEntero("Cantidad perdida", 1, producto.Stock, 1);
+        var motivo = LeerTexto("Motivo (caducado, roto, robo...)");
+
+        var resultado = _inventario.RegistrarMerma(producto.Id, cantidad, motivo, _usuarioActual.Nombre);
+        Aviso(resultado.Message, resultado.IsSuccess);
+    }
+
+    // ---------------- Gastos ----------------
+
+    private static void MenuGastos()
+    {
+        while (true)
+        {
+            LimpiarPantalla();
+            Console.WriteLine("=== GASTOS ===");
+            Console.WriteLine("  [1] Registrar gasto");
+            Console.WriteLine("  [2] Ver gastos");
+            Console.WriteLine("  [3] Total y por concepto");
+            Console.WriteLine("  [0] Regresar");
+            Console.Write("\n  Opción: ");
+
+            switch (Console.ReadLine())
+            {
+                case "1": RegistrarGasto(); break;
+                case "2": VerGastos(); break;
+                case "3": ReporteGastos(); break;
+                case "0": return;
+                case null: return;
+                default: Aviso("Opción no válida."); break;
+            }
+        }
+    }
+
+    private static void RegistrarGasto()
+    {
+        LimpiarPantalla();
+        Console.WriteLine("=== REGISTRAR GASTO ===");
+        var gasto = new Gasto
+        {
+            Concepto = LeerTexto("Concepto"),
+            Monto = LeerDecimal("Monto ($)", 0, 0),
+            MetodoPago = LeerTextoConDefecto("Método de pago (Efectivo/Tarjeta/Transferencia)", "Efectivo"),
+            Origen = LeerSiNo("¿Salió del efectivo de la caja?", true) ? OrigenGasto.Caja : OrigenGasto.Externo,
+            Observaciones = LeerTextoConDefecto("Observaciones", string.Empty),
+            Fecha = DateTime.Now
+        };
+
+        var resultado = _config.AgregarGasto(gasto);
+        Aviso(resultado.Message, resultado.IsSuccess);
+    }
+
+    private static void VerGastos()
+    {
+        LimpiarPantalla();
+        var gastos = _config.ObtenerTodosLosGastos().Value ?? new List<Gasto>();
+        Console.WriteLine("=== GASTOS REGISTRADOS ===");
+        if (gastos.Count == 0)
+        {
+            Console.WriteLine("  Sin gastos registrados.");
+        }
+        else
+        {
+            foreach (var g in gastos.Take(100))
+                Console.WriteLine($"  {g.Fecha:d}  {g.Concepto,-25} ${g.Monto,9:F2}  {g.MetodoPago}  ({g.Origen})");
+        }
+        Pausa();
+    }
+
+    private static void ReporteGastos()
+    {
+        LimpiarPantalla();
+        Console.WriteLine("=== RESUMEN DE GASTOS ===");
+        Console.WriteLine($"  Total: ${_config.ObtenerTotalGastos().Value:F2}\n");
+        foreach (var grupo in _config.ObtenerGastosPorConcepto().Value ?? new List<GastoPorConcepto>())
+            Console.WriteLine($"  {grupo.Concepto,-30} ${grupo.Total,9:F2}");
+        Pausa();
+    }
+
+    // ---------------- Fiado ----------------
+
+    private static void MenuFiado()
+    {
+        if (!_configTienda.FiadoActivado)
+        {
+            Aviso("El módulo de fiado está desactivado. Puede activarlo en Configuración.");
+            return;
+        }
+
+        while (true)
+        {
+            LimpiarPantalla();
+            Console.WriteLine("=== CLIENTES Y FIADO ===");
+            Console.WriteLine("  [1] Nuevo cliente");
+            Console.WriteLine("  [2] Ver todos los clientes");
+            Console.WriteLine("  [3] Clientes con saldo pendiente");
+            Console.WriteLine("  [4] Registrar abono");
+            Console.WriteLine("  [0] Regresar");
+            Console.Write("\n  Opción: ");
+
+            switch (Console.ReadLine())
+            {
+                case "1": NuevoClienteFiado(); break;
+                case "2": VerClientes(false); break;
+                case "3": VerClientes(true); break;
+                case "4": RegistrarAbono(); break;
+                case "0": return;
+                case null: return;
+                default: Aviso("Opción no válida."); break;
+            }
+        }
+    }
+
+    private static void NuevoClienteFiado()
+    {
+        LimpiarPantalla();
+        Console.WriteLine("=== NUEVO CLIENTE (FIADO) ===");
+        var cliente = new ClienteFiado
+        {
+            Nombre = LeerTexto("Nombre"),
+            Telefono = LeerTextoConDefecto("Teléfono", string.Empty),
+            SaldoActual = LeerDecimal("Saldo inicial ($)", 0, 0)
+        };
+
+        var resultado = _config.AgregarClienteFiado(cliente);
+        Aviso(resultado.Message, resultado.IsSuccess);
+    }
+
+    private static void VerClientes(bool soloConSaldo)
+    {
+        LimpiarPantalla();
+        var clientes = soloConSaldo
+            ? _config.ObtenerClientesConSaldo().Value ?? new List<ClienteFiado>()
+            : _config.ObtenerTodosLosClientes().Value ?? new List<ClienteFiado>();
+
+        Console.WriteLine(soloConSaldo ? "=== CLIENTES CON SALDO ===" : "=== CLIENTES ===");
+        if (clientes.Count == 0)
+        {
+            Console.WriteLine("  Sin clientes registrados.");
+        }
+        else
+        {
+            foreach (var c in clientes.Take(100))
+                Console.WriteLine($"  [{c.Id}] {c.Nombre,-25} ${c.SaldoActual,9:F2}  {c.Telefono}");
+        }
+        Pausa();
+    }
+
+    private static void RegistrarAbono()
+    {
+        var clientes = _config.ObtenerClientesConSaldo().Value ?? new List<ClienteFiado>();
+        if (clientes.Count == 0)
+        {
+            Aviso("No hay clientes con saldo pendiente.");
+            return;
+        }
+
+        LimpiarPantalla();
+        Console.WriteLine("=== REGISTRAR ABONO ===");
+        foreach (var c in clientes.Take(50))
+            Console.WriteLine($"  [{c.Id}] {c.Nombre,-25} ${c.SaldoActual,9:F2}");
+
+        var id = LeerEntero("\n  ID del cliente (0 = cancelar)", 0, int.MaxValue, 0);
+        if (id == 0) return;
+
+        var cliente = clientes.FirstOrDefault(c => c.Id == id);
+        if (cliente == null)
+        {
+            Aviso("Cliente no encontrado.");
+            return;
+        }
+
+        var monto = LeerDecimal($"Monto del abono (saldo ${cliente.SaldoActual:F2})", 0.01m, 0);
+        var resultado = _config.RegistrarAbonoCliente(cliente.Id, monto);
+        Aviso(resultado.IsSuccess
+            ? $"Abono registrado. Nuevo saldo: ${resultado.Value.SaldoRestante:F2}"
+            : resultado.Message, resultado.IsSuccess);
+    }
+
+    // ---------------- Proveedores ----------------
+
+    private static void MenuProveedores()
+    {
+        while (true)
+        {
+            LimpiarPantalla();
+            Console.WriteLine("=== PROVEEDORES Y CUENTAS POR PAGAR ===");
+            Console.WriteLine("  [1] Nuevo proveedor");
+            Console.WriteLine("  [2] Ver proveedores");
+            Console.WriteLine("  [3] Registrar pago");
+            Console.WriteLine("  [0] Regresar");
+            Console.Write("\n  Opción: ");
+
+            switch (Console.ReadLine())
+            {
+                case "1": NuevoProveedor(); break;
+                case "2": VerProveedores(); break;
+                case "3": RegistrarPagoProveedor(); break;
+                case "0": return;
+                case null: return;
+                default: Aviso("Opción no válida."); break;
+            }
+        }
+    }
+
+    private static void NuevoProveedor()
+    {
+        LimpiarPantalla();
+        Console.WriteLine("=== NUEVO PROVEEDOR ===");
+        var proveedor = new Proveedor
+        {
+            Nombre = LeerTexto("Nombre"),
+            Clave = LeerTextoConDefecto("RFC o razón social", string.Empty),
+            Telefono = LeerTextoConDefecto("Teléfono", string.Empty),
+            Direccion = LeerTextoConDefecto("Dirección", string.Empty),
+            SaldoPendiente = LeerDecimal("Saldo inicial pendiente ($)", 0, 0)
+        };
+
+        var resultado = _config.AgregarProveedor(proveedor);
+        Aviso(resultado.Message, resultado.IsSuccess);
+    }
+
+    private static void VerProveedores()
+    {
+        LimpiarPantalla();
+        var proveedores = _config.ObtenerTodosLosProveedores().Value ?? new List<Proveedor>();
+        Console.WriteLine("=== PROVEEDORES ===");
+        if (proveedores.Count == 0)
+        {
+            Console.WriteLine("  Sin proveedores registrados.");
+        }
+        else
+        {
+            foreach (var p in proveedores.Take(100))
+                Console.WriteLine($"  [{p.Id}] {p.Nombre,-25} ${p.SaldoPendiente,9:F2}  {p.Telefono}");
+        }
+        Pausa();
+    }
+
+    private static void RegistrarPagoProveedor()
+    {
+        var proveedores = _config.ObtenerTodosLosProveedores().Value ?? new List<Proveedor>();
+        var conSaldo = proveedores.Where(p => p.SaldoPendiente > 0).ToList();
+        if (conSaldo.Count == 0)
+        {
+            Aviso("No hay proveedores con saldo pendiente.");
+            return;
+        }
+
+        LimpiarPantalla();
+        Console.WriteLine("=== REGISTRAR PAGO A PROVEEDOR ===");
+        foreach (var p in conSaldo.Take(50))
+            Console.WriteLine($"  [{p.Id}] {p.Nombre,-25} ${p.SaldoPendiente,9:F2}");
+
+        var id = LeerEntero("\n  ID del proveedor (0 = cancelar)", 0, int.MaxValue, 0);
+        if (id == 0) return;
+
+        var proveedor = conSaldo.FirstOrDefault(p => p.Id == id);
+        if (proveedor == null)
+        {
+            Aviso("Proveedor no encontrado.");
+            return;
+        }
+
+        var monto = LeerDecimal($"Monto del pago (saldo ${proveedor.SaldoPendiente:F2})", 0.01m, 0);
+        var resultado = _config.RegistrarPagoProveedor(proveedor.Id, monto);
+        Aviso(resultado.IsSuccess
+            ? $"Pago registrado. Nuevo saldo: ${resultado.Value.SaldoRestante:F2}"
+            : resultado.Message, resultado.IsSuccess);
+    }
+
+    // ---------------- Reportes ----------------
+
+    private static void MenuReportes()
+    {
+        while (true)
+        {
+            LimpiarPantalla();
+            Console.WriteLine("=== REPORTES ===");
+            Console.WriteLine("  [1] Valorizado de inventario");
+            Console.WriteLine("  [2] Productos con stock bajo");
+            Console.WriteLine("  [3] Resumen de gastos");
+            Console.WriteLine("  [4] Saldo total con proveedores");
+            Console.WriteLine("  [5] Ventas y utilidad (pendiente)");
+            Console.WriteLine("  [0] Regresar");
+            Console.Write("\n  Opción: ");
+
+            switch (Console.ReadLine())
+            {
+                case "1":
+                    LimpiarPantalla();
+                    Console.WriteLine("=== VALORIZADO DE INVENTARIO ===");
+                    Console.WriteLine($"  Valor total al costo: ${_inventario.ObtenerValorizadoInventario():F2}");
+                    Pausa();
+                    break;
+                case "2": ListarProductosPaginado(_inventario.ProductosStockBajo()); break;
+                case "3": ReporteGastos(); break;
+                case "4": ReporteSaldoProveedores(); break;
+                case "5":
+                    MostrarModuloPendiente("Ventas y utilidad",
+                        "Requiere el módulo de ventas. Aún no hay ventas registradas que reportar.");
+                    break;
+                case "0": return;
+                case null: return;
+                default: Aviso("Opción no válida."); break;
+            }
+        }
+    }
+
+    private static void ReporteSaldoProveedores()
+    {
+        LimpiarPantalla();
+        var proveedores = _config.ObtenerTodosLosProveedores().Value ?? new List<Proveedor>();
+        Console.WriteLine("=== SALDO CON PROVEEDORES ===");
+        foreach (var p in proveedores.Where(p => p.SaldoPendiente > 0))
+            Console.WriteLine($"  {p.Nombre,-30} ${p.SaldoPendiente,9:F2}");
+        Console.WriteLine($"\n  Total por pagar: ${proveedores.Sum(p => p.SaldoPendiente):F2}");
+        Pausa();
+    }
+
+    // ---------------- Configuración ----------------
+
+    private static void MenuConfiguracion()
+    {
+        while (true)
+        {
+            LimpiarPantalla();
+            Console.WriteLine("=== CONFIGURACIÓN ===");
+            Console.WriteLine("  [1] Ver configuración");
+            Console.WriteLine("  [2] Editar configuración (dueño)");
+            Console.WriteLine("  [3] Usuarios (dueño)");
+            Console.WriteLine("  [0] Regresar");
+            Console.Write("\n  Opción: ");
+
+            switch (Console.ReadLine())
+            {
+                case "1": VerConfiguracion(); break;
+                case "2": EditarConfiguracion(); break;
+                case "3": MenuUsuarios(); break;
+                case "0": return;
+                case null: return;
+                default: Aviso("Opción no válida."); break;
+            }
+        }
+    }
+
+    private static void VerConfiguracion()
+    {
+        LimpiarPantalla();
+        var c = _config.ObtenerConfiguracion().Value;
+        Console.WriteLine("=== CONFIGURACIÓN DE LA TIENDA ===");
+        Console.WriteLine($"  Nombre:            {c.NombreTienda}");
+        Console.WriteLine($"  Giro:              {c.Giro}");
+        Console.WriteLine($"  Impuesto:          {c.ImpuestoPredeterminado:F2}%");
+        Console.WriteLine($"  Comisión tarjeta:  {c.ComisionTarjeta:F2}%");
+        Console.WriteLine($"  Fondo de caja:     ${c.FondoCajaInicial:F2}");
+        Console.WriteLine($"  Fiado:             {(c.FiadoActivado ? "Activado" : "Desactivado")}");
+        Console.WriteLine($"  Límite de crédito: ${c.LimiCreditoCliente:F2}");
+        Console.WriteLine($"  Respaldo cada:     {c.RespaldoIntervaloDias} día(s)");
+        Console.WriteLine($"  Versión:           {c.VersionApp}");
+        Pausa();
+    }
+
+    private static void EditarConfiguracion()
+    {
+        if (!EsDueño)
+        {
+            Aviso("Solo el dueño puede cambiar la configuración global.");
+            return;
+        }
+
+        var c = _config.ObtenerConfiguracion().Value;
+        LimpiarPantalla();
+        Console.WriteLine("=== EDITAR CONFIGURACIÓN ===");
+
+        c.NombreTienda = LeerTextoConDefecto("Nombre de la tienda", c.NombreTienda);
+        c.Giro = LeerTextoConDefecto("Giro", c.Giro);
+        c.ImpuestoPredeterminado = LeerDecimal("Impuesto predeterminado (%)", 0, c.ImpuestoPredeterminado);
+        c.ComisionTarjeta = LeerDecimal("Comisión de tarjeta (%)", 0, c.ComisionTarjeta);
+        c.FondoCajaInicial = LeerDecimal("Fondo de caja inicial ($)", 0, c.FondoCajaInicial);
+        c.FiadoActivado = LeerSiNo("¿Activar fiado?", c.FiadoActivado);
+        c.LimiCreditoCliente = c.FiadoActivado
+            ? LeerDecimal("Límite de crédito por cliente (0 = sin límite)", 0, c.LimiCreditoCliente)
+            : 0;
+        c.RespaldoIntervaloDias = LeerEntero("Días entre respaldos (0 = deshabilitado)", 0, 365, c.RespaldoIntervaloDias);
+
+        var resultado = _config.ActualizarConfiguracion(c);
+        Aviso(resultado.Message, resultado.IsSuccess);
+        _configTienda = _config.ObtenerConfiguracion().Value;
+    }
+
+    private static void MenuUsuarios()
+    {
+        if (!EsDueño)
+        {
+            Aviso("Solo el dueño puede administrar usuarios.");
+            return;
+        }
+
+        while (true)
+        {
+            LimpiarPantalla();
+            Console.WriteLine("=== USUARIOS ===");
+            var usuarios = _config.ObtenerUsuarios().Value ?? new List<UsuarioSistema>();
+            foreach (var u in usuarios)
+                Console.WriteLine($"  [{u.Id}] {u.Nombre,-20} {u.Rol}");
+
+            Console.WriteLine("\n  [1] Agregar usuario");
+            Console.WriteLine("  [0] Regresar");
+            Console.Write("  Opción: ");
+
+            switch (Console.ReadLine())
+            {
+                case "1": AgregarUsuario(); break;
+                case "0": return;
+                case null: return;
+                default: Aviso("Opción no válida."); break;
+            }
+        }
+    }
+
+    private static void AgregarUsuario()
+    {
+        LimpiarPantalla();
+        Console.WriteLine("=== AGREGAR USUARIO ===");
+        var nombre = LeerTexto("Nombre");
+        var pin = LeerPin("PIN (4 a 6 dígitos)");
+        var rol = LeerEntero("Rol (0 = Dueño, 1 = Encargado, 2 = Empleado)", 0, 2, 2);
+
+        var resultado = _config.AgregarUsuario(nombre, pin, (RolUsuario)rol);
+        Aviso(resultado.Message, resultado.IsSuccess);
+    }
+
+    // ---------------- Utilidades de consola ----------------
+
+    private static void MostrarModuloPendiente(string modulo, string detalle)
+    {
+        LimpiarPantalla();
+        Console.WriteLine($"=== {modulo.ToUpperInvariant()} ===");
+        Console.WriteLine("\n  Módulo pendiente de implementación.");
+        Console.WriteLine($"  {detalle}");
+        Console.WriteLine("\n  Consulte docs/roadmap.md para ver el avance del proyecto.");
+        Pausa();
+    }
+
+    private static void LimpiarPantalla()
+    {
+        try { Console.Clear(); }
+        catch (IOException) { }
+    }
+
+    private static void Pausa()
+    {
+        Console.WriteLine("\n  Presione Enter para continuar...");
+        Console.ReadLine();
+    }
+
+    private static void Aviso(string mensaje, bool exito = false)
+    {
+        Console.WriteLine($"\n  {(exito ? "✓" : "⚠")} {mensaje}");
+        Pausa();
+    }
+
+    private static string LeerTexto(string etiqueta)
+    {
+        while (true)
+        {
+            Console.Write($"  {etiqueta}: ");
+            var valor = Console.ReadLine();
+            if (valor == null) throw new OperationCanceledException("Entrada terminada");
+            if (!string.IsNullOrWhiteSpace(valor)) return valor.Trim();
+            Console.WriteLine("  ⚠ Este campo es obligatorio.");
+        }
+    }
+
+    private static string LeerTextoConDefecto(string etiqueta, string porDefecto)
+    {
+        Console.Write($"  {etiqueta} [{porDefecto}]: ");
+        var valor = Console.ReadLine();
+        if (valor == null) throw new OperationCanceledException("Entrada terminada");
+        return string.IsNullOrWhiteSpace(valor) ? porDefecto : valor.Trim();
+    }
+
+    private static decimal LeerDecimal(string etiqueta, decimal minimo, decimal porDefecto)
+    {
+        while (true)
+        {
+            Console.Write($"  {etiqueta} [{porDefecto:F2}]: ");
+            var valor = Console.ReadLine();
+            if (valor == null) throw new OperationCanceledException("Entrada terminada");
+            if (string.IsNullOrWhiteSpace(valor)) return porDefecto;
+
+            if (decimal.TryParse(valor, out var numero) && numero >= minimo)
+                return numero;
+
+            Console.WriteLine($"  ⚠ Escriba un número mayor o igual a {minimo:F2}.");
+        }
+    }
+
+    private static int LeerEntero(string etiqueta, int minimo, int maximo, int porDefecto)
+    {
+        while (true)
+        {
+            Console.Write($"  {etiqueta} [{porDefecto}]: ");
+            var valor = Console.ReadLine();
+            if (valor == null) throw new OperationCanceledException("Entrada terminada");
+            if (string.IsNullOrWhiteSpace(valor)) return porDefecto;
+
+            if (int.TryParse(valor, out var numero) && numero >= minimo && numero <= maximo)
+                return numero;
+
+            Console.WriteLine($"  ⚠ Escriba un número entre {minimo} y {maximo}.");
+        }
+    }
+
+    private static bool LeerSiNo(string etiqueta, bool porDefecto)
+    {
+        Console.Write($"  {etiqueta} (s/n) [{(porDefecto ? "s" : "n")}]: ");
+        var valor = Console.ReadLine();
+        if (valor == null) throw new OperationCanceledException("Entrada terminada");
+        if (string.IsNullOrWhiteSpace(valor)) return porDefecto;
+        return valor.Trim().StartsWith("s", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string LeerPin(string etiqueta)
+    {
+        while (true)
+        {
+            Console.Write($"  {etiqueta}: ");
+            var pin = Console.ReadLine();
+            if (pin == null) throw new OperationCanceledException("Entrada terminada");
+            if (ConfiguracionService.PinValido(pin)) return pin;
+            Console.WriteLine("  ⚠ El PIN debe tener entre 4 y 6 dígitos.");
+        }
     }
 }

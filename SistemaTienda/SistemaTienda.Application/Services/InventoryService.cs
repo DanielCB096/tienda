@@ -1,5 +1,8 @@
 // Servicio de inventario - lógica de negocio
 using SistemaTienda.Core;
+using SistemaTienda.Infrastructure;
+
+namespace SistemaTienda.Application.Services;
 
 public class InventoryService
 {
@@ -7,144 +10,131 @@ public class InventoryService
 
     public InventoryService(DatabaseTools db) => _db = db;
 
-    /// <summary>
-    /// Agrega un nuevo producto al catálogo
-    /// </summary>
-    public ProcessResult AgregarProducto(Producto prod)
+    public ProcessResult AgregarProducto(Producto producto)
     {
-        try
-        {
-            if (_db.AgregarProducto(prod))
-                return ProcessResult.OK().Success("Producto agregado correctamente");
-            else
-                return ProcessResult.Error("El código de barras ya existe. Use uno diferente.");
-        }
-        catch (Exception ex)
-        {
-            return ProcessResult.Error($"Error al agregar producto: {ex.Message}");
-        }
+        if (string.IsNullOrWhiteSpace(producto.CodigoBarras))
+            return ProcessResult.Error("El código de barras es obligatorio");
+
+        if (string.IsNullOrWhiteSpace(producto.Nombre))
+            return ProcessResult.Error("El nombre del producto es obligatorio");
+
+        if (producto.Costo < 0 || producto.Precio < 0)
+            return ProcessResult.Error("El costo y el precio no pueden ser negativos");
+
+        if (producto.Stock < 0)
+            return ProcessResult.Error("El stock inicial no puede ser negativo");
+
+        if (producto.StockMinimo < 0)
+            return ProcessResult.Error("El stock mínimo no puede ser negativo");
+
+        producto.CodigoBarras = producto.CodigoBarras.Trim();
+        producto.Nombre = producto.Nombre.Trim();
+
+        var id = _db.AgregarProducto(producto);
+        return id > 0
+            ? ProcessResult.Success("Producto agregado correctamente")
+            : ProcessResult.Error("El código de barras ya existe. Use uno diferente.");
     }
 
-    /// <summary>
-    /// Obtiene todos los productos del catálogo
-    /// </summary>
     public List<Producto> ObtenerProductos() => _db.ObtenerProductos();
 
-    /// <summary>
-    /// Busca un producto por su código de barras
-    /// </summary>
-    public Producto? BuscarPorCodigo(string codigoBarras) => _db.ObtenerProductoPorCodigo(codigoBarras);
+    public Producto BuscarPorCodigo(string codigoBarras) => _db.ObtenerProductoPorCodigo(codigoBarras);
 
-    /// <summary>
-    /// Busca un producto por su ID
-    /// </summary>
-    public Producto? BuscarPorId(int productoId) => _db.ObtenerProductoPorId(productoId);
+    public Producto BuscarPorId(int productoId) => _db.ObtenerProductoPorId(productoId);
 
-    /// <summary>
-    /// Actualiza los datos de un producto (solo dueño/encargado)
-    /// </summary>
-    public bool ActualizarProducto(Producto prod)
+    public List<Producto> BuscarPorNombre(string texto) =>
+        string.IsNullOrWhiteSpace(texto) ? new List<Producto>() : _db.BuscarProductosPorNombre(texto.Trim());
+
+    public ProcessResult ActualizarProducto(Producto producto)
     {
-        try
-        {
-            if (_db.ActualizarProducto(prod))
-            {
-                // Registrar movimiento de ajuste de stock
-                _db.AjustarStock(prod.Id, prod.Stock, "Actualización de producto", "Sistema");
-                return true;
-            }
-            return false;
-        }
-        catch
-        {
-            return false;
-        }
+        if (producto == null || producto.Id <= 0)
+            return ProcessResult.Error("Producto no válido");
+
+        if (string.IsNullOrWhiteSpace(producto.Nombre))
+            return ProcessResult.Error("El nombre del producto es obligatorio");
+
+        if (producto.Costo < 0 || producto.Precio < 0 || producto.StockMinimo < 0)
+            return ProcessResult.Error("El costo, el precio y el stock mínimo no pueden ser negativos");
+
+        return _db.ActualizarProducto(producto)
+            ? ProcessResult.Success("Producto actualizado correctamente")
+            : ProcessResult.Error("No se encontró el producto");
     }
 
     /// <summary>
-    /// Reduce el stock al registrar una venta (cálculo simplificado: precio incluye impuesto)
+    /// Reduce el stock al registrar una venta. El stock nunca se edita directamente.
     /// </summary>
-    /// <param name="productoId">ID del producto vendido</param>
-    /// <param name="cantidad">Cantidad vendida</param>
-    /// <param name="usuarioVendedor">Nombre del cajero que vende</param>
-    /// <returns>ProcessResult con éxito o error</returns>
     public ProcessResult ReducirStockVenta(int productoId, int cantidad, string usuarioVendedor)
     {
-        var prod = _db.ObtenerProductoPorId(productoId);
-        if (prod == null) return ProcessResult.Error("Producto no encontrado");
+        if (cantidad <= 0)
+            return ProcessResult.Error("La cantidad debe ser mayor a cero");
 
-        if (prod.Stock < cantidad)
-            return ProcessResult.Error("Stock insuficiente para completar la venta");
+        var producto = _db.ObtenerProductoPorId(productoId);
+        if (producto == null)
+            return ProcessResult.Error("Producto no encontrado");
 
-        // Reducir stock: el precio ya incluye impuesto, así que solo restamos del stock
-        bool éxito = _db.AjustarStock(productoId, prod.Stock - cantidad, "Venta", usuarioVendedor);
+        return _db.RegistrarSalida(productoId, cantidad, "Venta", usuarioVendedor)
+            ? ProcessResult.Success("Stock reducido y venta registrada")
+            : ProcessResult.Error("Stock insuficiente para completar la venta");
+    }
 
-        if (éxito)
-            return ProcessResult.OK().Success("Stock reducido y venta registrada");
-        else
-            return ProcessResult.Error("Error atómico al reducir stock");
+    public ProcessResult RegistrarEntrada(int productoId, int cantidad, decimal costoUnitario,
+        string usuario, string motivo = "Compra")
+    {
+        if (cantidad <= 0)
+            return ProcessResult.Error("La cantidad debe ser mayor a cero");
+
+        if (costoUnitario < 0)
+            return ProcessResult.Error("El costo unitario no puede ser negativo");
+
+        return _db.RegistrarEntrada(productoId, cantidad, costoUnitario, motivo, usuario)
+            ? ProcessResult.Success($"Entrada registrada: {cantidad} unidades añadidas")
+            : ProcessResult.Error("No se encontró el producto");
     }
 
     /// <summary>
-    /// Registra una entrada de inventario (compra a proveedor)
+    /// Registra una merma: descuenta inventario y reporta el costo perdido.
     /// </summary>
-    public ProcessResult RegistrarEntrada(int productoId, int cantidad, decimal costoUnitario, string usuario, string motivo = "Compra")
+    public ProcessResult RegistrarMerma(int productoId, int cantidad, string motivo, string usuario)
     {
-        var prod = _db.ObtenerProductoPorId(productoId);
-        if (prod == null) return ProcessResult.Error("Producto no encontrado");
+        if (cantidad <= 0)
+            return ProcessResult.Error("La cantidad debe ser mayor a cero");
 
-        // Aumentar stock
-        bool actualizo = _db.AjustarStock(productoId, prod.Stock + cantidad, motivo, usuario);
+        if (string.IsNullOrWhiteSpace(motivo))
+            return ProcessResult.Error("El motivo de la merma es obligatorio");
 
-        if (actualizo)
-            return ProcessResult.OK().Success($"Entrada registrada: {cantidad} unidades añadidas");
-        else
-            return ProcessResult.Error("Error al registrar entrada de inventario");
-    }
+        var producto = _db.ObtenerProductoPorId(productoId);
+        if (producto == null)
+            return ProcessResult.Error("Producto no encontrado");
 
-    /// <summary>
-    /// Registra una merma (pérdida de inventario)
-    /// </summary>
-    public ProcessResult RegistrarMerca(int productoId, int cantidad, decimal costoPerdido, string motivo, string usuario)
-    {
-        var prod = _db.ObtenerProductoPorId(productoId);
-        if (prod == null) return ProcessResult.Error("Producto no encontrado");
-
-        if (prod.Stock < cantidad)
+        if (!_db.RegistrarSalida(productoId, cantidad, $"Merma: {motivo.Trim()}", usuario))
             return ProcessResult.Error("Stock insuficiente para registrar la merma");
 
-        // Reducir stock y registrar movimiento de merma
-        bool éxito = _db.AjustarStock(productoId, prod.Stock - cantidad, motivo, usuario);
-
-        if (éxito)
-            return ProcessResult.OK().Success($"Mermas registradas: {cantidad} unidades, costo perdido: ${costoPerdido:F2}");
-        else
-            return ProcessResult.Error("Error al registrar merma");
+        var costoPerdido = producto.Costo * cantidad;
+        return ProcessResult.Success(
+            $"Merma registrada: {cantidad} unidades, costo perdido ${costoPerdido:F2}");
     }
 
     /// <summary>
-    /// Obtiene productos con stock bajo (stock <= stock_minimo)
+    /// Ajusta el stock a un valor absoluto; requiere motivo y queda como movimiento.
     /// </summary>
+    public ProcessResult AjustarStock(int productoId, int nuevoStock, string motivo, string usuario)
+    {
+        if (nuevoStock < 0)
+            return ProcessResult.Error("El stock no puede ser negativo");
+
+        if (string.IsNullOrWhiteSpace(motivo))
+            return ProcessResult.Error("El motivo del ajuste es obligatorio");
+
+        return _db.AjustarStock(productoId, nuevoStock, motivo.Trim(), usuario)
+            ? ProcessResult.Success("Stock ajustado correctamente")
+            : ProcessResult.Error("No se pudo ajustar el stock");
+    }
+
     public List<Producto> ProductosStockBajo() => _db.ObtenerProductosStockBajo();
 
-    /// <summary>
-    /// Obtiene el historial de movimientos de un producto
-    /// </summary>
-    public List<MovimientoInventario> HistorialMovimientos(int productoId) => _db.ObtenerHistorialMovimientos(productoId);
+    public List<MovimientoInventario> HistorialMovimientos(int productoId) =>
+        _db.ObtenerHistorialMovimientos(productoId);
 
-    /// <summary>
-    /// Obtiene reporte de valorizado de inventario (stock × costo)
-    /// </summary>
-    public decimal ObtenerValorizadoInventario()
-    {
-        var productos = ObtenerProductos();
-        decimal total = 0;
-
-        foreach (var prod in productos)
-        {
-            total += prod.Stock * prod.Costo;
-        }
-
-        return total;
-    }
+    public decimal ObtenerValorizadoInventario() => _db.ObtenerValorizadoInventario();
 }

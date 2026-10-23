@@ -4,11 +4,12 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>disable</Nullable>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../SistemaTienda.Core/SistemaTienda.Core.csproj" />
-    <ProjectReference Include="../SistemaTienda.Infrastructure/SistemaTienda.Infrastructure.csproj" />
+    <ProjectReference Include="..\SistemaTienda.Core\Core.csproj" />
+    <ProjectReference Include="..\SistemaTienda.Infrastructure\Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

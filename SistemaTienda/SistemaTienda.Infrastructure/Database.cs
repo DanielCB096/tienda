@@ -1,92 +1,39 @@
 // Capa de acceso a datos local con SQLite
-using System.Text;
+using System.Globalization;
+using Microsoft.Data.Sqlite;
 using SistemaTienda.Core;
+
+namespace SistemaTienda.Infrastructure;
 
 public class DatabaseTools
 {
+    private const int VersionEsquemaActual = 1;
     private readonly string _connectionString;
 
     public DatabaseTools(string databasePath)
     {
-        _connectionString = $"Data Source={databasePath}";
-    }
+        var fullPath = Path.GetFullPath(databasePath);
+        var directory = Path.GetDirectoryName(fullPath);
+        if (!string.IsNullOrEmpty(directory))
+            Directory.CreateDirectory(directory);
 
-    public System.Data.Common.DbConnection CreateConnection()
-    {
-        var conn = new System.Data.SQLite.SQLiteConnection(_connectionString);
-        return conn;
-    }
-
-    public List<T> ExecuteReportObjects<T>(string sql, params System.Data.SQLite.SQLiteParameter[] parameters) where T : new()
-    {
-        var list = new List<T>();
-        using var conn = CreateConnection();
-        conn.Open();
-        using var cmd = conn.CreateCommand();
-        cmd.CommandText = sql;
-        if (parameters != null)
-            foreach (var p in parameters)
-                cmd.Parameters.Add(p);
-
-        using var reader = cmd.ExecuteReader();
-        while (reader.Read())
+        _connectionString = new SqliteConnectionStringBuilder
         {
-            var item = new T();
-            for (int i = 0; i < reader.FieldCount; i++)
-            {
-                var prop = typeof(T).GetProperty(reader.GetName(i));
-                if (prop != null && !prop.GetIsNullable() && reader.IsDBNull(i))
-                    continue;
-                if (prop != null) prop.SetValue(item, reader.GetValue(i));
-            }
-            list.Add(item);
-        }
-        return list;
+            DataSource = fullPath,
+            ForeignKeys = true,
+            DefaultTimeout = 30
+        }.ToString();
     }
 
-    public T? ExecuteReportObject<T>(string sql, params System.Data.SQLite.SQLiteParameter[] parameters) where T : new()
+    public SqliteConnection CreateConnection() => new(_connectionString);
+
+    public void InicializarBaseDeDatos()
     {
         using var conn = CreateConnection();
         conn.Open();
+
         using var cmd = conn.CreateCommand();
-        cmd.CommandText = sql;
-        if (parameters != null)
-            foreach (var p in parameters)
-                cmd.Parameters.Add(p);
-
-        using var reader = cmd.ExecuteReader();
-        if (reader.Read())
-        {
-            var item = new T();
-            for (int i = 0; i < reader.FieldCount; i++)
-            {
-                var prop = typeof(T).GetProperty(reader.GetName(i));
-                if (prop != null) prop.SetValue(item, reader.GetValue(i));
-            }
-            return item;
-        }
-        return default;
-    }
-
-    public int ExecuteCommand(string sql, params System.Data.SQLite.SQLiteParameter[] parameters)
-    {
-        using var conn = CreateConnection();
-        conn.Open();
-        using var cmd = conn.CreateCommand();
-        cmd.CommandText = sql;
-        if (parameters != null)
-            foreach (var p in parameters)
-                cmd.Parameters.Add(p);
-        return cmd.ExecuteNonQuery();
-    }
-
-    /// <summary>
-    /// Crea las tablas de configuración e inventario si no existen
-    /// </summary>
-    public void InicializarTablasConfiguracionYGastos()
-    {
-        // Tabla de configuración global de la tienda
-        ExecuteCommand(@"
+        cmd.CommandText = @"
             CREATE TABLE IF NOT EXISTS ConfiguracionTienda (
                 Id INTEGER PRIMARY KEY AUTOINCREMENT,
                 NombreTienda TEXT NOT NULL DEFAULT '',
@@ -100,21 +47,17 @@ public class DatabaseTools
                 UsuarioDueñoPINHash TEXT NOT NULL DEFAULT '',
                 FechaCreacion DATETIME NOT NULL DEFAULT (datetime('now')),
                 VersionApp TEXT NOT NULL DEFAULT ''
-            )");
+            );
 
-        // Tabla de usuarios del sistema
-        ExecuteCommand(@"
             CREATE TABLE IF NOT EXISTS UsuariosSistema (
                 Id INTEGER PRIMARY KEY AUTOINCREMENT,
                 Nombre TEXT NOT NULL DEFAULT '',
                 PINHash TEXT NOT NULL DEFAULT '',
-                Rol INTEGER NOT NULL DEFAULT 0, -- 0=Dueño, 1=Encargado, 2=Empleado
+                Rol INTEGER NOT NULL DEFAULT 2,
                 PermisosEspeciales TEXT NOT NULL DEFAULT '',
                 FechaCreacion DATETIME NOT NULL DEFAULT (datetime('now'))
-            )");
+            );
 
-        // Tabla de productos
-        ExecuteCommand(@"
             CREATE TABLE IF NOT EXISTS Productos (
                 Id INTEGER PRIMARY KEY AUTOINCREMENT,
                 CodigoBarras TEXT NOT NULL UNIQUE,
@@ -127,325 +70,612 @@ public class DatabaseTools
                 Impuesto DECIMAL NOT NULL DEFAULT 16.00,
                 FechaCreacion DATETIME NOT NULL DEFAULT (datetime('now')),
                 UltimaActualizacion DATETIME
-            )");
+            );
 
-        // Tabla de movimientos de inventario
-        ExecuteCommand(@"
             CREATE TABLE IF NOT EXISTS MovimientoInventario (
                 Id INTEGER PRIMARY KEY AUTOINCREMENT,
                 ProductoId INTEGER NOT NULL,
-                Tipo TEXT NOT NULL, -- 'ENTRADA', 'SALIDA', 'AJUSTE'
+                Tipo TEXT NOT NULL,
                 Cantidad INTEGER NOT NULL,
                 CostoUnitario DECIMAL NOT NULL DEFAULT 0,
                 Motivo TEXT NOT NULL DEFAULT '',
                 Usuario TEXT NOT NULL DEFAULT '',
                 Fecha DATETIME NOT NULL DEFAULT (datetime('now')),
                 FOREIGN KEY (ProductoId) REFERENCES Productos(Id)
-            )");
+            );
 
-        // **NUEVA TABLA: Gastos**
-        ExecuteCommand(@"
             CREATE TABLE IF NOT EXISTS Gastos (
                 Id INTEGER PRIMARY KEY AUTOINCREMENT,
                 Concepto TEXT NOT NULL DEFAULT '',
                 Monto DECIMAL NOT NULL DEFAULT 0,
                 Fecha DATETIME NOT NULL DEFAULT (datetime('now')),
                 MetodoPago TEXT NOT NULL DEFAULT '',
-                Origen TEXT NOT NULL DEFAULT 'Caja', -- 'Caja' o 'Externo'
-                Observaciones TEXT
-            )");
+                Origen TEXT NOT NULL DEFAULT 'Caja',
+                Observaciones TEXT NOT NULL DEFAULT ''
+            );
 
-        // **NUEVA TABLA: Clientes Fiado**
-        ExecuteCommand(@"
             CREATE TABLE IF NOT EXISTS ClientesFiado (
                 Id INTEGER PRIMARY KEY AUTOINCREMENT,
                 Nombre TEXT NOT NULL DEFAULT '',
-                Clave TEXT NOT NULL DEFAULT '', -- Cédula o RFC
+                Telefono TEXT NOT NULL DEFAULT '',
                 SaldoActual DECIMAL NOT NULL DEFAULT 0,
                 FechaRegistro DATETIME NOT NULL DEFAULT (datetime('now')),
                 UltimaActualizacion DATETIME
-            )");
+            );
 
-// **NUEVA TABLA: Proveedores
-        ExecuteCommand(@"
             CREATE TABLE IF NOT EXISTS Proveedores (
                 Id INTEGER PRIMARY KEY AUTOINCREMENT,
                 Nombre TEXT NOT NULL DEFAULT '',
-                Clave TEXT NOT NULL DEFAULT '', -- RFC o nombre comercial
+                Clave TEXT NOT NULL DEFAULT '',
                 Telefono TEXT NOT NULL DEFAULT '',
                 Direccion TEXT NOT NULL DEFAULT '',
                 SaldoPendiente DECIMAL NOT NULL DEFAULT 0,
                 FechaRegistro DATETIME NOT NULL DEFAULT (datetime('now')),
                 UltimaActualizacion DATETIME
-            )");
+            );
 
-        // Índices para rendimiento
-        ExecuteCommand("CREATE INDEX IF NOT EXISTS IX_Productos_CodigoBarras ON Productos(CodigoBarras)");
-        ExecuteCommand("CREATE INDEX IF NOT EXISTS IX_Productos_Nombre ON Productos(Nombre)");
-        ExecuteCommand("CREATE INDEX IF NOT EXISTS IX_Productos_Stock ON Productos(Stock)");
-        ExecuteCommand("CREATE INDEX IF NOT EXISTS IX_MovimientoInventario_ProductoId ON MovimientoInventario(ProductoId)");
-        ExecuteCommand("CREATE INDEX IF NOT EXISTS IX_Gastos_Fecha ON Gastos(Fecha)");
-        ExecuteCommand("CREATE INDEX IF NOT EXISTS IX_ClientesFiado_Nombre ON ClientesFiado(Nombre)");
-        ExecuteCommand("CREATE INDEX IF NOT EXISTS IX_Proveedores_Nombre ON Proveedores(Nombre)");
+            CREATE INDEX IF NOT EXISTS IX_Productos_CodigoBarras ON Productos(CodigoBarras);
+            CREATE INDEX IF NOT EXISTS IX_Productos_Nombre ON Productos(Nombre);
+            CREATE INDEX IF NOT EXISTS IX_Productos_Stock ON Productos(Stock);
+            CREATE INDEX IF NOT EXISTS IX_MovimientoInventario_ProductoId ON MovimientoInventario(ProductoId);
+            CREATE INDEX IF NOT EXISTS IX_MovimientoInventario_Fecha ON MovimientoInventario(Fecha);
+            CREATE INDEX IF NOT EXISTS IX_Gastos_Fecha ON Gastos(Fecha);
+            CREATE INDEX IF NOT EXISTS IX_ClientesFiado_Nombre ON ClientesFiado(Nombre);
+            CREATE INDEX IF NOT EXISTS IX_Proveedores_Nombre ON Proveedores(Nombre);
+        ";
+        cmd.ExecuteNonQuery();
 
-        // Insertar configuración por defecto si la tabla está vacía
-        var existente = ExecuteReportObject<ConfiguracionTienda>("SELECT Id FROM ConfiguracionTienda LIMIT 1");
+        var existente = ExecuteReportObject<ConfiguracionTienda>(conn, "SELECT * FROM ConfiguracionTienda LIMIT 1");
         if (existente == null)
         {
-            ExecuteCommand(@"
-                INSERT INTO ConfiguracionTienda (NombreTienda, Giro, ImpuestoPredeterminado, ComisionTarjeta, FondoCajaInicial, FiadoActivado, LimiCreditoCliente, RespaldoIntervaloDias, UsuarioDueñoPINHash, VersionApp)
-                VALUES ('Mi Tienda', 'Abarrotes', 16.00, 3.50, 200.00, 0, 0, 1, '', 'v1.0.0')");
+            using var insert = conn.CreateCommand();
+            insert.CommandText = @"
+                INSERT INTO ConfiguracionTienda
+                    (NombreTienda, Giro, ImpuestoPredeterminado, ComisionTarjeta, FondoCajaInicial,
+                     FiadoActivado, LimiCreditoCliente, RespaldoIntervaloDias, VersionApp)
+                VALUES ('Mi Tienda', @giro, @impuesto, @comision, @fondo, 0, 0, @intervalo, 'v0.1.0')";
+            insert.Parameters.AddWithValue("@giro", ConfiguracionPorDefecto.GiroPredeterminado);
+            insert.Parameters.AddWithValue("@impuesto", ConfiguracionPorDefecto.ImpuestoPredeterminado);
+            insert.Parameters.AddWithValue("@comision", ConfiguracionPorDefecto.ComisionTarjetaPredeterminada);
+            insert.Parameters.AddWithValue("@fondo", ConfiguracionPorDefecto.FondoCajaInicialPredeterminado);
+            insert.Parameters.AddWithValue("@intervalo", ConfiguracionPorDefecto.RespaldoIntervaloDiasPredeterminado);
+            insert.ExecuteNonQuery();
         }
+
+        using var version = conn.CreateCommand();
+        version.CommandText = $"PRAGMA user_version = {VersionEsquemaActual}";
+        version.ExecuteNonQuery();
     }
 
-    /// <summary>
-    /// Obtiene la configuración actual de la tienda
-    /// </summary>
-    public ConfiguracionTienda ObtenerConfiguracion() => ExecuteReportObject<ConfiguracionTienda>("SELECT * FROM ConfiguracionTienda WHERE Id = 1");
+    // ---------- Consultas genéricas ----------
 
-    /// <summary>
-    /// Actualiza la configuración de la tienda
-    /// </summary>
+    public List<T> ExecuteReportObjects<T>(string sql, params SqliteParameter[] parameters) where T : new()
+    {
+        using var conn = CreateConnection();
+        conn.Open();
+        return ExecuteReportObjects<T>(conn, sql, parameters);
+    }
+
+    private static List<T> ExecuteReportObjects<T>(SqliteConnection conn, string sql, params SqliteParameter[] parameters) where T : new()
+    {
+        var list = new List<T>();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = sql;
+        if (parameters != null)
+            cmd.Parameters.AddRange(parameters);
+
+        using var reader = cmd.ExecuteReader();
+        while (reader.Read())
+        {
+            var item = new T();
+            var props = typeof(T).GetProperties();
+            for (int i = 0; i < reader.FieldCount; i++)
+            {
+                var prop = props.FirstOrDefault(p => p.Name.Equals(reader.GetName(i), StringComparison.OrdinalIgnoreCase));
+                if (prop == null || reader.IsDBNull(i)) continue;
+                prop.SetValue(item, ConvertValue(reader.GetValue(i), prop.PropertyType));
+            }
+            list.Add(item);
+        }
+        return list;
+    }
+
+    public T ExecuteReportObject<T>(string sql, params SqliteParameter[] parameters) where T : new()
+    {
+        using var conn = CreateConnection();
+        conn.Open();
+        return ExecuteReportObject<T>(conn, sql, parameters);
+    }
+
+    private static T ExecuteReportObject<T>(SqliteConnection conn, string sql, params SqliteParameter[] parameters) where T : new()
+    {
+        var list = ExecuteReportObjects<T>(conn, sql, parameters);
+        return list.Count > 0 ? list[0] : default;
+    }
+
+    public T ExecuteScalar<T>(string sql, params SqliteParameter[] parameters)
+    {
+        using var conn = CreateConnection();
+        conn.Open();
+        return ExecuteScalar<T>(conn, sql, parameters);
+    }
+
+    private static T ExecuteScalar<T>(SqliteConnection conn, string sql, params SqliteParameter[] parameters)
+    {
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = sql;
+        if (parameters != null)
+            cmd.Parameters.AddRange(parameters);
+
+        var result = cmd.ExecuteScalar();
+        if (result == null || result == DBNull.Value)
+            return default;
+
+        return (T)ConvertValue(result, typeof(T));
+    }
+
+    public int ExecuteCommand(string sql, params SqliteParameter[] parameters)
+    {
+        using var conn = CreateConnection();
+        conn.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = sql;
+        if (parameters != null)
+            cmd.Parameters.AddRange(parameters);
+        return cmd.ExecuteNonQuery();
+    }
+
+    private static object ConvertValue(object value, Type targetType)
+    {
+        var underlying = Nullable.GetUnderlyingType(targetType) ?? targetType;
+
+        if (underlying == typeof(string))
+            return Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty;
+
+        if (underlying == typeof(bool))
+        {
+            if (value is string s)
+                return s == "1" || s.Equals("true", StringComparison.OrdinalIgnoreCase);
+            return Convert.ToInt64(value, CultureInfo.InvariantCulture) != 0;
+        }
+
+        if (underlying == typeof(decimal))
+            return Convert.ToDecimal(value, CultureInfo.InvariantCulture);
+
+        if (underlying == typeof(DateTime))
+        {
+            if (value is DateTime dt) return dt;
+            return DateTime.Parse(Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty,
+                CultureInfo.InvariantCulture, DateTimeStyles.None);
+        }
+
+        if (underlying.IsEnum)
+            return Enum.ToObject(underlying, Convert.ToInt64(value, CultureInfo.InvariantCulture));
+
+        return Convert.ChangeType(value, underlying, CultureInfo.InvariantCulture);
+    }
+
+    // ---------- Configuración ----------
+
+    public ConfiguracionTienda ObtenerConfiguracion() =>
+        ExecuteReportObject<ConfiguracionTienda>("SELECT * FROM ConfiguracionTienda ORDER BY Id LIMIT 1");
+
     public bool ActualizarConfiguracion(ConfiguracionTienda config)
     {
+        var filas = ExecuteCommand(@"
+            UPDATE ConfiguracionTienda
+            SET NombreTienda = @nom, Giro = @giro, ImpuestoPredeterminado = @imp,
+                ComisionTarjeta = @comis, FondoCajaInicial = @fondo, FiadoActivado = @fiado,
+                LimiCreditoCliente = @limite, RespaldoIntervaloDias = @intervalo,
+                VersionApp = @ver
+            WHERE Id = @id",
+            new SqliteParameter("@id", config.Id),
+            new SqliteParameter("@nom", config.NombreTienda),
+            new SqliteParameter("@giro", config.Giro),
+            new SqliteParameter("@imp", config.ImpuestoPredeterminado),
+            new SqliteParameter("@comis", config.ComisionTarjeta),
+            new SqliteParameter("@fondo", config.FondoCajaInicial),
+            new SqliteParameter("@fiado", config.FiadoActivado ? 1 : 0),
+            new SqliteParameter("@limite", config.LimiCreditoCliente),
+            new SqliteParameter("@intervalo", config.RespaldoIntervaloDias),
+            new SqliteParameter("@ver", config.VersionApp));
+
+        return filas > 0;
+    }
+
+    // ---------- Usuarios ----------
+
+    public int AgregarUsuario(UsuarioSistema usuario)
+    {
+        using var conn = CreateConnection();
+        conn.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = @"
+            INSERT INTO UsuariosSistema (Nombre, PINHash, Rol, PermisosEspeciales)
+            VALUES (@nom, @pin, @rol, @perm);
+            SELECT last_insert_rowid();";
+        cmd.Parameters.AddWithValue("@nom", usuario.Nombre);
+        cmd.Parameters.AddWithValue("@pin", usuario.PINHash);
+        cmd.Parameters.AddWithValue("@rol", (int)usuario.Rol);
+        cmd.Parameters.AddWithValue("@perm", usuario.PermisosEspeciales ?? string.Empty);
+
+        usuario.Id = Convert.ToInt32(cmd.ExecuteScalar(), CultureInfo.InvariantCulture);
+        return usuario.Id;
+    }
+
+    public List<UsuarioSistema> ObtenerUsuarios() =>
+        ExecuteReportObjects<UsuarioSistema>("SELECT * FROM UsuariosSistema ORDER BY Nombre");
+
+    public UsuarioSistema ObtenerUsuarioPorId(int usuarioId) =>
+        ExecuteReportObject<UsuarioSistema>("SELECT * FROM UsuariosSistema WHERE Id = @id",
+            new SqliteParameter("@id", usuarioId));
+
+    public int ContarUsuarios() =>
+        ExecuteScalar<int>("SELECT COUNT(*) FROM UsuariosSistema");
+
+    // ---------- Productos ----------
+
+    /// <summary>
+    /// Inserta el producto y registra su stock inicial como movimiento de entrada.
+    /// Devuelve el Id creado o 0 si el código de barras ya existe.
+    /// </summary>
+    public int AgregarProducto(Producto producto)
+    {
+        using var conn = CreateConnection();
+        conn.Open();
+        using var tx = conn.BeginTransaction();
+
         try
         {
-            ExecuteCommand(@"
-                UPDATE ConfiguracionTienda 
-                SET NombreTienda = @nom, Giro = @giro, ImpuestoPredeterminado = @imp, 
-                    ComisionTarjeta = @comis, FondoCajaInicial = @fondo, FiadoActivado = @fiado,
-                    LimiCreditoCliente = @limite, RespaldoIntervaloDias = @intervalo, 
-                    UsuarioDueñoPINHash = @pinHash, VersionApp = @ver
-                WHERE Id = 1", 
-                new System.Data.SQLite.SQLiteParameter("@nom", config.NombreTienda),
-                new System.Data.SQLite.SQLiteParameter("@giro", config.Giro),
-                new System.Data.SQLite.SQLiteParameter("@imp", (object)config.ImpuestoPredeterminado ?? DBNull.Value),
-                new System.Data.SQLite.SQLiteParameter("@comis", (object)config.ComisionTarjeta ?? DBNull.Value),
-                new System.Data.SQLite.SQLiteParameter("@fondo", (object)config.FondoCajaInicial ?? DBNull.Value),
-                new System.Data.SQLite.SQLiteParameter("@fiado", config.FiadoActivado ? 1 : 0),
-                new System.Data.SQLite.SQLiteParameter("@limite", (object)config.LimiCreditoCliente ?? DBNull.Value),
-                new System.Data.SQLite.SQLiteParameter("@intervalo", config.RespaldoIntervaloDias),
-                new System.Data.SQLite.SQLiteParameter("@pinHash", config.UsuarioDueñoPINHash),
-                new System.Data.SQLite.SQLiteParameter("@ver", config.VersionApp));
-            return true;
+            using var cmd = conn.CreateCommand();
+            cmd.Transaction = tx;
+            cmd.CommandText = @"
+                INSERT INTO Productos
+                    (CodigoBarras, Nombre, Costo, Precio, Stock, StockMinimo, Categoria, Impuesto)
+                VALUES (@codigo, @nombre, @costo, @precio, 0, @minimo, @categoria, @impuesto);
+                SELECT last_insert_rowid();";
+            cmd.Parameters.AddWithValue("@codigo", producto.CodigoBarras);
+            cmd.Parameters.AddWithValue("@nombre", producto.Nombre);
+            cmd.Parameters.AddWithValue("@costo", producto.Costo);
+            cmd.Parameters.AddWithValue("@precio", producto.Precio);
+            cmd.Parameters.AddWithValue("@minimo", producto.StockMinimo);
+            cmd.Parameters.AddWithValue("@categoria", producto.Categoria ?? string.Empty);
+            cmd.Parameters.AddWithValue("@impuesto", producto.Impuesto);
+
+            var id = Convert.ToInt32(cmd.ExecuteScalar(), CultureInfo.InvariantCulture);
+
+            if (producto.Stock > 0)
+                InsertarMovimiento(conn, tx, id, MovimientoTipo.Entrada, producto.Stock,
+                    producto.Costo, "Stock inicial", "Sistema");
+
+            tx.Commit();
+            producto.Id = id;
+            return id;
         }
-        catch
+        catch (SqliteException ex) when (ex.SqliteErrorCode == 19)
         {
+            tx.Rollback();
+            return 0;
+        }
+    }
+
+    public bool ActualizarProducto(Producto producto)
+    {
+        var filas = ExecuteCommand(@"
+            UPDATE Productos
+            SET Nombre = @nombre, Costo = @costo, Precio = @precio,
+                StockMinimo = @minimo, Categoria = @categoria, Impuesto = @impuesto,
+                UltimaActualizacion = datetime('now')
+            WHERE Id = @id",
+            new SqliteParameter("@id", producto.Id),
+            new SqliteParameter("@nombre", producto.Nombre),
+            new SqliteParameter("@costo", producto.Costo),
+            new SqliteParameter("@precio", producto.Precio),
+            new SqliteParameter("@minimo", producto.StockMinimo),
+            new SqliteParameter("@categoria", producto.Categoria ?? string.Empty),
+            new SqliteParameter("@impuesto", producto.Impuesto));
+
+        return filas > 0;
+    }
+
+    public List<Producto> ObtenerProductos() =>
+        ExecuteReportObjects<Producto>("SELECT * FROM Productos ORDER BY Nombre");
+
+    public List<Producto> BuscarProductosPorNombre(string texto)
+    {
+        var patron = $"%{texto.Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_")}%";
+        return ExecuteReportObjects<Producto>(
+            "SELECT * FROM Productos WHERE Nombre LIKE @patron ESCAPE '\\' ORDER BY Nombre LIMIT 50",
+            new SqliteParameter("@patron", patron));
+    }
+
+    public Producto ObtenerProductoPorCodigo(string codigoBarras) =>
+        ExecuteReportObject<Producto>("SELECT * FROM Productos WHERE CodigoBarras = @codigo",
+            new SqliteParameter("@codigo", codigoBarras));
+
+    public Producto ObtenerProductoPorId(int productoId) =>
+        ExecuteReportObject<Producto>("SELECT * FROM Productos WHERE Id = @id",
+            new SqliteParameter("@id", productoId));
+
+    public List<Producto> ObtenerProductosStockBajo() =>
+        ExecuteReportObjects<Producto>(
+            "SELECT * FROM Productos WHERE Stock <= StockMinimo ORDER BY Stock, Nombre");
+
+    public decimal ObtenerValorizadoInventario() =>
+        ExecuteScalar<decimal>("SELECT COALESCE(SUM(Stock * Costo), 0) FROM Productos");
+
+    public int ObtenerStock(int productoId) =>
+        ExecuteScalar<int>("SELECT COALESCE(SUM(Cantidad), 0) FROM MovimientoInventario WHERE ProductoId = @id",
+            new SqliteParameter("@id", productoId));
+
+    // ---------- Movimientos de inventario ----------
+
+    public bool RegistrarEntrada(int productoId, int cantidad, decimal costoUnitario, string motivo, string usuario)
+    {
+        if (cantidad <= 0) return false;
+        return RegistrarMovimientoSeguro(productoId, MovimientoTipo.Entrada, cantidad, costoUnitario, motivo, usuario);
+    }
+
+    /// <summary>
+    /// Registra una salida (venta o merma) validando stock dentro de la transacción.
+    /// </summary>
+    public bool RegistrarSalida(int productoId, int cantidad, string motivo, string usuario)
+    {
+        if (cantidad <= 0) return false;
+
+        using var conn = CreateConnection();
+        conn.Open();
+        using var tx = conn.BeginTransaction();
+
+        var stock = ObtenerStockEnTransaccion(conn, tx, productoId);
+        if (stock < cantidad)
+        {
+            tx.Rollback();
             return false;
         }
+
+        var producto = ObtenerProductoEnTransaccion(conn, tx, productoId);
+        InsertarMovimiento(conn, tx, productoId, MovimientoTipo.Salida, -cantidad,
+            producto?.Costo ?? 0, motivo, usuario);
+        tx.Commit();
+        return true;
     }
 
     /// <summary>
-    /// Agrega un nuevo gasto
+    /// Ajusta el stock a un valor absoluto registrando la diferencia como movimiento.
     /// </summary>
-    public bool AgregarGasto(Gasto gasto)
+    public bool AjustarStock(int productoId, int nuevoStock, string motivo, string usuario)
     {
-        try
+        if (nuevoStock < 0) return false;
+
+        using var conn = CreateConnection();
+        conn.Open();
+        using var tx = conn.BeginTransaction();
+
+        var stockActual = ObtenerStockEnTransaccion(conn, tx, productoId);
+        var diferencia = nuevoStock - stockActual;
+        if (diferencia == 0)
         {
-            ExecuteCommand(@"
-                INSERT INTO Gastos (Concepto, Monto, Fecha, MetodoPago, Origen, Observaciones)
-                VALUES (@con, @mon, @fecha, @met, @ori, @obs)", 
-                new System.Data.SQLite.SQLiteParameter("@con", gasto.Concepto),
-                new System.Data.SQLite.SQLiteParameter("@mon", (object)gasto.Monto ?? DBNull.Value),
-                new System.Data.SQLite.SQLiteParameter("@fecha", gasto.Fecha ?? DateTime.Now),
-                new System.Data.SQLite.SQLiteParameter("@met", gasto.MetodoPago ?? ""),
-                new System.Data.SQLite.SQLiteParameter("@ori", gasto.Origen ?? "Caja"),
-                new System.Data.SQLite.SQLiteParameter("@obs", (object)gasto.Observaciones ?? DBNull.Value));
+            tx.Rollback();
             return true;
         }
-        catch
+
+        InsertarMovimiento(conn, tx, productoId, MovimientoTipo.Ajuste,
+            diferencia, 0, motivo, usuario);
+        tx.Commit();
+        return true;
+    }
+
+    public List<MovimientoInventario> ObtenerHistorialMovimientos(int productoId) =>
+        ExecuteReportObjects<MovimientoInventario>(
+            "SELECT * FROM MovimientoInventario WHERE ProductoId = @id ORDER BY Fecha DESC, Id DESC LIMIT 200",
+            new SqliteParameter("@id", productoId));
+
+    private bool RegistrarMovimientoSeguro(int productoId, string tipo, int cantidad,
+        decimal costoUnitario, string motivo, string usuario)
+    {
+        using var conn = CreateConnection();
+        conn.Open();
+        using var tx = conn.BeginTransaction();
+
+        if (ObtenerProductoEnTransaccion(conn, tx, productoId) == null)
         {
+            tx.Rollback();
             return false;
         }
+
+        InsertarMovimiento(conn, tx, productoId, tipo, cantidad, costoUnitario, motivo, usuario);
+        tx.Commit();
+        return true;
     }
 
-    /// <summary>
-    /// Obtiene todos los gastos registrados
-    /// </summary>
-    public List<Gasto> ObtenerGastos() => ExecuteReportObjects<Gasto>("SELECT * FROM Gastos ORDER BY Fecha DESC");
-
-    /// <summary>
-    /// Obtiene gastos por fecha o método de pago
-    /// </summary>
-    public List<Gasto> ObtenerGastosPorFiltro(string metodoPago = null, string origen = null)
+    private static void InsertarMovimiento(SqliteConnection conn, SqliteTransaction tx, int productoId,
+        string tipo, int cantidadFirmada, decimal costoUnitario, string motivo, string usuario)
     {
-        string sql = "SELECT * FROM Gastos WHERE 1=1";
-        var parameters = new List<System.Data.SQLite.SQLiteParameter>();
-        
-        if (!string.IsNullOrEmpty(metodoPago))
-        {
-            sql += " AND MetodoPago = @met";
-            parameters.Add(new System.Data.SQLite.SQLiteParameter("@met", metodoPago));
-        }
-        
-        if (!string.IsNullOrEmpty(origen))
-        {
-            sql += " AND Origen = @ori";
-            parameters.Add(new System.Data.SQLite.SQLiteParameter("@ori", origen));
-        }
+        using var insert = conn.CreateCommand();
+        insert.Transaction = tx;
+        insert.CommandText = @"
+            INSERT INTO MovimientoInventario (ProductoId, Tipo, Cantidad, CostoUnitario, Motivo, Usuario)
+            VALUES (@producto, @tipo, @cantidad, @costo, @motivo, @usuario)";
+        insert.Parameters.AddWithValue("@producto", productoId);
+        insert.Parameters.AddWithValue("@tipo", tipo);
+        insert.Parameters.AddWithValue("@cantidad", cantidadFirmada);
+        insert.Parameters.AddWithValue("@costo", costoUnitario);
+        insert.Parameters.AddWithValue("@motivo", motivo ?? string.Empty);
+        insert.Parameters.AddWithValue("@usuario", usuario ?? string.Empty);
+        insert.ExecuteNonQuery();
 
-        return ExecuteReportObjects<Gasto>(sql, parameters.ToArray().ToArray());
+        using var update = conn.CreateCommand();
+        update.Transaction = tx;
+        update.CommandText = @"
+            UPDATE Productos
+            SET Stock = Stock + @cantidad, UltimaActualizacion = datetime('now')
+            WHERE Id = @producto";
+        update.Parameters.AddWithValue("@cantidad", cantidadFirmada);
+        update.Parameters.AddWithValue("@producto", productoId);
+        update.ExecuteNonQuery();
     }
 
-    /// <summary>
-    /// Obtiene el total de gastos en un período
-    /// </summary>
-    public decimal ObtenerTotalGastos() => ExecuteReportObject<decimal>("SELECT ISNULL(SUM(Monto), 0) FROM Gastos");
-
-    /// <summary>
-    /// Obtiene gastos por categoría (concepto)
-    /// </summary>
-    public List<(string Concepto, decimal Total)> ObtenerGastosPorConcepto()
+    private static int ObtenerStockEnTransaccion(SqliteConnection conn, SqliteTransaction tx, int productoId)
     {
-        return ExecuteReportObjects<(string Concepto, decimal Total)>(
-            "SELECT Concepto, ISNULL(SUM(Monto), 0) as Total FROM Gastos GROUP BY Concepto ORDER BY Total DESC");
+        using var cmd = conn.CreateCommand();
+        cmd.Transaction = tx;
+        cmd.CommandText = "SELECT COALESCE(SUM(Cantidad), 0) FROM MovimientoInventario WHERE ProductoId = @id";
+        cmd.Parameters.AddWithValue("@id", productoId);
+        return Convert.ToInt32(cmd.ExecuteScalar(), CultureInfo.InvariantCulture);
     }
 
-    /// <summary>
-    /// Agrega un nuevo cliente fiado
-    /// </summary>
-    public bool AgregarClienteFiado(ClienteFiado cliente)
+    private static Producto ObtenerProductoEnTransaccion(SqliteConnection conn, SqliteTransaction tx, int productoId)
     {
-        try
+        using var cmd = conn.CreateCommand();
+        cmd.Transaction = tx;
+        cmd.CommandText = "SELECT * FROM Productos WHERE Id = @id";
+        cmd.Parameters.AddWithValue("@id", productoId);
+
+        using var reader = cmd.ExecuteReader();
+        if (!reader.Read()) return null;
+
+        var producto = new Producto();
+        var props = typeof(Producto).GetProperties();
+        for (int i = 0; i < reader.FieldCount; i++)
         {
-            ExecuteCommand(@"
-                INSERT INTO ClientesFiado (Nombre, Clave, SaldoActual, FechaRegistro, UltimaActualizacion)
-                VALUES (@nom, @clv, @sal, @fec, @ult)", 
-                new System.Data.SQLite.SQLiteParameter("@nom", cliente.Nombre),
-                new System.Data.SQLite.SQLiteParameter("@clv", cliente.Clave),
-                new System.Data.SQLite.SQLiteParameter("@sal", (object)cliente.SaldoActual ?? DBNull.Value),
-                new System.Data.SQLite.SQLiteParameter("@fec", cliente.FechaRegistro),
-                new System.Data.SQLite.SQLiteParameter("@ult", cliente.UltimaActualizacion));
-            return true;
+            var prop = props.FirstOrDefault(p => p.Name.Equals(reader.GetName(i), StringComparison.OrdinalIgnoreCase));
+            if (prop == null || reader.IsDBNull(i)) continue;
+            prop.SetValue(producto, ConvertValue(reader.GetValue(i), prop.PropertyType));
         }
-        catch
-        {
-            return false;
-        }
+        return producto;
     }
 
-    /// <summary>
-    /// Obtiene todos los clientes fiado
-    /// </summary>
-    public List<ClienteFiado> ObtenerTodosLosClientes() => ExecuteReportObjects<ClienteFiado>("SELECT * FROM ClientesFiado ORDER BY Nombre");
+    // ---------- Gastos ----------
 
-    /// <summary>
-    /// Obtiene clientes con saldo pendiente
-    /// </summary>
-    public List<ClienteFiado> ObtenerClientesConSaldo() => ExecuteReportObjects<ClienteFiado>("SELECT * FROM ClientesFiado WHERE SaldoActual > 0 ORDER BY Nombre");
-
-    /// <summary>
-    /// Obtiene un cliente fiado por ID
-    /// </summary>
-    public ClienteFiado? ObtenerClienteFiadoPorId(int clienteId) => ExecuteReportObject<ClienteFiado>("SELECT * FROM ClientesFiado WHERE Id = @id", new System.Data.SQLite.SQLiteParameter("@id", clienteId));
-
-    /// <summary>
-    /// Actualiza el saldo de un cliente después de un abono
-    /// </summary>
-    public bool ActualizarSaldoCliente(ClienteFiado cliente)
+    public int AgregarGasto(Gasto gasto)
     {
-        try
-        {
-            ExecuteCommand(@"
-                UPDATE ClientesFiado 
-                SET SaldoActual = @sal, UltimaActualizacion = datetime('now')
-                WHERE Id = @id", 
-                new System.Data.SQLite.SQLiteParameter("@id", cliente.Id),
-                new System.Data.SQLite.SQLiteParameter("@sal", (object)cliente.SaldoActual ?? DBNull.Value));
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
+        using var conn = CreateConnection();
+        conn.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = @"
+            INSERT INTO Gastos (Concepto, Monto, Fecha, MetodoPago, Origen, Observaciones)
+            VALUES (@concepto, @monto, @fecha, @metodo, @origen, @obs);
+            SELECT last_insert_rowid();";
+        cmd.Parameters.AddWithValue("@concepto", gasto.Concepto);
+        cmd.Parameters.AddWithValue("@monto", gasto.Monto);
+        cmd.Parameters.AddWithValue("@fecha", gasto.Fecha);
+        cmd.Parameters.AddWithValue("@metodo", gasto.MetodoPago ?? string.Empty);
+        cmd.Parameters.AddWithValue("@origen", gasto.Origen ?? OrigenGasto.Caja);
+        cmd.Parameters.AddWithValue("@obs", gasto.Observaciones ?? string.Empty);
+
+        gasto.Id = Convert.ToInt32(cmd.ExecuteScalar(), CultureInfo.InvariantCulture);
+        return gasto.Id;
     }
 
-    /// <summary>
-    /// Verifica si un cliente existe
-    /// </summary>
-    public bool ClienteExiste(string nombre) => ExecuteReportObject<int?>("SELECT COUNT(*) FROM ClientesFiado WHERE Nombre = @nom", new System.Data.SQLite.SQLiteParameter("@nom", nombre)) > 0;
+    public List<Gasto> ObtenerGastos() =>
+        ExecuteReportObjects<Gasto>("SELECT * FROM Gastos ORDER BY Fecha DESC, Id DESC");
 
-    /// <summary>
-    /// Agrega un nuevo proveedor
-    /// </summary>
-    public bool AgregarProveedor(Proveedor proveedor)
+    public decimal ObtenerTotalGastos() =>
+        ExecuteScalar<decimal>("SELECT COALESCE(SUM(Monto), 0) FROM Gastos");
+
+    public List<GastoPorConcepto> ObtenerGastosPorConcepto()
     {
-        try
+        using var conn = CreateConnection();
+        conn.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = @"
+            SELECT Concepto, COALESCE(SUM(Monto), 0) AS Total
+            FROM Gastos
+            GROUP BY Concepto
+            ORDER BY Total DESC";
+
+        var lista = new List<GastoPorConcepto>();
+        using var reader = cmd.ExecuteReader();
+        while (reader.Read())
         {
-            ExecuteCommand(@"
-                INSERT INTO Proveedores (Nombre, Clave, Telefono, Direccion, SaldoPendiente, FechaRegistro, UltimaActualizacion)
-                VALUES (@nom, @clv, @tel, @dir, @sal, @fec, @ult)", 
-                new System.Data.SQLite.SQLiteParameter("@nom", proveedor.Nombre),
-                new System.Data.SQLite.SQLiteParameter("@clv", proveedor.Clave),
-                new System.Data.SQLite.SQLiteParameter("@tel", proveedor.Telefono),
-                new System.Data.SQLite.SQLiteParameter("@dir", proveedor.Direccion),
-                new System.Data.SQLite.SQLiteParameter("@sal", (object)proveedor.SaldoPendiente ?? DBNull.Value),
-                new System.Data.SQLite.SQLiteParameter("@fec", proveedor.FechaRegistro),
-                new System.Data.SQLite.SQLiteParameter("@ult", proveedor.UltimaActualizacion));
-            return true;
+            lista.Add(new GastoPorConcepto
+            {
+                Concepto = reader.GetString(0),
+                Total = Convert.ToDecimal(reader.GetValue(1), CultureInfo.InvariantCulture)
+            });
         }
-        catch
-        {
-            return false;
-        }
+        return lista;
     }
 
-    /// <summary>
-    /// Obtiene todos los proveedores
-    /// </summary>
-    public List<Proveedor> ObtenerTodosLosProveedores() => ExecuteReportObjects<Proveedor>("SELECT * FROM Proveedores ORDER BY Nombre");
+    // ---------- Clientes fiado ----------
 
-    /// <summary>
-    /// Obtiene el saldo pendiente de un proveedor
-    /// </summary>
-    public decimal ObtenerSaldoProveedor(int proveedorId) => ExecuteReportObject<decimal>("SELECT ISNULL(SaldoPendiente, 0) FROM Proveedores WHERE Id = @id", new System.Data.SQLite.SQLiteParameter("@id", proveedorId));
-
-    /// <summary>
-    /// Actualiza el saldo de un proveedor después de un pago
-    /// </summary>
-    public bool ActualizarSaldoProveedor(Proveedor proveedor)
+    public int AgregarClienteFiado(ClienteFiado cliente)
     {
-        try
-        {
-            ExecuteCommand(@"
-                UPDATE Proveedores 
-                SET SaldoPendiente = @sal, UltimaActualizacion = datetime('now')
-                WHERE Id = @id", 
-                new System.Data.SQLite.SQLiteParameter("@id", proveedor.Id),
-                new System.Data.SQLite.SQLiteParameter("@sal", (object)proveedor.SaldoPendiente ?? DBNull.Value));
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
+        using var conn = CreateConnection();
+        conn.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = @"
+            INSERT INTO ClientesFiado (Nombre, Telefono, SaldoActual)
+            VALUES (@nombre, @telefono, @saldo);
+            SELECT last_insert_rowid();";
+        cmd.Parameters.AddWithValue("@nombre", cliente.Nombre);
+        cmd.Parameters.AddWithValue("@telefono", cliente.Telefono ?? string.Empty);
+        cmd.Parameters.AddWithValue("@saldo", cliente.SaldoActual);
+
+        cliente.Id = Convert.ToInt32(cmd.ExecuteScalar(), CultureInfo.InvariantCulture);
+        return cliente.Id;
     }
-}
 
-/// <summary>
-/// Entidad para cliente fiado
-/// </summary>
-public class ClienteFiado
-{
-    public int Id { get; set; }
-    public string Nombre { get; set; } = string.Empty;
-    public string Clave { get; set; } = string.Empty; // Cédula o RFC
-    public decimal SaldoActual { get; set; }
-    public DateTime FechaRegistro { get; set; } = DateTime.Now;
-    public DateTime? UltimaActualizacion { get; set; }
-}
+    public List<ClienteFiado> ObtenerTodosLosClientes() =>
+        ExecuteReportObjects<ClienteFiado>("SELECT * FROM ClientesFiado ORDER BY Nombre");
 
-/// <summary>
-/// Entidad para proveedor
-/// </summary>
-public class Proveedor
-{
-    public int Id { get; set; }
-    public string Nombre { get; set; } = string.Empty;
-    public string Clave { get; set; } = string.Empty; // RFC o nombre comercial
-    public string Telefono { get; set; } = string.Empty;
-    public string Direccion { get; set; } = string.Empty;
-    public decimal SaldoPendiente { get; set; }
-    public DateTime FechaRegistro { get; set; } = DateTime.Now;
-    public DateTime? UltimaActualizacion { get; set; }
+    public List<ClienteFiado> ObtenerClientesConSaldo() =>
+        ExecuteReportObjects<ClienteFiado>("SELECT * FROM ClientesFiado WHERE SaldoActual > 0 ORDER BY Nombre");
+
+    public ClienteFiado ObtenerClienteFiadoPorId(int clienteId) =>
+        ExecuteReportObject<ClienteFiado>("SELECT * FROM ClientesFiado WHERE Id = @id",
+            new SqliteParameter("@id", clienteId));
+
+    public bool ActualizarSaldoCliente(int clienteId, decimal nuevoSaldo)
+    {
+        var filas = ExecuteCommand(@"
+            UPDATE ClientesFiado
+            SET SaldoActual = @saldo, UltimaActualizacion = datetime('now')
+            WHERE Id = @id",
+            new SqliteParameter("@id", clienteId),
+            new SqliteParameter("@saldo", nuevoSaldo));
+
+        return filas > 0;
+    }
+
+    // ---------- Proveedores ----------
+
+    public int AgregarProveedor(Proveedor proveedor)
+    {
+        using var conn = CreateConnection();
+        conn.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = @"
+            INSERT INTO Proveedores (Nombre, Clave, Telefono, Direccion, SaldoPendiente)
+            VALUES (@nombre, @clave, @telefono, @direccion, @saldo);
+            SELECT last_insert_rowid();";
+        cmd.Parameters.AddWithValue("@nombre", proveedor.Nombre);
+        cmd.Parameters.AddWithValue("@clave", proveedor.Clave ?? string.Empty);
+        cmd.Parameters.AddWithValue("@telefono", proveedor.Telefono ?? string.Empty);
+        cmd.Parameters.AddWithValue("@direccion", proveedor.Direccion ?? string.Empty);
+        cmd.Parameters.AddWithValue("@saldo", proveedor.SaldoPendiente);
+
+        proveedor.Id = Convert.ToInt32(cmd.ExecuteScalar(), CultureInfo.InvariantCulture);
+        return proveedor.Id;
+    }
+
+    public List<Proveedor> ObtenerTodosLosProveedores() =>
+        ExecuteReportObjects<Proveedor>("SELECT * FROM Proveedores ORDER BY Nombre");
+
+    public Proveedor ObtenerProveedorPorId(int proveedorId) =>
+        ExecuteReportObject<Proveedor>("SELECT * FROM Proveedores WHERE Id = @id",
+            new SqliteParameter("@id", proveedorId));
+
+    public bool ActualizarSaldoProveedor(int proveedorId, decimal nuevoSaldo)
+    {
+        var filas = ExecuteCommand(@"
+            UPDATE Proveedores
+            SET SaldoPendiente = @saldo, UltimaActualizacion = datetime('now')
+            WHERE Id = @id",
+            new SqliteParameter("@id", proveedorId),
+            new SqliteParameter("@saldo", nuevoSaldo));
+
+        return filas > 0;
+    }
 }
