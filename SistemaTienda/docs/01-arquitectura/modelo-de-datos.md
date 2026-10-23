@@ -1,6 +1,6 @@
-# Modelo de Datos (esquema v2)
+# Modelo de Datos (esquema v4)
 
-Base local SQLite, un solo archivo. `PRAGMA user_version = 2`.
+Base local SQLite, un solo archivo. `PRAGMA user_version = 4`.
 
 El acceso vive en `SistemaTienda.Infrastructure/Database.cs` (`DatabaseTools`). Todas las consultas son parametrizadas.
 
@@ -9,6 +9,8 @@ El acceso vive en `SistemaTienda.Infrastructure/Database.cs` (`DatabaseTools`). 
 - La versión vigente se guarda en `PRAGMA user_version`. La **versión 1** es el esquema base que crea `DatabaseTools` en una base nueva o vacía.
 - `SistemaTienda.Infrastructure/Migraciones.cs` define la lista ordenada de migraciones (`Migracion(Version, Descripcion, Aplicar)`). Versiones registradas:
   - **v2** — crea `Ventas` y `VentaLineas` con sus índices (módulo de ventas).
+  - **v3** — crea `CortesCaja`, `MovimientosCaja` y `AbonosFiado` con sus índices (corte de caja e historial de abonos).
+  - **v4** — crea `Bitacora` con sus índices y disparadores que impiden `UPDATE` y `DELETE` (auditoría inmutable).
 - Una base nueva se crea directamente en la versión máxima (`Migraciones.VersionMaxima`): no se crea respaldo previo porque aún no hay datos.
 - `MigradorEsquema.Migrar()` se ejecuta dentro de `InicializarBaseDeDatos()` al arrancar:
   1. Lee `user_version`; si la base es más nueva que la app, aborta sin tocar nada.
@@ -160,6 +162,80 @@ Detalle de productos vendidos con precio y costo congelados.
 | FechaRegistro | DATETIME | |
 | UltimaActualizacion | DATETIME | |
 
+### AbonosFiado
+
+Historial inmutable de pagos de clientes con fiado (migración v3). Se inserta en la misma transacción que descuenta `ClientesFiado.SaldoActual`.
+
+| Columna | Tipo | Notas |
+|---------|------|-------|
+| Id | INTEGER PK | |
+| ClienteId | INTEGER FK → ClientesFiado | |
+| Fecha | DATETIME | Hora local del abono |
+| Monto | DECIMAL | > 0 |
+| MetodoPago | TEXT | `Efectivo` por defecto; solo efectivo entra al corte |
+| Usuario | TEXT | Quien registró el abono |
+
+### CortesCaja
+
+Cabecera inmutable de cada corte (migración v3). Guarda los totales calculados y el resultado del conteo; no se edita ni se borra.
+
+| Columna | Tipo | Notas |
+|---------|------|-------|
+| Id | INTEGER PK | |
+| Desde | DATETIME | `Hasta` del corte anterior |
+| Hasta | DATETIME | Momento del cierre; **exclusivo** para el periodo siguiente |
+| FondoInicial | DECIMAL | Efectivo con el que abre el periodo |
+| VentasEfectivo | DECIMAL | Suma de `PagoEfectivo` del periodo |
+| VentasTarjeta | DECIMAL | Suma de `PagoTarjeta` |
+| VentasFiado | DECIMAL | Suma de `PagoFiado` |
+| TotalVentas | DECIMAL | Suma de `Total` |
+| NumeroVentas | INTEGER | Ventas del periodo |
+| NumeroVentasEfectivo | INTEGER | Con `MetodoPago = Efectivo` |
+| NumeroVentasTarjeta | INTEGER | Con `MetodoPago = Tarjeta` |
+| NumeroVentasMixto | INTEGER | Con `MetodoPago = Mixto` |
+| NumeroVentasFiado | INTEGER | Con `MetodoPago = Fiado` |
+| AbonosEfectivo | DECIMAL | Abonos cobrados en efectivo |
+| IngresosCaja | DECIMAL | Movimientos de tipo `Ingreso` |
+| RetirosCaja | DECIMAL | Movimientos de tipo `Retiro` |
+| GastosCaja | DECIMAL | Gastos con `Origen = Caja` |
+| EfectivoEsperado | DECIMAL | Fórmula del corte |
+| EfectivoContado | DECIMAL | Lo contado físicamente |
+| Diferencia | DECIMAL | `EfectivoContado − EfectivoEsperado` |
+| Usuario | TEXT | Quien cerró el corte |
+| Observaciones | TEXT | Motivo obligatorio si hay diferencia; notas opcionales |
+| FechaRegistro | DATETIME | Hora local en que se guardó |
+
+### MovimientosCaja
+
+Entradas y salidas manuales de efectivo que no son ventas, abonos ni gastos.
+
+| Columna | Tipo | Notas |
+|---------|------|-------|
+| Id | INTEGER PK | |
+| Fecha | DATETIME | Hora local |
+| Tipo | TEXT | `Ingreso` o `Retiro` |
+| Monto | DECIMAL | > 0 |
+| Motivo | TEXT | Obligatorio |
+| Usuario | TEXT | Quien lo registró |
+
+### Bitacora
+
+Auditoría inmutable de acciones sensibles (migración v4). Solo se inserta; los disparadores `TR_Bitacora_NoUpdate` y `TR_Bitacora_NoDelete` rechazan modificaciones y borrados.
+
+| Columna | Tipo | Notas |
+|---------|------|-------|
+| Id | INTEGER PK | |
+| Fecha | DATETIME | Hora local del registro |
+| Usuario | TEXT | Nombre del usuario de la sesión |
+| Accion | TEXT | Constante de `AccionBitacora` |
+| Entidad | TEXT | Tabla o entidad afectada |
+| EntidadId | TEXT | Identificador del registro afectado |
+| DatosAntes | TEXT | Estado previo resumido |
+| DatosDespues | TEXT | Estado resultante resumido |
+| Motivo | TEXT | Motivo u observaciones |
+
+La bitácora se escribe después de la operación de negocio; si el registro falla, la operación ya quedó aplicada. La atomicidad entre acción y bitácora queda como deuda técnica.
+
 ## Invariante: stock = suma de movimientos
 
 `Productos.Stock` es una caché. Se actualiza **solo** dentro de la misma transacción que inserta el movimiento (`InsertarMovimiento`), y las consultas de verificación usan:
@@ -180,9 +256,17 @@ Reglas implementadas:
 
 El precio y el costo de cada línea se copian al vender; cambios posteriores en el catálogo no alteran ventas históricas.
 
+## Invariante: corte de caja atómico e inmutable
+
+`DatabaseTools.RegistrarCorteCaja` calcula los totales y guarda la cabecera en **una sola transacción**: si la inserción falla, no queda corte ni totales parciales. El periodo va de `Desde` (exclusivo) a `Hasta` (inclusivo); el siguiente corte empieza en el `Hasta` anterior.
+
+`EfectivoEsperado = FondoInicial + VentasEfectivo + AbonosEfectivo + IngresosCaja − RetirosCaja − GastosCaja`.
+
+Si `Diferencia ≠ 0` y `Observaciones` está vacía, la operación se rechaza y se revierte. Un corte guardado nunca se edita ni se borra. Los abonos de fiado también son atómicos: el descuento de `ClientesFiado.SaldoActual` y la fila de `AbonosFiado` se escriben juntos o no se escriben.
+
 ## Índices
 
-`Productos(CodigoBarras)`, `Productos(Nombre)`, `Productos(Stock)`, `MovimientoInventario(ProductoId)`, `MovimientoInventario(Fecha)`, `Gastos(Fecha)`, `ClientesFiado(Nombre)`, `Proveedores(Nombre)`, `Ventas(Fecha)`, `VentaLineas(VentaId)`, `VentaLineas(ProductoId)`.
+`Productos(CodigoBarras)`, `Productos(Nombre)`, `Productos(Stock)`, `MovimientoInventario(ProductoId)`, `MovimientoInventario(Fecha)`, `Gastos(Fecha)`, `ClientesFiado(Nombre)`, `Proveedores(Nombre)`, `Ventas(Fecha)`, `VentaLineas(VentaId)`, `VentaLineas(ProductoId)`, `CortesCaja(Hasta)`, `MovimientosCaja(Fecha)`, `AbonosFiado(Fecha)`, `AbonosFiado(ClienteId)`.
 
 ## Notas de tipado
 

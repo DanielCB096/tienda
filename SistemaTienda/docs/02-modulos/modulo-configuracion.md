@@ -85,6 +85,8 @@ Después del asistente, el dueño puede modificar en cualquier momento:
 4. **Si se desactiva el fiado**, las ventas existentes a fiado siguen estando en el sistema pero ya no se pueden crear nuevas ventas a fiado (el método desaparece de la interfaz de venta).
 5. **Las plantillas de giro** cargan categorías y configuraciones sugeridas, pero el dueño puede modificarlas todas. Nada en el código asume un tipo de negocio específico.
 6. **La comisión de tarjeta** se configura como porcentaje y se aplica automáticamente a todas las ventas con método "tarjeta" para calcular la utilidad neta.
+7. **Permisos validados en la capa de aplicación.** `AutorizacionService` define la matriz por rol y los servicios la consultan antes de ejecutar operaciones sensibles; no basta con ocultar menús. El dueño puede todo; el encargado vende, registra mermas, gastos, abonos, entradas, ingresos de caja y cortes, pero no cambia precios/costos, no ajusta inventario, no retira efectivo ni gestiona usuarios; el empleado solo vende y consulta.
+8. **Bitácora inmutable.** Las operaciones sensibles agregan un registro en `Bitacora` con usuario, fecha, acción, entidad, antes/después y motivo. La tabla no admite `UPDATE` ni `DELETE` por disparadores de SQLite.
 
 ## Integración con Otros Módulos
 
@@ -132,7 +134,7 @@ Después del asistente, el dueño puede modificar en cualquier momento:
 
 **Estado actual (2026-10-23)**: base implementada y probada.
 
-- *Implementado*: asistente de primera configuración (solo si no hay usuarios); PIN de 4-6 dígitos hasheado con PBKDF2-SHA256 (100 000 iteraciones, salt de 16 bytes); login con 3 intentos; roles Dueño/Encargado/Empleado; alta de usuarios; validación de roles en los menús; gastos simples con total y agrupación por concepto.
+- *Implementado*: asistente de primera configuración (solo si no hay usuarios); PIN de 4-6 dígitos hasheado con PBKDF2-SHA256 (100 000 iteraciones, salt de 16 bytes); login con 3 intentos; roles Dueño/Encargado/Empleado; alta de usuarios; validación de roles en los menús; gastos simples con total y agrupación por concepto; **bitácora inmutable (esquema v4)** con antes/después y **permisos validados en `AutorizacionService`** para inventario, precios, mermas, gastos, abonos, pagos, ventas, caja y usuarios.
 - *Desviaciones del diseño*: el asistente pide nombre, giro, impuesto, comisión, fondo, fiado, límite, intervalo de respaldo y PIN; no pregunta métodos de pago ni crea respaldo inicial (no hay módulo de respaldo). Los roles se guardan como `INTEGER`, no como texto.
-- *Pendiente*: edición de usuarios y PIN, bitácora, permisos validados en servicios, plantillas por giro, respaldo inicial, recuperación de PIN.
-- *Pruebas*: `ConfiguracionTests` (18 casos) y `BaseDatosTests`.
+- *Pendiente*: edición de usuarios y PIN, plantillas por giro, respaldo inicial, recuperación de PIN, bitácora atómica con la operación.
+- *Pruebas*: `ConfiguracionTests` (18 casos), `BitacoraPermisosTests` (10 casos) y `BaseDatosTests`.

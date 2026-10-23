@@ -74,12 +74,12 @@ Cada agente: su carpeta, su rama y su PR.
 
 ## Estado del proyecto (2026-10-23)
 
-- Rama publicada con el trabajo actual: `feat/ventas-pos` (T2, sobre `feat/migraciones-respaldo`, que a su vez va sobre `feat/base-compilable`).
-- `main`: solo el commit base; los PR de `feat/base-compilable`, `feat/migraciones-respaldo` y `feat/ventas-pos` siguen pendientes de integración, en ese orden.
-- Build: 0 errores, 0 advertencias. Pruebas: **81 en verde** (verificadas por GitHub Actions).
-- Implementado: configuración inicial, usuarios/PIN/roles, gastos, inventario por movimientos, ventas/POS (efectivo, tarjeta, mixto y fiado; costo y precio congelados; comisión), fiado (cliente/abono), proveedores (saldo/pago), migraciones versionadas con respaldo, respaldo/restauración local, consola provisional.
-- No implementado: corte de caja, respaldo automático por intervalo, bitácora, reportes de utilidad, anulación de ventas, ticket con QR/compartir, UI definitiva.
-- Deuda principal: dinero en `decimal`, abonos/pagos sin historial inmutable, merma sin entidad propia.
+- Rama publicada con el trabajo actual: `feat/bitacora-permisos` (T4, sobre `feat/corte-caja` → `feat/ventas-pos` → `feat/migraciones-respaldo` → `feat/base-compilable`).
+- `main`: solo el commit base; los PR de `feat/base-compilable`, `feat/migraciones-respaldo`, `feat/ventas-pos`, `feat/corte-caja` y `feat/bitacora-permisos` siguen pendientes de integración, en ese orden.
+- Build: 0 errores, 0 advertencias. Pruebas: **104 en verde** (verificadas localmente y en GitHub Actions).
+- Implementado: configuración inicial, usuarios/PIN/roles, gastos, inventario por movimientos, ventas/POS (efectivo, tarjeta, mixto y fiado; costo y precio congelados; comisión), fiado (cliente/abono con historial), proveedores (saldo/pago), corte de caja (efectivo esperado, diferencia justificada, ingresos/retiros e historial), bitácora inmutable y permisos validados en servicios, migraciones versionadas con respaldo, respaldo/restauración local, consola provisional.
+- No implementado: respaldo automático por intervalo, reportes de utilidad, anulación de ventas, ticket con QR/compartir, UI definitiva y conteo por denominaciones.
+- Deuda principal: dinero en `decimal`, pagos a proveedores sin historial inmutable, merma sin entidad propia, bitácora no atómica con la operación.
 
 ## Tareas disponibles
 
@@ -100,20 +100,32 @@ El detalle vive en el tablero. Resumen y criterios de terminado:
 - Precio y costo congelados por línea; `ComisionTarjeta` calculada y guardada en la cabecera.
 - `VentaService` valida pagos (suma = total), duplicados, cantidades y reglas de fiado (exclusivo, cliente, límite).
 - Menú de consola: carrito, cobro, cambio, ticket de texto y ventas del día.
-- Pruebas en `VentasTests` (13 casos); total 81.
-- Pendiente fuera de T2: anulación con reverso, descuentos, QR/compartir, integración con corte de caja.
+- Pruebas en `VentasTests` (13 casos); total del proyecto: 81 al cerrar T2.
+- Pendiente fuera de T2: anulación con reverso, descuentos, QR/compartir.
+
+### T8 — Corte de caja (HECHO)
+
+- Completado en `feat/corte-caja` (fc6436b, a172e39, ef96af7, d58f391).
+- Esquema v3 con `CortesCaja`, `MovimientosCaja` y `AbonosFiado`; migración con respaldo previo.
+- `RegistrarCorteCaja` calcula y guarda en una transacción; periodo desde el `Hasta` anterior (exclusivo), fondo sugerido = contado previo.
+- Efectivo esperado = fondo + ventas en efectivo (incluye parte en efectivo de mixtos) + abonos en efectivo + ingresos − retiros − gastos de Caja; diferencia distinta de cero exige motivo.
+- Abonos de fiado con historial en la misma transacción que descuenta el saldo.
+- Menú [8] Corte de caja: resumen/cierre, ingreso, retiro e historial; Configuración pasa a [9].
+- Pruebas en `CorteCajaTests` (13 casos); total: 94.
+- Pendiente fuera de T8: conteo por denominaciones.
 
 ### T3 — Dinero en centavos enteros
 
 - Migrar entidades y columnas `DECIMAL` a `long`/`INTEGER` en centavos, con utilidades de formato/parseo.
-- Requiere T1. **No ejecutar en paralelo con T2** (ambas tocan el esquema).
+- Requiere T1. **No ejecutar en paralelo con T2 ni T8** (tocan esquema y columnas de dinero).
 - Pruebas de aritmética, redondeo y compatibilidad de la migración.
 
-### T4 — Bitácora y permisos en servicios
+### T4 — Bitácora y permisos en servicios (HECHO)
 
-- Tabla de bitácora inmutable (usuario, fecha, acción, antes/después).
-- Validar permisos en `Application`, no solo en menús.
-- Pruebas por rol para operaciones sensibles (ajustes, precios, cancelaciones, gastos).
+- Completado en `feat/bitacora-permisos` (ca21564).
+- Esquema v4 con `Bitacora` inmutable (disparadores contra `UPDATE`/`DELETE`), `BitacoraService` y `AutorizacionService`.
+- Permisos validados en `ConfiguracionService`, `InventoryService`, `VentaService` y `CorteCajaService`; `SesionActual` se inicia al autenticar.
+- Pruebas en `BitacoraPermisosTests` (10 casos); total 104.
 
 ### T5 — Reportes de utilidad
 

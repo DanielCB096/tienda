@@ -11,17 +11,18 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 - **Impacto**: riesgo de diferencias por redondeo y comparaciones de decimales frágiles, ahora sobre historial de ventas que no se corrige. SQLite no tiene tipo decimal nativo: los valores se guardan como texto/numérico con afinidad.
 - **Cierre**: migración a `long Centavos` en entidades y `INTEGER` en base, con utilidades de formato/parseo, pruebas de aritmética y conversión de las ventas existentes. Hacerlo antes de operar con ventas reales.
 
-### Sin bitácora ni validación de permisos en servicios
+### Bitácora no atómica con la operación
 
-- **Dónde**: `ConfiguracionService`, `InventoryService` y `VentaService`.
-- **Impacto**: los roles solo se validan en los menús de consola; un cambio de interfaz podría saltarse restricciones. No hay registro de quién cambió precios, ajustó stock, vendió a fiado o canceló.
-- **Cierre**: servicio de bitácora (usuario, fecha, acción, antes/después) y autorización en la capa de aplicación.
+- **Dónde**: `BitacoraService.Registrar` se llama después de que la operación de negocio ya se confirmó.
+- **Por qué**: los métodos de `DatabaseTools` abren su propia transacción y no exponen un punto de extensión; unificarlo exigía refactorizar cada operación sensible.
+- **Impacto**: si falla la escritura de la bitácora (por ejemplo, disco lleno), la operación ya quedó aplicada y falta su registro. La tabla sigue siendo inmutable y la operación normal sí queda auditada.
+- **Cierre**: pasar la transacción o un `UnitOfWork` a los servicios para insertar acción y bitácora en la misma transacción.
 
-### Abonos y pagos no quedan como historial inmutable
+### Pagos a proveedores sin historial inmutable
 
-- **Dónde**: `ActualizarSaldoCliente`, `ActualizarSaldoProveedor`.
-- **Impacto**: se actualiza el saldo, pero no se guarda el movimiento de abono/pago. No se puede auditar ni reconstruir el saldo. Contradice "el historial no se edita".
-- **Cierre**: tablas `AbonosFiado` y `PagosProveedor` inmutables; el saldo se deriva o se actualiza dentro de la misma transacción.
+- **Dónde**: `ActualizarSaldoProveedor`.
+- **Impacto**: se actualiza el saldo, pero no se guarda el movimiento de pago. No se puede auditar ni reconstruir el saldo. Contradice "el historial no se edita". Los abonos de fiado ya tienen historial (`AbonosFiado`), los pagos a proveedores no.
+- **Cierre**: tabla `PagosProveedor` inmutable; el saldo se actualiza dentro de la misma transacción.
 
 ### Ventas sin anulación ni descuentos
 
@@ -35,11 +36,11 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 - **Impacto**: el ticket actual es texto en consola. No se genera PDF/imagen, no lleva QR y no se puede compartir por WhatsApp o correo.
 - **Cierre**: generación de ticket con QR al construir la interfaz definitiva (requiere decisión de UI).
 
-### Ventas sin integrar a corte de caja
+### Corte de caja sin conteo por denominaciones
 
-- **Dónde**: `Ventas.PagoEfectivo` se guarda, pero no hay módulo de corte.
-- **Impacto**: el efectivo esperado todavía se calcula a mano.
-- **Cierre**: corte de caja que tome fondo inicial, ventas en efectivo, abonos y gastos de caja.
+- **Dónde**: `Program.CerrarCorte` y registro de abonos.
+- **Impacto**: el retiro ya requiere permiso de dueño y queda en bitácora; el conteo se captura como un solo importe, sin desglose de billetes y monedas, y el abono de fiado siempre se registra como efectivo (no se pregunta el método).
+- **Cierre**: captura por denominaciones y método de pago en abonos.
 
 ## Media prioridad
 
@@ -64,7 +65,7 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 ### Reportes incompletos
 
 - **Dónde**: `MenuReportes`.
-- **Impacto**: solo valorizado, stock bajo, gastos y saldos. Las ventas ya guardan `CostoTotal` y `ComisionTarjeta`, pero no hay reporte de utilidad, ventas por día ni comparativos.
+- **Impacto**: solo valorizado, stock bajo, gastos, saldos e historial de cortes. Las ventas ya guardan `CostoTotal` y `ComisionTarjeta`, pero no hay reporte de utilidad (`MenuReportes` opción 5) ni ventas por día o comparativos.
 - **Cierre**: consultas agregadas con índices por fecha (ya existen en `Ventas(Fecha)`) y paginación.
 
 ## Baja prioridad

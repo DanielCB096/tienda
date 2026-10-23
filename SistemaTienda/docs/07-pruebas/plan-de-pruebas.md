@@ -14,14 +14,14 @@ Validar que el sistema funcione correctamente según las reglas de negocio, cump
 ## Áreas Críticas a Probar (por regla NO negociable)
 
 1. **Venta atómica**
-   - *Caso*: Registrar una venta con descuento debe actualizar inventario y total correctamente.
+   - *Caso*: Registrar una venta multi-línea debe actualizar inventario y total correctamente.
    - *Expected*: Stock reduce, venta registrada, total correcto. Si falla, nada se guarda.
    - *Prueba*: Vender el último producto en stock; verificar que no permita vender más; verificar que el stock quede en 0.
 
 2. **Cuadro de caja**
    - *Caso*: Calcular efectivo esperado vs. contado.
-   - *Expected*: Fórmula: Fondo Inicial + Ventas Efectivo + Abonos Efectivo - Retiros - Gastos de Caja.
-   - *Prueba*: Simular un día con ventas mixtas, retiros y gastos; verificar que la diferencia sea correcta (o esperado si hay error).
+   - *Expected*: Fórmula: Fondo Inicial + Ventas Efectivo + Abonos Efectivo + Ingresos de Caja − Retiros − Gastos de Caja.
+   - *Prueba*: Simular un periodo con ventas mixtas, abonos, ingresos, retiros y gastos; verificar el efectivo esperado, que la diferencia exija motivo y que el periodo empiece en el corte anterior.
 
 3. **Integridad de Inventario**
    - *Caso*: El stock debe ser siempre el resultado de los movimientos (compras - ventas - mermas + ajustes).
@@ -110,10 +110,12 @@ dotnet test SistemaTienda/SistemaTienda.sln
 | `InventarioTests` | Alta, duplicados, venta, merma, entrada, ajuste, stock bajo, búsqueda, valorizado |
 | `FiadoProveedoresTests` | Cliente, abono, saldo, proveedor, pago, validaciones |
 | `BaseDatosTests` | Inicialización idempotente, tablas, mapeo de tipos |
-| `MigracionesRespaldoTests` | Migración v1→v2 con respaldo previo, idempotencia, fallo con rollback, rechazo de base más nueva, respaldo verificado, restauración exacta con respaldo de seguridad, confirmación obligatoria |
+| `MigracionesRespaldoTests` | Runner de migraciones con respaldo previo, idempotencia, fallo con rollback, rechazo de base más nueva, respaldo verificado, restauración exacta con respaldo de seguridad, confirmación obligatoria |
 | `VentasTests` | Venta atómica, stock insuficiente revierte todo, costo y precio congelados, fiado (saldo, desactivado, límite, exclusivo), pagos que no coinciden, comisión en mixto, líneas duplicadas, ventas del día, migración v1→v2 con datos |
+| `CorteCajaTests` | Efectivo esperado con todas las fuentes, faltante/sobrante, motivo obligatorio, gasto externo excluido, mixto solo suma efectivo, periodo entre cortes, fondo sugerido, corte sin actividad, validaciones, abono con historial, orden del historial, migración v2→v3 con respaldo |
+| `BitacoraPermisosTests` | Ajuste autorizado con antes/después, empleado sin permiso, encargado sin cambio de precio pero con edición, merma, gasto, retiro denegado e ingreso permitido, inmutabilidad por disparadores, filtros de consulta, registro sin acción o sin sesión |
 
-Total actual: 81 casos, todos en verde. Los puntos 1, 3, 5, 6, 7 y 8 del listado de áreas críticas tienen cobertura parcial; faltan corte de caja, anulación de ventas, ticket con QR y rendimiento. La restauración se prueba sobre una base temporal: se verifica que el contenido vuelve al del respaldo (no byte a byte).
+Total actual: 104 casos, todos en verde. Los puntos 1, 2, 3, 5, 6, 7 y 8 del listado de áreas críticas tienen cobertura parcial; faltan anulación de ventas, reporte de utilidad, ticket con QR y rendimiento. La restauración se prueba sobre una base temporal: se verifica que el contenido vuelve al del respaldo (no byte a byte).
 
 La verificación se ejecuta en GitHub Actions (`windows-latest`) en cada push; ver el aviso de Smart App Control en `CLAUDE-tienda.md` sobre por qué no siempre corre localmente.
 

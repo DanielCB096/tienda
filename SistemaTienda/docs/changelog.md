@@ -32,6 +32,27 @@ Próximamente después de completar los módulos críticos.
 - Configuración básica de tienda (nombre, giro, impuestos, métodos de pago).
 - Documentación inicial (glosario, stack, módulos, ADR).
 
+### v0.0.6 - 2026-10-23: Bitácora inmutable y permisos en servicios
+
+- *Agregado*: esquema v4 con tabla `Bitacora` (usuario, fecha, acción, entidad, antes/después, motivo), índices y disparadores que impiden `UPDATE` y `DELETE`.
+- *Agregado*: `BitacoraService` para registrar y consultar la auditoría; se escribe en altas de producto, cambios de precio, ajustes de inventario, entradas, mermas, gastos, abonos, pagos a proveedores, ventas, movimientos y cortes de caja.
+- *Agregado*: `AutorizacionService` con matriz por rol y `SesionActual` para identificar al usuario firmado; los servicios validan permisos antes de ejecutar operaciones sensibles.
+- *Agregado*: 10 pruebas de bitácora y permisos; total del proyecto: 104.
+- *Modificado*: la consola inicia `SesionActual` al autenticar; BaseDatosPrueba usa un dueño de sistema por defecto para las pruebas que no evalúan permisos.
+- *Corregido*: la prueba de periodos de corte vendía una cantidad que no correspondía al pago registrado.
+
+### v0.0.5 - 2026-10-23: Corte de caja
+
+- *Agregado*: esquema v3 con `CortesCaja`, `MovimientosCaja` y `AbonosFiado` (migración con respaldo previo), índices por fecha y cliente.
+- *Agregado*: `DatabaseTools.RegistrarCorteCaja` calcula ventas por método, abonos en efectivo, ingresos, retiros y gastos de caja dentro de una sola transacción, y guarda la cabecera solo si el cálculo y el conteo son consistentes.
+- *Agregado*: efectivo esperado = fondo + ventas en efectivo (incluida la parte en efectivo de pagos mixtos) + abonos en efectivo + ingresos − retiros − gastos con origen Caja.
+- *Agregado*: diferencia entre contado y esperado; si no es cero, el motivo es obligatorio y el corte no se guarda sin él.
+- *Agregado*: periodo desde el `Hasta` del corte anterior (exclusivo); el fondo sugerido es el efectivo contado del corte previo.
+- *Agregado*: historial de abonos de fiado (`AbonosFiado`) guardado en la misma transacción que descuenta el saldo del cliente.
+- *Agregado*: `CorteCajaService` con resumen pendiente, cierre, ingresos/retiros e historial; menú [8] Corte de caja en la consola.
+- *Agregado*: 13 pruebas de corte, abonos y migración v2 → v3; total del proyecto: 94.
+- *Modificado*: el menú principal pasa a [1]–[9] con Corte de caja en [8] y Configuración en [9].
+
 ### v0.0.4 - 2026-10-23: Ventas y punto de venta
 
 - *Agregado*: esquema v2 con `Ventas` y `VentaLineas` (migración con respaldo previo), índices por fecha, venta y producto.
