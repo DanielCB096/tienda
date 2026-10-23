@@ -262,7 +262,8 @@ public class ConfiguracionService
     public ProcessResult<List<ClienteFiado>> ObtenerClientesConSaldo() =>
         ProcessResult<List<ClienteFiado>>.OK(_db.ObtenerClientesConSaldo());
 
-    public ProcessResult<RegistrarAbonoResponse> RegistrarAbonoCliente(int clienteId, decimal montoAbono)
+    public ProcessResult<RegistrarAbonoResponse> RegistrarAbonoCliente(int clienteId, decimal montoAbono,
+        string usuario = "")
     {
         if (montoAbono <= 0)
             return ProcessResult<RegistrarAbonoResponse>.Error("El abono debe ser mayor a cero");
@@ -276,7 +277,7 @@ public class ConfiguracionService
                 $"El abono (${montoAbono:F2}) supera el saldo pendiente (${cliente.SaldoActual:F2})");
 
         var nuevoSaldo = cliente.SaldoActual - montoAbono;
-        if (!_db.ActualizarSaldoCliente(cliente.Id, nuevoSaldo))
+        if (!_db.RegistrarAbonoFiado(cliente.Id, montoAbono, nuevoSaldo, usuario))
             return ProcessResult<RegistrarAbonoResponse>.Error("No se pudo registrar el abono");
 
         return ProcessResult<RegistrarAbonoResponse>.OK(new RegistrarAbonoResponse

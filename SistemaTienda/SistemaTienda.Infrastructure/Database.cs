@@ -711,6 +711,52 @@ public class DatabaseTools
         return filas > 0;
     }
 
+    /// <summary>
+    /// Guarda el abono en el historial y actualiza el saldo en la misma transacción.
+    /// El historial permite reconstruir el efectivo recibido por periodo.
+    /// </summary>
+    public bool RegistrarAbonoFiado(int clienteId, decimal monto, decimal nuevoSaldo,
+        string usuario, string metodoPago = MetodoPagoVenta.Efectivo)
+    {
+        using var conn = CreateConnection();
+        conn.Open();
+        using var tx = conn.BeginTransaction();
+
+        using (var update = conn.CreateCommand())
+        {
+            update.Transaction = tx;
+            update.CommandText = @"
+                UPDATE ClientesFiado
+                SET SaldoActual = @saldo, UltimaActualizacion = datetime('now')
+                WHERE Id = @id";
+            update.Parameters.AddWithValue("@saldo", nuevoSaldo);
+            update.Parameters.AddWithValue("@id", clienteId);
+
+            if (update.ExecuteNonQuery() == 0)
+            {
+                tx.Rollback();
+                return false;
+            }
+        }
+
+        using (var insert = conn.CreateCommand())
+        {
+            insert.Transaction = tx;
+            insert.CommandText = @"
+                INSERT INTO AbonosFiado (ClienteId, Fecha, Monto, MetodoPago, Usuario)
+                VALUES (@cliente, @fecha, @monto, @metodo, @usuario)";
+            insert.Parameters.AddWithValue("@cliente", clienteId);
+            insert.Parameters.AddWithValue("@fecha", DateTime.Now);
+            insert.Parameters.AddWithValue("@monto", monto);
+            insert.Parameters.AddWithValue("@metodo", metodoPago ?? MetodoPagoVenta.Efectivo);
+            insert.Parameters.AddWithValue("@usuario", usuario ?? string.Empty);
+            insert.ExecuteNonQuery();
+        }
+
+        tx.Commit();
+        return true;
+    }
+
     // ---------- Proveedores ----------
 
     public int AgregarProveedor(Proveedor proveedor)
@@ -917,4 +963,257 @@ public class DatabaseTools
         ExecuteReportObjects<VentaLinea>(
             "SELECT * FROM VentaLineas WHERE VentaId = @id ORDER BY Id",
             new SqliteParameter("@id", ventaId));
+
+    // ---------- Corte de caja ----------
+
+    /// <summary>
+    /// Vista previa del periodo abierto: desde el último corte hasta ahora.
+    /// El fondo sugerido es el efectivo contado en el corte anterior o el configurado.
+    /// </summary>
+    public CorteCaja ObtenerResumenCajaPendiente()
+    {
+        using var conn = CreateConnection();
+        conn.Open();
+
+        var corte = CalcularTotalesCaja(conn, null);
+        var ultimo = ObtenerUltimoCorteCaja();
+        var config = ObtenerConfiguracion();
+
+        corte.FondoInicial = ultimo != null
+            ? ultimo.EfectivoContado
+            : config?.FondoCajaInicial ?? 0m;
+        corte.EfectivoEsperado = CalcularEfectivoEsperado(corte);
+        return corte;
+    }
+
+    /// <summary>
+    /// Calcula y guarda el corte en una sola transacción para que los totales
+    /// correspondan exactamente a lo que queda registrado.
+    /// </summary>
+    public ProcessResult<CorteCaja> RegistrarCorteCaja(decimal efectivoContado, decimal fondoInicial,
+        string usuario, string observaciones)
+    {
+        using var conn = CreateConnection();
+        conn.Open();
+        using var tx = conn.BeginTransaction();
+
+        var corte = CalcularTotalesCaja(conn, tx);
+        corte.FondoInicial = Math.Round(fondoInicial, 2);
+        corte.EfectivoContado = Math.Round(efectivoContado, 2);
+        corte.EfectivoEsperado = CalcularEfectivoEsperado(corte);
+        corte.Diferencia = Math.Round(corte.EfectivoContado - corte.EfectivoEsperado, 2);
+        corte.Usuario = (usuario ?? string.Empty).Trim();
+        corte.Observaciones = (observaciones ?? string.Empty).Trim();
+        corte.FechaRegistro = corte.Hasta;
+
+        if (corte.Diferencia != 0 && string.IsNullOrWhiteSpace(corte.Observaciones))
+        {
+            tx.Rollback();
+            return ProcessResult<CorteCaja>.Error(
+                $"El corte tiene una diferencia de ${corte.Diferencia:F2}; explique el motivo antes de guardarlo");
+        }
+
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.Transaction = tx;
+            cmd.CommandText = @"
+                INSERT INTO CortesCaja
+                    (Desde, Hasta, FondoInicial, VentasEfectivo, VentasTarjeta, VentasFiado,
+                     TotalVentas, NumeroVentas, NumeroVentasEfectivo, NumeroVentasTarjeta,
+                     NumeroVentasMixto, NumeroVentasFiado, AbonosEfectivo, IngresosCaja,
+                     RetirosCaja, GastosCaja, EfectivoEsperado, EfectivoContado, Diferencia,
+                     Usuario, Observaciones, FechaRegistro)
+                VALUES
+                    (@desde, @hasta, @fondo, @ventasEfectivo, @ventasTarjeta, @ventasFiado,
+                     @totalVentas, @numeroVentas, @numeroEfectivo, @numeroTarjeta,
+                     @numeroMixto, @numeroFiado, @abonos, @ingresos,
+                     @retiros, @gastos, @esperado, @contado, @diferencia,
+                     @usuario, @observaciones, @registro);
+                SELECT last_insert_rowid();";
+
+            cmd.Parameters.AddWithValue("@desde", corte.Desde);
+            cmd.Parameters.AddWithValue("@hasta", corte.Hasta);
+            cmd.Parameters.AddWithValue("@fondo", corte.FondoInicial);
+            cmd.Parameters.AddWithValue("@ventasEfectivo", corte.VentasEfectivo);
+            cmd.Parameters.AddWithValue("@ventasTarjeta", corte.VentasTarjeta);
+            cmd.Parameters.AddWithValue("@ventasFiado", corte.VentasFiado);
+            cmd.Parameters.AddWithValue("@totalVentas", corte.TotalVentas);
+            cmd.Parameters.AddWithValue("@numeroVentas", corte.NumeroVentas);
+            cmd.Parameters.AddWithValue("@numeroEfectivo", corte.NumeroVentasEfectivo);
+            cmd.Parameters.AddWithValue("@numeroTarjeta", corte.NumeroVentasTarjeta);
+            cmd.Parameters.AddWithValue("@numeroMixto", corte.NumeroVentasMixto);
+            cmd.Parameters.AddWithValue("@numeroFiado", corte.NumeroVentasFiado);
+            cmd.Parameters.AddWithValue("@abonos", corte.AbonosEfectivo);
+            cmd.Parameters.AddWithValue("@ingresos", corte.IngresosCaja);
+            cmd.Parameters.AddWithValue("@retiros", corte.RetirosCaja);
+            cmd.Parameters.AddWithValue("@gastos", corte.GastosCaja);
+            cmd.Parameters.AddWithValue("@esperado", corte.EfectivoEsperado);
+            cmd.Parameters.AddWithValue("@contado", corte.EfectivoContado);
+            cmd.Parameters.AddWithValue("@diferencia", corte.Diferencia);
+            cmd.Parameters.AddWithValue("@usuario", corte.Usuario);
+            cmd.Parameters.AddWithValue("@observaciones", corte.Observaciones);
+            cmd.Parameters.AddWithValue("@registro", corte.FechaRegistro);
+
+            corte.Id = Convert.ToInt32(cmd.ExecuteScalar(), CultureInfo.InvariantCulture);
+        }
+
+        tx.Commit();
+        return ProcessResult<CorteCaja>.OK(corte, $"Corte #{corte.Id} registrado");
+    }
+
+    public CorteCaja ObtenerUltimoCorteCaja() =>
+        ExecuteReportObject<CorteCaja>(
+            "SELECT * FROM CortesCaja ORDER BY Hasta DESC, Id DESC LIMIT 1");
+
+    public List<CorteCaja> ObtenerCortesCaja(int limite = 20) =>
+        ExecuteReportObjects<CorteCaja>(
+            "SELECT * FROM CortesCaja ORDER BY Hasta DESC, Id DESC LIMIT @limite",
+            new SqliteParameter("@limite", limite));
+
+    public int RegistrarMovimientoCaja(MovimientoCaja movimiento)
+    {
+        using var conn = CreateConnection();
+        conn.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = @"
+            INSERT INTO MovimientosCaja (Fecha, Tipo, Monto, Motivo, Usuario)
+            VALUES (@fecha, @tipo, @monto, @motivo, @usuario);
+            SELECT last_insert_rowid();";
+        cmd.Parameters.AddWithValue("@fecha", movimiento.Fecha);
+        cmd.Parameters.AddWithValue("@tipo", movimiento.Tipo);
+        cmd.Parameters.AddWithValue("@monto", movimiento.Monto);
+        cmd.Parameters.AddWithValue("@motivo", movimiento.Motivo ?? string.Empty);
+        cmd.Parameters.AddWithValue("@usuario", movimiento.Usuario ?? string.Empty);
+
+        movimiento.Id = Convert.ToInt32(cmd.ExecuteScalar(), CultureInfo.InvariantCulture);
+        return movimiento.Id;
+    }
+
+    /// <summary>
+    /// Periodo abierto y totales del flujo de efectivo. El primer corte arranca
+    /// en el primer movimiento registrado; los siguientes, en el corte anterior.
+    /// </summary>
+    private static CorteCaja CalcularTotalesCaja(SqliteConnection conn, SqliteTransaction tx)
+    {
+        var hasta = DateTime.Now;
+        var desde = CalcularInicioPeriodo(conn, tx);
+        var corte = new CorteCaja { Desde = desde, Hasta = hasta };
+
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.Transaction = tx;
+            cmd.CommandText = @"
+                SELECT
+                    COALESCE(SUM(PagoEfectivo), 0),
+                    COALESCE(SUM(PagoTarjeta), 0),
+                    COALESCE(SUM(PagoFiado), 0),
+                    COALESCE(SUM(Total), 0),
+                    COUNT(*),
+                    COALESCE(SUM(CASE WHEN MetodoPago = @efectivo THEN 1 ELSE 0 END), 0),
+                    COALESCE(SUM(CASE WHEN MetodoPago = @tarjeta THEN 1 ELSE 0 END), 0),
+                    COALESCE(SUM(CASE WHEN MetodoPago = @mixto THEN 1 ELSE 0 END), 0),
+                    COALESCE(SUM(CASE WHEN MetodoPago = @fiado THEN 1 ELSE 0 END), 0)
+                FROM Ventas
+                WHERE Fecha > @desde AND Fecha <= @hasta";
+            cmd.Parameters.AddWithValue("@desde", desde);
+            cmd.Parameters.AddWithValue("@hasta", hasta);
+            cmd.Parameters.AddWithValue("@efectivo", MetodoPagoVenta.Efectivo);
+            cmd.Parameters.AddWithValue("@tarjeta", MetodoPagoVenta.Tarjeta);
+            cmd.Parameters.AddWithValue("@mixto", MetodoPagoVenta.Mixto);
+            cmd.Parameters.AddWithValue("@fiado", MetodoPagoVenta.Fiado);
+
+            using var reader = cmd.ExecuteReader();
+            reader.Read();
+            corte.VentasEfectivo = Math.Round(Convert.ToDecimal(reader.GetValue(0), CultureInfo.InvariantCulture), 2);
+            corte.VentasTarjeta = Math.Round(Convert.ToDecimal(reader.GetValue(1), CultureInfo.InvariantCulture), 2);
+            corte.VentasFiado = Math.Round(Convert.ToDecimal(reader.GetValue(2), CultureInfo.InvariantCulture), 2);
+            corte.TotalVentas = Math.Round(Convert.ToDecimal(reader.GetValue(3), CultureInfo.InvariantCulture), 2);
+            corte.NumeroVentas = Convert.ToInt32(reader.GetValue(4), CultureInfo.InvariantCulture);
+            corte.NumeroVentasEfectivo = Convert.ToInt32(reader.GetValue(5), CultureInfo.InvariantCulture);
+            corte.NumeroVentasTarjeta = Convert.ToInt32(reader.GetValue(6), CultureInfo.InvariantCulture);
+            corte.NumeroVentasMixto = Convert.ToInt32(reader.GetValue(7), CultureInfo.InvariantCulture);
+            corte.NumeroVentasFiado = Convert.ToInt32(reader.GetValue(8), CultureInfo.InvariantCulture);
+        }
+
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.Transaction = tx;
+            cmd.CommandText = @"
+                SELECT COALESCE(SUM(Monto), 0) FROM AbonosFiado
+                WHERE MetodoPago = @efectivo AND Fecha > @desde AND Fecha <= @hasta";
+            cmd.Parameters.AddWithValue("@efectivo", MetodoPagoVenta.Efectivo);
+            cmd.Parameters.AddWithValue("@desde", desde);
+            cmd.Parameters.AddWithValue("@hasta", hasta);
+            corte.AbonosEfectivo = Math.Round(
+                Convert.ToDecimal(cmd.ExecuteScalar() ?? 0m, CultureInfo.InvariantCulture), 2);
+        }
+
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.Transaction = tx;
+            cmd.CommandText = @"
+                SELECT
+                    COALESCE(SUM(CASE WHEN Tipo = @ingreso THEN Monto ELSE 0 END), 0),
+                    COALESCE(SUM(CASE WHEN Tipo = @retiro THEN Monto ELSE 0 END), 0)
+                FROM MovimientosCaja
+                WHERE Fecha > @desde AND Fecha <= @hasta";
+            cmd.Parameters.AddWithValue("@ingreso", TipoMovimientoCaja.Ingreso);
+            cmd.Parameters.AddWithValue("@retiro", TipoMovimientoCaja.Retiro);
+            cmd.Parameters.AddWithValue("@desde", desde);
+            cmd.Parameters.AddWithValue("@hasta", hasta);
+
+            using var reader = cmd.ExecuteReader();
+            reader.Read();
+            corte.IngresosCaja = Math.Round(Convert.ToDecimal(reader.GetValue(0), CultureInfo.InvariantCulture), 2);
+            corte.RetirosCaja = Math.Round(Convert.ToDecimal(reader.GetValue(1), CultureInfo.InvariantCulture), 2);
+        }
+
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.Transaction = tx;
+            cmd.CommandText = @"
+                SELECT COALESCE(SUM(Monto), 0) FROM Gastos
+                WHERE Origen = @origen AND Fecha > @desde AND Fecha <= @hasta";
+            cmd.Parameters.AddWithValue("@origen", OrigenGasto.Caja);
+            cmd.Parameters.AddWithValue("@desde", desde);
+            cmd.Parameters.AddWithValue("@hasta", hasta);
+            corte.GastosCaja = Math.Round(
+                Convert.ToDecimal(cmd.ExecuteScalar() ?? 0m, CultureInfo.InvariantCulture), 2);
+        }
+
+        return corte;
+    }
+
+    private static DateTime CalcularInicioPeriodo(SqliteConnection conn, SqliteTransaction tx)
+    {
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.Transaction = tx;
+            cmd.CommandText = "SELECT Hasta FROM CortesCaja ORDER BY Hasta DESC, Id DESC LIMIT 1";
+            var ultimo = cmd.ExecuteScalar();
+            if (ultimo != null && ultimo != DBNull.Value)
+                return Convert.ToDateTime(ultimo, CultureInfo.InvariantCulture);
+        }
+
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.Transaction = tx;
+            cmd.CommandText = @"
+                SELECT MIN(f) FROM (
+                    SELECT MIN(Fecha) AS f FROM Ventas
+                    UNION ALL SELECT MIN(Fecha) FROM Gastos
+                    UNION ALL SELECT MIN(Fecha) FROM AbonosFiado
+                    UNION ALL SELECT MIN(Fecha) FROM MovimientosCaja
+                )";
+            var primera = cmd.ExecuteScalar();
+            if (primera != null && primera != DBNull.Value)
+                return Convert.ToDateTime(primera, CultureInfo.InvariantCulture).AddSeconds(-1);
+        }
+
+        return DateTime.Today;
+    }
+
+    private static decimal CalcularEfectivoEsperado(CorteCaja corte) =>
+        Math.Round(corte.FondoInicial + corte.VentasEfectivo + corte.AbonosEfectivo +
+                   corte.IngresosCaja - corte.RetirosCaja - corte.GastosCaja, 2);
 }
