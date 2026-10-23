@@ -29,7 +29,7 @@ public sealed class MapeoTiposTests
             Nombre = "Producto",
             Costo = 1m,
             Precio = 2m,
-            Stock = 1,
+            Stock = 0,
             StockMinimo = 1
         });
         var producto = Assert.Single(bd.Inventario.ObtenerProductos());
