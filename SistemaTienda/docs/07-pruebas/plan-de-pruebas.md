@@ -14,14 +14,14 @@ Validar que el sistema funcione correctamente según las reglas de negocio, cump
 ## Áreas Críticas a Probar (por regla NO negociable)
 
 1. **Venta atómica**
-   - *Caso*: Registrar una venta con descuento debe actualizar inventario y total correctamente.
+   - *Caso*: Registrar una venta multi-línea debe actualizar inventario y total correctamente.
    - *Expected*: Stock reduce, venta registrada, total correcto. Si falla, nada se guarda.
    - *Prueba*: Vender el último producto en stock; verificar que no permita vender más; verificar que el stock quede en 0.
 
 2. **Cuadro de caja**
    - *Caso*: Calcular efectivo esperado vs. contado.
-   - *Expected*: Fórmula: Fondo Inicial + Ventas Efectivo + Abonos Efectivo - Retiros - Gastos de Caja.
-   - *Prueba*: Simular un día con ventas mixtas, retiros y gastos; verificar que la diferencia sea correcta (o esperado si hay error).
+   - *Expected*: Fórmula: Fondo Inicial + Ventas Efectivo + Abonos Efectivo + Ingresos de Caja − Retiros − Gastos de Caja.
+   - *Prueba*: Simular un periodo con ventas mixtas, abonos, ingresos, retiros y gastos; verificar el efectivo esperado, que la diferencia exija motivo y que el periodo empiece en el corte anterior.
 
 3. **Integridad de Inventario**
    - *Caso*: El stock debe ser siempre el resultado de los movimientos (compras - ventas - mermas + ajustes).
@@ -95,6 +95,86 @@ Qué pasa cuando las cosas van mal:
 - 500 "ventas simuladas" en la base de datos (historical).
 - Búsqueda por nombre con 100 productos que coinciden.
 - Reporte de utilidad de un mes entero.
+
+## Pruebas automatizadas existentes (2026-10-23)
+
+Proyecto `SistemaTienda.Tests` (xUnit, net8.0). Cada prueba crea una base SQLite temporal aislada y la elimina al terminar.
+
+```bash
+dotnet test SistemaTienda/SistemaTienda.sln
+```
+
+| Archivo | Cubre |
+|---------|-------|
+| `ConfiguracionTests` | Asistente inicial, PIN hasheado, login, roles, gastos |
+| `InventarioTests` | Alta, duplicados, venta, merma, entrada, ajuste, stock bajo, búsqueda, valorizado |
+| `FiadoProveedoresTests` | Cliente, abono, saldo, proveedor, pago, validaciones |
+| `BaseDatosTests` | Inicialización idempotente, tablas, mapeo de tipos |
+| `DineroTests` | Conversión pesos ↔ centavos con redondeo `AwayFromZero`, multiplicación con desbordamiento, porcentaje a centavos y formato invariante |
+| `MigracionesRespaldoTests` | Runner de migraciones con respaldo previo, idempotencia, fallo con rollback, rechazo de base más nueva, respaldo verificado, restauración exacta con respaldo de seguridad, confirmación obligatoria, migración v3 → v4 a centavos con integridad de FKs |
+| `VentasTests` | Venta atómica, stock insuficiente revierte todo, costo y precio congelados, fiado (saldo, desactivado, límite, exclusivo), pagos que no coinciden, comisión en mixto, líneas duplicadas, ventas del día, migración v1→v2 con datos |
+| `AnulacionVentasTests` | Devolución de stock con costo congelado y bitácora, reverso del saldo fiado, bloqueo tras corte cerrado, exclusión del corte pendiente, doble anulación sin movimientos duplicados, permiso de encargado, motivo obligatorio y exclusión de la utilidad |
+| `CorteCajaTests` | Efectivo esperado con todas las fuentes, faltante/sobrante, motivo obligatorio, gasto externo excluido, mixto solo suma efectivo, periodo entre cortes, fondo sugerido, corte sin actividad, validaciones, abono con historial, orden del historial, migración v2→v3 con respaldo |
+| `BitacoraPermisosTests` | Ajuste autorizado con antes/después, empleado sin permiso, encargado sin cambio de precio pero con edición, merma, gasto, pago a proveedor, retiro denegado e ingreso permitido, inmutabilidad por disparadores, filtros de consulta, registro sin acción o sin sesión |
+| `GastosTests` | Gasto de un centavo, suma de centavos sin perder precisión, monto cero o negativo rechazado |
+| `SaldosBordeTests` | Abono igual al saldo, abono con saldo cero, centavos exactos, pago a proveedor que liquida el saldo |
+| `InventarioBordeTests` | Venta que agota el stock, costo o cantidad inválidos en entrada, merma no positiva, código duplicado tras recortar, comodines literales en la búsqueda |
+| `UsuariosPermisosTests` | Nombre recortado, PIN de cuatro dígitos, nombre en blanco, usuario inexistente, sal distinta por hash y hash mal formado |
+| `MapeoTiposTests` | Rol entero a enum y fecha nullable nula o cargada |
+| `ReportesTests` | Utilidad con costo congelado, costo modificado después de vender, comisión de tarjeta, mermas, gastos de ambos orígenes, venta fuera del rango y rango invertido |
+| `RespaldoAutomaticoTests` | Respaldo automático sin copia previa y su auditoría, respaldo vigente que no duplica, intervalo cumplido, intervalo 0 deshabilitado y auditoría del respaldo manual |
+
+Total actual: 171 casos, todos en verde. Los puntos 1, 2, 3, 5, 6, 7 y 8 del listado de áreas críticas tienen cobertura parcial; faltan ticket con QR y rendimiento. La restauración se prueba sobre una base temporal: se verifica que el contenido vuelve al del respaldo (no byte a byte).
+
+La verificación se ejecuta en GitHub Actions (`windows-latest`) en cada push y también puede correr localmente con `dotnet test`; ver `CLAUDE-tienda.md` para el entorno actual.
+
+## Verificación manual de la app MAUI (2026-10-23)
+
+La interfaz no está cubierta por pruebas automatizadas. Esta tabla registra la verificación hecha en Windows con una base temporal de prueba; los datos se borraron al terminar.
+
+| Caso | Resultado |
+|------|-----------|
+| Primer arranque sin base: crea el esquema v6 y muestra el asistente | Pasó |
+| Asistente con PIN distinto en la confirmación | Pasó (muestra “Los PIN no coinciden”) |
+| Asistente completo y transición al login | Pasó |
+| Login con PIN incorrecto y contador de intentos | Pasó |
+| Bloqueo tras 3 intentos hasta reabrir la app | Pasó |
+| Login correcto y apertura del tablero | Pasó |
+| Inicio: ventas del día, efectivo esperado, stock bajo y último respaldo | Pasó |
+| Ventas: lista del día y estado de anulación | Pasó (estado vacío y venta anulada) |
+| Caja: periodo abierto, desglose por método y último corte cerrado | Pasó |
+| Ajustes: datos, reglas, rutas reales y conteo de respaldos | Pasó |
+| Crear respaldo manual desde Ajustes | Pasó (copia verificada y ruta mostrada) |
+| Respaldo automático al iniciar sesión | Pasó (se creó una copia) |
+| Cerrar sesión y volver al login | Pasó |
+| Arranque sin conexión y sin permisos de red | Pasó |
+
+Pendiente:
+
+- Instalar y ejecutar la app Android en la tablet objetivo (hoy solo compila en CI).
+- Repetir el flujo con una base restaurada desde respaldo.
+- Medir arranque, cambio de pestaña y respuesta del tablero con 500 ventas y 500 productos ficticios.
+
+## Verificación manual del POS (T13)
+
+El POS ya compila en Windows y la lógica de venta está cubierta por `VentasTests`, pero la pantalla todavía no se probó a mano ni tiene pruebas automatizadas. Casos por ejecutar con datos ficticios:
+
+| Caso | Esperado |
+|------|----------|
+| Buscar por código exacto y agregar al carrito | Agrega una línea; si el producto ya está, suma cantidad |
+| Buscar por nombre y elegir entre resultados | Lista de hasta 10 coincidencias; el seleccionado entra al carrito |
+| Código o nombre inexistente | Mensaje claro en español, sin cambios en el carrito |
+| Sumar, restar y quitar líneas | Totales y stock validado; no permite pasar del stock disponible |
+| Cobro en efectivo con monto mayor | Muestra el cambio correcto y registra la venta |
+| Cobro con tarjeta | Aplica la comisión configurada y registra el pago con tarjeta |
+| Cobro mixto | Exige efectivo y tarjeta mayores a cero y suma exacta del total |
+| Cobro a fiado | Solo aparece si está activado; exige cliente y respeta el límite de crédito |
+| Confirmar venta | Descuenta stock, registra la venta y muestra el ticket |
+| Ticket | Se muestra el detalle, se puede copiar y compartir |
+| Cerrar el ticket y volver al POS | Carrito vacío y listo para la siguiente venta |
+| Producto con stock 0 | No se puede vender ni agregar de más |
+
+Cuando se ejecuten, registrar el resultado en esta tabla y mover los casos fallidos a la deuda técnica.
 
 ## Herramientas de Prueba
 

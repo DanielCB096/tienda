@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="SistemaTienda.Maui.Pages.AjustesPage"
+             Title="Ajustes">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="12">
+
+            <Label Text="Ajustes" Style="{StaticResource TituloPagina}" />
+            <Label x:Name="UsuarioLabel" Style="{StaticResource TextoNota}" Margin="0,0,0,8" />
+
+            <Border Style="{StaticResource Tarjeta}">
+                <VerticalStackLayout Spacing="6">
+                    <Label Text="TIENDA" Style="{StaticResource EtiquetaSeccion}" />
+                    <Label x:Name="TiendaLabel" FontSize="18" FontAttributes="Bold" />
+                    <Label x:Name="DetalleTiendaLabel" Style="{StaticResource TextoNota}" />
+                    <Label x:Name="ReglasLabel" Style="{StaticResource TextoNota}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Style="{StaticResource Tarjeta}">
+                <VerticalStackLayout Spacing="6">
+                    <Label Text="RESPALDO" Style="{StaticResource EtiquetaSeccion}" />
+                    <Label x:Name="UltimoRespaldoLabel" FontSize="18" FontAttributes="Bold" />
+                    <Label x:Name="RespaldoDetalleLabel" Style="{StaticResource TextoNota}" />
+                    <Button x:Name="CrearRespaldoButton"
+                            Text="Crear respaldo ahora"
+                            Style="{StaticResource BotonSecundario}"
+                            Clicked="OnCrearRespaldoClicked"
+                            Margin="0,8,0,0" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Style="{StaticResource Tarjeta}">
+                <VerticalStackLayout Spacing="6">
+                    <Label Text="ALMACENAMIENTO" Style="{StaticResource EtiquetaSeccion}" />
+                    <Label Text="Base de datos" Style="{StaticResource TextoNota}" />
+                    <Label x:Name="RutaBaseLabel" FontSize="12" LineBreakMode="WordWrap" />
+                    <Label Text="Respaldos" Style="{StaticResource TextoNota}" Margin="0,8,0,0" />
+                    <Label x:Name="RutaRespaldosLabel" FontSize="12" LineBreakMode="WordWrap" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Button Text="Cerrar sesión"
+                    Style="{StaticResource BotonSecundario}"
+                    Clicked="OnCerrarSesionClicked"
+                    Margin="0,8,0,0" />
+
+            <Label Text="SistemaTienda 0.1 · 100 % local, sin conexión a internet."
+                   Style="{StaticResource TextoNota}"
+                   HorizontalTextAlignment="Center"
+                   Margin="0,8,0,0" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

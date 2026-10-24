@@ -3,19 +3,32 @@
 ## Acceso
 
 - **PIN**: Ingresar el PIN de 4-6 dígitos que se configuró al instalar.
-- **Recuperar PIN**: Si se olvida, el desarrollador puede ayudar mediantevalidación de identidad (no hay "backdoor" por seguridad y modelo de costo $0).
+- **Recuperar PIN**: Si se olvida, el desarrollador puede ayudar mediante validación de identidad (no hay "backdoor" por seguridad y modelo de costo $0).
+
+## App para Windows y Android (base implementada)
+
+1. **Primer arranque**: si la base está vacía, se abre el asistente. Captura nombre de la tienda, giro, impuesto, comisión de tarjeta, fondo de caja, fiado y su límite, días entre respaldos y el PIN del dueño (se pide dos veces).
+2. **Inicio de sesión**: escribe tu PIN. Después de 3 intentos incorrectos la app bloquea el acceso hasta cerrarla y abrirla de nuevo.
+3. **Pestañas**:
+   - **Inicio**: ventas de hoy (incluye anuladas), efectivo esperado del periodo, productos con stock bajo, fecha del último respaldo y aviso si el respaldo está vencido.
+   - **Vender**: punto de venta con búsqueda o escaneo, carrito, cobro en efectivo, tarjeta, mixto o fiado, y ticket interno que se puede compartir o copiar.
+   - **Ventas**: lista de ventas del día con folio, total, método, hora y estado.
+   - **Caja**: resumen del periodo abierto (efectivo esperado, fondo, ventas por método, abonos, ingresos/retiros y gastos) y datos del último corte cerrado.
+   - **Ajustes**: datos de la tienda, reglas configuradas, rutas de la base y de los respaldos, último respaldo, botón para crear un respaldo y cierre de sesión.
+4. **Importante**: la app ya permite vender. Anular ventas, cerrar el corte y editar inventario todavía se hacen desde la consola provisional; no cierres la caja desde la app porque aún no existe esa acción.
+5. **Dónde están los datos**: en Windows, `%LOCALAPPDATA%\SistemaTienda\com.sistematienda.tienda\Data\tienda.db` y los respaldos en la carpeta `respaldos` junto a ese archivo. En Android están en el almacenamiento privado de la app. Las rutas exactas se muestran en Ajustes.
 
 ## Pantallas Principales
 
 ### 1. Inicio / Panel de Día
 
-Muestra al abrir la app (después del PIN):
+Muestra al abrir la app (después del PIN), en la pestaña **Inicio**:
 
-- **Fecha de hoy**.
-- **Fondo de caja inicial** configurado.
-- **Ventas del día hasta el momento**: Total efectivo, total tarjeta, número de transacciones.
-- **Último respaldo**: "Hace 2 días" o alerta si hace más tiempo.
-- **Próximo gasto recordatorio**: Si hay gastos recurrentes configurados.
+- **Fecha de hoy** y nombre de la tienda.
+- **Ventas de hoy**: cantidad de ventas vigentes, total cobrado y cuántas se anularon.
+- **Efectivo esperado**: monto del periodo abierto e inicio del periodo con el fondo incluido.
+- **Stock bajo**: cuántos productos necesitan revisión.
+- **Último respaldo**: fecha, estado y aviso cuando el intervalo configurado ya venció.
 
 ### 2. Catálogo de Productos
 
@@ -32,6 +45,14 @@ Acceso rápido desde el panel principal o menú.
 - Elegir método de pago (Efectivo / Tarjeta / Mixto / Fiado).
 - Ver total y cambio (si es efectivo).
 - Generar y mostrar/compartir ticket.
+
+#### Anular una venta registrada
+
+- Menú Ventas → [3] Anular venta (solo dueño o encargado).
+- Se anula la venta completa; el motivo es obligatorio y se confirma escribiendo `ANULAR`.
+- El sistema devuelve el stock con el costo congelado y revierte el saldo si fue fiado; la venta original queda marcada `[ANULADA]`.
+- El reembolso en efectivo se entrega manualmente. La venta se excluye del corte pendiente; si el reembolso se paga después de cerrar el corte, regístralo como retiro en el corte siguiente.
+- No se puede anular una venta que ya quedó incluida en un corte cerrado.
 
 ### 4. Corte de Caja
 
@@ -115,9 +136,12 @@ El ticket es un archivo PDF o imagen generado en el momento de la venta, que NO 
 
 ### Hacer un respaldo manual
 
-1. En la misma pantalla, tocar "Crear respaldo ahora".
-2. El sistema copia `tienda.localdb` a `tienda.localdb.copy`.
-3. Mensaje: "✓ Respaldo creado exitosamente en [ruta]".
+1. En la app, abrir la pestaña **Ajustes**.
+2. Tocar **Crear respaldo ahora**.
+3. La app crea una copia verificada en la carpeta `respaldos` y muestra la ruta del archivo.
+4. En la consola, la misma acción está en Configuración → Respaldo y restauración.
+
+La app también intenta crear un respaldo automático al iniciar y al cerrar sesión, según el intervalo configurado (0 desactiva el respaldo automático).
 
 ### ¿Cuándo restaurar?
 
