@@ -176,7 +176,7 @@ El detalle vive en el tablero. Resumen y criterios de terminado:
 
 ### T13 — POS en app MAUI (HECHO)
 
-- Completado en `feat/maui-pos` sobre `feat/ui-maui` (pendiente de commit/push al cierre de la sesión).
+- Completado en `feat/maui-pos` sobre `feat/ui-maui` (commit `d7c20c3`; pendiente de push y PR).
 - Pestaña **Vender**: búsqueda por código o nombre, carrito con cantidades y validación de stock, cobro efectivo/tarjeta/mixto/fiado y ticket interno compartible o copiable.
 - Usa `VentaService` sin lógica de negocio en la página; aplica `SesionApp.Aplicar()` antes de cada llamada.
 - No incluye QR, anulación ni cierre de corte. Sin pruebas automatizadas de interfaz.

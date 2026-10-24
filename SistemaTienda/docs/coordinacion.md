@@ -45,7 +45,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 | T11 | Qoder | feat/anulacion-ventas | Esquema v6 (`AnulacionesVenta` inmutable), anulación de venta completa con devolución de stock y reverso de fiado, bloqueo tras corte cerrado, permiso `AnularVenta`, menú [3], exclusión de utilidad/corte y 8 pruebas; 170 pruebas | 7c5ed91 |
 | T12 | Qoder | feat/ui-maui | App MAUI para Windows y Android con asistente, login por PIN, tablero Inicio/Ventas/Caja/Ajustes, respaldo automático y manual, cierre de sesión y job CI de compilación; 170 pruebas sin cambios | 20bcccd, 221fab0 |
 | — | Qoder | feat/maui-pos | Corrección de fecha local en movimientos de inventario: `RegistrarSalida` usa la fecha del equipo y se agregó la prueba de regresión; 171 pruebas | 09413fe |
-| T13 | Qoder | feat/maui-pos | Pestaña Vender con carrito, búsqueda/escaneo, cobro efectivo/tarjeta/mixto/fiado y ticket compartible o copiable; 171 pruebas sin cambios | pendiente de commit |
+| T13 | Qoder | feat/maui-pos | Pestaña Vender con carrito, búsqueda/escaneo, cobro efectivo/tarjeta/mixto/fiado y ticket compartible o copiable; 171 pruebas sin cambios | d7c20c3 |
 
 ## Tareas
 
@@ -87,4 +87,4 @@ Al terminar, mueve la fila a `Hecho` (o elimínala de En curso) y registra el co
 | 2026-10-23 | Qoder | feat/respaldo-automatico | T10 terminado: respaldo automático por intervalo con aviso en consola, bitácora de respaldos manuales y automáticos, 5 pruebas nuevas; 162 pruebas | bbc5257 |
 | 2026-10-23 | Qoder | feat/anulacion-ventas | T11 terminado: esquema v6, anulación de venta completa con reverso de stock y fiado, bloqueo tras corte cerrado, permiso y bitácora, 8 pruebas nuevas; 170 pruebas en CI | 7c5ed91 |
 | 2026-10-23 | Qoder | feat/ui-maui | T12 terminado: app MAUI Windows/Android con asistente, login, tablero, respaldo y cierre de sesión, verificación manual en Windows, 170 pruebas y job `app-maui` | 20bcccd, 221fab0 |
-| 2026-10-23 | Qoder | feat/maui-pos | T13 terminado: POS en la app con carrito, cobro efectivo/tarjeta/mixto/fiado y ticket compartible; corrección de fecha local en inventario; 171 pruebas en local | pendiente de commit |
+| 2026-10-23 | Qoder | feat/maui-pos | T13 terminado: POS en la app con carrito, cobro efectivo/tarjeta/mixto/fiado y ticket compartible; corrección de fecha local en inventario; 171 pruebas en local | 09413fe, d7c20c3 |
