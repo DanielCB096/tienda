@@ -74,7 +74,7 @@ Cada agente: su carpeta, su rama y su PR.
 
 ## Estado del proyecto (2026-10-23)
 
-- Rama publicada con el trabajo actual: `feat/ui-maui` (sobre `feat/anulacion-ventas`, que parte de `feat/respaldo-automatico`). El POS en MAUI vive en `feat/maui-pos` (local, pendiente de push).
+- Ramas publicadas con el trabajo actual: `feat/ui-maui` (sobre `feat/anulacion-ventas`, que parte de `feat/respaldo-automatico`) y `feat/maui-pos` (sobre `feat/ui-maui`, PR #4 contra `main`).
 - `main`: solo el commit base; los PR de `feat/base-compilable`, `feat/migraciones-respaldo`, `feat/ventas-pos`, `feat/corte-caja`, `feat/centavos-enteros`, `feat/integracion-t4-t9`, `feat/reportes-utilidad`, `feat/respaldo-automatico`, `feat/anulacion-ventas`, `feat/ui-maui` y `feat/maui-pos` siguen pendientes de integración, en ese orden.
 - Build: 0 errores, 0 advertencias. Pruebas: **171 en verde** (verificadas localmente el 2026-10-23 y en GitHub Actions). La app MAUI compila para Windows en local y para Windows y Android en CI.
 - Implementado: configuración inicial, usuarios/PIN/roles, gastos, inventario por movimientos, ventas/POS (efectivo, tarjeta, mixto y fiado; costo y precio congelados; comisión; anulación completa con reverso), fiado (cliente/abono con historial), proveedores (saldo/pago), corte de caja (efectivo esperado, diferencia justificada, ingresos/retiros e historial), bitácora inmutable y permisos validados en servicios, migraciones versionadas con respaldo, respaldo/restauración local y respaldo automático por intervalo al iniciar/cerrar, dinero en centavos enteros (`long`/`INTEGER`, esquema v4), reporte de utilidad por periodo (ventas − costo congelado − comisión − mermas − gastos), app MAUI para Windows y Android (asistente, login, tablero, POS con carrito, cobro y ticket compartible, respaldo y cierre de sesión) y consola provisional.
@@ -176,7 +176,7 @@ El detalle vive en el tablero. Resumen y criterios de terminado:
 
 ### T13 — POS en app MAUI (HECHO)
 
-- Completado en `feat/maui-pos` sobre `feat/ui-maui` (commit `d7c20c3`; pendiente de push y PR).
+- Completado en `feat/maui-pos` sobre `feat/ui-maui` (commit `d7c20c3`; push y PR #4 contra `main`).
 - Pestaña **Vender**: búsqueda por código o nombre, carrito con cantidades y validación de stock, cobro efectivo/tarjeta/mixto/fiado y ticket interno compartible o copiable.
 - Usa `VentaService` sin lógica de negocio en la página; aplica `SesionApp.Aplicar()` antes de cada llamada.
 - No incluye QR, anulación ni cierre de corte. Sin pruebas automatizadas de interfaz.
