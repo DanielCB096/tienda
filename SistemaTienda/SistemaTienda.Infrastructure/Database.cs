@@ -570,15 +570,18 @@ public class DatabaseTools
     {
         using var insert = conn.CreateCommand();
         insert.Transaction = tx;
+        // Fecha local explícita: el esquema usa datetime('now') (UTC) por defecto,
+        // pero ventas, gastos y reportes filtran por fecha local de la tienda.
         insert.CommandText = @"
-            INSERT INTO MovimientoInventario (ProductoId, Tipo, Cantidad, CostoUnitario, Motivo, Usuario)
-            VALUES (@producto, @tipo, @cantidad, @costo, @motivo, @usuario)";
+            INSERT INTO MovimientoInventario (ProductoId, Tipo, Cantidad, CostoUnitario, Motivo, Usuario, Fecha)
+            VALUES (@producto, @tipo, @cantidad, @costo, @motivo, @usuario, @fecha)";
         insert.Parameters.AddWithValue("@producto", productoId);
         insert.Parameters.AddWithValue("@tipo", tipo);
         insert.Parameters.AddWithValue("@cantidad", cantidadFirmada);
         insert.Parameters.AddWithValue("@costo", costoUnitario);
         insert.Parameters.AddWithValue("@motivo", motivo ?? string.Empty);
         insert.Parameters.AddWithValue("@usuario", usuario ?? string.Empty);
+        insert.Parameters.AddWithValue("@fecha", DateTime.Now);
         insert.ExecuteNonQuery();
 
         using var update = conn.CreateCommand();

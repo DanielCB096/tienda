@@ -82,6 +82,23 @@ public sealed class InventarioTests
     }
 
     [Fact]
+    public void Movimientos_SeRegistranConFechaLocal()
+    {
+        using var bd = new BaseDatosPrueba();
+        bd.Inventario.AgregarProducto(Producto(stock: 10));
+        var producto = Assert.Single(bd.Inventario.ObtenerProductos());
+
+        Assert.True(bd.Inventario.ReducirStockVenta(producto.Id, 1, "Cajero").IsSuccess);
+
+        var salida = bd.Inventario.HistorialMovimientos(producto.Id)
+            .Single(m => m.Tipo == MovimientoTipo.Salida);
+        var diferencia = (DateTime.Now - salida.Fecha).Duration();
+
+        Assert.True(diferencia < TimeSpan.FromMinutes(5),
+            $"La fecha del movimiento ({salida.Fecha:O}) no está en hora local ({DateTime.Now:O}).");
+    }
+
+    [Fact]
     public void ReducirStockVenta_SinStockSuficiente_FallaYNoModificaNada()
     {
         using var bd = new BaseDatosPrueba();
