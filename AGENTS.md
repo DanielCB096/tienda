@@ -74,12 +74,12 @@ Cada agente: su carpeta, su rama y su PR.
 
 ## Estado del proyecto (2026-10-23)
 
-- Rama publicada con el trabajo actual: `feat/ui-maui` (sobre `feat/anulacion-ventas`, que parte de `feat/respaldo-automatico`).
-- `main`: solo el commit base; los PR de `feat/base-compilable`, `feat/migraciones-respaldo`, `feat/ventas-pos`, `feat/corte-caja`, `feat/centavos-enteros`, `feat/integracion-t4-t9`, `feat/reportes-utilidad`, `feat/respaldo-automatico`, `feat/anulacion-ventas` y `feat/ui-maui` siguen pendientes de integración, en ese orden.
-- Build: 0 errores, 0 advertencias. Pruebas: **170 en verde** (verificadas por GitHub Actions; local bloqueado por Smart App Control). La app MAUI compila para Windows en local y para Windows y Android en CI.
-- Implementado: configuración inicial, usuarios/PIN/roles, gastos, inventario por movimientos, ventas/POS (efectivo, tarjeta, mixto y fiado; costo y precio congelados; comisión; anulación completa con reverso), fiado (cliente/abono con historial), proveedores (saldo/pago), corte de caja (efectivo esperado, diferencia justificada, ingresos/retiros e historial), bitácora inmutable y permisos validados en servicios, migraciones versionadas con respaldo, respaldo/restauración local y respaldo automático por intervalo al iniciar/cerrar, dinero en centavos enteros (`long`/`INTEGER`, esquema v4), reporte de utilidad por periodo (ventas − costo congelado − comisión − mermas − gastos), app MAUI para Windows y Android (asistente, login, tablero, respaldo y cierre de sesión) y consola provisional.
-- No implementado: operaciones de escritura en la app MAUI (vender, cerrar corte, inventario, clientes/proveedores), ticket con QR/compartir, copia de respaldos a USB/nube y conteo por denominaciones.
-- Deuda principal: pagos a proveedores sin historial inmutable, merma sin entidad propia, bitácora no atómica con la operación, corte sin desglose de billetes y validación de Android en dispositivo.
+- Rama publicada con el trabajo actual: `feat/ui-maui` (sobre `feat/anulacion-ventas`, que parte de `feat/respaldo-automatico`). El POS en MAUI vive en `feat/maui-pos` (local, pendiente de push).
+- `main`: solo el commit base; los PR de `feat/base-compilable`, `feat/migraciones-respaldo`, `feat/ventas-pos`, `feat/corte-caja`, `feat/centavos-enteros`, `feat/integracion-t4-t9`, `feat/reportes-utilidad`, `feat/respaldo-automatico`, `feat/anulacion-ventas`, `feat/ui-maui` y `feat/maui-pos` siguen pendientes de integración, en ese orden.
+- Build: 0 errores, 0 advertencias. Pruebas: **171 en verde** (verificadas localmente el 2026-10-23 y en GitHub Actions). La app MAUI compila para Windows en local y para Windows y Android en CI.
+- Implementado: configuración inicial, usuarios/PIN/roles, gastos, inventario por movimientos, ventas/POS (efectivo, tarjeta, mixto y fiado; costo y precio congelados; comisión; anulación completa con reverso), fiado (cliente/abono con historial), proveedores (saldo/pago), corte de caja (efectivo esperado, diferencia justificada, ingresos/retiros e historial), bitácora inmutable y permisos validados en servicios, migraciones versionadas con respaldo, respaldo/restauración local y respaldo automático por intervalo al iniciar/cerrar, dinero en centavos enteros (`long`/`INTEGER`, esquema v4), reporte de utilidad por periodo (ventas − costo congelado − comisión − mermas − gastos), app MAUI para Windows y Android (asistente, login, tablero, POS con carrito, cobro y ticket compartible, respaldo y cierre de sesión) y consola provisional.
+- No implementado: anulación de ventas y cierre de corte desde la app MAUI, pantallas de inventario/clientes/proveedores, ticket con QR, copia de respaldos a USB/nube y conteo por denominaciones.
+- Deuda principal: pagos a proveedores sin historial inmutable, merma sin entidad propia, bitácora no atómica con la operación, corte sin desglose de billetes, POS y app MAUI sin pruebas automatizadas y validación de Android en dispositivo.
 
 ## Tareas disponibles
 
@@ -174,9 +174,17 @@ El detalle vive en el tablero. Resumen y criterios de terminado:
 - Verificado manualmente en Windows; Android pendiente de probar en dispositivo.
 - Detalle en [SistemaTienda/docs/02-modulos/interfaz-maui.md](SistemaTienda/docs/02-modulos/interfaz-maui.md).
 
+### T13 — POS en app MAUI (HECHO)
+
+- Completado en `feat/maui-pos` sobre `feat/ui-maui` (pendiente de commit/push al cierre de la sesión).
+- Pestaña **Vender**: búsqueda por código o nombre, carrito con cantidades y validación de stock, cobro efectivo/tarjeta/mixto/fiado y ticket interno compartible o copiable.
+- Usa `VentaService` sin lógica de negocio en la página; aplica `SesionApp.Aplicar()` antes de cada llamada.
+- No incluye QR, anulación ni cierre de corte. Sin pruebas automatizadas de interfaz.
+- Detalle en [SistemaTienda/docs/02-modulos/interfaz-maui.md](SistemaTienda/docs/02-modulos/interfaz-maui.md) y [SistemaTienda/docs/03-procesos/venta.md](SistemaTienda/docs/03-procesos/venta.md).
+
 ### T7 — Pantallas de operación en MAUI
 
-- El ADR de UI ya está decidido (MAUI). Falta llevar a la app el punto de venta, el cierre de corte y el inventario; hoy esas operaciones siguen en la consola provisional.
+- El ADR de UI ya está decidido (MAUI). El punto de venta se entregó en T13; faltan el cierre de corte y el inventario en la app.
 - Trabaja una pantalla a la vez, con sus pruebas y documentación, y espera confirmación antes de la siguiente.
 
 ## No rehacer
@@ -214,7 +222,7 @@ dotnet build SistemaTienda/SistemaTienda.Maui/SistemaTienda.Maui.csproj -f net10
 
 Entorno conocido: el equipo tiene runtime **.NET 10** y SDK 10; los proyectos `net8.0` usan `RollForward=Major` para ejecutarse. Si creas un nuevo ejecutable o proyecto de pruebas, agrega la misma propiedad o fallará al arrancar. La app MAUI usa los frameworks `net10.0-android` y `net10.0-windows10.0.19041.0` y requiere las cargas de trabajo `maui-windows` y `maui-android` instaladas.
 
-**Bloqueo local (2026-10-23)**: Windows Smart App Control está activo y rechaza cualquier ensamblado compilado localmente al cargarlo (`0x800711C7`, política WDAC `0283ac0f-…`). Por eso `dotnet test` y la consola no pueden ejecutarse en este equipo, aunque `dotnet build` sí funciona. La verificación es el flujo de GitHub Actions (`.github/workflows/ci.yml`, job "Compilar y probar"). Si tienes permisos de administrador y aceptas el cambio irreversible, desactivar Smart App Control (Seguridad de Windows → Control de aplicaciones y navegador) vuelve a habilitar la ejecución local.
+**Nota local (2026-10-23)**: en este equipo las pruebas y la consola ya se ejecutan; `dotnet test` terminó con 171 pruebas en verde. La nota anterior sobre Smart App Control (error `0x800711C7` al cargar ensamblados locales) ya no aplica; si reaparece, revisa Seguridad de Windows → Control de aplicaciones y navegador.
 
 ## Convención de pruebas
 

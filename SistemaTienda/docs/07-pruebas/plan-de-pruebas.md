@@ -124,9 +124,9 @@ dotnet test SistemaTienda/SistemaTienda.sln
 | `ReportesTests` | Utilidad con costo congelado, costo modificado después de vender, comisión de tarjeta, mermas, gastos de ambos orígenes, venta fuera del rango y rango invertido |
 | `RespaldoAutomaticoTests` | Respaldo automático sin copia previa y su auditoría, respaldo vigente que no duplica, intervalo cumplido, intervalo 0 deshabilitado y auditoría del respaldo manual |
 
-Total actual: 170 casos, todos en verde. Los puntos 1, 2, 3, 5, 6, 7 y 8 del listado de áreas críticas tienen cobertura parcial; faltan ticket con QR y rendimiento. La restauración se prueba sobre una base temporal: se verifica que el contenido vuelve al del respaldo (no byte a byte).
+Total actual: 171 casos, todos en verde. Los puntos 1, 2, 3, 5, 6, 7 y 8 del listado de áreas críticas tienen cobertura parcial; faltan ticket con QR y rendimiento. La restauración se prueba sobre una base temporal: se verifica que el contenido vuelve al del respaldo (no byte a byte).
 
-La verificación se ejecuta en GitHub Actions (`windows-latest`) en cada push; ver el aviso de Smart App Control en `CLAUDE-tienda.md` sobre por qué no siempre corre localmente.
+La verificación se ejecuta en GitHub Actions (`windows-latest`) en cada push y también puede correr localmente con `dotnet test`; ver `CLAUDE-tienda.md` para el entorno actual.
 
 ## Verificación manual de la app MAUI (2026-10-23)
 
@@ -154,6 +154,27 @@ Pendiente:
 - Instalar y ejecutar la app Android en la tablet objetivo (hoy solo compila en CI).
 - Repetir el flujo con una base restaurada desde respaldo.
 - Medir arranque, cambio de pestaña y respuesta del tablero con 500 ventas y 500 productos ficticios.
+
+## Verificación manual del POS (T13)
+
+El POS ya compila en Windows y la lógica de venta está cubierta por `VentasTests`, pero la pantalla todavía no se probó a mano ni tiene pruebas automatizadas. Casos por ejecutar con datos ficticios:
+
+| Caso | Esperado |
+|------|----------|
+| Buscar por código exacto y agregar al carrito | Agrega una línea; si el producto ya está, suma cantidad |
+| Buscar por nombre y elegir entre resultados | Lista de hasta 10 coincidencias; el seleccionado entra al carrito |
+| Código o nombre inexistente | Mensaje claro en español, sin cambios en el carrito |
+| Sumar, restar y quitar líneas | Totales y stock validado; no permite pasar del stock disponible |
+| Cobro en efectivo con monto mayor | Muestra el cambio correcto y registra la venta |
+| Cobro con tarjeta | Aplica la comisión configurada y registra el pago con tarjeta |
+| Cobro mixto | Exige efectivo y tarjeta mayores a cero y suma exacta del total |
+| Cobro a fiado | Solo aparece si está activado; exige cliente y respeta el límite de crédito |
+| Confirmar venta | Descuenta stock, registra la venta y muestra el ticket |
+| Ticket | Se muestra el detalle, se puede copiar y compartir |
+| Cerrar el ticket y volver al POS | Carrito vacío y listo para la siguiente venta |
+| Producto con stock 0 | No se puede vender ni agregar de más |
+
+Cuando se ejecuten, registrar el resultado en esta tabla y mover los casos fallidos a la deuda técnica.
 
 ## Herramientas de Prueba
 

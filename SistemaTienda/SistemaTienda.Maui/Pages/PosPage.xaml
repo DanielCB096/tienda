@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:models="clr-namespace:SistemaTienda.Maui.Models"
+             x:Class="SistemaTienda.Maui.Pages.PosPage"
+             Title="Vender">
+
+    <ContentPage.Resources>
+        <Style x:Key="BotonCantidad" TargetType="Button">
+            <Setter Property="WidthRequest" Value="38" />
+            <Setter Property="HeightRequest" Value="38" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="FontSize" Value="18" />
+            <Setter Property="FontAttributes" Value="Bold" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
+            <Setter Property="TextColor" Value="{StaticResource White}" />
+        </Style>
+        <Style x:Key="BotonQuitar" TargetType="Button" BasedOn="{StaticResource BotonCantidad}">
+            <Setter Property="BackgroundColor" Value="#F3E3E1" />
+            <Setter Property="TextColor" Value="#B3261E" />
+        </Style>
+    </ContentPage.Resources>
+
+    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="10" Padding="16">
+
+        <VerticalStackLayout Grid.Row="0" Spacing="2">
+            <Label Text="Nueva venta" Style="{StaticResource TituloPagina}" />
+            <Label x:Name="UsuarioLabel" Style="{StaticResource TextoNota}" />
+        </VerticalStackLayout>
+
+        <Grid Grid.Row="1" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+            <Entry x:Name="BuscarEntry"
+                   Style="{StaticResource CampoTexto}"
+                   Placeholder="Escanea un código o busca por nombre"
+                   ReturnType="Search"
+                   Completed="OnBuscarCompleted" />
+            <Button Grid.Column="1"
+                    Text="Buscar"
+                    Style="{StaticResource BotonSecundario}"
+                    WidthRequest="96"
+                    HeightRequest="48"
+                    Clicked="OnBuscarClicked" />
+        </Grid>
+
+        <Border x:Name="PanelResultados"
+                Grid.Row="2"
+                Style="{StaticResource Tarjeta}"
+                Padding="10"
+                IsVisible="False">
+            <CollectionView x:Name="ListaResultados" HeightRequest="170" SelectionMode="None">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="models:ProductoFila">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Padding="0,6">
+                            <VerticalStackLayout Spacing="0">
+                                <Label Text="{Binding Nombre}" FontAttributes="Bold" />
+                                <Label Text="{Binding Precio}" Style="{StaticResource TextoNota}" />
+                                <Label Text="{Binding StockTexto}" TextColor="{Binding StockColor}" FontSize="12" />
+                            </VerticalStackLayout>
+                            <Button Grid.Column="1"
+                                    Text="Agregar"
+                                    CommandParameter="{Binding .}"
+                                    Clicked="OnAgregarResultadoClicked"
+                                    Style="{StaticResource BotonSecundario}"
+                                    WidthRequest="92"
+                                    HeightRequest="40" />
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </Border>
+
+        <Border Grid.Row="3" Style="{StaticResource Tarjeta}" Padding="12">
+            <Grid RowDefinitions="Auto,*" RowSpacing="6">
+                <Label Text="CARRITO" Style="{StaticResource EtiquetaSeccion}" />
+                <CollectionView x:Name="ListaCarrito" Grid.Row="1" SelectionMode="None">
+                    <CollectionView.EmptyView>
+                        <Label Text="El carrito está vacío. Escanea un código o busca por nombre."
+                               Style="{StaticResource TextoNota}"
+                               HorizontalTextAlignment="Center"
+                               Margin="0,30,0,0" />
+                    </CollectionView.EmptyView>
+                    <CollectionView.ItemTemplate>
+                        <DataTemplate x:DataType="models:CarritoFila">
+                            <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto" ColumnSpacing="6" Padding="0,5">
+                                <VerticalStackLayout Spacing="0" VerticalOptions="Center">
+                                    <Label Text="{Binding Nombre}" FontAttributes="Bold" />
+                                    <Label Text="{Binding PrecioUnitario}" Style="{StaticResource TextoNota}" />
+                                </VerticalStackLayout>
+                                <Button Grid.Column="1"
+                                        Text="−"
+                                        CommandParameter="{Binding .}"
+                                        Clicked="OnMenosClicked"
+                                        Style="{StaticResource BotonCantidad}" />
+                                <Label Grid.Column="2"
+                                       Text="{Binding CantidadTexto}"
+                                       FontAttributes="Bold"
+                                       WidthRequest="24"
+                                       HorizontalTextAlignment="Center"
+                                       VerticalOptions="Center" />
+                                <Button Grid.Column="3"
+                                        Text="+"
+                                        CommandParameter="{Binding .}"
+                                        Clicked="OnMasClicked"
+                                        Style="{StaticResource BotonCantidad}" />
+                                <Button Grid.Column="4"
+                                        Text="✕"
+                                        CommandParameter="{Binding .}"
+                                        Clicked="OnQuitarClicked"
+                                        Style="{StaticResource BotonQuitar}" />
+                            </Grid>
+                        </DataTemplate>
+                    </CollectionView.ItemTemplate>
+                </CollectionView>
+            </Grid>
+        </Border>
+
+        <VerticalStackLayout Grid.Row="4" Spacing="6">
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                <VerticalStackLayout Spacing="0" VerticalOptions="Center">
+                    <Label Text="TOTAL" Style="{StaticResource EtiquetaSeccion}" />
+                    <Label x:Name="TotalLabel" Text="$0.00" Style="{StaticResource ValorGrande}" />
+                </VerticalStackLayout>
+                <Button x:Name="CobrarButton"
+                        Grid.Column="1"
+                        Text="Cobrar"
+                        Style="{StaticResource BotonPrincipal}"
+                        WidthRequest="160"
+                        IsEnabled="False"
+                        Clicked="OnCobrarClicked" />
+            </Grid>
+            <Label x:Name="MensajeLabel" Style="{StaticResource TextoNota}" IsVisible="False" />
+        </VerticalStackLayout>
+
+        <Grid x:Name="PanelCobro"
+              Grid.Row="0"
+              Grid.RowSpan="5"
+              ZIndex="10"
+              IsVisible="False"
+              BackgroundColor="#99000000"
+              Padding="16">
+            <Border Style="{StaticResource Tarjeta}"
+                    Padding="18"
+                    HorizontalOptions="Fill"
+                    VerticalOptions="Center"
+                    MaximumWidthRequest="560">
+                <ScrollView>
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="Cobrar" FontSize="24" FontAttributes="Bold" />
+                        <Label x:Name="TotalCobroLabel" Text="$0.00" Style="{StaticResource ValorGrande}" />
+
+                        <Label Text="FORMA DE PAGO" Style="{StaticResource EtiquetaSeccion}" />
+                        <Picker x:Name="MetodoPicker" SelectedIndexChanged="OnMetodoChanged" />
+
+                        <VerticalStackLayout x:Name="CamposEfectivo" Spacing="6">
+                            <Label Text="Efectivo recibido" Style="{StaticResource EtiquetaSeccion}" />
+                            <Entry x:Name="EfectivoEntry"
+                                   Style="{StaticResource CampoTexto}"
+                                   Keyboard="Numeric"
+                                   Placeholder="0.00"
+                                   TextChanged="OnEfectivoChanged" />
+                            <Label x:Name="CambioLabel" Style="{StaticResource TextoNota}" Text="Cambio: —" />
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout x:Name="CamposMixto" Spacing="6" IsVisible="False">
+                            <Label Text="Parte en efectivo" Style="{StaticResource EtiquetaSeccion}" />
+                            <Entry x:Name="EfectivoMixtoEntry"
+                                   Style="{StaticResource CampoTexto}"
+                                   Keyboard="Numeric"
+                                   Placeholder="0.00"
+                                   TextChanged="OnMixtoChanged" />
+                            <Label Text="Parte con tarjeta" Style="{StaticResource EtiquetaSeccion}" />
+                            <Entry x:Name="TarjetaMixtoEntry"
+                                   Style="{StaticResource CampoTexto}"
+                                   Keyboard="Numeric"
+                                   Placeholder="0.00"
+                                   TextChanged="OnMixtoChanged" />
+                            <Label x:Name="SumaMixtoLabel" Style="{StaticResource TextoNota}" Text="Suma: —" />
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout x:Name="CamposFiado" Spacing="6" IsVisible="False">
+                            <Label Text="Cliente" Style="{StaticResource EtiquetaSeccion}" />
+                            <Picker x:Name="ClientePicker"
+                                    ItemDisplayBinding="{Binding NombreConSaldo}"
+                                    SelectedIndexChanged="OnClienteChanged"
+                                    Title="Selecciona el cliente" />
+                            <Label x:Name="FiadoAvisoLabel" Style="{StaticResource TextoNota}" />
+                        </VerticalStackLayout>
+
+                        <Label x:Name="ComisionLabel" Style="{StaticResource TextoNota}" IsVisible="False" />
+                        <Label x:Name="PagoErrorLabel" Style="{StaticResource Error}" IsVisible="False" />
+
+                        <Button x:Name="ConfirmarCobroButton"
+                                Text="Confirmar cobro"
+                                Style="{StaticResource BotonPrincipal}"
+                                Clicked="OnConfirmarCobroClicked" />
+                        <Button Text="Cancelar"
+                                Style="{StaticResource BotonSecundario}"
+                                Clicked="OnCancelarCobroClicked" />
+                    </VerticalStackLayout>
+                </ScrollView>
+            </Border>
+        </Grid>
+    </Grid>
+</ContentPage>

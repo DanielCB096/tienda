@@ -32,7 +32,7 @@ Sistema para tiendas pequeñas de **cualquier giro** en México. Registra ventas
 
 ## 3. Stack y estructura
 
-- **Tipo de aplicación:** escritorio/terminal local-first. La interfaz objetivo es **MAUI** (Windows y Android); ya existe una base con asistente, login y tablero de solo lectura. La **consola** sigue siendo provisional para las operaciones que faltan.
+- **Tipo de aplicación:** escritorio/terminal local-first. La interfaz objetivo es **MAUI** (Windows y Android); ya existe una base con asistente, login, tablero y punto de venta (POS). La **consola** sigue siendo provisional para anular ventas, cerrar el corte e inventario.
 - **Lenguaje/framework:** C# / .NET 8 (`net8.0`) para Core, Infrastructure, Application, consola y pruebas; la app MAUI (`SistemaTienda.Maui`) usa .NET 10 (`net10.0-windows10.0.19041.0` y `net10.0-android`).
 - **Base de datos local:** SQLite mediante `Microsoft.Data.Sqlite` 8.0.10 (`SistemaTienda.Infrastructure/Database.cs`).
 - **Interfaz:** app MAUI (`SistemaTienda.Maui`) y consola (`SistemaTienda.Presentation`), ambas con sesión por PIN.
@@ -94,7 +94,7 @@ dotnet format SistemaTienda/SistemaTienda.sln
 
 Después de cualquier cambio: ejecuta pruebas y lint. No des una tarea por terminada si fallan.
 
-> **Entorno de este equipo (2026-10-23)**: Windows Smart App Control bloquea la carga de cualquier ensamblado compilado localmente (`0x800711C7`), así que `dotnet test` no puede ejecutarse aquí. La verificación oficial es el flujo de GitHub Actions (`.github/workflows/ci.yml`), que compila y corre las pruebas en `windows-latest` en cada push. Si se desactiva Smart App Control (requiere administrador y es irreversible), vuelve a funcionar `dotnet test` local.
+> **Entorno de este equipo (2026-10-23)**: las pruebas y la consola ya se ejecutan localmente; `dotnet test` terminó con 171 pruebas en verde. La verificación oficial sigue siendo el flujo de GitHub Actions (`.github/workflows/ci.yml`), que compila y corre las pruebas en `windows-latest` en cada push. Si reaparece el error `0x800711C7` de Smart App Control, revisa Seguridad de Windows → Control de aplicaciones y navegador.
 
 ## 5. Convenciones de código
 

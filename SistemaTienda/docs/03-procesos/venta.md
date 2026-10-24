@@ -2,7 +2,7 @@
 
 ## Estado de implementación (2026-10-23)
 
-Base implementada en `feat/ventas-pos` (esquema v2; la anulación se agregó en v6). La venta y la anulación se operan en la consola provisional; la app MAUI solo muestra las ventas del día.
+Base implementada en `feat/ventas-pos` (esquema v2; la anulación se agregó en v6). La venta se opera en la consola provisional y en la app MAUI (T13); la anulación sigue solo en la consola.
 
 | Función | Estado |
 |---------|--------|
@@ -13,14 +13,27 @@ Base implementada en `feat/ventas-pos` (esquema v2; la anulación se agregó en 
 | Pago con tarjeta y comisión configurable | ✅ Implementado; la comisión se guarda en la venta |
 | Pago mixto (efectivo + tarjeta) | ✅ Implementado |
 | Venta a fiado (exclusiva, valida límite de crédito) | ✅ Implementado |
-| Ticket interno en pantalla | ✅ Implementado (texto) |
-| Ticket con QR y compartir (WhatsApp, correo, galería) | ⛔ Pendiente |
+| Ticket interno en pantalla | ✅ Implementado (texto en consola y app) |
+| Compartir o copiar el ticket | ✅ Implementado en la app MAUI (T13) |
 | Descuentos | ⛔ Fase 2 (no incluidos en MVP) |
 | Anulación posterior de una venta | ✅ Implementado (T11, esquema v6): venta completa, permiso dueño/encargado, devolución de stock y reverso de fiado |
 | Reporte de utilidad por periodo | ✅ Implementado (T5); el detalle por venta sigue pendiente |
 | Integración con corte de caja | ✅ Implementado: las ventas anuladas se excluyen del corte pendiente y no se pueden anular tras un corte cerrado |
 
 Decisiones aplicadas: el precio de catálogo incluye impuesto y no se recalcula; el fiado no se combina con otros métodos; no hay ventas en espera (una a la vez); el sistema no se integra con la terminal bancaria.
+
+## Punto de venta en la app MAUI (T13)
+
+La pestaña **Vender** replica el flujo de la consola sobre los mismos servicios:
+
+1. El cajero escanea un código (el lector envía Enter) o escribe un nombre. Un código exacto agrega el producto; un nombre muestra hasta 10 coincidencias para elegir.
+2. El carrito valida el stock disponible en cada alta o incremento; se puede reducir la cantidad o quitar la línea.
+3. El total se calcula con `Dinero.Multiplicar` y se muestra al instante.
+4. **Cobrar** abre el panel de pago: efectivo (calcula el cambio y bloquea faltantes), tarjeta (muestra la comisión configurada), mixto (exige que la suma sea el total) o fiado (cliente y límite de crédito).
+5. Al confirmar, `VentaService.RegistrarVenta` guarda la venta y descuenta el stock en una transacción. La app limpia el carrito y muestra el ticket.
+6. El ticket interno (no fiscal, sin QR) se puede compartir con el sistema o copiar al portapapeles.
+
+No incluye anulación, descuentos ni cierre de corte desde la app; esas operaciones siguen en la consola. La interfaz no tiene pruebas automatizadas: la verificación es manual y la compilación en CI. El QR del ticket (regla 7) sigue pendiente para una tarea posterior.
 
 ## Anulación de Venta (T11, esquema v6)
 

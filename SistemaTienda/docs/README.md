@@ -17,10 +17,10 @@ La base técnica está **compilando y con pruebas automatizadas**. El núcleo im
 - Migraciones de esquema versionadas (`PRAGMA user_version`) y respaldo/restauración local verificado.
 - Respaldo automático por intervalo configurado al iniciar y cerrar la aplicación, con aviso y bitácora.
 - Dinero en centavos enteros (`long`/`INTEGER`, esquema v4) con conversión y formato centralizados en `Dinero`.
-- App MAUI para Windows y Android con asistente de primera configuración, login por PIN, tablero (Inicio, Ventas, Caja y Ajustes), respaldo manual y automático, y cierre de sesión. Ventas y Caja son de solo lectura.
-- Interfaz de consola provisional para las operaciones que todavía no están en la app (vender, anular, cerrar corte, inventario, clientes y proveedores).
+- App MAUI para Windows y Android con asistente de primera configuración, login por PIN, tablero (Inicio, Vender, Ventas, Caja y Ajustes), punto de venta con carrito y cobro, ticket interno compartible, respaldo manual y automático, y cierre de sesión. Caja sigue siendo de solo lectura.
+- Interfaz de consola provisional para las operaciones que todavía no están en la app (anular ventas, cerrar corte, inventario, clientes y proveedores).
 
-Pendiente para el MVP: punto de venta y cierre de corte en MAUI, ticket con QR/compartir, copia de respaldos a USB/nube, conteo de caja por denominaciones y validación de Android en dispositivo. Ver [roadmap.md](roadmap.md) y [deuda-tecnica.md](deuda-tecnica.md).
+Pendiente para el MVP: cierre de corte en MAUI, anulación desde la app, ticket con QR, copia de respaldos a USB/nube, conteo de caja por denominaciones y validación de Android en dispositivo. Ver [roadmap.md](roadmap.md) y [deuda-tecnica.md](deuda-tecnica.md).
 
 ## Índice
 

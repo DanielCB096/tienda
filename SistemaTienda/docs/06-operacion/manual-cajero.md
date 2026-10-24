@@ -14,10 +14,10 @@
 
 1. Al abrir la app, se solicita el PIN.
 2. El usuario ingresa su PIN.
-3. El sistema valida y muestra el tablero (Inicio, Ventas, Caja y Ajustes).
+3. El sistema valida y muestra el tablero (Inicio, Vender, Ventas, Caja y Ajustes).
 4. Si el PIN está mal tres veces seguidas, la app bloquea el acceso hasta cerrarla y abrirla de nuevo.
 
-> **Estado de la app (2026-10-23)**: el tablero es informativo. Muestra ventas del día, efectivo esperado del corte, stock bajo y último respaldo, pero **vender, anular, cerrar corte y editar inventario todavía se hacen en la consola provisional**. No cierres la caja desde la app: aún no existe esa acción. El manual describe el flujo completo planeado; revisa en cada versión qué partes ya están en la app.
+> **Estado de la app (2026-10-23)**: el tablero muestra ventas del día, efectivo esperado del corte, stock bajo y último respaldo. La pestaña **Vender** ya registra ventas con carrito, cobros y ticket interno compartible. **Anular ventas, cerrar corte y editar inventario todavía se hacen en la consola provisional.** No cierres la caja desde la app: aún no existe esa acción. El manual describe el flujo completo planeado; revisa en cada versión qué partes ya están en la app.
 
 ### 2. Catálogo / Búsqueda de Producto
 

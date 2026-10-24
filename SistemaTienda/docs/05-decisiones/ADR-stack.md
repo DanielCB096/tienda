@@ -59,7 +59,7 @@ Seleccionar **MAUI (inicialmente .NET 8) con SQLite local** por:
 La decisión se mantiene y ya tiene una primera implementación:
 
 - `SistemaTienda.Maui` compila para Windows y Android.
-- En Windows se verificó manualmente el asistente de primera configuración, el login por PIN, el tablero con cuatro pestañas, el respaldo manual y el cierre de sesión.
+- En Windows se verificó manualmente el asistente de primera configuración, el login por PIN, el tablero, el respaldo manual y el cierre de sesión. El POS (T13) compila en Windows; su flujo de venta queda pendiente de verificación manual.
 - Android compila en GitHub Actions; falta probarlo en la tablet objetivo.
 - La app usa .NET 10 porque es el SDK con cargas de trabajo MAUI disponible en el equipo; las bibliotecas compartidas siguen en `net8.0` y se reutilizan sin cambios.
 - Pendiente para cerrar la validación de hardware: instalar el APK en el dispositivo objetivo y medir arranque, navegación y uso del teclado numérico.

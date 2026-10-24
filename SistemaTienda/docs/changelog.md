@@ -32,6 +32,17 @@ Próximamente después de completar los módulos críticos.
 - Configuración básica de tienda (nombre, giro, impuestos, métodos de pago).
 - Documentación inicial (glosario, stack, módulos, ADR).
 
+### v0.0.12 - 2026-10-23: Punto de venta en la app MAUI
+
+- *Agregado*: pestaña **Vender** en la app MAUI con búsqueda por código o nombre, alta directa al escanear, lista de coincidencias y carrito con cantidades editables.
+- *Agregado*: cobro en efectivo con cambio y validación de faltantes, tarjeta con aviso de comisión, mixto con suma exacta del total y fiado con selección de cliente y límite de crédito.
+- *Agregado*: al confirmar, la venta se registra con `VentaService` y el stock se descuenta en la misma transacción; el carrito se limpia y se muestra el ticket.
+- *Agregado*: página de ticket interno (no fiscal) con el detalle de líneas, total y forma de pago, más botones para compartir con el sistema o copiar al portapapeles.
+- *Agregado*: modelos `ProductoFila`, `CarritoFila` y `ClienteOpcion`, y registro de `PosPage` en la inyección de dependencias.
+- *Corregido*: los movimientos de inventario registran la fecha local en lugar de la fecha UTC.
+- *Limitación*: la app todavía no anula ventas, no cierra cortes ni edita inventario; el ticket no incluye QR. La interfaz no tiene pruebas automatizadas.
+- Total del proyecto: 171 pruebas (sin cambios; el flujo del POS aún no tiene verificación manual registrada, solo compilación local en verde y la de CI pendiente).
+
 ### v0.0.11 - 2026-10-23: App MAUI con login y tablero
 
 - *Agregado*: proyecto `SistemaTienda.Maui` para Windows y Android (`net10.0-windows10.0.19041.0` y `net10.0-android`) con inyección de dependencias, ruta de base en `FileSystem.AppDataDirectory` y arranque que elige entre asistente y login.

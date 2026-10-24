@@ -23,10 +23,10 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 - **Impacto**: el total es siempre precio de catálogo × cantidad. La anulación ya existe (solo venta completa, bloqueada tras un corte cerrado), pero no hay descuentos por línea ni por venta.
 - **Cierre**: descuentos como fase 2 con autorización y registro en bitácora.
 
-### Ventas sin ticket QR ni compartir
+### Ventas sin ticket QR
 
-- **Dónde**: `Program.ImprimirTicket`.
-- **Impacto**: el ticket actual es texto en consola y la app MAUI no muestra ticket. No se genera PDF/imagen, no lleva QR y no se puede compartir por WhatsApp o correo.
+- **Dónde**: `TicketPage` en la app MAUI y `Program.ImprimirTicket` en la consola.
+- **Impacto**: el ticket es texto interno y ya se puede compartir o copiar desde la app, pero no se genera PDF/imagen ni lleva QR, y no se puede guardar en galería. WhatsApp y correo dependen del menú de compartir del sistema.
 - **Cierre**: generación de ticket con QR en la app MAUI.
 
 ### Corte de caja sin conteo por denominaciones
@@ -56,17 +56,17 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 - **Impacto**: la restauración reemplaza toda la base y no deja registro de quién la ejecutó ni de qué archivo se usó. El respaldo `antes-restaurar` evita la pérdida de datos, pero la acción no queda auditada.
 - **Cierre**: registrar `AccionBitacora.Respaldo` con motivo `Restauracion` y la ruta usada inmediatamente después de restaurar.
 
-### La app MAUI todavía no permite operar la tienda
+### La app MAUI solo permite vender
 
 - **Dónde**: `SistemaTienda.Maui/Pages`.
-- **Por qué**: esta entrega entrega la base de navegación, sesión y tablero; las operaciones de escritura se harán en tareas posteriores.
-- **Impacto**: desde la app solo se consultan ventas y caja, se crea respaldo y se cierra sesión. Vender, anular, cerrar corte, inventario, clientes y proveedores siguen en la consola, que no es usable por el cajero.
-- **Cierre**: pantallas de punto de venta, caja e inventario en MAUI, módulo por módulo y con sus pruebas.
+- **Por qué**: el punto de venta se entregó en T13; las demás operaciones de escritura se harán en tareas posteriores.
+- **Impacto**: desde la app se vende y se consultan ventas y caja, se crea respaldo y se cierra sesión. Anular, cerrar corte, inventario, clientes y proveedores siguen en la consola, que no es usable por el cajero.
+- **Cierre**: pantallas de cierre de corte, anulación e inventario en MAUI, módulo por módulo y con sus pruebas.
 
 ### App MAUI sin pruebas automatizadas
 
 - **Dónde**: `SistemaTienda.Maui`.
-- **Impacto**: CI solo compila para Windows y Android. Una regresión de navegación, sesión o formato no se detecta hasta la verificación manual.
+- **Impacto**: CI solo compila para Windows y Android. Una regresión de navegación, sesión, POS o formato no se detecta hasta la verificación manual.
 - **Cierre**: extraer la lógica de cada página a modelos de vista probables y agregar pruebas; valorar pruebas de interfaz más adelante.
 
 ### Android sin validación en dispositivo

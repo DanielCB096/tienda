@@ -8,14 +8,15 @@ Alcance de esta entrega:
 
 - Asistente de primera configuración.
 - Inicio de sesión con PIN.
-- Tablero con cuatro pestañas: Inicio, Ventas, Caja y Ajustes.
+- Tablero con cinco pestañas: Inicio, Vender, Ventas, Caja y Ajustes.
+- Punto de venta: búsqueda o escaneo, carrito, cobro en efectivo, tarjeta, mixto o fiado, y ticket interno que se puede compartir o copiar.
 - Respaldo automático al iniciar y cerrar sesión, y respaldo manual desde Ajustes.
 
-Esta entrega **no** incluye todavía operaciones de escritura desde la app (vender, cobrar, cerrar corte, editar inventario). Las pestañas de Ventas y Caja son informativas de solo lectura.
+Esta entrega **no** incluye todavía el cierre de corte, la anulación de ventas ni la edición de inventario desde la app. Las pestañas Ventas y Caja son informativas de solo lectura.
 
 ## Estado
 
-Base implementada y verificada manualmente en Windows el 2026-10-23. La compilación para Android se valida en GitHub Actions porque el equipo de desarrollo no tiene Android SDK ni JDK instalados.
+Base implementada y verificada manualmente en Windows el 2026-10-23 para asistente, login, tablero y respaldo. El punto de venta (T13) está implementado y la compilación local en Windows está en verde; la verificación manual del flujo de venta y la compilación en CI quedan pendientes. La compilación para Android se valida en GitHub Actions porque el equipo de desarrollo no tiene Android SDK ni JDK instalados.
 
 ## Plataformas y proyecto
 
@@ -40,12 +41,14 @@ SistemaTienda.Maui/
 ├── App.xaml(.cs)              # Aplicación y ventana raíz
 ├── MauiProgram.cs             # Inyección de dependencias y ruta de la base
 ├── Formato.cs                 # Moneda y fechas en es-MX
-├── Models/VentaFila.cs        # Fila de la lista de ventas
+├── Models/                    # Filas y opciones de las listas (ventas, carrito, productos, clientes)
 ├── Pages/
 │   ├── ConfiguracionInicialPage   # Asistente de primera ejecución
 │   ├── LoginPage                  # PIN con 3 intentos
-│   ├── PrincipalPage              # TabbedPage con 4 pestañas
+│   ├── PrincipalPage              # TabbedPage con 5 pestañas
 │   ├── InicioPage                 # Tablero del día
+│   ├── PosPage                    # Punto de venta: carrito, cobro y ticket
+│   ├── TicketPage                 # Ticket interno con compartir y copiar
 │   ├── VentasPage                 # Ventas de hoy (lectura)
 │   ├── CajaPage                   # Corte pendiente y último corte (lectura)
 │   ├── AjustesPage                # Configuración, respaldo y cierre de sesión
@@ -70,15 +73,18 @@ SistemaTienda.Maui/
 | Asistente | Nombre, giro, impuesto, comisión, fondo, fiado y límite, intervalo de respaldo, PIN y confirmación | Crea tienda y usuario dueño |
 | Login | Nombre de la tienda y PIN numérico; 3 intentos y luego bloqueo hasta reabrir la app | Inicia sesión y evalúa respaldo automático |
 | Inicio | Ventas de hoy (vigentes y anuladas), efectivo esperado del periodo, stock bajo, último respaldo y aviso si venció | Solo lectura |
+| Vender | Búsqueda por código o nombre, carrito con cantidades, total, cobro efectivo/tarjeta/mixto/fiado y ticket interno | Venta y salida de stock |
 | Ventas | Lista de ventas del día con folio, total, método, hora y estado (vigente/anulada) | Solo lectura |
 | Caja | Periodo abierto, efectivo esperado, fondo, ventas por método, abonos, ingresos/retiros, gastos y último corte cerrado | Solo lectura |
 | Ajustes | Datos de la tienda, reglas configuradas, rutas de base y respaldos, último respaldo, crear respaldo y cerrar sesión | Respaldo manual y cierre de sesión |
+
+El POS reutiliza `VentaService`: la validación de stock, precios congelados, pagos y fiado ocurre en la capa de aplicación; la página solo arma el carrito y captura los importes. El ticket es texto interno (sin QR) y se abre en una página modal con opciones de compartir y copiar.
 
 Las pestañas se muestran en una barra inferior en Android y en la parte superior en Windows. Los textos usan español de México y los importes se formatean con `Formato.Moneda` (centavos → `$0.00`).
 
 ## Sesión y permisos
 
-`SesionActual` usa `AsyncLocal`, que no sobrevive entre eventos de interfaz. Por eso `SesionApp` guarda el usuario autenticado y lo vuelve a aplicar (`SesionApp.Aplicar()`) antes de cada llamada a un servicio desde un manejador de eventos. Los permisos siguen validándose en `Application`, no en la interfaz.
+`SesionActual` usa `AsyncLocal`, que no sobrevive entre eventos de interfaz. Por eso `SesionApp` guarda el usuario autenticado y lo vuelve a aplicar (`SesionApp.Aplicar()`) antes de cada llamada a un servicio desde un manejador de eventos. Los permisos siguen validándose en `Application`, no en la interfaz: el POS exige `Vender` al confirmar el cobro.
 
 Al cerrar sesión desde Ajustes se ejecuta el respaldo automático si corresponde, se limpia la sesión y se vuelve al login. No se conserva el usuario anterior.
 
@@ -113,9 +119,9 @@ No se usa `Shell` ni rutas jerárquicas. `NavegacionApp` cambia la página raíz
 
 ## Limitaciones de esta entrega
 
-- Ventas y Caja son de solo lectura; no hay punto de venta ni cierre de corte desde la app.
+- El punto de venta ya registra ventas desde la app; Caja sigue siendo de solo lectura y no hay cierre de corte ni anulación desde la app.
 - No hay pantallas de inventario, clientes, proveedores, gastos ni reportes.
-- No se genera ni comparte ticket; el ticket de texto sigue existiendo solo en la consola.
+- El ticket es texto interno (sin QR) con opciones de compartir y copiar.
 - No hay cierre por inactividad; el bloqueo por PIN es manual (cerrar sesión).
 - Android solo se ha compilado en CI, no probado en un dispositivo físico.
 - La interfaz no está cubierta por pruebas automatizadas; la verificación es manual y la compilación en CI.
@@ -132,6 +138,19 @@ No se usa `Shell` ni rutas jerárquicas. `NavegacionApp` cambia la página raíz
 - [x] Cerrar sesión regresa al login.
 - [x] La app abre sin conexión y sin permisos de red.
 - [x] Compila para Windows localmente y para Windows y Android en CI.
+
+## Criterios de aceptación de T13 (POS)
+
+Implementados en código; el flujo completo queda pendiente de verificación manual en Windows y en un dispositivo Android:
+
+- [ ] Escanear o buscar un producto lo agrega al carrito con precio y stock.
+- [ ] El carrito respeta el stock y permite cambiar cantidades o quitar líneas.
+- [ ] El total se calcula como precio × cantidad.
+- [ ] El cobro en efectivo calcula el cambio y rechaza montos insuficientes.
+- [ ] El cobro con tarjeta y mixto valida los importes y muestra la comisión.
+- [ ] El fiado exige cliente y respeta el límite configurado.
+- [ ] La venta se registra una sola vez y descuenta el stock.
+- [ ] El ticket se muestra y se puede compartir o copiar.
 
 ## Compilar y ejecutar
 
