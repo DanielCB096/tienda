@@ -28,9 +28,8 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 
 | Tarea | Agente | Rama | Archivos reservados | Inicio | Estado |
 |-------|--------|------|---------------------|--------|--------|
-| Tarea | Agente | Rama | Archivos reservados | Inicio | Estado |
-|-------|--------|------|---------------------|--------|--------|
-| — | — | — | — | — | Sin tareas en curso |
+| T13 | POS en app MAUI (carrito, cobro y ticket) | Qoder | feat/maui-pos | SistemaTienda.Maui/Pages/, PrincipalPage.cs, MauiProgram.cs, Models/ | 2026-10-23 | Tomada |
+| — | Corrección de fecha local en movimientos (bloqueo de base) | Qoder | feat/maui-pos | Database.cs, pruebas | 2026-10-23 | Tomada |
 
 ## Hecho
 
@@ -63,6 +62,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 | T10 | Respaldo automático por intervalo | Hecho | T1 | En `feat/respaldo-automatico` (sobre `feat/reportes-utilidad`). Se evalúa al iniciar sesión y al cerrar; `0` deshabilita; cualquier respaldo previo cuenta y la copia queda en `Bitacora`. Pendiente: copia a USB/nube y respaldo durante sesiones largas. |
 | T11 | Anulación de ventas | Hecho | T2, T4, T8 | En `feat/anulacion-ventas` (sobre `feat/respaldo-automatico`). Esquema v6; solo venta completa, bloqueada si ya está en un corte cerrado; devuelve stock con costo congelado y revierte fiado; reembolso en efectivo manual (ver [deuda-tecnica.md](deuda-tecnica.md)). |
 | T12 | App MAUI con login y tablero | Hecho | T7, T11 | En `feat/ui-maui` (sobre `feat/anulacion-ventas`). Asistente, login, tablero de solo lectura, respaldo y cierre de sesión; fuera de la solución y compilada en CI. Android pendiente de probar en dispositivo. Ver [interfaz-maui.md](02-modulos/interfaz-maui.md). |
+| T13 | POS en app MAUI | Tomada | T2, T12 | En `feat/maui-pos`. Carrito, búsqueda/escaneo, cobro efectivo/tarjeta/mixto/fiado y ticket compartible desde la app. No incluye QR ni cierre de corte. |
 
 ## Plantilla para reclamar
 
