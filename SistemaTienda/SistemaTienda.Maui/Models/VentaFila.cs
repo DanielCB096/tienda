@@ -2,6 +2,7 @@ namespace SistemaTienda.Maui.Models;
 
 public sealed class VentaFila
 {
+    public int VentaId { get; init; }
     public string Folio { get; init; } = string.Empty;
     public string Total { get; init; } = string.Empty;
     public string Detalle { get; init; } = string.Empty;

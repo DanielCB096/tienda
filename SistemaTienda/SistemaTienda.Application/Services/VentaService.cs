@@ -167,6 +167,8 @@ public class VentaService
 
     public Venta ObtenerVentaPorId(int ventaId) => _db.ObtenerVentaPorId(ventaId);
 
+    public AnulacionVenta ObtenerAnulacion(int ventaId) => _db.ObtenerAnulacionVenta(ventaId);
+
     /// <summary>
     /// Anula una venta completa con motivo obligatorio. El historial no se edita:
     /// se registra la anulación, se devuelve el stock y se revierte el fiado.
