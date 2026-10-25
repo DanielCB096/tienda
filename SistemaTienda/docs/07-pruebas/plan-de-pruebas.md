@@ -14,14 +14,14 @@ Validar que el sistema funcione correctamente según las reglas de negocio, cump
 ## Áreas Críticas a Probar (por regla NO negociable)
 
 1. **Venta atómica**
-   - *Caso*: Registrar una venta con descuento debe actualizar inventario y total correctamente.
+   - *Caso*: Registrar una venta multi-línea debe actualizar inventario y total correctamente.
    - *Expected*: Stock reduce, venta registrada, total correcto. Si falla, nada se guarda.
    - *Prueba*: Vender el último producto en stock; verificar que no permita vender más; verificar que el stock quede en 0.
 
 2. **Cuadro de caja**
    - *Caso*: Calcular efectivo esperado vs. contado.
-   - *Expected*: Fórmula: Fondo Inicial + Ventas Efectivo + Abonos Efectivo - Retiros - Gastos de Caja.
-   - *Prueba*: Simular un día con ventas mixtas, retiros y gastos; verificar que la diferencia sea correcta (o esperado si hay error).
+   - *Expected*: Fórmula: Fondo Inicial + Ventas Efectivo + Abonos Efectivo + Ingresos de Caja − Retiros − Gastos de Caja.
+   - *Prueba*: Simular un periodo con ventas mixtas, abonos, ingresos, retiros y gastos; verificar el efectivo esperado, que la diferencia exija motivo y que el periodo empiece en el corte anterior.
 
 3. **Integridad de Inventario**
    - *Caso*: El stock debe ser siempre el resultado de los movimientos (compras - ventas - mermas + ajustes).
@@ -95,6 +95,119 @@ Qué pasa cuando las cosas van mal:
 - 500 "ventas simuladas" en la base de datos (historical).
 - Búsqueda por nombre con 100 productos que coinciden.
 - Reporte de utilidad de un mes entero.
+
+## Pruebas automatizadas existentes (2026-10-23)
+
+Proyecto `SistemaTienda.Tests` (xUnit, net8.0). Cada prueba crea una base SQLite temporal aislada y la elimina al terminar.
+
+```bash
+dotnet test SistemaTienda/SistemaTienda.sln
+```
+
+| Archivo | Cubre |
+|---------|-------|
+| `ConfiguracionTests` | Asistente inicial, PIN hasheado, login, roles, gastos |
+| `InventarioTests` | Alta, duplicados, venta, merma, entrada, ajuste, stock bajo, búsqueda, valorizado |
+| `FiadoProveedoresTests` | Cliente, abono, saldo, proveedor, pago, validaciones |
+| `BaseDatosTests` | Inicialización idempotente, tablas, mapeo de tipos |
+| `DineroTests` | Conversión pesos ↔ centavos con redondeo `AwayFromZero`, multiplicación con desbordamiento, porcentaje a centavos y formato invariante |
+| `MigracionesRespaldoTests` | Runner de migraciones con respaldo previo, idempotencia, fallo con rollback, rechazo de base más nueva, respaldo verificado, restauración exacta con respaldo de seguridad, confirmación obligatoria, migración v3 → v4 a centavos con integridad de FKs |
+| `VentasTests` | Venta atómica, stock insuficiente revierte todo, costo y precio congelados, fiado (saldo, desactivado, límite, exclusivo), pagos que no coinciden, comisión en mixto, líneas duplicadas, ventas del día, migración v1→v2 con datos |
+| `AnulacionVentasTests` | Devolución de stock con costo congelado y bitácora, reverso del saldo fiado, bloqueo tras corte cerrado, exclusión del corte pendiente, doble anulación sin movimientos duplicados, permiso de encargado, motivo obligatorio y exclusión de la utilidad |
+| `CorteCajaTests` | Efectivo esperado con todas las fuentes, faltante/sobrante, motivo obligatorio, gasto externo excluido, mixto solo suma efectivo, periodo entre cortes, fondo sugerido, corte sin actividad, validaciones, abono con historial, orden del historial, migración v2→v3 con respaldo |
+| `BitacoraPermisosTests` | Ajuste autorizado con antes/después, empleado sin permiso, encargado sin cambio de precio pero con edición, merma, gasto, pago a proveedor, retiro denegado e ingreso permitido, inmutabilidad por disparadores, filtros de consulta, registro sin acción o sin sesión |
+| `GastosTests` | Gasto de un centavo, suma de centavos sin perder precisión, monto cero o negativo rechazado |
+| `SaldosBordeTests` | Abono igual al saldo, abono con saldo cero, centavos exactos, pago a proveedor que liquida el saldo |
+| `InventarioBordeTests` | Venta que agota el stock, costo o cantidad inválidos en entrada, merma no positiva, código duplicado tras recortar, comodines literales en la búsqueda |
+| `UsuariosPermisosTests` | Nombre recortado, PIN de cuatro dígitos, nombre en blanco, usuario inexistente, sal distinta por hash y hash mal formado |
+| `MapeoTiposTests` | Rol entero a enum y fecha nullable nula o cargada |
+| `ReportesTests` | Utilidad con costo congelado, costo modificado después de vender, comisión de tarjeta, mermas, gastos de ambos orígenes, venta fuera del rango y rango invertido |
+| `RespaldoAutomaticoTests` | Respaldo automático sin copia previa y su auditoría, respaldo vigente que no duplica, intervalo cumplido, intervalo 0 deshabilitado y auditoría del respaldo manual |
+
+Total actual: 171 casos, todos en verde. Los puntos 1, 2, 3, 5, 6, 7 y 8 del listado de áreas críticas tienen cobertura parcial; faltan ticket con QR y rendimiento. La restauración se prueba sobre una base temporal: se verifica que el contenido vuelve al del respaldo (no byte a byte).
+
+La verificación se ejecuta en GitHub Actions (`windows-latest`) en cada push y también puede correr localmente con `dotnet test`; ver `CLAUDE-tienda.md` para el entorno actual.
+
+## Verificación manual de la app MAUI (2026-10-23)
+
+La interfaz no está cubierta por pruebas automatizadas. Esta tabla registra la verificación hecha en Windows con una base temporal de prueba; los datos se borraron al terminar.
+
+| Caso | Resultado |
+|------|-----------|
+| Primer arranque sin base: crea el esquema v6 y muestra el asistente | Pasó |
+| Asistente con PIN distinto en la confirmación | Pasó (muestra “Los PIN no coinciden”) |
+| Asistente completo y transición al login | Pasó |
+| Login con PIN incorrecto y contador de intentos | Pasó |
+| Bloqueo tras 3 intentos hasta reabrir la app | Pasó |
+| Login correcto y apertura del tablero | Pasó |
+| Inicio: ventas del día, efectivo esperado, stock bajo y último respaldo | Pasó |
+| Ventas: lista del día y estado de anulación | Pasó (estado vacío y venta anulada) |
+| Caja: periodo abierto, desglose por método y último corte cerrado | Pasó |
+| Ajustes: datos, reglas, rutas reales y conteo de respaldos | Pasó |
+| Crear respaldo manual desde Ajustes | Pasó (copia verificada y ruta mostrada) |
+| Respaldo automático al iniciar sesión | Pasó (se creó una copia) |
+| Cerrar sesión y volver al login | Pasó |
+| Arranque sin conexión y sin permisos de red | Pasó |
+
+Pendiente:
+
+- Instalar y ejecutar la app Android en la tablet objetivo (hoy solo compila en CI).
+- Repetir el flujo con una base restaurada desde respaldo.
+- Medir arranque, cambio de pestaña y respuesta del tablero con 500 ventas y 500 productos ficticios.
+
+## Verificación manual del POS (T13)
+
+Ejecutada en Windows el 2026-10-25 con una base demo local: cinco productos, una clienta con límite de $500.00, comisión de tarjeta de 3.5 % y fondo inicial de $200.00. Se registraron ventas ficticias de efectivo, tarjeta, mixto y fiado; las cifras de esta tabla corresponden a la pasada controlada. Los datos de la demo no forman parte del repositorio.
+
+| Caso | Resultado |
+|------|-----------|
+| Buscar por código exacto y agregar al carrito | Pasó (Refresco Cola; el código entra directo y limpia el buscador) |
+| Buscar por nombre y elegir entre resultados | Pasó (Agua natural; la lista muestra precio y stock) |
+| Código o nombre inexistente | Pasó (mensaje “No se encontró 999999.”, sin cambios en el carrito) |
+| Sumar, restar y quitar líneas | Pasó (1→2 con `+`; 2→1→fuera con `−`; `✕` quita la línea) |
+| No vender por encima del stock | Pasó (Pan blanco: al llegar a 12, `+` muestra “No hay más stock… (stock 12)”) |
+| Cobro en efectivo con monto mayor | Pasó (venta #5 por $432.00 con $500.00: cambio $68.00) |
+| Cambio visible en el cobro y en el ticket | Pasó (venta #8 por $36.00 con $50.00: el recuadro “Cambio a entregar” muestra $14.00; con $20.00 muestra “Faltan $16.00” y no registra la venta; el ticket imprime Recibido y Cambio) |
+| Cobro con tarjeta | Pasó (venta #2 por $18.00; comisión 3.5 % = $0.63 en el ticket) |
+| Cobro mixto con suma incorrecta | Pasó (efectivo $5.00 + tarjeta $10.00: rechaza la suma $15.00 de $12.00, sin venta) |
+| Cobro mixto correcto | Pasó (venta #3 por $12.00: $5.00 efectivo + $7.00 tarjeta; comisión $0.25) |
+| Cobro a fiado sin cliente | Pasó (“Selecciona el cliente para la venta a fiado.”) |
+| Cobro a fiado con cliente | Pasó (venta #4 por $16.00 a María López; aviso de saldo $0.00 y límite $500.00) |
+| Confirmar venta | Pasó (cada venta descontó stock, mostró su folio y dejó el carrito vacío) |
+| Ticket: detalle, copiar y cerrar | Pasó (el texto copiado coincide; “Cerrar” vuelve al POS) |
+| Ticket: compartir con el sistema | No probado (abre el diálogo de Windows; queda pendiente) |
+| Ventas y Caja reflejan las ventas | Pasó (5 ventas por $496.00; efectivo esperado $655.00 = fondo $200.00 + $455.00 en efectivo; tarjeta $25.00 y fiado $16.00) |
+| Producto con stock 0 | Pasó (tras agotar Pan blanco, muestra “No hay stock disponible… (stock 0)” y no lo agrega) |
+
+Observación fuera del alcance del POS: Inicio y Ventas muestran “$496.00 cobrados” e incluyen la venta a fiado de $16.00, aunque ese importe no entró a caja; Caja sí lo separa. Es una etiqueta heredada de T12 y quedó anotada en [deuda-técnica](../deuda-tecnica.md).
+
+Pendiente del POS:
+
+- Probar “Compartir” con el diálogo del sistema en Windows.
+- Repetir el flujo en la tablet Android.
+
+## Verificación manual de Caja (T14)
+
+Ejecutada en Windows el 2026-10-25 sobre la misma base demo del POS (fondo inicial de $200.00). Se cerraron dos periodos y se registraron operaciones ficticias; los datos no forman parte del repositorio.
+
+| Caso | Resultado |
+|------|-----------|
+| Periodo abierto con ventas | Pasó (9 ventas; efectivo esperado $760.00 con fondo de $200.00 y desglose por método) |
+| Cierre con faltante sin observaciones | Pasó (mensaje “La diferencia exige explicar el motivo antes de cerrar.”; no se guardó el corte) |
+| Cierre con faltante y observación | Pasó (confirmación previa; corte #1 con contado $750.00, diferencia −$10.00 y usuario Dueño; el siguiente periodo inicia en $750.00) |
+| Ingreso de caja | Pasó ($50.00 con motivo; el efectivo esperado sube a $800.00) |
+| Retiro de caja | Pasó (confirmación; $20.00 con motivo; el efectivo esperado baja a $780.00) |
+| Abono de fiado desde Caja | Pasó ($10.00; el saldo de la clienta baja de $16.00 a $6.00 y el esperado sube a $790.00) |
+| Cierre sin diferencia | Pasó (contado $790.00; corte #2 con diferencia $0.00 y sin observaciones) |
+| Último corte cerrado | Pasó (muestra contado $790.00, diferencia $0.00 y responsable) |
+| Retiro con rol encargado | Pendiente (la matriz de permisos solo está cubierta por pruebas automatizadas) |
+| Conteo por denominaciones e historial de cortes | Pendiente (la app captura el total contado y muestra solo el último corte) |
+
+Pendiente de Caja:
+
+- Probar el cierre y las operaciones con un usuario encargado y otro empleado.
+- Repetir el flujo en la tablet Android.
+- Agregar el desglose por denominaciones y el historial de cortes.
 
 ## Herramientas de Prueba
 

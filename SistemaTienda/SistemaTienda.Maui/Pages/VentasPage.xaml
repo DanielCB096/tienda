@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:models="clr-namespace:SistemaTienda.Maui.Models"
+             x:Class="SistemaTienda.Maui.Pages.VentasPage"
+             Title="Ventas">
+
+    <Grid RowDefinitions="Auto,*" Padding="20,20,20,0" RowSpacing="12">
+
+        <VerticalStackLayout Grid.Row="0" Spacing="4">
+            <Label Text="Ventas de hoy" Style="{StaticResource TituloPagina}" />
+            <Label x:Name="ResumenLabel" Style="{StaticResource TextoNota}" />
+            <Button Text="Actualizar"
+                    Style="{StaticResource BotonSecundario}"
+                    Clicked="OnActualizarClicked"
+                    HorizontalOptions="Start"
+                    Margin="0,8,0,0" />
+        </VerticalStackLayout>
+
+        <RefreshView x:Name="Refresco" Grid.Row="1" Refreshing="OnRefrescando">
+            <CollectionView x:Name="ListaVentas" SelectionMode="None">
+                <CollectionView.EmptyView>
+                    <Label Text="Aún no hay ventas registradas hoy."
+                           Style="{StaticResource TextoNota}"
+                           HorizontalTextAlignment="Center"
+                           Margin="0,40,0,0" />
+                </CollectionView.EmptyView>
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="models:VentaFila">
+                        <Border Style="{StaticResource Tarjeta}" Margin="0,0,0,8" Padding="14">
+                            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" RowSpacing="4">
+                                <Label Text="{Binding Folio}" FontAttributes="Bold" FontSize="16" />
+                                <Label Text="{Binding Total}" Grid.Column="1" FontAttributes="Bold" FontSize="18" HorizontalTextAlignment="End" />
+                                <Label Text="{Binding Detalle}" Grid.Row="1" Style="{StaticResource TextoNota}" />
+                                <Label Text="{Binding Estado}" Grid.Row="1" Grid.Column="1"
+                                       TextColor="{Binding EstadoColor}" FontSize="13" HorizontalTextAlignment="End" />
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+    </Grid>
+</ContentPage>
