@@ -106,5 +106,6 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 - `ConfiguracionTienda.UsuarioDueñoPINHash` existe en la tabla pero no se usa (el hash vive en `UsuariosSistema`). Eliminar en la próxima migración.
 - `Rol` se documentó como texto en algunos documentos; en la base es `INTEGER` con enum. Unificar documentación.
 - Sin `Activo` en productos: no se puede retirar un producto del catálogo sin borrarlo.
+- Inicio y Ventas muestran el importe de las ventas vigentes como “cobrados”, pero incluyen las ventas a fiado, que no entran a caja (Caja sí las separa). Revisar la etiqueta o excluir el fiado del resumen.
 - Sin pruebas de rendimiento con volúmenes realistas (10 000 productos / 500 ventas por día).
 - Comentarios XML heredados de la versión anterior en `InventoryService`; no afectan.

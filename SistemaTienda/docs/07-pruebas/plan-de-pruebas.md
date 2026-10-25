@@ -157,24 +157,33 @@ Pendiente:
 
 ## Verificación manual del POS (T13)
 
-El POS ya compila en Windows y la lógica de venta está cubierta por `VentasTests`, pero la pantalla todavía no se probó a mano ni tiene pruebas automatizadas. Casos por ejecutar con datos ficticios:
+Ejecutada en Windows el 2026-10-25 con una base demo local: cinco productos, una clienta con límite de $500.00, comisión de tarjeta de 3.5 % y fondo inicial de $200.00. Se registraron cinco ventas ficticias (#1 efectivo, #2 tarjeta, #3 mixto, #4 fiado y #5 efectivo). Los datos de la demo no forman parte del repositorio.
 
-| Caso | Esperado |
-|------|----------|
-| Buscar por código exacto y agregar al carrito | Agrega una línea; si el producto ya está, suma cantidad |
-| Buscar por nombre y elegir entre resultados | Lista de hasta 10 coincidencias; el seleccionado entra al carrito |
-| Código o nombre inexistente | Mensaje claro en español, sin cambios en el carrito |
-| Sumar, restar y quitar líneas | Totales y stock validado; no permite pasar del stock disponible |
-| Cobro en efectivo con monto mayor | Muestra el cambio correcto y registra la venta |
-| Cobro con tarjeta | Aplica la comisión configurada y registra el pago con tarjeta |
-| Cobro mixto | Exige efectivo y tarjeta mayores a cero y suma exacta del total |
-| Cobro a fiado | Solo aparece si está activado; exige cliente y respeta el límite de crédito |
-| Confirmar venta | Descuenta stock, registra la venta y muestra el ticket |
-| Ticket | Se muestra el detalle, se puede copiar y compartir |
-| Cerrar el ticket y volver al POS | Carrito vacío y listo para la siguiente venta |
-| Producto con stock 0 | No se puede vender ni agregar de más |
+| Caso | Resultado |
+|------|-----------|
+| Buscar por código exacto y agregar al carrito | Pasó (Refresco Cola; el código entra directo y limpia el buscador) |
+| Buscar por nombre y elegir entre resultados | Pasó (Agua natural; la lista muestra precio y stock) |
+| Código o nombre inexistente | Pasó (mensaje “No se encontró 999999.”, sin cambios en el carrito) |
+| Sumar, restar y quitar líneas | Pasó (1→2 con `+`; 2→1→fuera con `−`; `✕` quita la línea) |
+| No vender por encima del stock | Pasó (Pan blanco: al llegar a 12, `+` muestra “No hay más stock… (stock 12)”) |
+| Cobro en efectivo con monto mayor | Pasó (venta #5 por $432.00 con $500.00: cambio $68.00) |
+| Cobro con tarjeta | Pasó (venta #2 por $18.00; comisión 3.5 % = $0.63 en el ticket) |
+| Cobro mixto con suma incorrecta | Pasó (efectivo $5.00 + tarjeta $10.00: rechaza la suma $15.00 de $12.00, sin venta) |
+| Cobro mixto correcto | Pasó (venta #3 por $12.00: $5.00 efectivo + $7.00 tarjeta; comisión $0.25) |
+| Cobro a fiado sin cliente | Pasó (“Selecciona el cliente para la venta a fiado.”) |
+| Cobro a fiado con cliente | Pasó (venta #4 por $16.00 a María López; aviso de saldo $0.00 y límite $500.00) |
+| Confirmar venta | Pasó (cada venta descontó stock, mostró su folio y dejó el carrito vacío) |
+| Ticket: detalle, copiar y cerrar | Pasó (el texto copiado coincide; “Cerrar” vuelve al POS) |
+| Ticket: compartir con el sistema | No probado (abre el diálogo de Windows; queda pendiente) |
+| Ventas y Caja reflejan las ventas | Pasó (5 ventas por $496.00; efectivo esperado $655.00 = fondo $200.00 + $455.00 en efectivo; tarjeta $25.00 y fiado $16.00) |
+| Producto con stock 0 | Pasó (tras agotar Pan blanco, muestra “No hay stock disponible… (stock 0)” y no lo agrega) |
 
-Cuando se ejecuten, registrar el resultado en esta tabla y mover los casos fallidos a la deuda técnica.
+Observación fuera del alcance del POS: Inicio y Ventas muestran “$496.00 cobrados” e incluyen la venta a fiado de $16.00, aunque ese importe no entró a caja; Caja sí lo separa. Es una etiqueta heredada de T12 y quedó anotada en [deuda-técnica](../deuda-tecnica.md).
+
+Pendiente del POS:
+
+- Probar “Compartir” con el diálogo del sistema en Windows.
+- Repetir el flujo en la tablet Android.
 
 ## Herramientas de Prueba
 

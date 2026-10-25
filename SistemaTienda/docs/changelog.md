@@ -41,7 +41,8 @@ Próximamente después de completar los módulos críticos.
 - *Agregado*: modelos `ProductoFila`, `CarritoFila` y `ClienteOpcion`, y registro de `PosPage` en la inyección de dependencias.
 - *Corregido*: los movimientos de inventario registran la fecha local en lugar de la fecha UTC.
 - *Limitación*: la app todavía no anula ventas, no cierra cortes ni edita inventario; el ticket no incluye QR. La interfaz no tiene pruebas automatizadas.
-- Total del proyecto: 171 pruebas (sin cambios; el flujo del POS aún no tiene verificación manual registrada, solo compilación local en verde y la de CI pendiente).
+- Verificación manual en Windows (2026-10-25): cinco ventas ficticias con búsqueda por código y nombre, límite de stock, producto agotado, efectivo con cambio, tarjeta, mixto, fiado, ticket con copiar/cerrar y totales coherentes en Ventas y Caja. El botón Compartir y la ejecución en Android quedan pendientes.
+- Total del proyecto: 171 pruebas (sin cambios); CI en verde para el PR #4.
 
 ### v0.0.11 - 2026-10-23: App MAUI con login y tablero
 

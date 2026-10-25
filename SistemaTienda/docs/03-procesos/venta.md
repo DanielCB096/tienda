@@ -33,7 +33,7 @@ La pestaña **Vender** replica el flujo de la consola sobre los mismos servicios
 5. Al confirmar, `VentaService.RegistrarVenta` guarda la venta y descuenta el stock en una transacción. La app limpia el carrito y muestra el ticket.
 6. El ticket interno (no fiscal, sin QR) se puede compartir con el sistema o copiar al portapapeles.
 
-No incluye anulación, descuentos ni cierre de corte desde la app; esas operaciones siguen en la consola. La interfaz no tiene pruebas automatizadas: la verificación es manual y la compilación en CI. El QR del ticket (regla 7) sigue pendiente para una tarea posterior.
+No incluye anulación, descuentos ni cierre de corte desde la app; esas operaciones siguen en la consola. La interfaz no tiene pruebas automatizadas: el POS se verificó manualmente en Windows el 2026-10-25 (efectivo con cambio, tarjeta, mixto, fiado, límite de stock, producto agotado y ticket con copiar/cerrar); compartir con el diálogo del sistema y Android siguen pendientes. El QR del ticket (regla 7) queda para una tarea posterior.
 
 ## Anulación de Venta (T11, esquema v6)
 

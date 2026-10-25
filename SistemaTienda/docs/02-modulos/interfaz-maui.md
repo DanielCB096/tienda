@@ -16,7 +16,7 @@ Esta entrega **no** incluye todavía el cierre de corte, la anulación de ventas
 
 ## Estado
 
-Base implementada y verificada manualmente en Windows el 2026-10-23 para asistente, login, tablero y respaldo. El punto de venta (T13) está implementado y la compilación local en Windows está en verde; la verificación manual del flujo de venta y la compilación en CI quedan pendientes. La compilación para Android se valida en GitHub Actions porque el equipo de desarrollo no tiene Android SDK ni JDK instalados.
+Base implementada y verificada manualmente en Windows: asistente, login, tablero y respaldo el 2026-10-23; punto de venta el 2026-10-25 (búsqueda, carrito, límite de stock, efectivo con cambio, tarjeta, mixto, fiado y ticket con copiar/cerrar). La compilación para Windows y Android está en verde en CI (PR #4). Quedan pendientes el botón Compartir del ticket (diálogo del sistema) y la ejecución en Android; el equipo de desarrollo no tiene Android SDK ni JDK instalados.
 
 ## Plataformas y proyecto
 
@@ -121,7 +121,7 @@ No se usa `Shell` ni rutas jerárquicas. `NavegacionApp` cambia la página raíz
 
 - El punto de venta ya registra ventas desde la app; Caja sigue siendo de solo lectura y no hay cierre de corte ni anulación desde la app.
 - No hay pantallas de inventario, clientes, proveedores, gastos ni reportes.
-- El ticket es texto interno (sin QR) con opciones de compartir y copiar.
+- El ticket es texto interno (sin QR) con opciones de compartir y copiar; copiar sí se verificó, compartir depende del diálogo de Windows y quedó pendiente de probar.
 - No hay cierre por inactividad; el bloqueo por PIN es manual (cerrar sesión).
 - Android solo se ha compilado en CI, no probado en un dispositivo físico.
 - La interfaz no está cubierta por pruebas automatizadas; la verificación es manual y la compilación en CI.
@@ -141,16 +141,17 @@ No se usa `Shell` ni rutas jerárquicas. `NavegacionApp` cambia la página raíz
 
 ## Criterios de aceptación de T13 (POS)
 
-Implementados en código; el flujo completo queda pendiente de verificación manual en Windows y en un dispositivo Android:
+Implementados en código y verificados manualmente en Windows el 2026-10-25, salvo lo indicado; Android sigue pendiente:
 
-- [ ] Escanear o buscar un producto lo agrega al carrito con precio y stock.
-- [ ] El carrito respeta el stock y permite cambiar cantidades o quitar líneas.
-- [ ] El total se calcula como precio × cantidad.
-- [ ] El cobro en efectivo calcula el cambio y rechaza montos insuficientes.
-- [ ] El cobro con tarjeta y mixto valida los importes y muestra la comisión.
-- [ ] El fiado exige cliente y respeta el límite configurado.
-- [ ] La venta se registra una sola vez y descuenta el stock.
-- [ ] El ticket se muestra y se puede compartir o copiar.
+- [x] Escanear o buscar un producto lo agrega al carrito con precio y stock.
+- [x] El carrito respeta el stock y permite cambiar cantidades o quitar líneas.
+- [x] El total se calcula como precio × cantidad.
+- [x] El cobro en efectivo calcula el cambio y rechaza montos insuficientes.
+- [x] El cobro con tarjeta y mixto valida los importes y muestra la comisión.
+- [x] El fiado exige cliente y respeta el límite configurado.
+- [x] La venta se registra una sola vez y descuenta el stock.
+- [x] El ticket se muestra y se puede copiar.
+- [ ] El ticket se puede compartir con el diálogo del sistema (implementado, sin verificación manual).
 
 ## Compilar y ejecutar
 

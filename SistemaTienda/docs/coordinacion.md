@@ -63,7 +63,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 | T10 | Respaldo automático por intervalo | Hecho | T1 | En `feat/respaldo-automatico` (sobre `feat/reportes-utilidad`). Se evalúa al iniciar sesión y al cerrar; `0` deshabilita; cualquier respaldo previo cuenta y la copia queda en `Bitacora`. Pendiente: copia a USB/nube y respaldo durante sesiones largas. |
 | T11 | Anulación de ventas | Hecho | T2, T4, T8 | En `feat/anulacion-ventas` (sobre `feat/respaldo-automatico`). Esquema v6; solo venta completa, bloqueada si ya está en un corte cerrado; devuelve stock con costo congelado y revierte fiado; reembolso en efectivo manual (ver [deuda-tecnica.md](deuda-tecnica.md)). |
 | T12 | App MAUI con login y tablero | Hecho | T7, T11 | En `feat/ui-maui` (sobre `feat/anulacion-ventas`). Asistente, login, tablero de solo lectura, respaldo y cierre de sesión; fuera de la solución y compilada en CI. Android pendiente de probar en dispositivo. Ver [interfaz-maui.md](02-modulos/interfaz-maui.md). |
-| T13 | POS en app MAUI | Hecho | T2, T12 | En `feat/maui-pos`. Carrito, búsqueda/escaneo, cobro efectivo/tarjeta/mixto/fiado y ticket compartible desde la app. No incluye QR ni cierre de corte. |
+| T13 | POS en app MAUI | Hecho | T2, T12 | En `feat/maui-pos` (PR #4 contra `main`). Carrito, búsqueda/escaneo, cobro efectivo/tarjeta/mixto/fiado y ticket copiable. Verificación manual en Windows el 2026-10-25 con cinco ventas ficticias: los cuatro métodos de pago, cambio, límite y stock 0, ticket y totales en Ventas/Caja. Pendientes: botón Compartir y Android. |
 
 ## Plantilla para reclamar
 
@@ -87,4 +87,5 @@ Al terminar, mueve la fila a `Hecho` (o elimínala de En curso) y registra el co
 | 2026-10-23 | Qoder | feat/respaldo-automatico | T10 terminado: respaldo automático por intervalo con aviso en consola, bitácora de respaldos manuales y automáticos, 5 pruebas nuevas; 162 pruebas | bbc5257 |
 | 2026-10-23 | Qoder | feat/anulacion-ventas | T11 terminado: esquema v6, anulación de venta completa con reverso de stock y fiado, bloqueo tras corte cerrado, permiso y bitácora, 8 pruebas nuevas; 170 pruebas en CI | 7c5ed91 |
 | 2026-10-23 | Qoder | feat/ui-maui | T12 terminado: app MAUI Windows/Android con asistente, login, tablero, respaldo y cierre de sesión, verificación manual en Windows, 170 pruebas y job `app-maui` | 20bcccd, 221fab0 |
-| 2026-10-23 | Qoder | feat/maui-pos | T13 terminado: POS en la app con carrito, cobro efectivo/tarjeta/mixto/fiado y ticket compartible; corrección de fecha local en inventario; 171 pruebas en local | 09413fe, d7c20c3 |
+| 2026-10-23 | Qoder | feat/maui-pos | T13 terminado: POS en la app con carrito, cobro efectivo/tarjeta/mixto/fiado y ticket compartible; corrección de fecha local en inventario; 171 pruebas en local; PR #4 abierto | 09413fe..1fdf303 |
+| 2026-10-25 | Qoder | feat/maui-pos | Verificación manual del POS en Windows: cinco ventas ficticias, cuatro métodos de pago, cambio, límite y stock 0, ticket con copiar/cerrar y totales coherentes en Ventas/Caja; CI en verde. Pendientes: Compartir y Android | 1fdf303 |
