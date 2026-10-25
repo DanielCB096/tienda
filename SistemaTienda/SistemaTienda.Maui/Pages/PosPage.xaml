@@ -159,7 +159,33 @@
                                    Keyboard="Numeric"
                                    Placeholder="0.00"
                                    TextChanged="OnEfectivoChanged" />
-                            <Label x:Name="CambioLabel" Style="{StaticResource TextoNota}" Text="Cambio: —" />
+                            <Border BackgroundColor="{AppThemeBinding Light={StaticResource Secondary}, Dark={StaticResource Tertiary}}"
+                                    StrokeThickness="0"
+                                    StrokeShape="RoundRectangle 10"
+                                    Padding="12">
+                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                                    <VerticalStackLayout Spacing="0" VerticalOptions="Center">
+                                        <Label Text="CAMBIO A ENTREGAR" Style="{StaticResource EtiquetaSeccion}" />
+                                        <Label x:Name="CambioLabel"
+                                               Text="—"
+                                               FontSize="26"
+                                               FontAttributes="Bold"
+                                               TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}" />
+                                    </VerticalStackLayout>
+                                    <VerticalStackLayout Grid.Column="1"
+                                                         Spacing="0"
+                                                         HorizontalOptions="End"
+                                                         VerticalOptions="Center">
+                                        <Label Text="Recibido"
+                                               Style="{StaticResource TextoNota}"
+                                               HorizontalTextAlignment="End" />
+                                        <Label x:Name="RecibidoLabel"
+                                               Text="—"
+                                               FontAttributes="Bold"
+                                               HorizontalTextAlignment="End" />
+                                    </VerticalStackLayout>
+                                </Grid>
+                            </Border>
                         </VerticalStackLayout>
 
                         <VerticalStackLayout x:Name="CamposMixto" Spacing="6" IsVisible="False">

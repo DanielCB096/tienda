@@ -178,7 +178,7 @@ El detalle vive en el tablero. Resumen y criterios de terminado:
 ### T13 — POS en app MAUI (HECHO)
 
 - Completado en `feat/maui-pos` sobre `feat/ui-maui` (commit `d7c20c3`; push y PR #4 contra `main`).
-- Pestaña **Vender**: búsqueda por código o nombre, carrito con cantidades y validación de stock, cobro efectivo/tarjeta/mixto/fiado y ticket interno compartible o copiable.
+- Pestaña **Vender**: búsqueda por código o nombre, carrito con cantidades y validación de stock, cobro efectivo con recuadro de cambio/tarjeta/mixto/fiado y ticket interno compartible o copiable; el ticket de efectivo imprime lo recibido y el cambio.
 - Usa `VentaService` sin lógica de negocio en la página; aplica `SesionApp.Aplicar()` antes de cada llamada.
 - Verificado manualmente en Windows el 2026-10-25 con cinco ventas ficticias: los cuatro métodos de pago, cambio, límite y stock 0, ticket con copiar/cerrar y totales coherentes en Ventas/Caja. Pendientes: botón Compartir (diálogo del sistema) y Android.
 - No incluye QR, anulación ni cierre de corte. Sin pruebas automatizadas de interfaz.

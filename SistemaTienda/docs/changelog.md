@@ -35,13 +35,14 @@ Próximamente después de completar los módulos críticos.
 ### v0.0.12 - 2026-10-23: Punto de venta en la app MAUI
 
 - *Agregado*: pestaña **Vender** en la app MAUI con búsqueda por código o nombre, alta directa al escanear, lista de coincidencias y carrito con cantidades editables.
-- *Agregado*: cobro en efectivo con cambio y validación de faltantes, tarjeta con aviso de comisión, mixto con suma exacta del total y fiado con selección de cliente y límite de crédito.
+- *Agregado*: cobro en efectivo con recuadro **Cambio a entregar** que muestra lo recibido y el cambio, validación de faltantes, tarjeta con aviso de comisión, mixto con suma exacta del total y fiado con selección de cliente y límite de crédito.
+- *Agregado*: el ticket de una venta en efectivo imprime el monto recibido y el cambio.
 - *Agregado*: al confirmar, la venta se registra con `VentaService` y el stock se descuenta en la misma transacción; el carrito se limpia y se muestra el ticket.
 - *Agregado*: página de ticket interno (no fiscal) con el detalle de líneas, total y forma de pago, más botones para compartir con el sistema o copiar al portapapeles.
 - *Agregado*: modelos `ProductoFila`, `CarritoFila` y `ClienteOpcion`, y registro de `PosPage` en la inyección de dependencias.
 - *Corregido*: los movimientos de inventario registran la fecha local en lugar de la fecha UTC.
 - *Limitación*: la app todavía no anula ventas, no cierra cortes ni edita inventario; el ticket no incluye QR. La interfaz no tiene pruebas automatizadas.
-- Verificación manual en Windows (2026-10-25): cinco ventas ficticias con búsqueda por código y nombre, límite de stock, producto agotado, efectivo con cambio, tarjeta, mixto, fiado, ticket con copiar/cerrar y totales coherentes en Ventas y Caja. El botón Compartir y la ejecución en Android quedan pendientes.
+- Verificación manual en Windows (2026-10-25): ventas ficticias con búsqueda por código y nombre, límite de stock, producto agotado, efectivo con cambio visible, tarjeta, mixto, fiado, ticket con copiar/cerrar y totales coherentes en Ventas y Caja. El botón Compartir y la ejecución en Android quedan pendientes.
 - Total del proyecto: 171 pruebas (sin cambios); CI en verde para el PR #4.
 
 ### v0.0.11 - 2026-10-23: App MAUI con login y tablero

@@ -157,7 +157,7 @@ Pendiente:
 
 ## Verificación manual del POS (T13)
 
-Ejecutada en Windows el 2026-10-25 con una base demo local: cinco productos, una clienta con límite de $500.00, comisión de tarjeta de 3.5 % y fondo inicial de $200.00. Se registraron cinco ventas ficticias (#1 efectivo, #2 tarjeta, #3 mixto, #4 fiado y #5 efectivo). Los datos de la demo no forman parte del repositorio.
+Ejecutada en Windows el 2026-10-25 con una base demo local: cinco productos, una clienta con límite de $500.00, comisión de tarjeta de 3.5 % y fondo inicial de $200.00. Se registraron ventas ficticias de efectivo, tarjeta, mixto y fiado; las cifras de esta tabla corresponden a la pasada controlada. Los datos de la demo no forman parte del repositorio.
 
 | Caso | Resultado |
 |------|-----------|
@@ -167,6 +167,7 @@ Ejecutada en Windows el 2026-10-25 con una base demo local: cinco productos, una
 | Sumar, restar y quitar líneas | Pasó (1→2 con `+`; 2→1→fuera con `−`; `✕` quita la línea) |
 | No vender por encima del stock | Pasó (Pan blanco: al llegar a 12, `+` muestra “No hay más stock… (stock 12)”) |
 | Cobro en efectivo con monto mayor | Pasó (venta #5 por $432.00 con $500.00: cambio $68.00) |
+| Cambio visible en el cobro y en el ticket | Pasó (venta #8 por $36.00 con $50.00: el recuadro “Cambio a entregar” muestra $14.00; con $20.00 muestra “Faltan $16.00” y no registra la venta; el ticket imprime Recibido y Cambio) |
 | Cobro con tarjeta | Pasó (venta #2 por $18.00; comisión 3.5 % = $0.63 en el ticket) |
 | Cobro mixto con suma incorrecta | Pasó (efectivo $5.00 + tarjeta $10.00: rechaza la suma $15.00 de $12.00, sin venta) |
 | Cobro mixto correcto | Pasó (venta #3 por $12.00: $5.00 efectivo + $7.00 tarjeta; comisión $0.25) |

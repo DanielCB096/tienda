@@ -206,7 +206,8 @@ public partial class PosPage : ContentPage
 
         OcultarResultados();
         PagoErrorLabel.IsVisible = false;
-        CambioLabel.Text = "Cambio: —";
+        RecibidoLabel.Text = "—";
+        CambioLabel.Text = "—";
         SumaMixtoLabel.Text = "Suma: —";
         EfectivoEntry.Text = Dinero.APesos(Total()).ToString("0.00", CultureInfo.InvariantCulture);
         EfectivoMixtoEntry.Text = string.Empty;
@@ -216,6 +217,7 @@ public partial class PosPage : ContentPage
         TotalCobroLabel.Text = Formato.Moneda(Total());
         PanelCobro.IsVisible = true;
         ActualizarVistaMetodo();
+        ActualizarCambio();
     }
 
     private void OnCancelarCobroClicked(object sender, EventArgs e)
@@ -246,13 +248,24 @@ public partial class PosPage : ContentPage
         MostrarAvisoFiado();
     }
 
-    private void OnEfectivoChanged(object sender, TextChangedEventArgs e)
+    private void OnEfectivoChanged(object sender, TextChangedEventArgs e) => ActualizarCambio();
+
+    private void ActualizarCambio()
     {
         var total = Total();
         var recibido = LeerCentavos(EfectivoEntry.Text);
-        CambioLabel.Text = recibido.HasValue && recibido.Value >= total
-            ? $"Cambio: {Formato.Moneda(recibido.Value - total)}"
-            : "Cambio: —";
+
+        if (!recibido.HasValue)
+        {
+            RecibidoLabel.Text = "—";
+            CambioLabel.Text = "—";
+            return;
+        }
+
+        RecibidoLabel.Text = Formato.Moneda(recibido.Value);
+        CambioLabel.Text = recibido.Value >= total
+            ? Formato.Moneda(recibido.Value - total)
+            : $"Faltan {Formato.Moneda(total - recibido.Value)}";
     }
 
     private void OnMixtoChanged(object sender, TextChangedEventArgs e)
@@ -406,7 +419,10 @@ public partial class PosPage : ContentPage
         }
 
         var nombreCliente = (ClientePicker.SelectedItem as ClienteOpcion)?.Cliente.Nombre;
-        var ticket = ConstruirTicket(resultado.Value, nombreCliente);
+        var efectivoRecibido = resultado.Value.MetodoPago == MetodoPagoVenta.Efectivo
+            ? LeerCentavos(EfectivoEntry.Text)
+            : null;
+        var ticket = ConstruirTicket(resultado.Value, nombreCliente, efectivoRecibido);
 
         _carrito.Clear();
         ActualizarCarrito();
@@ -433,7 +449,7 @@ public partial class PosPage : ContentPage
         PagoErrorLabel.IsVisible = true;
     }
 
-    private string ConstruirTicket(Venta venta, string? nombreCliente)
+    private string ConstruirTicket(Venta venta, string? nombreCliente, long? efectivoRecibido = null)
     {
         var sb = new StringBuilder();
         sb.AppendLine(_config?.NombreTienda ?? "Mi tienda");
@@ -451,6 +467,12 @@ public partial class PosPage : ContentPage
         sb.AppendLine(new string('-', 40));
         sb.AppendLine($"TOTAL: {Formato.Moneda(venta.Total)}");
         sb.AppendLine($"Pago: {venta.MetodoPago}");
+
+        if (venta.MetodoPago == MetodoPagoVenta.Efectivo && efectivoRecibido.HasValue)
+        {
+            sb.AppendLine($"Recibido: {Formato.Moneda(efectivoRecibido.Value)}");
+            sb.AppendLine($"Cambio: {Formato.Moneda(efectivoRecibido.Value - venta.Total)}");
+        }
 
         if (venta.PagoEfectivo > 0 && venta.PagoTarjeta > 0)
         {
