@@ -50,7 +50,7 @@ Los totales y el registro del corte se calculan y guardan dentro de una sola tra
 2. **Primer corte**: abarca todo el historial registrado; el cajero debe indicar el fondo que había al inicio de ese periodo.
 3. **Motivo obligatorio**: una diferencia distinta de cero exige observaciones; sin ellas el corte se rechaza y no se guarda.
 4. **Gastos**: solo restan los marcados como pagados del efectivo de la caja (`Origen = Caja`).
-5. **Abonos**: se registran como efectivo; la consola todavía no pregunta el método del abono.
+5. **Abonos**: se registran como efectivo; ni la consola ni la app preguntan el método del abono.
 6. **Responsable**: se guarda el usuario que cierra el corte junto con la fecha y hora.
 7. **Sin borrado**: no existe operación para editar o eliminar un corte o un movimiento.
 

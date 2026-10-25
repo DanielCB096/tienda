@@ -13,9 +13,9 @@
    - **Inicio**: ventas de hoy (incluye anuladas), efectivo esperado del periodo, productos con stock bajo, fecha del último respaldo y aviso si el respaldo está vencido.
    - **Vender**: punto de venta con búsqueda o escaneo, carrito, cobro en efectivo, tarjeta, mixto o fiado, y ticket interno que se puede compartir o copiar.
    - **Ventas**: lista de ventas del día con folio, total, método, hora y estado.
-   - **Caja**: resumen del periodo abierto (efectivo esperado, fondo, ventas por método, abonos, ingresos/retiros y gastos) y datos del último corte cerrado.
+   - **Caja**: periodo abierto (efectivo esperado, fondo, ventas por método, abonos, ingresos/retiros y gastos), cierre de corte con diferencia justificada, registro de ingresos y retiros, abonos de fiado y datos del último corte cerrado.
    - **Ajustes**: datos de la tienda, reglas configuradas, rutas de la base y de los respaldos, último respaldo, botón para crear un respaldo y cierre de sesión.
-4. **Importante**: la app ya permite vender. Anular ventas, cerrar el corte y editar inventario todavía se hacen desde la consola provisional; no cierres la caja desde la app porque aún no existe esa acción.
+4. **Importante**: desde la app ya se vende y se opera la caja (cierre, ingresos, retiros y abonos). Anular ventas y editar inventario todavía se hacen desde la consola provisional. El conteo de caja se captura como un total, sin desglose de billetes y monedas.
 5. **Dónde están los datos**: en Windows, `%LOCALAPPDATA%\SistemaTienda\com.sistematienda.tienda\Data\tienda.db` y los respaldos en la carpeta `respaldos` junto a ese archivo. En Android están en el almacenamiento privado de la app. Las rutas exactas se muestran en Ajustes.
 
 ## Pantallas Principales
