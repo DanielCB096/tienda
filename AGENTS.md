@@ -74,9 +74,9 @@ Cada agente: su carpeta, su rama y su PR.
 
 ## Estado del proyecto (2026-10-25)
 
-- Ramas publicadas con el trabajo actual: `feat/ui-maui` (sobre `feat/anulacion-ventas`, que parte de `feat/respaldo-automatico`), `feat/maui-pos` (sobre `feat/ui-maui`, PR #4 contra `main`), `feat/maui-caja` (sobre `feat/maui-pos`, PR #5 contra `main`), `feat/maui-inventario` (sobre `feat/maui-caja`, PR #7 contra `main`) y `feat/maui-anulacion-qr` (sobre `feat/maui-inventario`, PR pendiente contra `main`).
+- Ramas publicadas con el trabajo actual: `feat/ui-maui` (sobre `feat/anulacion-ventas`, que parte de `feat/respaldo-automatico`), `feat/maui-pos` (sobre `feat/ui-maui`, PR #4 contra `main`), `feat/maui-caja` (sobre `feat/maui-pos`, PR #5 contra `main`), `feat/maui-inventario` (sobre `feat/maui-caja`, PR #7 contra `main`) y `feat/maui-anulacion-qr` (sobre `feat/maui-inventario`, PR #8 contra `main`).
 - `main`: solo el commit base; los PR de `feat/base-compilable`, `feat/migraciones-respaldo`, `feat/ventas-pos`, `feat/corte-caja`, `feat/centavos-enteros`, `feat/integracion-t4-t9`, `feat/reportes-utilidad`, `feat/respaldo-automatico`, `feat/anulacion-ventas`, `feat/ui-maui`, `feat/maui-pos`, `feat/maui-caja`, `feat/maui-inventario` y `feat/maui-anulacion-qr` siguen pendientes de integración, en ese orden.
-- Build: 0 errores, 0 advertencias. Pruebas: **177 en verde** (verificadas localmente el 2026-10-25 y en GitHub Actions). La app MAUI compila para Windows en local y para Windows y Android en CI.
+- Build: 0 errores, 0 advertencias. Pruebas: **177 en verde** (verificadas localmente el 2026-10-25 y en GitHub Actions). La app MAUI compila para Windows en local y para Windows y Android en CI. El CI del PR #8 quedó en verde el 2026-10-25: compilación y pruebas, y app MAUI para Windows y Android.
 - POS verificado manualmente en Windows el 2026-10-25 con datos ficticios: los cuatro métodos de pago, cambio, límite y stock 0, ticket con copiar/cerrar y totales coherentes en Ventas/Caja. Pendientes: botón Compartir y ejecución en Android.
 - Caja verificada manualmente en Windows el 2026-10-25: cierre con faltante y observación (corte #1), ingreso, retiro con confirmación, abono de fiado y cierre sin diferencia (corte #2), con el efectivo esperado coincidiendo con la base. Pendientes: denominaciones, historial de cortes en la app y roles distintos al dueño.
 - Ventas (T16) verificado manualmente en Windows el 2026-10-25: venta #10 de tres productos, ticket con QR decodificado offline, reimpresión, anulación con motivo y confirmación `ANULAR`, restauración de stock y bitácora; rechazo con motivo vacío, confirmación incorrecta y corte cerrado; encargado ve la acción y empleado no.
@@ -206,7 +206,7 @@ El detalle vive en el tablero. Resumen y criterios de terminado:
 
 ### T16 — Anulación y QR en la app MAUI (HECHO)
 
-- Completado en `feat/maui-anulacion-qr` sobre `feat/maui-inventario` (PR pendiente contra `main`).
+- Completado en `feat/maui-anulacion-qr` sobre `feat/maui-inventario` (PR #8 contra `main`, CI en verde; sin merge).
 - Pestaña **Ventas**: la lista abre el detalle con líneas, pagos, comisión, cliente, estado y datos de anulación; permite reimprimir el ticket y anular la venta completa con motivo obligatorio y confirmación `ANULAR`.
 - Solo dueño y encargado ven la acción; `VentaService.AnularVenta` vuelve a validar el permiso `AnularVenta`, el estado de la venta y que no esté en un corte cerrado.
 - `TicketService` (capa `Application`) genera el texto y el contenido del QR sin dependencias de MAUI; el QR es informativo, offline, resume hasta diez productos y no es un comprobante fiscal. Se dibuja con `QrTicketView` sobre `GraphicsView`.
