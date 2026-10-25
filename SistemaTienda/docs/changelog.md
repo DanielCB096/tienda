@@ -32,6 +32,19 @@ Próximamente después de completar los módulos críticos.
 - Configuración básica de tienda (nombre, giro, impuestos, métodos de pago).
 - Documentación inicial (glosario, stack, módulos, ADR).
 
+### v0.0.14 - 2026-10-25: Inventario y catálogo en la app MAUI
+
+- *Agregado*: pestaña **Inventario** con catálogo, resumen de productos/stock bajo/valorizado, búsqueda por nombre, conteo de resultados y filtro de stock bajo.
+- *Agregado*: escaneo o búsqueda exacta por código de barras; un código conocido abre el detalle y uno desconocido de al menos ocho dígitos ofrece darlo de alta.
+- *Agregado*: alta y edición de productos con código, nombre, categoría, costo, precio, stock inicial, stock mínimo e impuesto. El código queda fijo tras el alta y el stock no se edita directamente.
+- *Agregado*: detalle del producto con costo, precio, stock, mínimo, impuesto y valor; entradas, mermas y ajustes con validaciones, motivo, usuario y actualización inmediata del stock.
+- *Agregado*: historial de los últimos 200 movimientos con cantidad firmada, tipo, usuario, fecha y costo del movimiento.
+- *Agregado*: visibilidad por rol en la pantalla (el empleado solo consulta; el encargado no cambia precios ni ajusta stock; el dueño tiene todo) y validación del permiso en `InventoryService`.
+- *Agregado*: modelos `ProductoInventarioFila` y `MovimientoInventarioFila`, y registro de `InventarioPage` en la inyección de dependencias; la barra pasa a seis pestañas.
+- *Limitación*: no hay borrado, desactivación ni filtro por categoría; la entrada registra el costo del movimiento, pero no actualiza el costo del catálogo; la interfaz no tiene pruebas automatizadas.
+- Verificación manual en Windows (2026-10-25): escaneo de un código conocido, búsqueda por nombre, filtro de stock bajo, entrada, merma, ajuste, edición, historial, alta desde un código desconocido y comprobación de los roles dueño, encargado y empleado. El escaneo se simuló con teclado y Enter.
+- Total del proyecto: 171 pruebas (sin cambios).
+
 ### v0.0.13 - 2026-10-25: Caja operativa en la app MAUI
 
 - *Agregado*: pestaña **Caja** con el periodo abierto, fondo inicial, efectivo esperado y desglose de ventas, abonos, ingresos, retiros y gastos de caja.

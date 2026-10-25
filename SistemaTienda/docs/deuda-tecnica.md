@@ -37,6 +37,13 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 
 ## Media prioridad
 
+### Entrada de inventario no actualiza el costo del catálogo
+
+- **Dónde**: `InventoryService.RegistrarEntrada` y la pestaña Inventario de la app MAUI.
+- **Por qué**: el servicio registra el costo unitario del movimiento, pero no toca `Productos.Costo`; el encargado puede registrar entradas sin tener permiso para cambiar precios.
+- **Impacto**: después de una compra a otro costo, el valorizado y el costo congelado de las siguientes ventas siguen usando el costo anterior hasta que el dueño lo edite a mano. La interfaz lo advierte, pero es un paso fácil de olvidar.
+- **Cierre**: decidir si la entrada actualiza el costo del catálogo (con bitácora) o si se captura un costo de reposición separado, y reflejarlo en la interfaz.
+
 ### Reembolso de anulación sin movimiento de caja
 
 - **Dónde**: `DatabaseTools.AnularVenta` y `Program.AnularVenta`.
@@ -59,14 +66,14 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 ### La app MAUI no cubre todas las operaciones
 
 - **Dónde**: `SistemaTienda.Maui/Pages`.
-- **Por qué**: el punto de venta se entregó en T13 y la caja operativa en T14; el resto de las operaciones de escritura se hará en tareas posteriores.
-- **Impacto**: desde la app se vende, se cierra el corte, se registran ingresos, retiros y abonos de fiado, se crea respaldo y se cierra sesión. Anular ventas, inventario, clientes y proveedores siguen en la consola, que no es usable por el cajero.
-- **Cierre**: pantallas de anulación e inventario en MAUI, módulo por módulo y con sus pruebas.
+- **Por qué**: el punto de venta se entregó en T13, la caja operativa en T14 y el inventario en T15; el resto de las operaciones de escritura se hará en tareas posteriores.
+- **Impacto**: desde la app se vende, se opera el inventario, se cierra el corte, se registran ingresos, retiros y abonos de fiado, se crea respaldo y se cierra sesión. Anular ventas, gestionar clientes, proveedores y gastos siguen en la consola, que no es usable por el cajero.
+- **Cierre**: pantallas de anulación, clientes, proveedores y gastos en MAUI, módulo por módulo y con sus pruebas.
 
 ### App MAUI sin pruebas automatizadas
 
 - **Dónde**: `SistemaTienda.Maui`.
-- **Impacto**: CI solo compila para Windows y Android. Una regresión de navegación, sesión, POS, caja o formato no se detecta hasta la verificación manual. El cierre de corte desde la app es irreversible y depende de esa verificación.
+- **Impacto**: CI solo compila para Windows y Android. Una regresión de navegación, sesión, POS, inventario, caja o formato no se detecta hasta la verificación manual. El cierre de corte y los movimientos de inventario desde la app dependen de esa verificación.
 - **Cierre**: extraer la lógica de cada página a modelos de vista probables y agregar pruebas; valorar pruebas de interfaz más adelante.
 
 ### Android sin validación en dispositivo
@@ -106,6 +113,7 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 - `ConfiguracionTienda.UsuarioDueñoPINHash` existe en la tabla pero no se usa (el hash vive en `UsuariosSistema`). Eliminar en la próxima migración.
 - `Rol` se documentó como texto en algunos documentos; en la base es `INTEGER` con enum. Unificar documentación.
 - Sin `Activo` en productos: no se puede retirar un producto del catálogo sin borrarlo.
+- El catálogo de la app MAUI no filtra por categoría, aunque la búsqueda por nombre ya existe.
 - Inicio y Ventas muestran el importe de las ventas vigentes como “cobrados”, pero incluyen las ventas a fiado, que no entran a caja (Caja sí las separa). Revisar la etiqueta o excluir el fiado del resumen.
 - Sin pruebas de rendimiento con volúmenes realistas (10 000 productos / 500 ventas por día).
 - Comentarios XML heredados de la versión anterior en `InventoryService`; no afectan.

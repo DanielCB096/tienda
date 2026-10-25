@@ -12,10 +12,11 @@
 3. **Pestañas**:
    - **Inicio**: ventas de hoy (incluye anuladas), efectivo esperado del periodo, productos con stock bajo, fecha del último respaldo y aviso si el respaldo está vencido.
    - **Vender**: punto de venta con búsqueda o escaneo, carrito, cobro en efectivo, tarjeta, mixto o fiado, y ticket interno que se puede compartir o copiar.
+   - **Inventario**: catálogo con stock bajo y valorizado, búsqueda o escaneo, alta/edición, entradas, mermas, ajustes e historial; el dueño controla costos, precios y ajustes.
    - **Ventas**: lista de ventas del día con folio, total, método, hora y estado.
    - **Caja**: periodo abierto (efectivo esperado, fondo, ventas por método, abonos, ingresos/retiros y gastos), cierre de corte con diferencia justificada, registro de ingresos y retiros, abonos de fiado y datos del último corte cerrado.
    - **Ajustes**: datos de la tienda, reglas configuradas, rutas de la base y de los respaldos, último respaldo, botón para crear un respaldo y cierre de sesión.
-4. **Importante**: desde la app ya se vende y se opera la caja (cierre, ingresos, retiros y abonos). Anular ventas y editar inventario todavía se hacen desde la consola provisional. El conteo de caja se captura como un total, sin desglose de billetes y monedas.
+4. **Importante**: desde la app ya se vende, se opera el inventario (alta, edición, entradas, mermas y ajustes) y se opera la caja (cierre, ingresos, retiros y abonos). Anular ventas todavía se hace desde la consola provisional. El conteo de caja se captura como un total, sin desglose de billetes y monedas; el catálogo aún no filtra por categoría ni desactiva productos.
 5. **Dónde están los datos**: en Windows, `%LOCALAPPDATA%\SistemaTienda\com.sistematienda.tienda\Data\tienda.db` y los respaldos en la carpeta `respaldos` junto a ese archivo. En Android están en el almacenamiento privado de la app. Las rutas exactas se muestran en Ajustes.
 
 ## Pantallas Principales
@@ -32,9 +33,12 @@ Muestra al abrir la app (después del PIN), en la pestaña **Inicio**:
 
 ### 2. Catálogo de Productos
 
-- Listado de todos los productos registrados.
-- **Acciones**: Buscar por nombre o código de barras, nuevo producto, editar (solo dueño/gerente), eliminar (solo dueño con confirmación).
-- **Stock actual**: Se muestra el stock disponible de cada producto.
+Acceso en la app: pestaña **Inventario**.
+
+- Listado de todos los productos con stock, mínimo, categoría y precio; resumen de stock bajo y valorizado.
+- **Acciones**: buscar por nombre o escanear el código, dar de alta, editar, registrar entrada, merma o ajuste, y consultar movimientos. El borrado no está implementado.
+- **Precios y ajustes**: solo el dueño puede cambiar costo/precio y ajustar el stock; el encargado puede editar los demás datos y registrar entradas o mermas.
+- **Stock actual**: se muestra el stock disponible y se actualiza por movimientos; nunca se edita directamente desde el formulario.
 
 ### 3. Registrar Venta
 

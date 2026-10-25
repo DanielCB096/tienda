@@ -209,6 +209,35 @@ Pendiente de Caja:
 - Repetir el flujo en la tablet Android.
 - Agregar el desglose por denominaciones y el historial de cortes.
 
+## Verificación manual de Inventario (T15)
+
+Ejecutada en Windows el 2026-10-25 sobre la misma base demo del POS y la Caja, con productos y movimientos ficticios que no forman parte del repositorio. Se usaron los roles dueño, encargado y empleado con PIN temporal. El escaneo se simuló con entrada de teclado terminada en Enter, el mismo mecanismo que usa un lector USB/Bluetooth en modo teclado.
+
+| Caso | Resultado |
+|------|-----------|
+| Catálogo inicial con resumen | Pasó (productos, stock bajo y valorizado se recalcularon después de cada operación) |
+| Escanear código conocido | Pasó (7501000000011 abrió el detalle de Refresco Cola) |
+| Buscar por nombre | Pasó (Refresco mostró una coincidencia) |
+| Filtrar stock bajo | Pasó (solo Pan blanco, con stock 0) |
+| Registrar entrada | Pasó (5 unidades a $12.50; stock 17→22 y movimiento +5) |
+| Registrar merma | Pasó (2 unidades con motivo; stock 22→20, movimiento −2 y costo perdido estimado) |
+| Ajustar stock como dueño | Pasó (nuevo stock 25 con motivo; diferencia +5 y movimiento de ajuste) |
+| Historial de movimientos | Pasó (entrada, merma, ajuste y ventas con cantidad firmada, usuario, motivo y fecha; límite de 200) |
+| Editar producto como dueño | Pasó (precio $19.00 y mínimo 8; costo y precio editables) |
+| Código desconocido | Pasó (ofreció alta; se creó Producto T15 con stock 4 y mínimo 2; el catálogo pasó a 6 productos) |
+| Editar como encargado | Pasó (puede editar, registrar entrada y merma; no ve Ajustar stock; costo y precio deshabilitados con aviso) |
+| Consultar como empleado | Pasó (sin + Nuevo; en el detalle solo Ver movimientos y Cerrar, con aviso de solo lectura) |
+| Valorizado después de las operaciones | Pasó ($838.00 con 6 productos) |
+
+Observación: la entrada conserva el costo del movimiento, pero no actualiza el costo del catálogo; el costo vigente se cambia desde Editar con permiso de dueño. Quedó anotado en [deuda-técnica](../deuda-tecnica.md).
+
+Pendiente de Inventario:
+
+- Probar con un lector de código de barras físico USB o Bluetooth.
+- Repetir el flujo en la tablet Android.
+- Agregar filtro por categoría y desactivación de productos.
+- Cubrir la interfaz con pruebas automatizadas.
+
 ## Herramientas de Prueba
 
 - **Datos de prueba ficticios**: Un script o conjunto de datos iniciales que incluir:

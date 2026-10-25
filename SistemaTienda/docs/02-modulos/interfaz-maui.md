@@ -8,16 +8,17 @@ Alcance de esta entrega:
 
 - Asistente de primera configuración.
 - Inicio de sesión con PIN.
-- Tablero con cinco pestañas: Inicio, Vender, Ventas, Caja y Ajustes.
+- Tablero con seis pestañas: Inicio, Vender, Inventario, Ventas, Caja y Ajustes.
 - Punto de venta: búsqueda o escaneo, carrito, cobro en efectivo, tarjeta, mixto o fiado, y ticket interno que se puede compartir o copiar.
+- Inventario y catálogo: búsqueda o escaneo, alta y edición de productos, entradas, mermas, ajustes, historial de movimientos y alertas de stock bajo.
 - Caja operativa: cierre de corte con diferencia justificada, ingresos, retiros y abonos de fiado.
 - Respaldo automático al iniciar y cerrar sesión, y respaldo manual desde Ajustes.
 
-Esta entrega **no** incluye todavía la anulación de ventas, la edición de inventario ni el historial de cortes desde la app. La pestaña Ventas es informativa de solo lectura.
+Esta entrega **no** incluye todavía la anulación de ventas, el historial de cortes ni las pantallas de clientes, proveedores, gastos o reportes. La pestaña Ventas es informativa de solo lectura.
 
 ## Estado
 
-Base implementada y verificada manualmente en Windows: asistente, login, tablero y respaldo el 2026-10-23; punto de venta el 2026-10-25 (búsqueda, carrito, límite de stock, efectivo con cambio, tarjeta, mixto, fiado y ticket con copiar/cerrar); caja operativa el 2026-10-25 (cierre con diferencia justificada, ingreso, retiro y abono). La compilación para Windows y Android está en verde en CI. Quedan pendientes el botón Compartir del ticket (diálogo del sistema) y la ejecución en Android; el equipo de desarrollo no tiene Android SDK ni JDK instalados.
+Base implementada y verificada manualmente en Windows: asistente, login, tablero y respaldo el 2026-10-23; punto de venta el 2026-10-25 (búsqueda, carrito, límite de stock, efectivo con cambio, tarjeta, mixto, fiado y ticket con copiar/cerrar); caja operativa el 2026-10-25 (cierre con diferencia justificada, ingreso, retiro y abono); inventario el 2026-10-25 (catálogo, escaneo, alta, edición, entrada, merma, ajuste, historial y permisos por rol). La compilación para Windows y Android está en verde en CI. Quedan pendientes el botón Compartir del ticket (diálogo del sistema) y la ejecución en Android; el equipo de desarrollo no tiene Android SDK ni JDK instalados.
 
 ## Plataformas y proyecto
 
@@ -46,9 +47,10 @@ SistemaTienda.Maui/
 ├── Pages/
 │   ├── ConfiguracionInicialPage   # Asistente de primera ejecución
 │   ├── LoginPage                  # PIN con 3 intentos
-│   ├── PrincipalPage              # TabbedPage con 5 pestañas
+│   ├── PrincipalPage              # TabbedPage con 6 pestañas
 │   ├── InicioPage                 # Tablero del día
 │   ├── PosPage                    # Punto de venta: carrito, cobro y ticket
+│   ├── InventarioPage             # Catálogo, alta/edición y movimientos
 │   ├── TicketPage                 # Ticket interno con compartir y copiar
 │   ├── VentasPage                 # Ventas de hoy (lectura)
 │   ├── CajaPage                   # Cierre de corte, movimientos y abonos
@@ -75,6 +77,7 @@ SistemaTienda.Maui/
 | Login | Nombre de la tienda y PIN numérico; 3 intentos y luego bloqueo hasta reabrir la app | Inicia sesión y evalúa respaldo automático |
 | Inicio | Ventas de hoy (vigentes y anuladas), efectivo esperado del periodo, stock bajo, último respaldo y aviso si venció | Solo lectura |
 | Vender | Búsqueda por código o nombre, carrito con cantidades, total, cobro efectivo con cambio visible/tarjeta/mixto/fiado y ticket interno | Venta y salida de stock |
+| Inventario | Resumen de productos, stock bajo y valorizado; búsqueda o escaneo, alta y edición, entrada, merma, ajuste, historial y filtro de stock bajo | Catálogo y movimientos de inventario |
 | Ventas | Lista de ventas del día con folio, total, método, hora y estado (vigente/anulada) | Solo lectura |
 | Caja | Periodo abierto, efectivo esperado, fondo, ventas por método, abonos, ingresos/retiros, gastos, cierre con conteo y diferencia, y último corte cerrado | Cierre de corte, ingresos, retiros y abonos |
 | Ajustes | Datos de la tienda, reglas configuradas, rutas de base y respaldos, último respaldo, crear respaldo y cerrar sesión | Respaldo manual y cierre de sesión |
@@ -83,11 +86,13 @@ El POS reutiliza `VentaService`: la validación de stock, precios congelados, pa
 
 Caja reutiliza `CorteCajaService` y `ConfiguracionService`. Al cerrar, la página recalcula el efectivo esperado con el fondo capturado, muestra la diferencia en vivo y exige observaciones cuando no es cero; la confirmación advierte que el periodo queda inmutable. Los ingresos y retiros piden monto y motivo, y los retiros piden una confirmación adicional. Los abonos de fiado muestran el saldo del cliente y se listan solo si el fiado está activado. Después de cualquier operación se vuelve a leer el periodo desde la base, sin sumar importes en la interfaz.
 
+Inventario reutiliza `InventoryService`: la búsqueda exacta por código abre el detalle, la búsqueda por nombre filtra la lista y un código desconocido de al menos ocho dígitos ofrece darlo de alta. El formulario de producto no edita el stock (solo el stock inicial al crear); los cambios posteriores se hacen con entrada, merma o ajuste, y cada uno exige cantidad, motivo y usuario. El historial muestra los últimos 200 movimientos con cantidad firmada, tipo, usuario y fecha. La entrada captura el costo del movimiento, pero no modifica el costo del catálogo; el dueño lo cambia desde Editar. El filtro de stock bajo considera `Stock <= StockMinimo`.
+
 Las pestañas se muestran en una barra inferior en Android y en la parte superior en Windows. Los textos usan español de México y los importes se formatean con `Formato.Moneda` (centavos → `$0.00`).
 
 ## Sesión y permisos
 
-`SesionActual` usa `AsyncLocal`, que no sobrevive entre eventos de interfaz. Por eso `SesionApp` guarda el usuario autenticado y lo vuelve a aplicar (`SesionApp.Aplicar()`) antes de cada llamada a un servicio desde un manejador de eventos. Los permisos siguen validándose en `Application`, no en la interfaz: el POS exige `Vender` al confirmar el cobro; Caja exige `CorteCaja` e `IngresoCaja` a dueño o encargado, `RetiroCaja` solo al dueño y `RegistrarAbono` a dueño o encargado. La pantalla muestra las operaciones a todos los roles y el servicio rechaza las que no corresponden.
+`SesionActual` usa `AsyncLocal`, que no sobrevive entre eventos de interfaz. Por eso `SesionApp` guarda el usuario autenticado y lo vuelve a aplicar (`SesionApp.Aplicar()`) antes de cada llamada a un servicio desde un manejador de eventos. Los permisos siguen validándose en `Application`, no en la interfaz: el POS exige `Vender` al confirmar el cobro; Caja exige `CorteCaja` e `IngresoCaja` a dueño o encargado, `RetiroCaja` solo al dueño y `RegistrarAbono` a dueño o encargado. POS y Caja muestran las operaciones a todos los roles y el servicio rechaza las que no corresponden. Inventario además oculta las acciones según el rol: el empleado solo consulta y ve movimientos; el encargado edita, registra entradas y mermas, pero no cambia precios ni ajusta stock; el dueño tiene todas. Aun cuando un botón quede oculto, el servicio vuelve a validar el permiso.
 
 Al cerrar sesión desde Ajustes se ejecuta el respaldo automático si corresponde, se limpia la sesión y se vuelve al login. No se conserva el usuario anterior.
 
@@ -111,7 +116,7 @@ El manifiesto de Android no solicita permisos de red y desactiva el respaldo aut
 
 ## Navegación
 
-No se usa `Shell` ni rutas jerárquicas. `NavegacionApp` cambia la página raíz de la ventana (`Window.Page`) entre asistente, login y tablero. Es suficiente para cuatro pantallas sin historial de navegación y evita dejar páginas apiladas con sesiones viejas.
+No se usa `Shell` ni rutas jerárquicas. `NavegacionApp` cambia la página raíz de la ventana (`Window.Page`) entre asistente, login y tablero. Es suficiente para las pantallas raíz sin historial de navegación y evita dejar páginas apiladas con sesiones viejas. Los detalles y formularios de Inventario se abren en una capa modal dentro de la misma pestaña.
 
 ## Respaldo
 
@@ -122,9 +127,10 @@ No se usa `Shell` ni rutas jerárquicas. `NavegacionApp` cambia la página raíz
 
 ## Limitaciones de esta entrega
 
-- El punto de venta y la caja ya registran operaciones desde la app; la anulación de ventas y el inventario siguen en la consola.
+- El punto de venta, el inventario y la caja ya registran operaciones desde la app; la anulación de ventas sigue en la consola.
 - Caja muestra el último corte cerrado, pero el historial completo solo se consulta en la consola; el conteo se captura como un total, sin desglose por denominaciones.
-- No hay pantallas de inventario, clientes, proveedores, gastos ni reportes.
+- Inventario no permite borrar ni desactivar productos, filtrar por categoría, actualizar el costo del catálogo al registrar una entrada ni reportar un valorizado histórico.
+- No hay pantallas de clientes, proveedores, gastos ni reportes.
 - El ticket es texto interno (sin QR) con opciones de compartir y copiar; copiar sí se verificó, compartir depende del diálogo de Windows y quedó pendiente de probar.
 - No hay cierre por inactividad; el bloqueo por PIN es manual (cerrar sesión).
 - Android solo se ha compilado en CI, no probado en un dispositivo físico.
@@ -168,6 +174,19 @@ Implementados en código y verificados manualmente en Windows el 2026-10-25:
 - [x] Los abonos de fiado descuentan el saldo del cliente y suman al efectivo esperado.
 - [x] El último corte cerrado se muestra con contado, diferencia y responsable.
 - [ ] El conteo por denominaciones y el historial de cortes se consultan en la app.
+
+## Criterios de aceptación de T15 (Inventario)
+
+Implementados en código y verificados manualmente en Windows el 2026-10-25:
+
+- [x] El catálogo muestra productos, stock bajo y valorizado, con búsqueda por nombre y filtro de stock bajo.
+- [x] Escanear un código conocido abre el detalle; un código desconocido de al menos ocho dígitos ofrece registrarlo.
+- [x] Se puede dar de alta un producto con código, nombre, categoría, costo, precio, stock inicial, stock mínimo e impuesto.
+- [x] El código de barras queda fijo después del alta y el stock no se edita desde el formulario de producto.
+- [x] El encargado puede editar, registrar entradas y mermas, pero no cambiar costo/precio ni ajustar stock; el empleado solo consulta y ve movimientos.
+- [x] Cada entrada, merma o ajuste valida cantidad, costo o motivo, actualiza el stock y deja un movimiento con usuario y fecha.
+- [x] El historial muestra los últimos 200 movimientos con cantidad firmada.
+- [ ] El catálogo se puede filtrar por categoría y los productos se pueden desactivar o borrar desde la app.
 
 ## Compilar y ejecutar
 
