@@ -26,9 +26,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 
 ## En curso
 
-| Tarea | Agente | Rama | Archivos reservados | Inicio | Estado |
-|-------|--------|------|---------------------|--------|--------|
-| T16 | Anulación y QR en la app MAUI | Qoder | feat/maui-anulacion-qr | `SistemaTienda.Maui/Pages/VentasPage.*`, `PosPage.xaml.cs`, `TicketPage.cs`, `Services/`, `Application/Services/TicketService.cs`, pruebas y docs | 2026-10-25 | Tomada |
+Sin tareas tomadas al cierre de esta sesión.
 
 ## Hecho
 
@@ -48,6 +46,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 | T13 | Qoder | feat/maui-pos | Pestaña Vender con carrito, búsqueda/escaneo, cobro efectivo/tarjeta/mixto/fiado y ticket compartible o copiable; 171 pruebas sin cambios | d7c20c3 |
 | T14 | Qoder | feat/maui-caja | Pestaña Caja operativa: cierre con diferencia justificada y observaciones obligatorias, ingresos, retiros con confirmación, abonos de fiado y último corte; 171 pruebas sin cambios; PR #5 contra `main` | b8dfad6, 7db70da |
 | T15 | Qoder | feat/maui-inventario | Pestaña Inventario: catálogo, escaneo/búsqueda, alta/edición, entradas, mermas, ajustes, historial y filtro de stock bajo; permisos de dueño/encargado/empleado; 171 pruebas sin cambios; PR #7 contra `main` | 735766f |
+| T16 | Qoder | feat/maui-anulacion-qr | Detalle de venta en Ventas, reimpresión con QR informativo offline y anulación con motivo/`ANULAR`; permiso validado en `VentaService`; 6 pruebas nuevas; 177 pruebas; PR pendiente contra `main` | dc23434, 0eefeba |
 
 ## Tareas
 
@@ -59,7 +58,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 | T4 | Bitácora y permisos en servicios | Hecho | — | En `feat/integracion-t4-t9`. Esquema v5: bitácora inmutable, matriz de permisos y validación en servicios. |
 | T5 | Reportes de utilidad | Hecho | T2 | En `feat/reportes-utilidad` (sobre `feat/integracion-t4-t9`). Utilidad bruta y neta por periodo con filtros por fecha; permiso `Consultar`. |
 | T6 | Importación Excel/CSV | Libre | T2 recomendado | Dependencia nueva requiere ADR. |
-| T7 | Interfaz definitiva | Tomada | ADR, T12 | Decisión MAUI validada y base implementada en T12. POS entregado en T13, caja operativa en T14 e inventario en T15; faltan anulación y pantallas de clientes, proveedores y gastos en la app. |
+| T7 | Interfaz definitiva | Tomada | ADR, T12 | Decisión MAUI validada y base implementada en T12. POS entregado en T13, caja operativa en T14, inventario en T15 y detalle/anulación con QR en T16; faltan las pantallas de clientes, proveedores y gastos en la app. |
 | T8 | Corte de caja | Hecho | T2 | En `feat/corte-caja` (parte de `feat/ventas-pos`). Esquema v3: cortes, movimientos de caja y abonos con historial. |
 | T9 | Cobertura adicional de pruebas | Hecho | T1–T3 | En `feat/integracion-t4-t9`. 25 pruebas de borde en gastos, saldos, inventario, usuarios y mapeo de tipos. Hallazgos sin corregir: `AjustarStock` no valida que el producto exista; se permiten PIN duplicados y `VerificarAcceso` devuelve el primer usuario por nombre; `AgregarGasto` no recorta el concepto; la búsqueda por nombre no ignora acentos. Ver [deuda-tecnica.md](deuda-tecnica.md). |
 | T10 | Respaldo automático por intervalo | Hecho | T1 | En `feat/respaldo-automatico` (sobre `feat/reportes-utilidad`). Se evalúa al iniciar sesión y al cerrar; `0` deshabilita; cualquier respaldo previo cuenta y la copia queda en `Bitacora`. Pendiente: copia a USB/nube y respaldo durante sesiones largas. |
@@ -68,7 +67,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 | T13 | POS en app MAUI | Hecho | T2, T12 | En `feat/maui-pos` (PR #4 contra `main`). Carrito, búsqueda/escaneo, cobro efectivo con recuadro de cambio, tarjeta, mixto, fiado y ticket copiable. Verificación manual en Windows el 2026-10-25 con ventas ficticias: los cuatro métodos de pago, cambio, límite y stock 0, ticket y totales en Ventas/Caja. Pendientes: botón Compartir y Android. |
 | T14 | Caja operativa en la app MAUI | Hecho | T8, T13 | En `feat/maui-caja` sobre `feat/maui-pos` (PR #5 contra `main`). Cierre de corte con diferencia justificada, ingresos, retiros y abonos de fiado desde Caja. Verificación manual en Windows el 2026-10-25: corte #1 con faltante y observación, ingreso, retiro con confirmación, abono y corte #2 sin diferencia. Pendientes: denominaciones, historial de cortes y roles distintos al dueño. |
 | T15 | Inventario y catálogo en la app MAUI | Hecho | T12, T14 | En `feat/maui-inventario` sobre `feat/maui-caja` (PR #7 contra `main`). Catálogo, escaneo/búsqueda, alta/edición, entradas, mermas, ajustes, historial y stock bajo; permisos por rol. Verificación manual en Windows el 2026-10-25 con datos ficticios: entrada, merma, ajuste, edición, alta desde código desconocido y roles dueño/encargado/empleado. Pendientes: filtro por categoría, desactivación, costo de entrada al catálogo y pruebas automatizadas de interfaz. |
-| T16 | Anulación y QR en la app MAUI | Tomada | T11, T13, T15 | En `feat/maui-anulacion-qr` sobre `feat/maui-inventario`. Detalle de venta con anulación (motivo y confirmación `ANULAR`), ticket compartido con QR offline y reimpresión desde Ventas. |
+| T16 | Anulación y QR en la app MAUI | Hecho | T11, T13, T15 | En `feat/maui-anulacion-qr` sobre `feat/maui-inventario`. Detalle de venta con reimpresión, QR informativo offline y anulación completa (motivo y confirmación `ANULAR`, permiso dueño/encargado). Verificación manual en Windows el 2026-10-25; 177 pruebas. Pendientes: compartir el QR como imagen, reimpresión con efectivo recibido y validación en Android. |
 
 ## Plantilla para reclamar
 
@@ -98,3 +97,4 @@ Al terminar, mueve la fila a `Hecho` (o elimínala de En curso) y registra el co
 | 2026-10-25 | Qoder | feat/maui-caja | CI en verde para el PR #5: compilación y pruebas, y app MAUI para Windows y Android | 7db70da |
 | 2026-10-25 | Qoder | feat/maui-inventario | T15 terminado: inventario y catálogo en la app con escaneo, alta/edición, entradas, mermas, ajustes, historial y permisos por rol; verificación manual en Windows con los tres roles; 171 pruebas en local; documentación actualizada; PR #7 abierto | 735766f, b0f0094 |
 | 2026-10-25 | Qoder | feat/maui-inventario | CI en verde para el PR #7: compilación y pruebas, y app MAUI para Windows y Android | b0f0094 |
+| 2026-10-25 | Qoder | feat/maui-anulacion-qr | T16 terminado: ticket con QR offline, detalle y reimpresión en Ventas, anulación con motivo y confirmación, permisos y 6 pruebas nuevas; verificación manual en Windows con venta ficticia y QR decodificado offline; 177 pruebas en local | e474bcb, dc23434, 0eefeba |

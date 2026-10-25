@@ -55,8 +55,8 @@ Validar que el sistema funcione correctamente según las reglas de negocio, cump
 
 9. **Ticket digital**
    - *Caso*: Generar ticket y compartir.
-   - *Expected*: Ticket PDF/imagen generado y función de compartir disponible.
-   - *Prueba*: Realizar una venta, verificar que el ticket aparezca, probar las opciones de compartir (WhastApp puede requerir configuración de dispositivo).
+   - *Expected*: Ticket interno con QR informativo (no fiscal) visible en pantalla; compartir el texto o copiarlo. El QR no se guarda como imagen.
+   - *Prueba*: Realizar una venta, decodificar el QR con un lector externo y probar Copiar y Compartir.
 
 10. **Rendimiento**
     - *Caso*: Buscar producto, iniciar app, lista de productos.
@@ -96,7 +96,7 @@ Qué pasa cuando las cosas van mal:
 - Búsqueda por nombre con 100 productos que coinciden.
 - Reporte de utilidad de un mes entero.
 
-## Pruebas automatizadas existentes (2026-10-23)
+## Pruebas automatizadas existentes (2026-10-25)
 
 Proyecto `SistemaTienda.Tests` (xUnit, net8.0). Cada prueba crea una base SQLite temporal aislada y la elimina al terminar.
 
@@ -123,8 +123,9 @@ dotnet test SistemaTienda/SistemaTienda.sln
 | `MapeoTiposTests` | Rol entero a enum y fecha nullable nula o cargada |
 | `ReportesTests` | Utilidad con costo congelado, costo modificado después de vender, comisión de tarjeta, mermas, gastos de ambos orígenes, venta fuera del rango y rango invertido |
 | `RespaldoAutomaticoTests` | Respaldo automático sin copia previa y su auditoría, respaldo vigente que no duplica, intervalo cumplido, intervalo 0 deshabilitado y auditoría del respaldo manual |
+| `TicketServiceTests` | Texto del ticket (efectivo con recibido y cambio, mixto con comisión, fiado con cliente), marcador de anulación, contenido del QR con estado, límite de diez productos y nombre de tienda por defecto |
 
-Total actual: 171 casos, todos en verde. Los puntos 1, 2, 3, 5, 6, 7 y 8 del listado de áreas críticas tienen cobertura parcial; faltan ticket con QR y rendimiento. La restauración se prueba sobre una base temporal: se verifica que el contenido vuelve al del respaldo (no byte a byte).
+Total actual: 177 casos, todos en verde. Los puntos 1, 2, 3, 5, 6, 7, 8 y 9 del listado de áreas críticas tienen cobertura parcial; falta rendimiento y la interfaz MAUI sigue sin pruebas automatizadas. La restauración se prueba sobre una base temporal: se verifica que el contenido vuelve al del respaldo (no byte a byte).
 
 La verificación se ejecuta en GitHub Actions (`windows-latest`) en cada push y también puede correr localmente con `dotnet test`; ver `CLAUDE-tienda.md` para el entorno actual.
 
@@ -236,6 +237,34 @@ Pendiente de Inventario:
 - Probar con un lector de código de barras físico USB o Bluetooth.
 - Repetir el flujo en la tablet Android.
 - Agregar filtro por categoría y desactivación de productos.
+- Cubrir la interfaz con pruebas automatizadas.
+
+## Verificación manual de Ventas, ticket y anulación (T16)
+
+Ejecutada en Windows el 2026-10-25 sobre la misma base demo del POS, la Caja y el Inventario. Se usó una venta ficticia de tres productos y se decodificó el QR con ZXing.Net en un proyecto temporal, sin conexión. Los datos no forman parte del repositorio.
+
+| Caso | Resultado |
+|------|-----------|
+| Venta de tres productos desde el POS | Pasó (venta #10: Refresco Cola $19.00 + Agua $12.00 + Sabritas $16.00 = $47.00 en efectivo con $100.00; cambio $53.00) |
+| QR del ticket recién cobrado | Pasó (decodificado offline: tienda, venta #10, fecha, estado `Vigente`, total $47.00, pago Efectivo, tres productos y “No es un comprobante fiscal.”) |
+| Botones del ticket con QR | Pasó (tras corregir la cuadrícula, Compartir, Copiar y Cerrar quedan visibles y el ticket se desplaza dentro del marco) |
+| Detalle de la venta | Pasó (folio, fecha, cajero, estado, líneas, pago y total) |
+| Reimpresión desde el detalle | Pasó (mismo texto y QR que el ticket original; botones visibles) |
+| Anulación con motivo vacío | Pasó (“Falta el motivo”; no se modificó la base) |
+| Anulación con confirmación incorrecta | Pasó (al escribir `NO` muestra “Anulación cancelada”; la venta siguió vigente) |
+| Anulación correcta | Pasó (motivo “Cobro duplicado T16” y `ANULAR`; registro en `AnulacionesVenta`, stock restaurado a 25, 29 y 17 unidades, bitácora `AnulacionVenta` y resumen de 9 ventas, $618.00 cobrados y 1 anulada) |
+| Ticket de una venta anulada | Pasó (sello con usuario, fecha y motivo; el QR indica `Estado: Anulada` y el texto advierte que ya no es válido) |
+| Venta incluida en un corte cerrado | Pasó (la venta #1 se rechaza con el mensaje de corte cerrado) |
+| Visibilidad por rol | Pasó (el encargado ve **Anular venta**; el empleado solo ve **Ver ticket** y **Cerrar**) |
+| Compartir el QR como imagen | Pendiente (hoy se comparte el texto y el QR solo se ve en pantalla) |
+| Reimpresión con efectivo recibido | Limitación (la venta no guarda el recibido; la reimpresión no repite el cambio) |
+| QR en la tablet Android | Pendiente (solo se ha compilado en CI) |
+
+Pendiente de Ventas y ticket:
+
+- Compartir el QR como imagen y verificar el botón Compartir con el diálogo del sistema.
+- Repetir el flujo en la tablet Android.
+- Decidir si se guarda el efectivo recibido para reimprimirlo o si se mantiene solo en el ticket original.
 - Cubrir la interfaz con pruebas automatizadas.
 
 ## Herramientas de Prueba

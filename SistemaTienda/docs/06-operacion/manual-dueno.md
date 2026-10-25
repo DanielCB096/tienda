@@ -11,12 +11,12 @@
 2. **Inicio de sesión**: escribe tu PIN. Después de 3 intentos incorrectos la app bloquea el acceso hasta cerrarla y abrirla de nuevo.
 3. **Pestañas**:
    - **Inicio**: ventas de hoy (incluye anuladas), efectivo esperado del periodo, productos con stock bajo, fecha del último respaldo y aviso si el respaldo está vencido.
-   - **Vender**: punto de venta con búsqueda o escaneo, carrito, cobro en efectivo, tarjeta, mixto o fiado, y ticket interno que se puede compartir o copiar.
+   - **Vender**: punto de venta con búsqueda o escaneo, carrito, cobro en efectivo, tarjeta, mixto o fiado, y ticket interno con QR que se puede compartir como texto o copiar.
    - **Inventario**: catálogo con stock bajo y valorizado, búsqueda o escaneo, alta/edición, entradas, mermas, ajustes e historial; el dueño controla costos, precios y ajustes.
-   - **Ventas**: lista de ventas del día con folio, total, método, hora y estado.
+   - **Ventas**: lista de ventas del día con folio, total, método, hora y estado; al tocar una venta se abre su detalle con líneas, pagos, comisión y datos de anulación, y se puede reimprimir el ticket o anular la venta con permiso.
    - **Caja**: periodo abierto (efectivo esperado, fondo, ventas por método, abonos, ingresos/retiros y gastos), cierre de corte con diferencia justificada, registro de ingresos y retiros, abonos de fiado y datos del último corte cerrado.
    - **Ajustes**: datos de la tienda, reglas configuradas, rutas de la base y de los respaldos, último respaldo, botón para crear un respaldo y cierre de sesión.
-4. **Importante**: desde la app ya se vende, se opera el inventario (alta, edición, entradas, mermas y ajustes) y se opera la caja (cierre, ingresos, retiros y abonos). Anular ventas todavía se hace desde la consola provisional. El conteo de caja se captura como un total, sin desglose de billetes y monedas; el catálogo aún no filtra por categoría ni desactiva productos.
+4. **Importante**: desde la app ya se vende, se opera el inventario (alta, edición, entradas, mermas y ajustes), se opera la caja (cierre, ingresos, retiros y abonos) y se anulan ventas desde Ventas (dueño o encargado). El conteo de caja se captura como un total, sin desglose de billetes y monedas; el catálogo aún no filtra por categoría ni desactiva productos.
 5. **Dónde están los datos**: en Windows, `%LOCALAPPDATA%\SistemaTienda\com.sistematienda.tienda\Data\tienda.db` y los respaldos en la carpeta `respaldos` junto a ese archivo. En Android están en el almacenamiento privado de la app. Las rutas exactas se muestran en Ajustes.
 
 ## Pantallas Principales
@@ -50,13 +50,14 @@ Acceso rápido desde el panel principal o menú.
 - Ver total y cambio (si es efectivo).
 - Generar y mostrar/compartir ticket.
 
-#### Anular una venta registrada
+#### Ver el detalle, reimprimir o anular una venta
 
-- Menú Ventas → [3] Anular venta (solo dueño o encargado).
-- Se anula la venta completa; el motivo es obligatorio y se confirma escribiendo `ANULAR`.
-- El sistema devuelve el stock con el costo congelado y revierte el saldo si fue fiado; la venta original queda marcada `[ANULADA]`.
+- En **Ventas**, toca una venta para abrir el detalle con folio, fecha, cajero, estado, líneas, pagos, comisión y cliente si fue fiado.
+- **Ver ticket** reabre el ticket con su QR; si la venta está anulada, muestra el sello con usuario, fecha y motivo.
+- **Anular venta** (solo dueño o encargado): escribe el motivo y confirma escribiendo `ANULAR`.
+- Se anula la venta completa; el sistema devuelve el stock con el costo congelado, revierte el saldo si fue fiado y deja el registro en la bitácora. La venta original no se edita ni se borra.
 - El reembolso en efectivo se entrega manualmente. La venta se excluye del corte pendiente; si el reembolso se paga después de cerrar el corte, regístralo como retiro en el corte siguiente.
-- No se puede anular una venta que ya quedó incluida en un corte cerrado.
+- No se puede anular una venta que ya quedó incluida en un corte cerrado. La misma operación sigue disponible en la consola: Ventas → [3].
 
 ### 4. Corte de Caja
 
@@ -100,35 +101,31 @@ Acceso restringido (PIN de admin). Opciones:
 - **Registrar pago**: Reducir el saldo del proveedor.
 - **Historial de transacciones** con cada proveedor.
 
-## Generando un Ticket Digital
+## Ticket interno y QR
 
 ### ¿Qué es?
 
-El ticket es un archivo PDF o imagen generado en el momento de la venta, que NO tiene validez fiscal (es un comprobante interno). El diseño incluye:
+El ticket es un texto interno generado en el momento de la venta; NO tiene validez fiscal. Incluye:
 
 - Nombre de la tienda.
-- Fecha y hora.
-- Lista de productos comprados (código, nombre, cantidad, precio unitario, total).
-- Subtotal, impuesto (si aplica), total.
-- Método de pago (Efectivo/Tarjeta/Mixture/Fiado).
-- Saldo restante (si es fiado).
-- Mensaje de retorno (ej. "Gracias por su compra").
+- Folio, fecha y hora, y cajero.
+- Lista de productos comprados (cantidad, nombre, precio unitario e importe).
+- Total y método de pago (Efectivo/Tarjeta/Mixto/Fiado); en mixto, el desglose de efectivo y tarjeta; en fiado, el cliente.
+- En efectivo, el monto recibido y el cambio (solo en el ticket recién cobrado; la reimpresión no los incluye).
+- Comisión de tarjeta cuando aplica.
+- Un QR informativo offline con folio, fecha, estado, total, método pago y hasta diez productos, con la leyenda “No es un comprobante fiscal”.
+- Si está anulada, el sello con usuario, fecha, motivo y la leyenda de que ya no es válido.
 
 ### Cómo se comparte
 
-1. Después de finalizar la venta, el sistema muestra el ticket.
-2. El cajero toca el botón "Compartir".
-3. El sistema ofrece:
-   - **WhatsApp**: Abre el contacto con el archivo adjunto (o texto si el cliente solo quiere el número).
-   - **Correo**: Abre el cliente de correo del dispositivo con el adjunto.
-   - **Mostrar en pantalla**: El ticket queda en pantalla grande, el cliente lo fotografía.
-   - **Guardar en galería**: Guardar la imagen del ticket en la foto/galería de la tablet.
+1. Después de finalizar la venta, la app muestra el ticket con el QR.
+2. El cajero toca **Compartir** para enviar el texto por el diálogo del sistema (WhatsApp, correo u otra app instalada) o **Copiar** para el portapapeles.
+3. El QR se muestra en pantalla para que el cliente lo fotografíe; todavía no se guarda ni se comparte como imagen.
 
-### Historial deTickets
+### Historial de tickets
 
-- Los tickets pasados se pueden consultar desde el menú "Historial de Ventas".
-- Se puede seleccionar una fecha y revender o ver el ticket generado anteriormente.
-- Útil para reimpresiones o consultas.
+- En **Ventas** se listan las ventas del día; al tocar una se abre el detalle y **Ver ticket** reimprime el ticket con el QR.
+- La consulta de fechas anteriores y la reventa todavía no están implementadas en la app.
 
 ## Respaldos y Recuperación (Guía Rápida para el Dueño)
 

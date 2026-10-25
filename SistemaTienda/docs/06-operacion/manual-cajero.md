@@ -6,7 +6,7 @@
 - **Roles y permisos**:
   - **Dueño/Administrador**: Ve todo, configura impuestos, usuarios, cortes, reportes.
   - **Encargado/Cajero**: Vende, cobra, registra compras, mermas, gastos permitidos, hace corte de caja.
-  - **Empleado básico**: Solo vende y consulta precios (no puede acceder a configuración, reportes, cortes, mermas, proveedores).
+  - **Empleado básico**: Solo vende, consulta precios y ventas, y reimprime tickets (no puede acceder a configuración, reportes, cortes, mermas, proveedores ni anular ventas).
 
 ## Pantallas Principales
 
@@ -17,7 +17,7 @@
 3. El sistema valida y muestra el tablero (Inicio, Vender, Inventario, Ventas, Caja y Ajustes).
 4. Si el PIN está mal tres veces seguidas, la app bloquea el acceso hasta cerrarla y abrirla de nuevo.
 
-> **Estado de la app (2026-10-25)**: el tablero muestra ventas del día, efectivo esperado del corte, stock bajo y último respaldo. **Vender** registra ventas con carrito, cobros y ticket interno compartible. **Inventario** permite consultar, escanear, dar de alta o editar productos, y registrar entradas, mermas y ajustes según el rol. **Caja** ya permite cerrar el corte, registrar ingresos y retiros, y abonar al fiado. **Anular ventas todavía se hace en la consola provisional.** El conteo de caja se captura como un total, sin desglose de billetes y monedas. El manual describe el flujo completo planeado; revisa en cada versión qué partes ya están en la app.
+> **Estado de la app (2026-10-25)**: el tablero muestra ventas del día, efectivo esperado del corte, stock bajo y último respaldo. **Vender** registra ventas con carrito, cobros y ticket interno con QR compartible como texto. **Inventario** permite consultar, escanear, dar de alta o editar productos, y registrar entradas, mermas y ajustes según el rol. **Ventas** muestra el detalle de cada venta, permite reimprimir el ticket con su QR y anular la venta completa (solo dueño o encargado). **Caja** ya permite cerrar el corte, registrar ingresos y retiros, y abonar al fiado. El conteo de caja se captura como un total, sin desglose de billetes y monedas. La anulación también sigue disponible en la consola provisional. El manual describe el flujo completo planeado; revisa en cada versión qué partes ya están en la app.
 
 ### 2. Catálogo / Búsqueda de Producto
 
@@ -50,7 +50,16 @@ Flujo paso a paso:
      - El ticket se genera indicando "Venta a Fiado".
 6. **Pagar y generar ticket**: Tocar "Finalizar Venta".
    - El sistema registra la venta, actualiza inventario (si es que corresponde) y genera el ticket digital.
-   - Se ofrece compartir el ticket (WhastApp, correo, mostrar en pantalla).
+   - El ticket muestra un QR informativo (no fiscal) y se puede compartir como texto con el sistema o copiar. El QR no se guarda como imagen.
+
+**Ver el detalle, reimprimir o anular una venta**
+
+En la pestaña **Ventas**, toca una venta para abrir su detalle con líneas, pagos, comisión y estado:
+
+- **Ver ticket** reabre el ticket con el QR. Si la venta está anulada, muestra el sello, el usuario, la fecha y el motivo.
+- **Anular venta** (solo dueño o encargado): escribe el motivo y confirma con la palabra `ANULAR`. El sistema devuelve el stock con el costo original, revierte el saldo si fue fiado y deja el registro en la bitácora.
+- El reembolso en efectivo se entrega manualmente. La venta anulada se excluye del corte; si el reembolso se paga después de cerrar el corte, el dueño lo registra como retiro en el corte siguiente.
+- No se puede anular una venta que ya quedó incluida en un corte cerrado.
 
 ### 4. Inventario (pestaña Inventario)
 
@@ -130,7 +139,7 @@ Acceso en la app: pestaña **Caja** (requiere sesión de dueño o encargado para
 ### "Me equivoqué al poner la cantidad"
 
 - Si la venta aún no se ha finalizado (aún está en el carrito), se puede quitar el producto del carrito y volver a agregar con la cantidad correcta.
-- Si la venta ya se registró, no se puede editar. Solicita al dueño o encargado que la **anule** desde Ventas → [3] Anular venta: se anula la venta completa, se devuelve el stock y, si fue fiado, se revierte el saldo del cliente.
+- Si la venta ya se registró, no se puede editar. Solicita al dueño o encargado que la **anule** desde Ventas → detalle de la venta → **Anular venta** (o en la consola, Ventas → [3]): se anula la venta completa, se devuelve el stock y, si fue fiado, se revierte el saldo del cliente.
 - El reembolso en efectivo se entrega manualmente. La venta anulada ya se excluye del corte; si el reembolso se paga después de cerrar el corte, el dueño lo registra como retiro en el corte siguiente.
 
 ### "El cliente no tiene código de barras"

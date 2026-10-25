@@ -1,8 +1,8 @@
 # Módulo 3: Ventas / Punto de Venta
 
-## Estado de implementación (2026-10-23)
+## Estado de implementación (2026-10-25)
 
-Base implementada en `feat/ventas-pos` (esquema v2; la anulación se agregó en v6). La venta se opera en la consola provisional y en la app MAUI (T13); la anulación sigue solo en la consola.
+Base implementada en `feat/ventas-pos` (esquema v2; la anulación se agregó en v6). La venta se opera en la consola provisional y en la app MAUI (T13); el detalle, la reimpresión con QR y la anulación están en la app desde T16, y la anulación también sigue disponible en la consola.
 
 | Función | Estado |
 |---------|--------|
@@ -14,9 +14,11 @@ Base implementada en `feat/ventas-pos` (esquema v2; la anulación se agregó en 
 | Pago mixto (efectivo + tarjeta) | ✅ Implementado |
 | Venta a fiado (exclusiva, valida límite de crédito) | ✅ Implementado |
 | Ticket interno en pantalla | ✅ Implementado (texto en consola y app) |
-| Compartir o copiar el ticket | ✅ Implementado en la app MAUI (T13) |
+| QR informativo en el ticket | ✅ Implementado en la app MAUI (T16): offline, hasta diez productos, sin validez fiscal |
+| Compartir o copiar el ticket | ✅ Implementado en la app MAUI (T13): texto por el diálogo del sistema y copiar; el QR no se comparte como imagen |
+| Detalle de venta y reimpresión | ✅ Implementado en la app MAUI (T16) |
 | Descuentos | ⛔ Fase 2 (no incluidos en MVP) |
-| Anulación posterior de una venta | ✅ Implementado (T11, esquema v6): venta completa, permiso dueño/encargado, devolución de stock y reverso de fiado |
+| Anulación posterior de una venta | ✅ Implementado (T11 consola, T16 app; esquema v6): venta completa, permiso dueño/encargado, devolución de stock y reverso de fiado |
 | Reporte de utilidad por periodo | ✅ Implementado (T5); el detalle por venta sigue pendiente |
 | Integración con corte de caja | ✅ Implementado: las ventas anuladas se excluyen del corte pendiente y no se pueden anular tras un corte cerrado |
 
@@ -31,9 +33,19 @@ La pestaña **Vender** replica el flujo de la consola sobre los mismos servicios
 3. El total se calcula con `Dinero.Multiplicar` y se muestra al instante.
 4. **Cobrar** abre el panel de pago: efectivo (muestra un recuadro “Cambio a entregar” con lo recibido y el cambio, y bloquea faltantes), tarjeta (muestra la comisión configurada), mixto (exige que la suma sea el total) o fiado (cliente y límite de crédito).
 5. Al confirmar, `VentaService.RegistrarVenta` guarda la venta y descuenta el stock en una transacción. La app limpia el carrito y muestra el ticket.
-6. El ticket interno (no fiscal, sin QR) se puede compartir con el sistema o copiar al portapapeles. Si el pago fue en efectivo, imprime el monto recibido y el cambio.
+6. El ticket interno (no fiscal) incluye un QR informativo y se puede compartir como texto con el sistema o copiar al portapapeles. Si el pago fue en efectivo, imprime el monto recibido y el cambio.
 
-No incluye anulación ni descuentos desde la app; esas operaciones siguen en la consola. El cierre de corte ya se hace desde la pestaña Caja. La interfaz no tiene pruebas automatizadas: el POS se verificó manualmente en Windows el 2026-10-25 (efectivo con cambio, tarjeta, mixto, fiado, límite de stock, producto agotado y ticket con copiar/cerrar); compartir con el diálogo del sistema y Android siguen pendientes. El QR del ticket (regla 7) queda para una tarea posterior.
+El detalle, la reimpresión y la anulación desde Ventas llegaron en T16; los descuentos siguen fuera del alcance. El cierre de corte se hace desde la pestaña Caja. La interfaz no tiene pruebas automatizadas: el POS se verificó manualmente en Windows el 2026-10-25 (efectivo con cambio, tarjeta, mixto, fiado, límite de stock, producto agotado y ticket con copiar/cerrar); compartir con el diálogo del sistema y Android siguen pendientes.
+
+## Detalle, reimpresión y anulación en la app MAUI (T16)
+
+1. En **Ventas**, tocar una venta abre el detalle con folio, fecha, cajero, estado, método de pago, cliente, líneas, total, pagos y comisión. Si está anulada, también muestra el usuario, la fecha y el motivo.
+2. **Ver ticket** reconstruye el ticket con `TicketService` y lo muestra con su QR, las mismas acciones de compartir y copiar, y el sello de anulación cuando corresponde. No guarda el efectivo recibido: la venta solo conserva el total, así que una reimpresión no repite el cambio original.
+3. **Anular venta** solo aparece si el usuario tiene el permiso `AnularVenta` (dueño o encargado). Pide el motivo (obligatorio, hasta 200 caracteres) y luego exige escribir `ANULAR` para confirmar.
+4. `VentaService.AnularVenta` vuelve a validar el permiso, rechaza una venta ya anulada o incluida en un corte cerrado y, en una transacción, registra la anulación, devuelve el stock con el costo congelado, revierte el fiado y deja la bitácora.
+5. La app recarga la lista y el detalle, y avisa que el reembolso en efectivo es manual. El empleado no ve la acción y, si se llamara al servicio, este la rechazaría.
+
+El QR es informativo y offline: incluye tienda, folio, fecha, estado (`Vigente`/`Anulada`), total, método de pago y hasta diez productos, con la leyenda de que no es un comprobante fiscal. No contiene enlaces, no valida la venta y no se comparte como imagen. La decisión y sus límites están en [ADR-qr-ticket.md](../05-decisiones/ADR-qr-ticket.md).
 
 ## Anulación de Venta (T11, esquema v6)
 
@@ -47,8 +59,8 @@ Reglas confirmadas con el usuario:
 
 Flujo:
 
-1. Menú Ventas → [3] Anular venta (dueño o encargado).
-2. Se captura el número de venta y se muestran fecha, total, método y líneas.
+1. En la consola: Ventas → [3] Anular venta (dueño o encargado). En la app: Ventas → detalle de la venta → **Anular venta**.
+2. Se captura el número de venta (consola) o se abre el detalle (app) y se muestran fecha, total, método y líneas.
 3. Se exige el motivo y se confirma escribiendo `ANULAR`.
 4. En una sola transacción se registra la anulación en `AnulacionesVenta`, se devuelve el stock con el costo congelado de cada línea y, si hubo fiado, se descuenta del saldo del cliente.
 5. La acción queda en la bitácora como `AnulacionVenta` con usuario, motivo y datos de la venta. La venta original no se edita ni se borra.
@@ -66,7 +78,7 @@ Las ventas anuladas se excluyen del corte pendiente y del reporte de utilidad, y
 | **Sin ventas en espera** | Una venta a la vez por cajero. El sistema no permite iniciar una nueva venta mientras haya una en progreso. |
 | **Precio incluye impuesto** | El campo `Precio` en `Producto` ya considera el impuesto. Al vender, se muestra el total directamente sin cálculos adicionales: `Total = Precio × Cantidad`. |
 | **No hay descuentos en MVP** | El precio final es el precio de catálogo × cantidad. Los descuentos quedan para Fase 2. |
-| **QR en ticket** | El ticket digital generado incluirá un código QR con la información de la venta (enlace a detalles o pago sencillo). |
+| **QR en ticket** | El ticket de la app incluye un QR informativo offline con los datos esenciales de la venta (folio, fecha, estado, total, método y hasta diez productos). No es un enlace ni un comprobante fiscal. |
 
 ### Flujo de Venta Simplificado
 
@@ -85,12 +97,12 @@ Las ventas anuladas se excluyen del corte pendiente y del reporte de utilidad, y
    - FIADO: diseñado pero opcional en MVP (requiere módulo de clientes activado)
 5. GENERAR TICKET DIGITAL
    - Se crea un registro con: nombre tienda, fecha, hora, lista de productos (código, nombre, cantidad, precio unitario, total por línea), subtotal, total, método de pago.
-   - El ticket incluye un CÓDIGO QR que contiene la información de la venta (o un enlace a los detalles).
+   - El ticket de la app incluye un CÓDIGO QR informativo, sin enlace ni validación en línea.
    - Opciones de compartir (una vez generado):
-     * WhatsApp (función compartir del sistema, adjunta el ticket o texto con los datos).
-     * Correo electrónico (adjunta el ticket como archivo o texto en el cuerpo).
-     * Mostrar en pantalla (para que el cliente lo fotografíe).
-     * Guardar en Galería (foto del ticket).
+     * Texto por el diálogo del sistema (WhatsApp, correo u otra app instalada).
+     * Mostrar en pantalla (para que el cliente lo fotografíe); el QR se ve en pantalla.
+     * Copiar el texto del ticket.
+     * Guardar el QR como imagen: pendiente.
 6. REDUCIR STOCK AUTOMÁTICAMENTE
    - El stock del producto se reduce de forma atómica en el momento de finalizar la venta.
    - Si el stock es insuficiente en el momento de la venta, se bloquea con mensaje: "Stock insuficiente. Stock actual: X, necesario: Y".
@@ -115,7 +127,7 @@ Las ventas anuladas se excluyen del corte pendiente y del reporte de utilidad, y
 4. **Comisión de tarjeta**: Es configurable por tienda (en Configuración) y se resta automáticamente de la utilidad neta sobre las ventas con método tarjeta.
 5. **Historial inmodificable**: No se pueden editar ventas pasadas. Si hay error, se anula la venta completa (con motivo, permiso y bitácora) y se registra una nueva venta correcta.
 6. **Ticket no fiscal**: El ticket digital es un comprobante interno. No se promete validez fiscal. Diseñado sin impedir la facturación CFDI futura (los campos opcionales están en la base de datos por si se necesita después).
-7. **Ticket incluye QR**: **NUEVO** - El código QR en el ticket contiene los datos esenciales de la venta (total, productos, etc.) para facilitar al cliente el acceso o pago posterior.
+7. **Ticket incluye QR**: implementado en la app (T16). El QR contiene los datos esenciales de la venta (folio, fecha, estado, total, método y productos) para mostrarlos u hojearlos sin conexión; no es un comprobante fiscal ni un enlace de pago.
 
 ### Casos Límite
 
@@ -140,8 +152,8 @@ Las ventas anuladas se excluyen del corte pendiente y del reporte de utilidad, y
 - [ ] El sistema bloquea la venta si el stock es insuficiente, con mensaje claro.
 - [ ] Al pagar en efectivo, el cambio se calcula automáticamente: `Cambio = Recibido - Total`.
 - [ ] Al pagar con tarjeta, se registra el método y se muestra el mensaje de comisión aplicada a utilidad.
-- [ ] Después de finalizar la venta, se genera el ticket digital con código QR.
-- [ ] Las opciones de compartir (WhatsApp, Correo, Guardar) están disponibles en el ticket.
+- [x] Después de finalizar la venta, se genera el ticket digital con código QR (app MAUI, T16).
+- [ ] Las opciones de compartir (WhatsApp, Correo, Guardar) están disponibles en el ticket; hoy se comparte el texto con el diálogo del sistema y el QR no se guarda como imagen.
 - [ ] Si se cancela una venta (única en progreso), el stock se devuelve automáticamente.
 - [ ] Las ventas a fiado (si están activadas) generan saldo en el cliente y no afectan el efectivo esperado hasta el abono.
 - [ ] La comisión de tarjeta configurada se refleja en el reporte de utilidad neta.
@@ -156,4 +168,4 @@ Las ventas anuladas se excluyen del corte pendiente y del reporte de utilidad, y
 
 ---
 
-**Próximos pasos en código**: ticket con QR y compartir cuando exista interfaz gráfica; descuentos quedan para Fase 2.
+**Próximos pasos en código**: descuentos (Fase 2), compartir el QR como imagen, reimpresión con efectivo recibido y validación del QR en Android. El ticket con QR y la anulación ya están implementados en la app.

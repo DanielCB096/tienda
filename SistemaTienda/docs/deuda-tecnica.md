@@ -23,11 +23,12 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 - **Impacto**: el total es siempre precio de catálogo × cantidad. La anulación ya existe (solo venta completa, bloqueada tras un corte cerrado), pero no hay descuentos por línea ni por venta.
 - **Cierre**: descuentos como fase 2 con autorización y registro en bitácora.
 
-### Ventas sin ticket QR
+### QR del ticket sin imagen ni validación
 
-- **Dónde**: `TicketPage` en la app MAUI y `Program.ImprimirTicket` en la consola.
-- **Impacto**: el ticket es texto interno y ya se puede compartir o copiar desde la app, pero no se genera PDF/imagen ni lleva QR, y no se puede guardar en galería. WhatsApp y correo dependen del menú de compartir del sistema.
-- **Cierre**: generación de ticket con QR en la app MAUI.
+- **Dónde**: `TicketService`, `QrTicketView`, `TicketPage` y `VentasPage` de la app MAUI; `Program.ImprimirTicket` en la consola.
+- **Por qué**: el alcance de T16 era mostrar el QR en pantalla con una dependencia mínima (`Net.Codecrete.QrCodeGenerator`), sin generar archivos ni integrar la galería o el menú de compartir con imágenes.
+- **Impacto**: el QR es informativo y no fiscal; resume hasta diez productos, no se guarda ni se comparte como imagen, no permite validar la venta contra nada y no se ha probado en Android. La reimpresión reconstruye el ticket, pero no incluye el efectivo recibido ni el cambio porque la venta solo guarda el total. WhatsApp y correo dependen del diálogo de compartir del sistema, que sigue sin verificarse. Ver [ADR-qr-ticket.md](05-decisiones/ADR-qr-ticket.md).
+- **Cierre**: renderizar el QR a PNG y compartirlo como archivo, decidir si se sube el límite de productos, guardar el efectivo recibido si se quiere reimprimir el cambio y validar el QR en un dispositivo Android.
 
 ### Corte de caja sin conteo por denominaciones
 
@@ -46,7 +47,7 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 
 ### Reembolso de anulación sin movimiento de caja
 
-- **Dónde**: `DatabaseTools.AnularVenta` y `Program.AnularVenta`.
+- **Dónde**: `DatabaseTools.AnularVenta`, `Program.AnularVenta` y `VentasPage` de la app MAUI.
 - **Por qué**: se confirmó con el usuario que el reembolso sea manual y documentado en esta versión.
 - **Impacto**: la anulación devuelve stock y revierte el fiado, pero no registra un movimiento de caja. La venta se excluye del corte pendiente, así que un reembolso pagado en el mismo periodo no necesita retiro; si se paga después de cerrar el corte, el dueño debe registrar un retiro en el corte siguiente. El sistema no conoce el método ni el momento del reembolso.
 - **Cierre**: si se requiere, generar automáticamente un `MovimientoCaja` de retiro ligado a la anulación, con permiso y bitácora.
@@ -66,14 +67,14 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 ### La app MAUI no cubre todas las operaciones
 
 - **Dónde**: `SistemaTienda.Maui/Pages`.
-- **Por qué**: el punto de venta se entregó en T13, la caja operativa en T14 y el inventario en T15; el resto de las operaciones de escritura se hará en tareas posteriores.
-- **Impacto**: desde la app se vende, se opera el inventario, se cierra el corte, se registran ingresos, retiros y abonos de fiado, se crea respaldo y se cierra sesión. Anular ventas, gestionar clientes, proveedores y gastos siguen en la consola, que no es usable por el cajero.
-- **Cierre**: pantallas de anulación, clientes, proveedores y gastos en MAUI, módulo por módulo y con sus pruebas.
+- **Por qué**: el punto de venta se entregó en T13, la caja operativa en T14, el inventario en T15 y el detalle/anulación de ventas en T16; el resto de las operaciones de escritura se hará en tareas posteriores.
+- **Impacto**: desde la app se vende, se opera el inventario, se cierra el corte, se registran ingresos, retiros y abonos de fiado, se anulan ventas, se reimprime el ticket y se crea respaldo. Gestionar clientes, proveedores y gastos sigue en la consola, que no es usable por el cajero; el historial completo de cortes y la consulta de ventas de fechas anteriores tampoco están en la app.
+- **Cierre**: pantallas de clientes, proveedores y gastos en MAUI, módulo por módulo y con sus pruebas; después, historial de cortes y consulta histórica de ventas.
 
 ### App MAUI sin pruebas automatizadas
 
 - **Dónde**: `SistemaTienda.Maui`.
-- **Impacto**: CI solo compila para Windows y Android. Una regresión de navegación, sesión, POS, inventario, caja o formato no se detecta hasta la verificación manual. El cierre de corte y los movimientos de inventario desde la app dependen de esa verificación.
+- **Impacto**: CI solo compila para Windows y Android. Una regresión de navegación, sesión, POS, Ventas, anulación, inventario, caja o formato no se detecta hasta la verificación manual. El cierre de corte, los movimientos de inventario y la anulación desde la app dependen de esa verificación. `TicketServiceTests` cubre el texto y el contenido del QR, no la interfaz.
 - **Cierre**: extraer la lógica de cada página a modelos de vista probables y agregar pruebas; valorar pruebas de interfaz más adelante.
 
 ### Android sin validación en dispositivo
