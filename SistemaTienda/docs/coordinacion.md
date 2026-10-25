@@ -28,7 +28,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 
 | Tarea | Agente | Rama | Archivos reservados | Inicio | Estado |
 |-------|--------|------|---------------------|--------|--------|
-| — | Sin tareas activas al cierre de esta sesión | — | — | — | — |
+| T16 | Anulación y QR en la app MAUI | Qoder | feat/maui-anulacion-qr | `SistemaTienda.Maui/Pages/VentasPage.*`, `PosPage.xaml.cs`, `TicketPage.cs`, `Services/`, `Application/Services/TicketService.cs`, pruebas y docs | 2026-10-25 | Tomada |
 
 ## Hecho
 
@@ -68,6 +68,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 | T13 | POS en app MAUI | Hecho | T2, T12 | En `feat/maui-pos` (PR #4 contra `main`). Carrito, búsqueda/escaneo, cobro efectivo con recuadro de cambio, tarjeta, mixto, fiado y ticket copiable. Verificación manual en Windows el 2026-10-25 con ventas ficticias: los cuatro métodos de pago, cambio, límite y stock 0, ticket y totales en Ventas/Caja. Pendientes: botón Compartir y Android. |
 | T14 | Caja operativa en la app MAUI | Hecho | T8, T13 | En `feat/maui-caja` sobre `feat/maui-pos` (PR #5 contra `main`). Cierre de corte con diferencia justificada, ingresos, retiros y abonos de fiado desde Caja. Verificación manual en Windows el 2026-10-25: corte #1 con faltante y observación, ingreso, retiro con confirmación, abono y corte #2 sin diferencia. Pendientes: denominaciones, historial de cortes y roles distintos al dueño. |
 | T15 | Inventario y catálogo en la app MAUI | Hecho | T12, T14 | En `feat/maui-inventario` sobre `feat/maui-caja` (PR #7 contra `main`). Catálogo, escaneo/búsqueda, alta/edición, entradas, mermas, ajustes, historial y stock bajo; permisos por rol. Verificación manual en Windows el 2026-10-25 con datos ficticios: entrada, merma, ajuste, edición, alta desde código desconocido y roles dueño/encargado/empleado. Pendientes: filtro por categoría, desactivación, costo de entrada al catálogo y pruebas automatizadas de interfaz. |
+| T16 | Anulación y QR en la app MAUI | Tomada | T11, T13, T15 | En `feat/maui-anulacion-qr` sobre `feat/maui-inventario`. Detalle de venta con anulación (motivo y confirmación `ANULAR`), ticket compartido con QR offline y reimpresión desde Ventas. |
 
 ## Plantilla para reclamar
 
