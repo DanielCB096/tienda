@@ -7,7 +7,7 @@ public class Proveedor
     public string Clave { get; set; } = string.Empty;
     public string Telefono { get; set; } = string.Empty;
     public string Direccion { get; set; } = string.Empty;
-    public decimal SaldoPendiente { get; set; }
+    public long SaldoPendiente { get; set; }
     public DateTime FechaRegistro { get; set; } = DateTime.Now;
     public DateTime? UltimaActualizacion { get; set; }
 }

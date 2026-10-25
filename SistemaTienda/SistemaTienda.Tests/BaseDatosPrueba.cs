@@ -1,5 +1,6 @@
 using Microsoft.Data.Sqlite;
 using SistemaTienda.Application.Services;
+using SistemaTienda.Core;
 using SistemaTienda.Infrastructure;
 
 namespace SistemaTienda.Tests;
@@ -9,6 +10,8 @@ namespace SistemaTienda.Tests;
 /// </summary>
 public sealed class BaseDatosPrueba : IDisposable
 {
+    private readonly string _directorio;
+
     public string Ruta { get; }
     public DatabaseTools Db { get; }
     public ConfiguracionService Config { get; }
@@ -16,28 +19,53 @@ public sealed class BaseDatosPrueba : IDisposable
 
     public BaseDatosPrueba()
     {
-        Ruta = Path.Combine(Path.GetTempPath(), $"sistematienda-test-{Guid.NewGuid():N}.db");
+        _directorio = Path.Combine(Path.GetTempPath(), $"sistematienda-test-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(_directorio);
+        Ruta = Path.Combine(_directorio, "tienda.db");
+
         Db = new DatabaseTools(Ruta);
         Db.InicializarBaseDeDatos();
         Config = new ConfiguracionService(Db);
         Inventario = new InventoryService(Db);
+
+        // Las pruebas que no ejercitan permisos corren como dueño del sistema.
+        SesionActual.Iniciar(new UsuarioSistema { Nombre = "Sistema", Rol = RolUsuario.Dueño });
     }
 
     public void ConfigurarTienda(string pin = "1234", bool fiado = true)
     {
         var resultado = Config.EjecutarAsistenteInicial(
-            "Tienda de prueba", "Abarrotes", 16m, 3.5m, 200m, fiado, 500m, 1, pin);
+            "Tienda de prueba", "Abarrotes", 16m, 3.5m, 20_000, fiado, 50_000, 1, pin);
 
         Assert.True(resultado.IsSuccess, resultado.Message);
+
+        var dueno = Config.ObtenerUsuarios().Value.FirstOrDefault(u => u.Rol == RolUsuario.Dueño);
+        if (dueno != null)
+            SesionActual.Iniciar(dueno);
+    }
+
+    public UsuarioSistema IniciarSesion(RolUsuario rol, string nombre = "Usuario de prueba")
+    {
+        var usuario = new UsuarioSistema { Nombre = nombre, Rol = rol };
+        SesionActual.Iniciar(usuario);
+        return usuario;
     }
 
     public void Dispose()
     {
+        SesionActual.Cerrar();
         SqliteConnection.ClearAllPools();
-        foreach (var sufijo in new[] { "", "-shm", "-wal" })
+        try
         {
-            var archivo = Ruta + sufijo;
-            if (File.Exists(archivo)) File.Delete(archivo);
+            if (Directory.Exists(_directorio))
+                Directory.Delete(_directorio, recursive: true);
+        }
+        catch (IOException)
+        {
+            // Un archivo aún bloqueado no debe hacer fallar la prueba.
+        }
+        catch (UnauthorizedAccessException)
+        {
         }
     }
 }

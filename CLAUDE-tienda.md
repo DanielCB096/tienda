@@ -32,13 +32,13 @@ Sistema para tiendas pequeñas de **cualquier giro** en México. Registra ventas
 
 ## 3. Stack y estructura
 
-- **Tipo de aplicación:** escritorio/terminal local-first. La interfaz actual es una **consola provisional**; la UI definitiva sigue pendiente de ADR (MAUI/WPF/PWA).
-- **Lenguaje/framework:** C# / .NET 8 (`net8.0`), solución con capas Core → Infrastructure → Application → Presentation.
+- **Tipo de aplicación:** escritorio/terminal local-first. La interfaz objetivo es **MAUI** (Windows y Android); ya existe una base con asistente, login, tablero y punto de venta (POS). La **consola** sigue siendo provisional para anular ventas, cerrar el corte e inventario.
+- **Lenguaje/framework:** C# / .NET 8 (`net8.0`) para Core, Infrastructure, Application, consola y pruebas; la app MAUI (`SistemaTienda.Maui`) usa .NET 10 (`net10.0-windows10.0.19041.0` y `net10.0-android`).
 - **Base de datos local:** SQLite mediante `Microsoft.Data.Sqlite` 8.0.10 (`SistemaTienda.Infrastructure/Database.cs`).
-- **Interfaz:** consola (`SistemaTienda.Presentation`), menús por rol y sesión con PIN.
+- **Interfaz:** app MAUI (`SistemaTienda.Maui`) y consola (`SistemaTienda.Presentation`), ambas con sesión por PIN.
 - **Pruebas:** xUnit 2.9 + Microsoft.NET.Test.Sdk, con base SQLite temporal por prueba (`SistemaTienda.Tests`).
-- **Distribución e instalación:** pendiente de definir; por ahora `dotnet run`. Requiere SDK .NET 8+; los ejecutables usan `RollForward=Major` para correr sobre runtimes mayores.
-- **Dinero:** hoy en `decimal` (deuda registrada: migrar a centavos enteros, ver `SistemaTienda/docs/deuda-tecnica.md`).
+- **Distribución e instalación:** pendiente de definir; por ahora compilación local y CI. Windows se compila sin MSIX; Android genera APK. Requiere SDK .NET 8+ para la solución y SDK 10 con cargas MAUI para la app; los ejecutables usan `RollForward=Major`.
+- **Dinero:** centavos enteros (`long` en C#, `INTEGER` en SQLite) desde el esquema v4; `Core/Dinero.cs` centraliza conversión, porcentajes y formato. Los porcentajes (impuesto, comisión) siguen en `decimal`.
 
 Estructura de carpetas:
 
@@ -52,6 +52,7 @@ tienda/
     ├── SistemaTienda.Infrastructure/  # DatabaseTools: esquema y acceso SQLite
     ├── SistemaTienda.Application/     # Servicios de configuración e inventario
     ├── SistemaTienda.Presentation/    # Consola: asistente, login y menús
+    ├── SistemaTienda.Maui/            # App Windows/Android (fuera de la solución)
     ├── SistemaTienda.Tests/           # Pruebas xUnit con SQLite temporal
     └── docs/                          # Ver docs/README.md
 ```
@@ -71,16 +72,29 @@ dotnet run --project SistemaTienda/SistemaTienda.Presentation/Presentation.cspro
 # Ejecutar con otra base de datos
 SISTEMATIENDA_DB=/ruta/a/tienda.db dotnet run --project SistemaTienda/SistemaTienda.Presentation/Presentation.csproj
 
+# App MAUI en Windows (requiere SDK 10 y carga maui-windows)
+dotnet build SistemaTienda/SistemaTienda.Maui/SistemaTienda.Maui.csproj -f net10.0-windows10.0.19041.0
+dotnet run --project SistemaTienda/SistemaTienda.Maui/SistemaTienda.Maui.csproj -f net10.0-windows10.0.19041.0
+
+# App MAUI para Android (requiere Android SDK y JDK 17; también corre en CI)
+dotnet build SistemaTienda/SistemaTienda.Maui/SistemaTienda.Maui.csproj -f net10.0-android
+
 # Pruebas
 dotnet test SistemaTienda/SistemaTienda.sln
 
 # Formato (cuando se adopte; no bloquea todavía)
 dotnet format SistemaTienda/SistemaTienda.sln
 
-# Migraciones: PENDIENTE — esquema v1 fijado con PRAGMA user_version; sin runner
+# Migraciones: se aplican solas al iniciar la app (runner en Infrastructure/Migraciones.cs).
+# Para agregar una: añade un Migracion(2, "...", ...) en Migraciones.ObtenerTodas() y su prueba.
+
+# Respaldos: se crean en respaldos/ junto a la base; desde la consola:
+#   Configuración → [4] Crear respaldo ahora / [5] Ver respaldos / [6] Restaurar respaldo
 ```
 
 Después de cualquier cambio: ejecuta pruebas y lint. No des una tarea por terminada si fallan.
+
+> **Entorno de este equipo (2026-10-23)**: las pruebas y la consola ya se ejecutan localmente; `dotnet test` terminó con 171 pruebas en verde. La verificación oficial sigue siendo el flujo de GitHub Actions (`.github/workflows/ci.yml`), que compila y corre las pruebas en `windows-latest` en cada push. Si reaparece el error `0x800711C7` de Smart App Control, revisa Seguridad de Windows → Control de aplicaciones y navegador.
 
 ## 5. Convenciones de código
 

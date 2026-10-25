@@ -1,37 +1,40 @@
 # Roadmap
 
-Estado al 2026-10-23. Orden sugerido en [CLAUDE-tienda.md §13](../CLAUDE-tienda.md).
+Estado al 2026-10-25. Orden sugerido en [CLAUDE-tienda.md §13](../CLAUDE-tienda.md).
 
 ## Avance por módulo
 
 | # | Módulo | Estado | Notas |
 |---|--------|--------|-------|
-| 1 | Configuración y usuarios | ✅ Base implementada | Asistente, PIN hasheado, roles, gastos |
+| 1 | Configuración y usuarios | ✅ Base implementada | Asistente, PIN hasheado, roles, gastos, bitácora inmutable y permisos en servicios |
 | 2 | Catálogo e inventario | ✅ Base implementada | CRUD, movimientos, stock bajo, búsqueda |
-| 3 | Ventas / POS | ⛔ No implementado | Solo descuento de stock reutilizable |
+| 3 | Ventas / POS | 🟡 Base implementada | Venta multi-línea atómica, efectivo/tarjeta/mixto/fiado, costo y precio congelados, comisión, ticket de texto y anulación completa con reverso; POS en MAUI con ticket compartible. Falta QR y anulación desde la app |
 | 4 | Mermas | 🟡 Parcial | Descuenta stock y reporta costo; el historial sale de movimientos |
 | 5 | Gastos y pagos | 🟡 Parcial | Gastos simples; pagos al personal no existen |
-| 6 | Clientes y fiado | 🟡 Parcial | Cliente, saldo y abono; sin historial de abonos |
+| 6 | Clientes y fiado | 🟡 Parcial | Cliente, saldo y abono con historial (`AbonosFiado`); falta estado de cuenta impreso |
 | 7 | Proveedores y cuentas por pagar | 🟡 Parcial | Proveedor, saldo y pago; sin historial de pagos |
-| 8 | Corte de caja | ⛔ No implementado | — |
-| 9 | Reportes y utilidad | ⛔ No implementado | Solo valorizado y stock bajo |
-| 10 | Respaldo y restauración | ⛔ No implementado | Riesgo alto antes de uso real |
-| — | Interfaz definitiva | ⛔ Pendiente | Consola provisional; ADR de UI abierto |
-| — | Migraciones versionadas | ⛔ No implementado | Esquema v1 fijado con `PRAGMA user_version` |
-| — | Bitácora / auditoría | ⛔ No implementado | Requerida por regla de negocio #9 |
+| 8 | Corte de caja | 🟡 Base implementada | Periodo desde el corte anterior, efectivo esperado, diferencia con motivo obligatorio, ingresos/retiros e historial; retiros autorizados y auditados; cierre y operaciones desde Caja en MAUI. Falta conteo por denominaciones e historial de cortes en la app |
+| 9 | Reportes y utilidad | 🟡 Base implementada | Utilidad por periodo (ventas − costo − comisión − mermas − gastos) más valorizado y stock bajo; faltan ventas por día y comparativos |
+| 10 | Respaldo y restauración | 🟡 Base implementada | Manual y automático por intervalo (al iniciar/cerrar), antes de migrar y antes de restaurar, con verificación y bitácora; falta USB/nube y respaldo durante sesiones largas |
+| — | Interfaz definitiva | 🟡 Base implementada | App MAUI para Windows y Android con asistente, login, tablero, punto de venta, caja operativa y respaldo. Ver [interfaz-maui.md](02-modulos/interfaz-maui.md) |
+| — | Migraciones versionadas | ✅ Base implementada | Runner con `PRAGMA user_version`, respaldo previo y rollback; v6 aplicada (ventas, corte de caja, centavos, bitácora y anulaciones) |
+| — | Dinero en centavos | ✅ Implementado | Importes `long`/`INTEGER` en todas las tablas; porcentajes en `decimal`; `Dinero` centraliza conversión y formato |
+| — | Bitácora / auditoría | ✅ Base implementada | Tabla inmutable con disparadores y permisos validados en `Application` |
 
 ## Siguiente trabajo recomendado
 
-1. **Migraciones versionadas + respaldo** antes de tocar el esquema otra vez. Sin esto, cada cambio de modelo exige recrear la base.
-2. **Ventas / POS** con líneas, pagos, costo congelado y descuento atómico de stock.
-3. **Corte de caja** sobre ventas y abonos.
-4. **Reportería de utilidad** (ventas − costo − mermas − gastos − comisión).
-5. **Bitácora** de operaciones sensibles y validación de permisos en servicios, no solo en menús.
-6. **Interfaz definitiva** según ADR de UI (MAUI/WPF/PWA).
-7. **Importación Excel/CSV** y plantillas por giro.
+1. **Inventario y catálogo** en la app, con lector de código de barras.
+2. **Anulación de ventas** y **ticket con QR** en la app.
+3. **Conteo por denominaciones** e historial de cortes en Caja.
+4. **Importación Excel/CSV** y plantillas por giro.
+5. **Copia de respaldos a USB o nube personal** (Fase 2).
 
 ## Riesgos abiertos
 
-- Dinero modelado con `decimal`, no en centavos enteros. Ver [deuda-tecnica.md](deuda-tecnica.md).
-- No hay respaldo: un borrado accidental del archivo `.db` implica pérdida total.
-- La consola no es la interfaz objetivo; puede cambiar por completo.
+- La migración v4 reconstruye todas las tablas de dinero: en bases grandes el primer arranque puede tardar; siempre se crea un respaldo `antes-migrar` verificado antes de tocar datos.
+- La bitácora se escribe después de la operación: una falla al registrarla deja la acción aplicada sin auditoría.
+- La anulación devuelve stock y revierte el fiado, pero no mueve efectivo: la venta se excluye del corte y, si el reembolso se paga después de cerrarlo, debe registrarse como retiro en el corte siguiente.
+- El respaldo automático se evalúa al iniciar o cerrar: en una sesión abierta varios días la copia puede quedar vieja hasta el cierre.
+- La app MAUI (POS, Caja, sesión y respaldos) no tiene pruebas automatizadas; un error de carrito, cobro o cierre de corte se detecta en la verificación manual.
+- La app MAUI usa .NET 10 y las bibliotecas `net8.0`; si una biblioteca agrega APIs no disponibles en net8.0 habrá que subir su framework o aislar la dependencia.
+- La app MAUI solo se ha probado en Windows; Android se compila en CI pero no se ha ejecutado en un dispositivo real.

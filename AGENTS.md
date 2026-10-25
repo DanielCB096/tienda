@@ -22,7 +22,7 @@ Punto de entrada para cualquier IA o persona que trabaje en este repositorio. L�
 - **El historial no se edita ni se borra**: se corrige con un movimiento nuevo (motivo, usuario, fecha).
 - PIN siempre hasheado (PBKDF2-SHA256); nunca texto plano. Permisos validados en la lógica, no solo ocultando menús.
 - **100 % offline.** Sin servicios de pago, nube ni dependencias que requieran servidor.
-- Dinero: el objetivo son **centavos enteros**. Hoy hay deuda en `decimal`; no la amplíes sin plan (ver deuda técnica).
+- Dinero: **siempre centavos enteros** (`long` en C#, `INTEGER` en SQLite). Usa `Core/Dinero.cs` para convertir, multiplicar, calcular porcentajes y formatear; los porcentajes (impuesto, comisión) sí van en `decimal`.
 - Si una regla de negocio no está clara, **pregunta**. No inventes reglas ni cálculos fiscales.
 - Antes de commit final: `git diff --stat`, build y pruebas en verde.
 - Operaciones destructivas (`reset --hard`, `push --force`, `clean -fd`, borrar ramas): pide confirmación.
@@ -72,60 +72,132 @@ git worktree add ../tienda-ia2 -b feat/mi-tarea feat/base-compilable
 
 Cada agente: su carpeta, su rama y su PR.
 
-## Estado del proyecto (2026-10-23)
+## Estado del proyecto (2026-10-25)
 
-- Rama publicada con el trabajo actual: `feat/base-compilable` (3 commits sobre `main`).
-- `main`: solo el commit base; el PR sigue pendiente de integración.
-- Build: 0 errores, 0 advertencias. Pruebas: **59 en verde**.
-- Implementado: configuración inicial, usuarios/PIN/roles, gastos, inventario por movimientos, fiado (cliente/abono), proveedores (saldo/pago), consola provisional.
-- No implementado: ventas/POS, corte de caja, respaldo/restauración, migraciones versionadas, bitácora, reportes de utilidad, UI definitiva.
-- Deuda principal: dinero en `decimal`, abonos/pagos sin historial inmutable, merma sin entidad propia.
+- Ramas publicadas con el trabajo actual: `feat/ui-maui` (sobre `feat/anulacion-ventas`, que parte de `feat/respaldo-automatico`), `feat/maui-pos` (sobre `feat/ui-maui`, PR #4 contra `main`) y `feat/maui-caja` (sobre `feat/maui-pos`, PR #5 contra `main`).
+- `main`: solo el commit base; los PR de `feat/base-compilable`, `feat/migraciones-respaldo`, `feat/ventas-pos`, `feat/corte-caja`, `feat/centavos-enteros`, `feat/integracion-t4-t9`, `feat/reportes-utilidad`, `feat/respaldo-automatico`, `feat/anulacion-ventas`, `feat/ui-maui`, `feat/maui-pos` y `feat/maui-caja` siguen pendientes de integración, en ese orden.
+- Build: 0 errores, 0 advertencias. Pruebas: **171 en verde** (verificadas localmente el 2026-10-25 y en GitHub Actions). La app MAUI compila para Windows en local y para Windows y Android en CI.
+- POS verificado manualmente en Windows el 2026-10-25 con datos ficticios: los cuatro métodos de pago, cambio, límite y stock 0, ticket con copiar/cerrar y totales coherentes en Ventas/Caja. Pendientes: botón Compartir y ejecución en Android.
+- Caja verificada manualmente en Windows el 2026-10-25: cierre con faltante y observación (corte #1), ingreso, retiro con confirmación, abono de fiado y cierre sin diferencia (corte #2), con el efectivo esperado coincidiendo con la base. Pendientes: denominaciones, historial de cortes en la app y roles distintos al dueño.
+- Implementado: configuración inicial, usuarios/PIN/roles, gastos, inventario por movimientos, ventas/POS (efectivo, tarjeta, mixto y fiado; costo y precio congelados; comisión; anulación completa con reverso), fiado (cliente/abono con historial), proveedores (saldo/pago), corte de caja (efectivo esperado, diferencia justificada, ingresos/retiros e historial), bitácora inmutable y permisos validados en servicios, migraciones versionadas con respaldo, respaldo/restauración local y respaldo automático por intervalo al iniciar/cerrar, dinero en centavos enteros (`long`/`INTEGER`, esquema v4), reporte de utilidad por periodo (ventas − costo congelado − comisión − mermas − gastos), app MAUI para Windows y Android (asistente, login, tablero, POS con carrito, cobro y ticket compartible, caja operativa con cierre, ingresos, retiros y abonos, respaldo y cierre de sesión) y consola provisional.
+- No implementado: anulación de ventas desde la app MAUI, pantallas de inventario/clientes/proveedores, ticket con QR, copia de respaldos a USB/nube, conteo por denominaciones e historial de cortes en la app.
+- Deuda principal: pagos a proveedores sin historial inmutable, merma sin entidad propia, bitácora no atómica con la operación, corte sin desglose de billetes, POS/Caja y app MAUI sin pruebas automatizadas y validación de Android en dispositivo.
 
 ## Tareas disponibles
 
 El detalle vive en el tablero. Resumen y criterios de terminado:
 
-### T1 — Migraciones versionadas + respaldo (prioridad alta)
+### T1 — Migraciones versionadas + respaldo (HECHO)
 
-- Runner idempotente basado en `PRAGMA user_version`; migraciones 1→N.
-- Respaldo obligatorio antes de aplicar una migración y verificación de integridad.
-- Servicio de respaldo/restauración local (copiar el `.db`; sin nube).
-- Pruebas: base v1 migra a v2; respaldo creado y restaurado idéntico; falla de migración deja intacto el original.
-- Toca: `Infrastructure/Database.cs`, nuevo `Infrastructure/Migraciones.cs`, `Application/RespaldoService.cs`, pruebas.
+- Completado en `feat/migraciones-respaldo` (8ead191, 54901bd, 50b35be).
+- Runner con `PRAGMA user_version`, respaldo `antes-migrar` verificado, transacción por migración y rollback.
+- `RespaldoLocal` + `RespaldoService` con crear/verificar/listar/restaurar; restauración con respaldo `antes-restaurar`.
+- Pruebas en `MigracionesRespaldoTests` (9 casos).
+- **T2 ya puede usar el esquema v2**: agrega `new Migracion(2, "...", ...)` en `Migraciones.ObtenerTodas()`.
 
-### T2 — Ventas / POS (crítico)
+### T2 — Ventas / POS (HECHO)
 
-- Tablas `Ventas`, `VentaLineas` (y pagos si aplica); esquema v2 vía T1.
-- Una venta: líneas con costo y precio **congelados**, total, método de pago, descuento de stock atómico, comisión de tarjeta si aplica.
-- Fiado: genera saldo del cliente en la misma transacción.
-- Pruebas: venta descuenta stock; stock insuficiente revierte todo; costo congelado; venta a fiado crea saldo.
-- Toca: `Core/`, `Application/VentaService.cs`, `Infrastructure/Database.cs`, `Presentation/Program.cs`.
+- Completado en `feat/ventas-pos` (040e77d, d28c223).
+- Esquema v2 con `Ventas` y `VentaLineas`; venta atómica multi-línea con movimiento de salida por producto y cargo de fiado en la misma transacción.
+- Precio y costo congelados por línea; `ComisionTarjeta` calculada y guardada en la cabecera.
+- `VentaService` valida pagos (suma = total), duplicados, cantidades y reglas de fiado (exclusivo, cliente, límite).
+- Menú de consola: carrito, cobro, cambio, ticket de texto y ventas del día.
+- Pruebas en `VentasTests` (13 casos); total del proyecto: 81 al cerrar T2.
+- Pendiente fuera de T2: descuentos y QR/compartir (la anulación llegó en T11).
 
-### T3 — Dinero en centavos enteros
+### T8 — Corte de caja (HECHO)
 
-- Migrar entidades y columnas `DECIMAL` a `long`/`INTEGER` en centavos, con utilidades de formato/parseo.
-- Requiere T1. **No ejecutar en paralelo con T2** (ambas tocan el esquema).
-- Pruebas de aritmética, redondeo y compatibilidad de la migración.
+- Completado en `feat/corte-caja` (fc6436b, a172e39, ef96af7, d58f391).
+- Esquema v3 con `CortesCaja`, `MovimientosCaja` y `AbonosFiado`; migración con respaldo previo.
+- `RegistrarCorteCaja` calcula y guarda en una transacción; periodo desde el `Hasta` anterior (exclusivo), fondo sugerido = contado previo.
+- Efectivo esperado = fondo + ventas en efectivo (incluye parte en efectivo de mixtos) + abonos en efectivo + ingresos − retiros − gastos de Caja; diferencia distinta de cero exige motivo.
+- Abonos de fiado con historial en la misma transacción que descuenta el saldo.
+- Menú [8] Corte de caja: resumen/cierre, ingreso, retiro e historial; Configuración pasa a [9].
+- Pruebas en `CorteCajaTests` (13 casos); total: 94.
+- Pendiente fuera de T8: conteo por denominaciones.
 
-### T4 — Bitácora y permisos en servicios
+### T3 — Dinero en centavos enteros (HECHO)
 
-- Tabla de bitácora inmutable (usuario, fecha, acción, antes/después).
-- Validar permisos en `Application`, no solo en menús.
-- Pruebas por rol para operaciones sensibles (ajustes, precios, cancelaciones, gastos).
+- Completado en `feat/centavos-enteros`.
+- `Core/Dinero.cs` centraliza conversión pesos ↔ centavos, multiplicación, porcentaje y formato invariante.
+- Entidades y columnas de dinero pasan a `long`/`INTEGER`; los porcentajes siguen en `decimal`.
+- Esquema v4 reconstruye las tablas con conversión `CAST(ROUND(col * 100) AS INTEGER)`, conservando Id, FKs e índices.
+- Pruebas en `DineroTests` (5 casos) y migración v3 → v4 en `MigracionesRespaldoTests`; total: 114.
+- Pendiente fuera de T3: cantidades fraccionarias (kg/litros), que requieren otra unidad mínima.
 
-### T5 — Reportes de utilidad
+### T4 — Bitácora y permisos en servicios (HECHO)
 
-- Utilidad = ventas − costo congelado − mermas − gastos − comisión.
-- Filtros por fecha, paginación e índices. Depende de T2.
+- Integrado por Qoder en `feat/integracion-t4-t9` (9d1dc9f, e009af4) sobre el dinero en centavos.
+- Esquema v5 con `Bitacora` inmutable (disparadores contra `UPDATE`/`DELETE`), `BitacoraService` y `AutorizacionService`.
+- Permisos validados en `ConfiguracionService`, `InventoryService`, `VentaService` y `CorteCajaService`; `SesionActual` se inicia al autenticar.
+- Los detalles auditados formatean el dinero con `Dinero.Formatear`.
+- Pruebas en `BitacoraPermisosTests` (11 casos).
+
+### T5 — Reportes de utilidad (HECHO)
+
+- Completado en `feat/reportes-utilidad` sobre `feat/integracion-t4-t9`.
+- Utilidad bruta = ventas − costo congelado − comisión de tarjeta; utilidad neta = bruta − mermas − gastos.
+- Las mermas salen del costo congelado en `MovimientoInventario` (motivo `Merma:%`); los gastos suman ambos orígenes.
+- Filtro por día, mes o rango de fechas en la consola; permiso `Consultar` validado en el servicio.
+- Pruebas en `ReportesTests` (7 casos); total 157.
+
+### T10 — Respaldo automático (HECHO)
+
+- Completado en `feat/respaldo-automatico` sobre `feat/reportes-utilidad`.
+- `RespaldoService.EjecutarAutomaticoSiCorresponde` crea un respaldo verificado cuando venció `RespaldoIntervaloDias` (0 deshabilita); cualquier respaldo previo cuenta para el intervalo.
+- La consola revisa al iniciar sesión y al cerrar, avisa cuando crea la copia y advierte si está vencido y no se pudo crear.
+- La creación manual y automática se registra en la bitácora (`AccionBitacora.Respaldo`) con ruta, etiqueta y usuario.
+- Pruebas en `RespaldoAutomaticoTests` (5 casos); total 162.
+- Pendiente fuera de T10: copia a USB/nube y respaldo durante sesiones largas.
+
+### T11 — Anulación de ventas (HECHO)
+
+- Completado en `feat/anulacion-ventas` sobre `feat/respaldo-automatico` (7c5ed91).
+- Esquema v6 con `AnulacionesVenta` inmutable (una por venta) e índice por fecha.
+- `DatabaseTools.AnularVenta` registra la anulación, devuelve el stock con el costo congelado y revierte el fiado en una transacción; se bloquea si la venta ya está en un corte cerrado.
+- Permiso `AnularVenta` para dueño y encargado; motivo obligatorio y acción `AnulacionVenta` en la bitácora.
+- Las ventas anuladas se excluyen del corte pendiente y de la utilidad, y se marcan `[ANULADA]` en ventas del día.
+- Menú Ventas → [3] Anular venta con confirmación `ANULAR`.
+- Pruebas en `AnulacionVentasTests` (8 casos); total 170.
+- Limitación confirmada: el reembolso en efectivo es manual; ver `deuda-tecnica.md`.
 
 ### T6 — Importación Excel/CSV
 
 - Validar y sanear antes de grabar; códigos duplicados reportados por fila.
 - Cualquier dependencia nueva requiere justificación y ADR.
 
-### T7 — Interfaz definitiva
+### T12 — App MAUI con login y tablero (HECHO)
 
-- **Primero el ADR** (MAUI/WPF/PWA); sin ADR no se escribe UI. La consola es provisional y reemplazable.
+- Completado en `feat/ui-maui` sobre `feat/anulacion-ventas`.
+- Proyecto `SistemaTienda.Maui` para `net10.0-windows10.0.19041.0` y `net10.0-android`, fuera de la solución para no frenar el job de pruebas.
+- Asistente de primera configuración, login con 3 intentos, tablero con Inicio/Ventas/Caja/Ajustes, respaldo automático al iniciar y cerrar sesión, respaldo manual y cierre de sesión.
+- `SesionApp` reaplica `SesionActual` en cada evento porque `AsyncLocal` no persiste entre eventos de interfaz.
+- Job `app-maui` en CI compila Windows y Android.
+- Verificado manualmente en Windows; Android pendiente de probar en dispositivo.
+- Detalle en [SistemaTienda/docs/02-modulos/interfaz-maui.md](SistemaTienda/docs/02-modulos/interfaz-maui.md).
+
+### T13 — POS en app MAUI (HECHO)
+
+- Completado en `feat/maui-pos` sobre `feat/ui-maui` (commit `d7c20c3`; push y PR #4 contra `main`).
+- Pestaña **Vender**: búsqueda por código o nombre, carrito con cantidades y validación de stock, cobro efectivo con recuadro de cambio/tarjeta/mixto/fiado y ticket interno compartible o copiable; el ticket de efectivo imprime lo recibido y el cambio.
+- Usa `VentaService` sin lógica de negocio en la página; aplica `SesionApp.Aplicar()` antes de cada llamada.
+- Verificado manualmente en Windows el 2026-10-25 con cinco ventas ficticias: los cuatro métodos de pago, cambio, límite y stock 0, ticket con copiar/cerrar y totales coherentes en Ventas/Caja. Pendientes: botón Compartir (diálogo del sistema) y Android.
+- No incluye QR, anulación ni cierre de corte. Sin pruebas automatizadas de interfaz.
+- Detalle en [SistemaTienda/docs/02-modulos/interfaz-maui.md](SistemaTienda/docs/02-modulos/interfaz-maui.md) y [SistemaTienda/docs/03-procesos/venta.md](SistemaTienda/docs/03-procesos/venta.md).
+
+### T14 — Caja operativa en app MAUI (HECHO)
+
+- Completado en `feat/maui-caja` sobre `feat/maui-pos`.
+- Pestaña **Caja**: periodo abierto, efectivo esperado y desglose por método; cierre con diferencia en vivo, observaciones obligatorias y confirmación; ingresos y retiros con monto y motivo; abono de fiado con cliente y saldo; tarjeta del último corte cerrado.
+- Reutiliza `CorteCajaService` y `ConfiguracionService` sin lógica de negocio en la página; aplica `SesionApp.Aplicar()` antes de cada llamada.
+- Verificado manualmente en Windows el 2026-10-25: corte #1 con faltante de $10.00 y observación, ingreso de $50.00, retiro de $20.00 con confirmación, abono de $10.00 y corte #2 sin diferencia por $790.00.
+- No incluye conteo por denominaciones ni historial de cortes; sin pruebas automatizadas de interfaz.
+- Detalle en [SistemaTienda/docs/02-modulos/interfaz-maui.md](SistemaTienda/docs/02-modulos/interfaz-maui.md) y [SistemaTienda/docs/03-procesos/corte-caja.md](SistemaTienda/docs/03-procesos/corte-caja.md).
+
+### T7 — Pantallas de operación en MAUI
+
+- El ADR de UI ya está decidido (MAUI). El punto de venta se entregó en T13 y la caja operativa en T14; faltan la anulación de ventas y el inventario en la app.
+- Trabaja una pantalla a la vez, con sus pruebas y documentación, y espera confirmación antes de la siguiente.
 
 ## No rehacer
 
@@ -134,6 +206,8 @@ El detalle vive en el tablero. Resumen y criterios de terminado:
 - No cambies el formato de hash (`pbkdf2-sha256$iteraciones$salt$hash`) ni bajes las iteraciones.
 - No muevas las pruebas a una base compartida: cada prueba usa su archivo temporal (`BaseDatosPrueba`).
 - No edites el tablero fuera de tu sección ni borres filas del registro.
+- No agregues `SistemaTienda.Maui` a `SistemaTienda.sln`: el job de pruebas no debe cargar las cargas de trabajo MAUI. La app se compila en su propio job de CI.
+- No pongas lógica de negocio en las páginas MAUI: usa los servicios de `Application` y reaplica la sesión con `SesionApp.Aplicar()` antes de llamarlos desde eventos.
 
 ## Comandos
 
@@ -149,9 +223,18 @@ dotnet run --project SistemaTienda/SistemaTienda.Presentation/Presentation.cspro
 
 # Usar otra base de datos
 SISTEMATIENDA_DB=/ruta/a/tienda.db dotnet run --project SistemaTienda/SistemaTienda.Presentation/Presentation.csproj
+
+# Compilar y ejecutar la app MAUI en Windows
+dotnet build SistemaTienda/SistemaTienda.Maui/SistemaTienda.Maui.csproj -f net10.0-windows10.0.19041.0
+dotnet run --project SistemaTienda/SistemaTienda.Maui/SistemaTienda.Maui.csproj -f net10.0-windows10.0.19041.0
+
+# Compilar para Android (requiere Android SDK y JDK 17)
+dotnet build SistemaTienda/SistemaTienda.Maui/SistemaTienda.Maui.csproj -f net10.0-android
 ```
 
-Entorno conocido: el equipo tiene runtime **.NET 10** y SDK 10; los proyectos `net8.0` usan `RollForward=Major` para ejecutarse. Si creas un nuevo ejecutable o proyecto de pruebas, agrega la misma propiedad o fallará al arrancar.
+Entorno conocido: el equipo tiene runtime **.NET 10** y SDK 10; los proyectos `net8.0` usan `RollForward=Major` para ejecutarse. Si creas un nuevo ejecutable o proyecto de pruebas, agrega la misma propiedad o fallará al arrancar. La app MAUI usa los frameworks `net10.0-android` y `net10.0-windows10.0.19041.0` y requiere las cargas de trabajo `maui-windows` y `maui-android` instaladas.
+
+**Nota local (2026-10-25)**: en este equipo las pruebas y la consola ya se ejecutan; `dotnet test` terminó con 171 pruebas en verde. La nota anterior sobre Smart App Control (error `0x800711C7` al cargar ensamblados locales) ya no aplica; si reaparece, revisa Seguridad de Windows → Control de aplicaciones y navegador.
 
 ## Convención de pruebas
 

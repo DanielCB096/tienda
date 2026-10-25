@@ -14,8 +14,10 @@
 
 1. Al abrir la app, se solicita el PIN.
 2. El usuario ingresa su PIN.
-3. El sistema valida y muestra la interfaz según su rol.
-4. Si el PIN está mal tres veces seguidas, la app se cierra temporalmente (o requiere esperar 30 segundos) para evitar intentos brutos.
+3. El sistema valida y muestra el tablero (Inicio, Vender, Ventas, Caja y Ajustes).
+4. Si el PIN está mal tres veces seguidas, la app bloquea el acceso hasta cerrarla y abrirla de nuevo.
+
+> **Estado de la app (2026-10-25)**: el tablero muestra ventas del día, efectivo esperado del corte, stock bajo y último respaldo. **Vender** registra ventas con carrito, cobros y ticket interno compartible. **Caja** ya permite cerrar el corte, registrar ingresos y retiros, y abonar al fiado. **Anular ventas y editar inventario todavía se hacen en la consola provisional.** El conteo de caja se captura como un total, sin desglose de billetes y monedas. El manual describe el flujo completo planeado; revisa en cada versión qué partes ya están en la app.
 
 ### 2. Catálogo / Búsqueda de Producto
 
@@ -90,21 +92,20 @@ Acceso: Menú → "Reportes" (ver resumen).
 
 ### 8. Corte de Caja (Parcial o Diario)
 
-Acceso: Menú → "Corte de Caja" (requiere PIN de cajero o debido).
+Acceso en la app: pestaña **Caja** (requiere sesión de dueño o encargado para operar; el retiro es solo del dueño).
 
 1. El sistema muestra:
-   - Fondo inicial del día.
-   - Ventas en efectivo acumuladas del día.
+   - Fondo inicial del periodo.
+   - Ventas en efectivo acumuladas.
    - Ventas en tarjeta acumuladas.
-   - Retiros de caja (si hubo durante el día).
-   - Gastos pagados de caja.
-   - **Efectivo esperado** (fórmula: fondo + ventas efectivo + abonos efectivo - retiros - gastos de caja).
+   - Abonos, ingresos, retiros y gastos de caja.
+   - **Efectivo esperado** (fórmula: fondo + ventas efectivo + abonos efectivo + ingresos − retiros − gastos de caja).
    - **Efectivo contado**: Cuánto cuenta el cajero al cerrar.
-   - **Diferencia**: Esperado - Contado.
+   - **Diferencia**: Contado − Esperado (positiva es sobrante y negativa faltante).
 
 2. **Acciones**:
-   - **Cerrar corte**: Registrar el corte con el resultado y el responsable. Reinicia el fondo para el próximo día.
-   - **Salir sin cerrar**: Volver al menú sin guardar el corte (los datos del día se mantienen, pero no se considera "oficial" hasta que se cierra).
+   - **Cerrar corte**: Registrar el corte con el resultado y el responsable. Si hay diferencia, hay que explicar el motivo. El siguiente periodo inicia con lo contado.
+   - **Salir sin cerrar**: Volver al menú sin guardar el corte (los datos del periodo se mantienen, pero no se considera "oficial" hasta que se cierra).
 
 ## Flujo de Cierre del Día (Resumen para el Cajero)
 
@@ -120,7 +121,8 @@ Acceso: Menú → "Corte de Caja" (requiere PIN de cajero o debido).
 ### "Me equivoqué al poner la cantidad"
 
 - Si la venta aún no se ha finalizado (aún está en el carrito), se puede quitar el producto del carrito y volver a agregar con la cantidad correcta.
-- Si la venta ya se registró, no se puede editar. Se debe registrar una **devolución** o **contramovimiento** (nueva venta inversa con motivo "Error en captura").
+- Si la venta ya se registró, no se puede editar. Solicita al dueño o encargado que la **anule** desde Ventas → [3] Anular venta: se anula la venta completa, se devuelve el stock y, si fue fiado, se revierte el saldo del cliente.
+- El reembolso en efectivo se entrega manualmente. La venta anulada ya se excluye del corte; si el reembolso se paga después de cerrar el corte, el dueño lo registra como retiro en el corte siguiente.
 
 ### "El cliente no tiene código de barras"
 

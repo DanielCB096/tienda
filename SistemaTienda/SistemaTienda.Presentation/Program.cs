@@ -1,4 +1,5 @@
 // Punto de entrada de la aplicación (interfaz de consola provisional)
+using System.Globalization;
 using SistemaTienda.Application.Services;
 using SistemaTienda.Core;
 using SistemaTienda.Infrastructure;
@@ -10,6 +11,10 @@ internal static class Program
     private static DatabaseTools _db;
     private static ConfiguracionService _config;
     private static InventoryService _inventario;
+    private static VentaService _ventas;
+    private static CorteCajaService _cortes;
+    private static ReporteUtilidadService _reportes;
+    private static RespaldoService _respaldos;
     private static UsuarioSistema _usuarioActual;
     private static ConfiguracionTienda _configTienda;
 
@@ -33,6 +38,10 @@ internal static class Program
 
             _config = new ConfiguracionService(_db);
             _inventario = new InventoryService(_db);
+            _ventas = new VentaService(_db);
+            _cortes = new CorteCajaService(_db);
+            _reportes = new ReporteUtilidadService(_db);
+            _respaldos = new RespaldoService(_db);
 
             if (_db.ContarUsuarios() == 0 && !EjecutarAsistenteInicial())
                 return 1;
@@ -40,7 +49,9 @@ internal static class Program
             if (!IniciarSesion())
                 return 0;
 
+            RevisarRespaldoAutomatico(alCerrar: false);
             BuclePrincipal();
+            RevisarRespaldoAutomatico(alCerrar: true);
             return 0;
         }
         catch (Exception ex)
@@ -65,9 +76,9 @@ internal static class Program
         var giro = LeerTextoConDefecto("Giro del negocio", ConfiguracionPorDefecto.GiroPredeterminado);
         var impuesto = LeerDecimal("Impuesto predeterminado (%)", 0, ConfiguracionPorDefecto.ImpuestoPredeterminado);
         var comision = LeerDecimal("Comisión de tarjeta (%)", 0, ConfiguracionPorDefecto.ComisionTarjetaPredeterminada);
-        var fondo = LeerDecimal("Fondo de caja inicial ($)", 0, ConfiguracionPorDefecto.FondoCajaInicialPredeterminado);
+        var fondo = LeerDinero("Fondo de caja inicial ($)", 0, ConfiguracionPorDefecto.FondoCajaInicialPredeterminado);
         var fiado = LeerSiNo("¿Activar fiado a clientes?", false);
-        var limite = fiado ? LeerDecimal("Límite de crédito por cliente (0 = sin límite)", 0, 0) : 0;
+        var limite = fiado ? LeerDinero("Límite de crédito por cliente (0 = sin límite)", 0, 0) : 0;
         var intervalo = LeerEntero("Días entre respaldos (0 = deshabilitado)", 0, 365,
             ConfiguracionPorDefecto.RespaldoIntervaloDiasPredeterminado);
         var pin = LeerPin("PIN del dueño (4 a 6 dígitos)");
@@ -108,6 +119,7 @@ internal static class Program
             if (resultado.IsSuccess)
             {
                 _usuarioActual = resultado.Value;
+                SesionActual.Iniciar(_usuarioActual);
                 _configTienda = _config.ObtenerConfiguracion().Value;
                 return true;
             }
@@ -141,7 +153,8 @@ internal static class Program
             Console.WriteLine("  [5] Clientes y fiado");
             Console.WriteLine("  [6] Proveedores y cuentas por pagar");
             Console.WriteLine("  [7] Reportes");
-            Console.WriteLine("  [8] Configuración");
+            Console.WriteLine("  [8] Corte de caja");
+            Console.WriteLine("  [9] Configuración");
             Console.WriteLine("  [0] Salir");
             Console.WriteLine("==============================================");
             Console.Write("  Opción: ");
@@ -149,14 +162,14 @@ internal static class Program
             switch (Console.ReadLine())
             {
                 case "1": MenuInventario(); break;
-                case "2": MostrarModuloPendiente("Ventas / punto de venta",
-                    "Falta implementar el registro de ventas, el ticket digital y el descuento automático de stock."); break;
+                case "2": MenuVentas(); break;
                 case "3": MenuMermas(); break;
                 case "4": MenuGastos(); break;
                 case "5": MenuFiado(); break;
                 case "6": MenuProveedores(); break;
                 case "7": MenuReportes(); break;
-                case "8": MenuConfiguracion(); break;
+                case "8": MenuCorteCaja(); break;
+                case "9": MenuConfiguracion(); break;
                 case "0": return;
                 case null: return;
                 default: Aviso("Opción no válida."); break;
@@ -223,7 +236,7 @@ internal static class Program
             for (var i = inicio; i < fin; i++)
             {
                 var p = productos[i];
-                Console.WriteLine($"  {p.Id,-5} {p.CodigoBarras,-17} {p.Nombre,-31} {p.Stock,-8} ${p.Precio,8:F2}");
+                Console.WriteLine($"  {p.Id,-5} {p.CodigoBarras,-17} {p.Nombre,-31} {p.Stock,-8} ${Dinero.Formatear(p.Precio),8}");
             }
 
             Console.WriteLine("\n  [Enter] siguiente página   [q] salir");
@@ -272,8 +285,8 @@ internal static class Program
         Console.WriteLine($"  Código:    {producto.CodigoBarras}");
         Console.WriteLine($"  Nombre:    {producto.Nombre}");
         Console.WriteLine($"  Categoría: {producto.Categoria}");
-        Console.WriteLine($"  Costo:     ${producto.Costo:F2}");
-        Console.WriteLine($"  Precio:    ${producto.Precio:F2}");
+        Console.WriteLine($"  Costo:     ${Dinero.Formatear(producto.Costo)}");
+        Console.WriteLine($"  Precio:    ${Dinero.Formatear(producto.Precio)}");
         Console.WriteLine($"  Stock:     {producto.Stock} (mínimo {producto.StockMinimo})");
         Console.WriteLine($"  Impuesto:  {producto.Impuesto:F2}%");
         Pausa();
@@ -314,8 +327,8 @@ internal static class Program
             CodigoBarras = LeerTexto("Código de barras"),
             Nombre = LeerTexto("Nombre"),
             Categoria = LeerTextoConDefecto("Categoría", string.Empty),
-            Costo = LeerDecimal("Costo ($)", 0, 0),
-            Precio = LeerDecimal("Precio de venta ($)", 0, 0),
+            Costo = LeerDinero("Costo ($)", 0, 0),
+            Precio = LeerDinero("Precio de venta ($)", 0, 0),
             Stock = LeerEntero("Stock inicial", 0, 1_000_000, 0),
             StockMinimo = LeerEntero("Stock mínimo", 0, 1_000_000, 5),
             Impuesto = _configTienda.ImpuestoPredeterminado
@@ -342,8 +355,8 @@ internal static class Program
 
         producto.Nombre = LeerTextoConDefecto("Nombre", producto.Nombre);
         producto.Categoria = LeerTextoConDefecto("Categoría", producto.Categoria);
-        producto.Costo = LeerDecimal("Costo ($)", 0, producto.Costo);
-        producto.Precio = LeerDecimal("Precio de venta ($)", 0, producto.Precio);
+        producto.Costo = LeerDinero("Costo ($)", 0, producto.Costo);
+        producto.Precio = LeerDinero("Precio de venta ($)", 0, producto.Precio);
         producto.StockMinimo = LeerEntero("Stock mínimo", 0, 1_000_000, producto.StockMinimo);
         producto.Impuesto = LeerDecimal("Impuesto (%)", 0, producto.Impuesto);
 
@@ -394,6 +407,312 @@ internal static class Program
         var producto = _inventario.BuscarPorId(id);
         if (producto == null) Aviso("Producto no encontrado.");
         return producto;
+    }
+
+    // ---------------- Ventas ----------------
+
+    private static void MenuVentas()
+    {
+        while (true)
+        {
+            LimpiarPantalla();
+            Console.WriteLine("=== VENTAS ===");
+            Console.WriteLine("  [1] Nueva venta");
+            Console.WriteLine("  [2] Ventas del día");
+            Console.WriteLine("  [3] Anular venta (dueño/encargado)");
+            Console.WriteLine("  [0] Regresar");
+            Console.Write("\n  Opción: ");
+
+            switch (Console.ReadLine())
+            {
+                case "1": NuevaVenta(); break;
+                case "2": VentasDelDia(); break;
+                case "3": AnularVenta(); break;
+                case "0": return;
+                case null: return;
+                default: Aviso("Opción no válida."); break;
+            }
+        }
+    }
+
+    private static void NuevaVenta()
+    {
+        var carrito = new List<(Producto Producto, int Cantidad)>();
+
+        while (true)
+        {
+            LimpiarPantalla();
+            Console.WriteLine("=== NUEVA VENTA ===");
+            MostrarCarrito(carrito);
+            Console.Write("\n  Código de barras o nombre (Enter para cobrar, 0 para cancelar): ");
+            var entrada = Console.ReadLine();
+            if (entrada == null) throw new OperationCanceledException("Entrada terminada");
+            entrada = entrada.Trim();
+            if (entrada.Length == 0) break;
+            if (entrada == "0") return;
+
+            var producto = _inventario.BuscarPorCodigo(entrada);
+            if (producto == null)
+            {
+                var coincidencias = _inventario.BuscarPorNombre(entrada);
+                if (coincidencias.Count == 0)
+                {
+                    Aviso($"No se encontró \"{entrada}\".");
+                    continue;
+                }
+
+                producto = ElegirProducto(coincidencias);
+                if (producto == null) continue;
+            }
+
+            var enCarrito = carrito.Where(c => c.Producto.Id == producto.Id).Sum(c => c.Cantidad);
+            var disponible = producto.Stock - enCarrito;
+            if (disponible <= 0)
+            {
+                Aviso($"No hay stock disponible de {producto.Nombre} (stock {producto.Stock}).");
+                continue;
+            }
+
+            var cantidad = LeerEntero($"Cantidad de {producto.Nombre} (disponible {disponible})", 1, disponible, 1);
+            var indice = carrito.FindIndex(c => c.Producto.Id == producto.Id);
+            if (indice >= 0)
+                carrito[indice] = (producto, carrito[indice].Cantidad + cantidad);
+            else
+                carrito.Add((producto, cantidad));
+        }
+
+        if (carrito.Count == 0) return;
+
+        var total = carrito.Sum(c => Dinero.Multiplicar(c.Producto.Precio, c.Cantidad));
+        var pago = CobrarVenta(total);
+        if (pago == null) return;
+
+        var lineas = carrito
+            .Select(c => new LineaVentaSolicitada { ProductoId = c.Producto.Id, Cantidad = c.Cantidad })
+            .ToList();
+
+        var resultado = _ventas.RegistrarVenta(lineas, pago, _usuarioActual.Nombre);
+        if (resultado.IsError)
+        {
+            Aviso(resultado.Message);
+            return;
+        }
+
+        LimpiarPantalla();
+        ImprimirTicket(resultado.Value, carrito);
+        Pausa();
+    }
+
+    private static void MostrarCarrito(List<(Producto Producto, int Cantidad)> carrito)
+    {
+        if (carrito.Count == 0)
+        {
+            Console.WriteLine("\n  Carrito vacío.");
+            return;
+        }
+
+        Console.WriteLine();
+        foreach (var (producto, cantidad) in carrito)
+        {
+            var importe = Dinero.Multiplicar(producto.Precio, cantidad);
+            Console.WriteLine($"  {cantidad} x {producto.Nombre,-30} ${Dinero.Formatear(producto.Precio),8} = ${Dinero.Formatear(importe),9}");
+        }
+
+        Console.WriteLine($"\n  TOTAL: ${Dinero.Formatear(carrito.Sum(c => Dinero.Multiplicar(c.Producto.Precio, c.Cantidad)))}");
+    }
+
+    private static Producto ElegirProducto(List<Producto> productos)
+    {
+        LimpiarPantalla();
+        Console.WriteLine("=== PRODUCTOS ENCONTRADOS ===");
+        var maximo = Math.Min(productos.Count, 10);
+        for (var i = 0; i < maximo; i++)
+        {
+            var p = productos[i];
+            Console.WriteLine($"  [{i + 1}] {p.Nombre,-32} ${Dinero.Formatear(p.Precio),8}  stock {p.Stock}");
+        }
+
+        var indice = LeerEntero("Producto (0 = cancelar)", 0, maximo, 1);
+        return indice == 0 ? null : productos[indice - 1];
+    }
+
+    private static PagoSolicitado CobrarVenta(long total)
+    {
+        while (true)
+        {
+            LimpiarPantalla();
+            Console.WriteLine("=== COBRO ===");
+            Console.WriteLine($"  Total: ${Dinero.Formatear(total)}\n");
+            Console.WriteLine("  [1] Efectivo");
+            Console.WriteLine("  [2] Tarjeta");
+            Console.WriteLine("  [3] Mixto (efectivo + tarjeta)");
+            Console.WriteLine(_configTienda.FiadoActivado
+                ? "  [4] Fiado"
+                : "  [4] Fiado (desactivado en configuración)");
+            Console.WriteLine("  [0] Cancelar");
+            Console.Write("\n  Opción: ");
+
+            switch (Console.ReadLine())
+            {
+                case "1":
+                    var recibido = LeerDinero("Efectivo recibido", total, total);
+                    Console.WriteLine($"\n  Cambio: ${Dinero.Formatear(recibido - total)}");
+                    return new PagoSolicitado { Efectivo = total };
+                case "2":
+                    Console.WriteLine($"\n  La comisión de tarjeta ({_configTienda.ComisionTarjeta:F2}%) se descuenta de la utilidad.");
+                    return new PagoSolicitado { Tarjeta = total };
+                case "3":
+                    var efectivo = LeerDinero("Parte en efectivo", 0, 0);
+                    if (efectivo >= total)
+                    {
+                        Console.WriteLine($"\n  Cambio: ${Dinero.Formatear(efectivo - total)}");
+                        return new PagoSolicitado { Efectivo = total };
+                    }
+                    return new PagoSolicitado { Efectivo = efectivo, Tarjeta = total - efectivo };
+                case "4":
+                    if (!_configTienda.FiadoActivado)
+                    {
+                        Aviso("El fiado está desactivado en la configuración.");
+                        continue;
+                    }
+
+                    var cliente = ElegirClienteFiado();
+                    if (cliente == null) continue;
+                    return new PagoSolicitado { Fiado = total, ClienteId = cliente.Id };
+                case "0":
+                    return null;
+                case null:
+                    return null;
+                default:
+                    Aviso("Opción no válida.");
+                    break;
+            }
+        }
+    }
+
+    private static ClienteFiado ElegirClienteFiado()
+    {
+        var clientes = _config.ObtenerTodosLosClientes().Value ?? new List<ClienteFiado>();
+        if (clientes.Count == 0)
+        {
+            Aviso("No hay clientes registrados. Agregue uno en Clientes y fiado.");
+            return null;
+        }
+
+        LimpiarPantalla();
+        Console.WriteLine("=== CLIENTE PARA FIADO ===");
+        for (var i = 0; i < clientes.Count; i++)
+            Console.WriteLine($"  [{i + 1}] {clientes[i].Nombre,-28} saldo ${Dinero.Formatear(clientes[i].SaldoActual),8}");
+
+        var indice = LeerEntero("Cliente (0 = cancelar)", 0, clientes.Count, 1);
+        return indice == 0 ? null : clientes[indice - 1];
+    }
+
+    private static void ImprimirTicket(Venta venta, List<(Producto Producto, int Cantidad)> carrito)
+    {
+        Console.WriteLine($"  === {_configTienda.NombreTienda} ===");
+        Console.WriteLine($"  Ticket interno (no fiscal)   Venta #{venta.Id}");
+        Console.WriteLine($"  {venta.Fecha:yyyy-MM-dd HH:mm}   Atendió: {venta.Usuario}");
+        Console.WriteLine("  " + new string('-', 52));
+
+        foreach (var (producto, cantidad) in carrito)
+        {
+            Console.WriteLine($"  {cantidad} x {producto.Nombre}");
+            Console.WriteLine($"      ${Dinero.Formatear(producto.Precio),8} = ${Dinero.Formatear(Dinero.Multiplicar(producto.Precio, cantidad)),9}");
+        }
+
+        Console.WriteLine("  " + new string('-', 52));
+        Console.WriteLine($"  TOTAL: ${Dinero.Formatear(venta.Total)}");
+        Console.WriteLine($"  Pago: {venta.MetodoPago}");
+
+        if (venta.PagoEfectivo > 0 && venta.PagoTarjeta > 0)
+        {
+            Console.WriteLine($"    Efectivo: ${Dinero.Formatear(venta.PagoEfectivo)}");
+            Console.WriteLine($"    Tarjeta:  ${Dinero.Formatear(venta.PagoTarjeta)}");
+        }
+
+        if (venta.PagoFiado > 0)
+        {
+            var cliente = venta.ClienteId.HasValue
+                ? _db.ObtenerClienteFiadoPorId(venta.ClienteId.Value)
+                : null;
+            Console.WriteLine($"    Fiado a: {cliente?.Nombre ?? "cliente"}");
+        }
+
+        if (venta.ComisionTarjeta > 0)
+            Console.WriteLine($"  Comisión tarjeta: ${Dinero.Formatear(venta.ComisionTarjeta)} (afecta la utilidad)");
+
+        Console.WriteLine("\n  Gracias por su compra.");
+    }
+
+    private static void VentasDelDia()
+    {
+        LimpiarPantalla();
+        var ventas = _ventas.ObtenerVentasDelDia(DateTime.Today);
+        Console.WriteLine($"=== VENTAS DE HOY ({DateTime.Today:yyyy-MM-dd}) ===");
+
+        if (ventas.Count == 0)
+        {
+            Console.WriteLine("  No hay ventas registradas hoy.");
+        }
+        else
+        {
+            foreach (var venta in ventas)
+                Console.WriteLine($"  #{venta.Id,-5} {venta.Fecha:HH:mm}  ${Dinero.Formatear(venta.Total),9}  {venta.MetodoPago,-8} {venta.Usuario}{(venta.Anulada ? "  [ANULADA]" : string.Empty)}");
+
+            Console.WriteLine($"\n  Total del día: ${Dinero.Formatear(ventas.Where(v => !v.Anulada).Sum(v => v.Total))}");
+        }
+
+        Pausa();
+    }
+
+    private static void AnularVenta()
+    {
+        if (!EsAdministrador)
+        {
+            Aviso("Solo dueño o encargado pueden anular ventas.");
+            return;
+        }
+
+        LimpiarPantalla();
+        Console.WriteLine("=== ANULAR VENTA ===");
+        Console.WriteLine("  Solo se anula la venta completa. La venta se excluye del corte pendiente.");
+        Console.WriteLine("  Entrega el reembolso manualmente; si lo pagas después del corte,");
+        Console.WriteLine("  regístralo como retiro en el corte siguiente.\n");
+
+        var ventaId = LeerEntero("Número de venta (0 = cancelar)", 0, int.MaxValue, 0);
+        if (ventaId == 0)
+            return;
+
+        var venta = _ventas.ObtenerVentaPorId(ventaId);
+        if (venta == null)
+        {
+            Aviso($"La venta #{ventaId} no existe.");
+            return;
+        }
+
+        if (venta.Anulada)
+        {
+            Aviso($"La venta #{ventaId} ya está anulada.");
+            return;
+        }
+
+        Console.WriteLine($"\n  Venta #{venta.Id}  {venta.Fecha:yyyy-MM-dd HH:mm}  " +
+                          $"${Dinero.Formatear(venta.Total)}  {venta.MetodoPago}");
+        foreach (var linea in _ventas.ObtenerLineas(venta.Id))
+            Console.WriteLine($"    {linea.Cantidad} x {linea.Nombre}  ${Dinero.Formatear(linea.Importe)}");
+
+        var motivo = LeerTexto("Motivo de la anulación");
+
+        Console.Write("\n  Escriba ANULAR para confirmar: ");
+        if (!string.Equals(Console.ReadLine()?.Trim(), "ANULAR", StringComparison.Ordinal))
+        {
+            Aviso("Anulación cancelada.");
+            return;
+        }
+
+        var resultado = _ventas.AnularVenta(venta.Id, motivo, _usuarioActual.Nombre);
+        Aviso(resultado.Message, resultado.IsSuccess);
     }
 
     // ---------------- Mermas ----------------
@@ -457,7 +776,7 @@ internal static class Program
         var gasto = new Gasto
         {
             Concepto = LeerTexto("Concepto"),
-            Monto = LeerDecimal("Monto ($)", 0, 0),
+            Monto = LeerDinero("Monto ($)", 0, 0),
             MetodoPago = LeerTextoConDefecto("Método de pago (Efectivo/Tarjeta/Transferencia)", "Efectivo"),
             Origen = LeerSiNo("¿Salió del efectivo de la caja?", true) ? OrigenGasto.Caja : OrigenGasto.Externo,
             Observaciones = LeerTextoConDefecto("Observaciones", string.Empty),
@@ -480,7 +799,7 @@ internal static class Program
         else
         {
             foreach (var g in gastos.Take(100))
-                Console.WriteLine($"  {g.Fecha:d}  {g.Concepto,-25} ${g.Monto,9:F2}  {g.MetodoPago}  ({g.Origen})");
+                Console.WriteLine($"  {g.Fecha:d}  {g.Concepto,-25} ${Dinero.Formatear(g.Monto),9}  {g.MetodoPago}  ({g.Origen})");
         }
         Pausa();
     }
@@ -489,9 +808,9 @@ internal static class Program
     {
         LimpiarPantalla();
         Console.WriteLine("=== RESUMEN DE GASTOS ===");
-        Console.WriteLine($"  Total: ${_config.ObtenerTotalGastos().Value:F2}\n");
+        Console.WriteLine($"  Total: ${Dinero.Formatear(_config.ObtenerTotalGastos().Value)}\n");
         foreach (var grupo in _config.ObtenerGastosPorConcepto().Value ?? new List<GastoPorConcepto>())
-            Console.WriteLine($"  {grupo.Concepto,-30} ${grupo.Total,9:F2}");
+            Console.WriteLine($"  {grupo.Concepto,-30} ${Dinero.Formatear(grupo.Total),9}");
         Pausa();
     }
 
@@ -537,7 +856,7 @@ internal static class Program
         {
             Nombre = LeerTexto("Nombre"),
             Telefono = LeerTextoConDefecto("Teléfono", string.Empty),
-            SaldoActual = LeerDecimal("Saldo inicial ($)", 0, 0)
+            SaldoActual = LeerDinero("Saldo inicial ($)", 0, 0)
         };
 
         var resultado = _config.AgregarClienteFiado(cliente);
@@ -559,7 +878,7 @@ internal static class Program
         else
         {
             foreach (var c in clientes.Take(100))
-                Console.WriteLine($"  [{c.Id}] {c.Nombre,-25} ${c.SaldoActual,9:F2}  {c.Telefono}");
+                Console.WriteLine($"  [{c.Id}] {c.Nombre,-25} ${Dinero.Formatear(c.SaldoActual),9}  {c.Telefono}");
         }
         Pausa();
     }
@@ -576,7 +895,7 @@ internal static class Program
         LimpiarPantalla();
         Console.WriteLine("=== REGISTRAR ABONO ===");
         foreach (var c in clientes.Take(50))
-            Console.WriteLine($"  [{c.Id}] {c.Nombre,-25} ${c.SaldoActual,9:F2}");
+            Console.WriteLine($"  [{c.Id}] {c.Nombre,-25} ${Dinero.Formatear(c.SaldoActual),9}");
 
         var id = LeerEntero("\n  ID del cliente (0 = cancelar)", 0, int.MaxValue, 0);
         if (id == 0) return;
@@ -588,10 +907,10 @@ internal static class Program
             return;
         }
 
-        var monto = LeerDecimal($"Monto del abono (saldo ${cliente.SaldoActual:F2})", 0.01m, 0);
-        var resultado = _config.RegistrarAbonoCliente(cliente.Id, monto);
+        var monto = LeerDinero($"Monto del abono (saldo ${Dinero.Formatear(cliente.SaldoActual)})", 1, 0);
+        var resultado = _config.RegistrarAbonoCliente(cliente.Id, monto, _usuarioActual.Nombre);
         Aviso(resultado.IsSuccess
-            ? $"Abono registrado. Nuevo saldo: ${resultado.Value.SaldoRestante:F2}"
+            ? $"Abono registrado. Nuevo saldo: ${Dinero.Formatear(resultado.Value.SaldoRestante)}"
             : resultado.Message, resultado.IsSuccess);
     }
 
@@ -631,7 +950,7 @@ internal static class Program
             Clave = LeerTextoConDefecto("RFC o razón social", string.Empty),
             Telefono = LeerTextoConDefecto("Teléfono", string.Empty),
             Direccion = LeerTextoConDefecto("Dirección", string.Empty),
-            SaldoPendiente = LeerDecimal("Saldo inicial pendiente ($)", 0, 0)
+            SaldoPendiente = LeerDinero("Saldo inicial pendiente ($)", 0, 0)
         };
 
         var resultado = _config.AgregarProveedor(proveedor);
@@ -650,7 +969,7 @@ internal static class Program
         else
         {
             foreach (var p in proveedores.Take(100))
-                Console.WriteLine($"  [{p.Id}] {p.Nombre,-25} ${p.SaldoPendiente,9:F2}  {p.Telefono}");
+                Console.WriteLine($"  [{p.Id}] {p.Nombre,-25} ${Dinero.Formatear(p.SaldoPendiente),9}  {p.Telefono}");
         }
         Pausa();
     }
@@ -668,7 +987,7 @@ internal static class Program
         LimpiarPantalla();
         Console.WriteLine("=== REGISTRAR PAGO A PROVEEDOR ===");
         foreach (var p in conSaldo.Take(50))
-            Console.WriteLine($"  [{p.Id}] {p.Nombre,-25} ${p.SaldoPendiente,9:F2}");
+            Console.WriteLine($"  [{p.Id}] {p.Nombre,-25} ${Dinero.Formatear(p.SaldoPendiente),9}");
 
         var id = LeerEntero("\n  ID del proveedor (0 = cancelar)", 0, int.MaxValue, 0);
         if (id == 0) return;
@@ -680,10 +999,10 @@ internal static class Program
             return;
         }
 
-        var monto = LeerDecimal($"Monto del pago (saldo ${proveedor.SaldoPendiente:F2})", 0.01m, 0);
+        var monto = LeerDinero($"Monto del pago (saldo ${Dinero.Formatear(proveedor.SaldoPendiente)})", 1, 0);
         var resultado = _config.RegistrarPagoProveedor(proveedor.Id, monto);
         Aviso(resultado.IsSuccess
-            ? $"Pago registrado. Nuevo saldo: ${resultado.Value.SaldoRestante:F2}"
+            ? $"Pago registrado. Nuevo saldo: ${Dinero.Formatear(resultado.Value.SaldoRestante)}"
             : resultado.Message, resultado.IsSuccess);
     }
 
@@ -699,7 +1018,7 @@ internal static class Program
             Console.WriteLine("  [2] Productos con stock bajo");
             Console.WriteLine("  [3] Resumen de gastos");
             Console.WriteLine("  [4] Saldo total con proveedores");
-            Console.WriteLine("  [5] Ventas y utilidad (pendiente)");
+            Console.WriteLine("  [5] Ventas y utilidad");
             Console.WriteLine("  [0] Regresar");
             Console.Write("\n  Opción: ");
 
@@ -708,16 +1027,13 @@ internal static class Program
                 case "1":
                     LimpiarPantalla();
                     Console.WriteLine("=== VALORIZADO DE INVENTARIO ===");
-                    Console.WriteLine($"  Valor total al costo: ${_inventario.ObtenerValorizadoInventario():F2}");
+                    Console.WriteLine($"  Valor total al costo: ${Dinero.Formatear(_inventario.ObtenerValorizadoInventario())}");
                     Pausa();
                     break;
                 case "2": ListarProductosPaginado(_inventario.ProductosStockBajo()); break;
                 case "3": ReporteGastos(); break;
                 case "4": ReporteSaldoProveedores(); break;
-                case "5":
-                    MostrarModuloPendiente("Ventas y utilidad",
-                        "Requiere el módulo de ventas. Aún no hay ventas registradas que reportar.");
-                    break;
+                case "5": ReporteUtilidad(); break;
                 case "0": return;
                 case null: return;
                 default: Aviso("Opción no válida."); break;
@@ -731,8 +1047,214 @@ internal static class Program
         var proveedores = _config.ObtenerTodosLosProveedores().Value ?? new List<Proveedor>();
         Console.WriteLine("=== SALDO CON PROVEEDORES ===");
         foreach (var p in proveedores.Where(p => p.SaldoPendiente > 0))
-            Console.WriteLine($"  {p.Nombre,-30} ${p.SaldoPendiente,9:F2}");
-        Console.WriteLine($"\n  Total por pagar: ${proveedores.Sum(p => p.SaldoPendiente):F2}");
+            Console.WriteLine($"  {p.Nombre,-30} ${Dinero.Formatear(p.SaldoPendiente),9}");
+        Console.WriteLine($"\n  Total por pagar: ${Dinero.Formatear(proveedores.Sum(p => p.SaldoPendiente))}");
+        Pausa();
+    }
+
+    private static void ReporteUtilidad()
+    {
+        LimpiarPantalla();
+        Console.WriteLine("=== VENTAS Y UTILIDAD ===");
+        Console.WriteLine("  [1] Hoy");
+        Console.WriteLine("  [2] Este mes");
+        Console.WriteLine("  [3] Rango de fechas");
+        Console.WriteLine("  [0] Regresar");
+        Console.Write("\n  Opción: ");
+
+        DateTime desde;
+        DateTime hasta;
+
+        switch (Console.ReadLine())
+        {
+            case "1":
+                desde = hasta = DateTime.Today;
+                break;
+            case "2":
+                desde = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+                hasta = DateTime.Today;
+                break;
+            case "3":
+                desde = LeerFecha("Desde (dd/mm/aaaa)", DateTime.Today);
+                hasta = LeerFecha("Hasta (dd/mm/aaaa)", DateTime.Today);
+                break;
+            default:
+                return;
+        }
+
+        var resultado = _reportes.Obtener(desde, hasta);
+        if (resultado.IsError)
+        {
+            Aviso(resultado.Message);
+            return;
+        }
+
+        var reporte = resultado.Value;
+        LimpiarPantalla();
+        Console.WriteLine("=== VENTAS Y UTILIDAD ===");
+        Console.WriteLine($"  Periodo: {reporte.Desde:dd/MM/yyyy} a {reporte.Hasta:dd/MM/yyyy}");
+        Console.WriteLine($"  Ventas: {reporte.NumeroVentas} por ${Dinero.Formatear(reporte.VentasTotal)}");
+        Console.WriteLine($"  Costo de ventas: ${Dinero.Formatear(reporte.CostoVentas)}");
+        Console.WriteLine($"  Comisión de tarjeta: ${Dinero.Formatear(reporte.ComisionTarjeta)}");
+        Console.WriteLine($"  Utilidad bruta: ${Dinero.Formatear(reporte.UtilidadBruta)}");
+        Console.WriteLine($"  Mermas: ${Dinero.Formatear(reporte.Mermas)}");
+        Console.WriteLine($"  Gastos: ${Dinero.Formatear(reporte.Gastos)}");
+        Console.WriteLine($"  Utilidad neta: ${Dinero.Formatear(reporte.UtilidadNeta)}");
+        Pausa();
+    }
+
+    private static DateTime LeerFecha(string etiqueta, DateTime porDefecto)
+    {
+        while (true)
+        {
+            Console.Write($"  {etiqueta} [{porDefecto:dd/MM/yyyy}]: ");
+            var valor = Console.ReadLine();
+            if (valor == null) throw new OperationCanceledException("Entrada terminada");
+            if (string.IsNullOrWhiteSpace(valor)) return porDefecto.Date;
+
+            if (DateTime.TryParseExact(valor.Trim(), "dd/MM/yyyy", CultureInfo.InvariantCulture,
+                    DateTimeStyles.None, out var fecha))
+                return fecha.Date;
+
+            Console.WriteLine("  ⚠ Use el formato dd/mm/aaaa.");
+        }
+    }
+
+    // ---------------- Corte de caja ----------------
+
+    private static void MenuCorteCaja()
+    {
+        while (true)
+        {
+            LimpiarPantalla();
+            Console.WriteLine("=== CORTE DE CAJA ===");
+            var ultimo = _cortes.ObtenerUltimoCorte().Value;
+            Console.WriteLine(ultimo == null
+                ? "  Aún no hay cortes registrados.\n"
+                : $"  Último corte: #{ultimo.Id}  {ultimo.Hasta:g}  diferencia ${Dinero.Formatear(ultimo.Diferencia)}\n");
+            Console.WriteLine("  [1] Resumen y cerrar corte");
+            Console.WriteLine("  [2] Registrar ingreso de efectivo");
+            Console.WriteLine("  [3] Registrar retiro de efectivo");
+            Console.WriteLine("  [4] Historial de cortes");
+            Console.WriteLine("  [0] Regresar");
+            Console.Write("\n  Opción: ");
+
+            switch (Console.ReadLine())
+            {
+                case "1": CerrarCorte(); break;
+                case "2": RegistrarMovimientoCaja(TipoMovimientoCaja.Ingreso); break;
+                case "3": RegistrarMovimientoCaja(TipoMovimientoCaja.Retiro); break;
+                case "4": VerCortes(); break;
+                case "0": return;
+                case null: return;
+                default: Aviso("Opción no válida."); break;
+            }
+        }
+    }
+
+    private static void CerrarCorte()
+    {
+        LimpiarPantalla();
+        var preview = _cortes.ObtenerResumenPendiente();
+        if (preview.IsError)
+        {
+            Aviso(preview.Message);
+            return;
+        }
+
+        var r = preview.Value;
+        Console.WriteLine("=== CORTE DE CAJA: PERIODO ABIERTO ===");
+        Console.WriteLine($"  Desde: {r.Desde:g}");
+        Console.WriteLine($"  Hasta: {r.Hasta:g}\n");
+        Console.WriteLine($"  Ventas en efectivo:  ${Dinero.Formatear(r.VentasEfectivo),10}  ({r.NumeroVentasEfectivo})");
+        Console.WriteLine($"  Ventas con tarjeta:  ${Dinero.Formatear(r.VentasTarjeta),10}  ({r.NumeroVentasTarjeta})");
+        Console.WriteLine($"  Ventas a fiado:      ${Dinero.Formatear(r.VentasFiado),10}  ({r.NumeroVentasFiado})");
+        Console.WriteLine($"  Ventas mixtas:       {r.NumeroVentasMixto} transacción(es)");
+        Console.WriteLine($"  Total vendido:       ${Dinero.Formatear(r.TotalVentas),10}  ({r.NumeroVentas})");
+        Console.WriteLine($"  Abonos en efectivo:  ${Dinero.Formatear(r.AbonosEfectivo),10}");
+        Console.WriteLine($"  Ingresos de caja:    ${Dinero.Formatear(r.IngresosCaja),10}");
+        Console.WriteLine($"  Retiros de caja:    -${Dinero.Formatear(r.RetirosCaja),10}");
+        Console.WriteLine($"  Gastos de caja:     -${Dinero.Formatear(r.GastosCaja),10}\n");
+
+        var fondo = LeerDinero("Fondo inicial del periodo ($)", 0, r.FondoInicial);
+        var esperado = r.EfectivoEsperado - r.FondoInicial + fondo;
+        Console.WriteLine($"  Efectivo esperado:   ${Dinero.Formatear(esperado),10}");
+        var contado = LeerDinero("Efectivo contado en caja ($)", 0, esperado);
+        var diferencia = contado - esperado;
+        Console.WriteLine($"  Diferencia:          ${Dinero.Formatear(diferencia),10}");
+
+        string observaciones;
+        if (diferencia != 0)
+        {
+            Console.WriteLine(diferencia > 0
+                ? "  Hay un sobrante de efectivo. Explique la causa."
+                : "  Hay un faltante de efectivo. Explique la causa.");
+            observaciones = LeerTexto("Motivo de la diferencia");
+        }
+        else
+        {
+            observaciones = LeerTextoConDefecto("Observaciones (opcional)", string.Empty);
+        }
+
+        var resultado = _cortes.RegistrarCorte(contado, fondo, _usuarioActual.Nombre, observaciones);
+        if (resultado.IsError)
+        {
+            Aviso(resultado.Message);
+            return;
+        }
+
+        var c = resultado.Value;
+        LimpiarPantalla();
+        Console.WriteLine($"=== CORTE #{c.Id} REGISTRADO ===");
+        Console.WriteLine($"  Responsable: {c.Usuario}");
+        Console.WriteLine($"  Fecha: {c.FechaRegistro:g}");
+        Console.WriteLine($"  Efectivo esperado: ${Dinero.Formatear(c.EfectivoEsperado)}");
+        Console.WriteLine($"  Efectivo contado:  ${Dinero.Formatear(c.EfectivoContado)}");
+        Console.WriteLine($"  Diferencia:        ${Dinero.Formatear(c.Diferencia)}  {EstadoDiferencia(c.Diferencia)}");
+        if (!string.IsNullOrWhiteSpace(c.Observaciones))
+            Console.WriteLine($"  Observaciones: {c.Observaciones}");
+        Console.WriteLine($"\n  El próximo periodo inicia con ${Dinero.Formatear(c.EfectivoContado)} en caja.");
+        Pausa();
+    }
+
+    private static string EstadoDiferencia(long diferencia) =>
+        diferencia == 0 ? "(cuadra)" : diferencia > 0 ? "(sobrante)" : "(faltante)";
+
+    private static void RegistrarMovimientoCaja(string tipo)
+    {
+        LimpiarPantalla();
+        Console.WriteLine(tipo == TipoMovimientoCaja.Ingreso
+            ? "=== INGRESO DE EFECTIVO ==="
+            : "=== RETIRO DE EFECTIVO ===");
+
+        var monto = LeerDinero("Monto ($)", 0, 0);
+        if (monto <= 0)
+        {
+            Aviso("El monto debe ser mayor a cero.");
+            return;
+        }
+
+        var motivo = LeerTexto("Motivo");
+        var resultado = _cortes.RegistrarMovimiento(tipo, monto, motivo, _usuarioActual.Nombre);
+        Aviso(resultado.Message, resultado.IsSuccess);
+    }
+
+    private static void VerCortes()
+    {
+        LimpiarPantalla();
+        var cortes = _cortes.ObtenerCortes(20).Value ?? new List<CorteCaja>();
+        Console.WriteLine("=== HISTORIAL DE CORTES ===");
+        if (cortes.Count == 0)
+        {
+            Console.WriteLine("  Sin cortes registrados.");
+        }
+        else
+        {
+            foreach (var c in cortes)
+                Console.WriteLine($"  #{c.Id,-4} {c.Hasta:g}  {c.Usuario,-12} " +
+                                  $"esperado ${Dinero.Formatear(c.EfectivoEsperado),8}  contado ${Dinero.Formatear(c.EfectivoContado),8}  " +
+                                  $"dif. ${Dinero.Formatear(c.Diferencia),7}");
+        }
         Pausa();
     }
 
@@ -742,11 +1264,17 @@ internal static class Program
     {
         while (true)
         {
+            var ultimo = _respaldos.ObtenerUltimoRespaldo();
             LimpiarPantalla();
             Console.WriteLine("=== CONFIGURACIÓN ===");
+            Console.WriteLine($"  Último respaldo: {(ultimo.IsSuccess && ultimo.Value.HasValue ? ultimo.Value.Value.ToString("yyyy-MM-dd HH:mm") : "ninguno")}");
+            Console.WriteLine();
             Console.WriteLine("  [1] Ver configuración");
             Console.WriteLine("  [2] Editar configuración (dueño)");
             Console.WriteLine("  [3] Usuarios (dueño)");
+            Console.WriteLine("  [4] Crear respaldo ahora");
+            Console.WriteLine("  [5] Ver respaldos");
+            Console.WriteLine("  [6] Restaurar respaldo (dueño)");
             Console.WriteLine("  [0] Regresar");
             Console.Write("\n  Opción: ");
 
@@ -755,11 +1283,117 @@ internal static class Program
                 case "1": VerConfiguracion(); break;
                 case "2": EditarConfiguracion(); break;
                 case "3": MenuUsuarios(); break;
+                case "4": CrearRespaldoManual(); break;
+                case "5": VerRespaldos(); break;
+                case "6": RestaurarRespaldo(); break;
                 case "0": return;
                 case null: return;
                 default: Aviso("Opción no válida."); break;
             }
         }
+    }
+
+    private static void CrearRespaldoManual()
+    {
+        var resultado = _respaldos.CrearRespaldo("manual");
+        Aviso(resultado.IsSuccess
+            ? $"Respaldo creado y verificado:\n  {resultado.Value}"
+            : resultado.Message, resultado.IsSuccess);
+    }
+
+    private static void RevisarRespaldoAutomatico(bool alCerrar)
+    {
+        var resultado = _respaldos.EjecutarAutomaticoSiCorresponde();
+
+        if (resultado.IsError)
+        {
+            Console.WriteLine($"\n  ⚠ {resultado.Message}");
+            if (!alCerrar) Pausa();
+            return;
+        }
+
+        if (resultado.Value.Estado != EstadoRespaldoAutomatico.Creado)
+            return;
+
+        Console.WriteLine($"\n  ✓ Respaldo automático creado: {Path.GetFileName(resultado.Value.Ruta)}");
+        if (!alCerrar) Pausa();
+    }
+
+    private static void VerRespaldos()
+    {
+        LimpiarPantalla();
+        var resultado = _respaldos.ListarRespaldos();
+        Console.WriteLine("=== RESPALDOS ===");
+
+        if (!resultado.IsSuccess)
+        {
+            Aviso(resultado.Message);
+            return;
+        }
+
+        if (resultado.Value.Count == 0)
+        {
+            Console.WriteLine("  No hay respaldos todavía.");
+        }
+        else
+        {
+            Console.WriteLine($"  Carpeta: {_respaldos.DirectorioRespaldos}\n");
+            foreach (var r in resultado.Value)
+                Console.WriteLine($"  {r.Nombre}  {r.Fecha:yyyy-MM-dd HH:mm}  {r.TamanoBytes / 1024.0:F1} KB");
+        }
+
+        Pausa();
+    }
+
+    private static void RestaurarRespaldo()
+    {
+        if (!EsDueño)
+        {
+            Aviso("Solo el dueño puede restaurar un respaldo.");
+            return;
+        }
+
+        var respaldos = _respaldos.ListarRespaldos();
+        if (!respaldos.IsSuccess || respaldos.Value.Count == 0)
+        {
+            Aviso("No hay respaldos disponibles para restaurar.");
+            return;
+        }
+
+        LimpiarPantalla();
+        Console.WriteLine("=== RESTAURAR RESPALDO ===");
+        Console.WriteLine("  ⚠ Se reemplazarán TODOS los datos actuales por los del respaldo.\n");
+
+        for (var i = 0; i < respaldos.Value.Count; i++)
+        {
+            var r = respaldos.Value[i];
+            Console.WriteLine($"  [{i + 1}] {r.Nombre}  {r.Fecha:yyyy-MM-dd HH:mm}  {r.TamanoBytes / 1024.0:F1} KB");
+        }
+
+        var indice = LeerEntero("Número de respaldo (0 = cancelar)", 0, respaldos.Value.Count, 0);
+        if (indice == 0)
+            return;
+
+        var elegido = respaldos.Value[indice - 1];
+
+        Console.Write($"\n  Escriba RESTAURAR para confirmar la restauración de {elegido.Nombre}: ");
+        if (!string.Equals(Console.ReadLine()?.Trim(), "RESTAURAR", StringComparison.Ordinal))
+        {
+            Aviso("Restauración cancelada.");
+            return;
+        }
+
+        var resultado = _respaldos.Restaurar(elegido.Ruta, confirmado: true);
+        Console.WriteLine($"\n  {(resultado.IsSuccess ? "✓" : "⚠")} {resultado.Message}");
+
+        if (resultado.IsSuccess)
+        {
+            Console.WriteLine("\n  La aplicación se cerrará para que los cambios tengan efecto.");
+            Console.ReadLine();
+            Environment.Exit(0);
+        }
+
+        Pausa();
     }
 
     private static void VerConfiguracion()
@@ -771,9 +1405,9 @@ internal static class Program
         Console.WriteLine($"  Giro:              {c.Giro}");
         Console.WriteLine($"  Impuesto:          {c.ImpuestoPredeterminado:F2}%");
         Console.WriteLine($"  Comisión tarjeta:  {c.ComisionTarjeta:F2}%");
-        Console.WriteLine($"  Fondo de caja:     ${c.FondoCajaInicial:F2}");
+        Console.WriteLine($"  Fondo de caja:     ${Dinero.Formatear(c.FondoCajaInicial)}");
         Console.WriteLine($"  Fiado:             {(c.FiadoActivado ? "Activado" : "Desactivado")}");
-        Console.WriteLine($"  Límite de crédito: ${c.LimiCreditoCliente:F2}");
+        Console.WriteLine($"  Límite de crédito: ${Dinero.Formatear(c.LimiCreditoCliente)}");
         Console.WriteLine($"  Respaldo cada:     {c.RespaldoIntervaloDias} día(s)");
         Console.WriteLine($"  Versión:           {c.VersionApp}");
         Pausa();
@@ -795,10 +1429,10 @@ internal static class Program
         c.Giro = LeerTextoConDefecto("Giro", c.Giro);
         c.ImpuestoPredeterminado = LeerDecimal("Impuesto predeterminado (%)", 0, c.ImpuestoPredeterminado);
         c.ComisionTarjeta = LeerDecimal("Comisión de tarjeta (%)", 0, c.ComisionTarjeta);
-        c.FondoCajaInicial = LeerDecimal("Fondo de caja inicial ($)", 0, c.FondoCajaInicial);
+        c.FondoCajaInicial = LeerDinero("Fondo de caja inicial ($)", 0, c.FondoCajaInicial);
         c.FiadoActivado = LeerSiNo("¿Activar fiado?", c.FiadoActivado);
         c.LimiCreditoCliente = c.FiadoActivado
-            ? LeerDecimal("Límite de crédito por cliente (0 = sin límite)", 0, c.LimiCreditoCliente)
+            ? LeerDinero("Límite de crédito por cliente (0 = sin límite)", 0, c.LimiCreditoCliente)
             : 0;
         c.RespaldoIntervaloDias = LeerEntero("Días entre respaldos (0 = deshabilitado)", 0, 365, c.RespaldoIntervaloDias);
 
@@ -912,6 +1546,28 @@ internal static class Program
                 return numero;
 
             Console.WriteLine($"  ⚠ Escriba un número mayor o igual a {minimo:F2}.");
+        }
+    }
+
+    /// <summary>
+    /// Lee un importe en pesos y lo devuelve en centavos. El mínimo también va en centavos.
+    /// </summary>
+    private static long LeerDinero(string etiqueta, long minimoCentavos, long porDefectoCentavos)
+    {
+        while (true)
+        {
+            Console.Write($"  {etiqueta} [{Dinero.Formatear(porDefectoCentavos)}]: ");
+            var valor = Console.ReadLine();
+            if (valor == null) throw new OperationCanceledException("Entrada terminada");
+            if (string.IsNullOrWhiteSpace(valor)) return porDefectoCentavos;
+
+            if (decimal.TryParse(valor, out var pesos))
+            {
+                var centavos = Dinero.DePesos(pesos);
+                if (centavos >= minimoCentavos) return centavos;
+            }
+
+            Console.WriteLine($"  ⚠ Escriba un importe mayor o igual a ${Dinero.Formatear(minimoCentavos)}.");
         }
     }
 

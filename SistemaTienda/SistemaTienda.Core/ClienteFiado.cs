@@ -8,7 +8,7 @@ public class ClienteFiado
     public int Id { get; set; }
     public string Nombre { get; set; } = string.Empty;
     public string Telefono { get; set; } = string.Empty;
-    public decimal SaldoActual { get; set; }
+    public long SaldoActual { get; set; }
     public DateTime FechaRegistro { get; set; } = DateTime.Now;
     public DateTime? UltimaActualizacion { get; set; }
 }

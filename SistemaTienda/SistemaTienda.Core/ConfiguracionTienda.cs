@@ -6,11 +6,15 @@ public class ConfiguracionTienda
     public int Id { get; set; }
     public string NombreTienda { get; set; } = string.Empty;
     public string Giro { get; set; } = string.Empty;
+    /// <summary>Porcentaje de impuesto; no es un importe.</summary>
     public decimal ImpuestoPredeterminado { get; set; }
+    /// <summary>Porcentaje de comisión bancaria; no es un importe.</summary>
     public decimal ComisionTarjeta { get; set; }
-    public decimal FondoCajaInicial { get; set; }
+    /// <summary>Fondo de caja en centavos.</summary>
+    public long FondoCajaInicial { get; set; }
     public bool FiadoActivado { get; set; }
-    public decimal LimiCreditoCliente { get; set; }
+    /// <summary>Límite de crédito por cliente en centavos; 0 = sin límite.</summary>
+    public long LimiCreditoCliente { get; set; }
     public int RespaldoIntervaloDias { get; set; }
     public string UsuarioDueñoPINHash { get; set; } = string.Empty;
     public DateTime FechaCreacion { get; set; } = DateTime.Now;
@@ -39,6 +43,6 @@ public static class ConfiguracionPorDefecto
     public const string GiroPredeterminado = "Abarrotes";
     public const decimal ImpuestoPredeterminado = 16.00m;
     public const decimal ComisionTarjetaPredeterminada = 3.50m;
-    public const decimal FondoCajaInicialPredeterminado = 200.00m;
+    public const long FondoCajaInicialPredeterminado = 20_000; // $200.00 en centavos
     public const int RespaldoIntervaloDiasPredeterminado = 1;
 }
