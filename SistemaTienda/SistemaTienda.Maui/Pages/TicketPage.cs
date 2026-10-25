@@ -1,5 +1,6 @@
 using Microsoft.Maui.ApplicationModel.DataTransfer;
 using Microsoft.Maui.Devices;
+using SistemaTienda.Maui.Services;
 
 namespace SistemaTienda.Maui.Pages;
 
@@ -7,7 +8,7 @@ public sealed class TicketPage : ContentPage
 {
     private readonly string _texto;
 
-    public TicketPage(string texto)
+    public TicketPage(string texto, string? contenidoQr = null)
     {
         _texto = texto;
         Title = "Ticket de venta";
@@ -15,9 +16,12 @@ public sealed class TicketPage : ContentPage
         var encabezado = new Label { Text = "Ticket de venta" };
         encabezado.SetDynamicResource(VisualElement.StyleProperty, "TituloPagina");
 
+        var qr = QrTicketView.Crear(contenidoQr);
         var nota = new Label
         {
-            Text = "Comprobante interno, no fiscal. Puedes compartirlo o copiarlo."
+            Text = qr == null
+                ? "Comprobante interno, no fiscal. Puedes compartirlo o copiarlo."
+                : "Comprobante interno, no fiscal. El cliente puede escanear el QR; el texto se puede compartir o copiar."
         };
         nota.SetDynamicResource(VisualElement.StyleProperty, "TextoNota");
 
@@ -29,9 +33,23 @@ public sealed class TicketPage : ContentPage
             FontFamily = DeviceInfo.Platform == DevicePlatform.WinUI ? "Consolas" : "monospace"
         };
 
+        var visor = new VerticalStackLayout { Spacing = 10 };
+        if (qr != null)
+        {
+            visor.Children.Add(qr);
+            var notaQr = new Label
+            {
+                Text = "QR informativo de la venta",
+                HorizontalTextAlignment = TextAlignment.Center
+            };
+            notaQr.SetDynamicResource(VisualElement.StyleProperty, "TextoNota");
+            visor.Children.Add(notaQr);
+        }
+        visor.Children.Add(ticket);
+
         var marco = new Border
         {
-            Content = new ScrollView { Content = ticket }
+            Content = new ScrollView { Content = visor }
         };
         marco.SetDynamicResource(VisualElement.StyleProperty, "Tarjeta");
 
@@ -47,10 +65,19 @@ public sealed class TicketPage : ContentPage
         cerrar.SetDynamicResource(VisualElement.StyleProperty, "BotonSecundario");
         cerrar.Clicked += async (_, _) => await Navigation.PopModalAsync();
 
-        var contenido = new VerticalStackLayout
+        var contenido = new Grid
         {
             Padding = 16,
-            Spacing = 12,
+            RowSpacing = 12,
+            RowDefinitions =
+            {
+                new RowDefinition(GridLength.Auto),
+                new RowDefinition(GridLength.Auto),
+                new RowDefinition(GridLength.Star),
+                new RowDefinition(GridLength.Auto),
+                new RowDefinition(GridLength.Auto),
+                new RowDefinition(GridLength.Auto)
+            },
             Children =
             {
                 encabezado,
@@ -61,10 +88,14 @@ public sealed class TicketPage : ContentPage
                 cerrar
             }
         };
+        Grid.SetRow(encabezado, 0);
+        Grid.SetRow(nota, 1);
+        Grid.SetRow(marco, 2);
+        Grid.SetRow(compartir, 3);
+        Grid.SetRow(copiar, 4);
+        Grid.SetRow(cerrar, 5);
 
-        var raiz = new Grid { Children = { contenido } };
-
-        Content = raiz;
+        Content = contenido;
     }
 
     private async Task Compartir()
