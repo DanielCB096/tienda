@@ -28,7 +28,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 
 | Tarea | Agente | Rama | Archivos reservados | Inicio | Estado |
 |-------|--------|------|---------------------|--------|--------|
-| T14 Caja operativa en MAUI | Qoder | feat/maui-caja | `SistemaTienda.Maui/Pages/CajaPage.*`, `MauiProgram.cs` | 2026-10-25 | Tomada |
+| — | Sin tareas activas al cierre de esta sesión | — | — | — | — |
 
 ## Hecho
 
@@ -46,6 +46,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 | T12 | Qoder | feat/ui-maui | App MAUI para Windows y Android con asistente, login por PIN, tablero Inicio/Ventas/Caja/Ajustes, respaldo automático y manual, cierre de sesión y job CI de compilación; 170 pruebas sin cambios | 20bcccd, 221fab0 |
 | — | Qoder | feat/maui-pos | Corrección de fecha local en movimientos de inventario: `RegistrarSalida` usa la fecha del equipo y se agregó la prueba de regresión; 171 pruebas | 09413fe |
 | T13 | Qoder | feat/maui-pos | Pestaña Vender con carrito, búsqueda/escaneo, cobro efectivo/tarjeta/mixto/fiado y ticket compartible o copiable; 171 pruebas sin cambios | d7c20c3 |
+| T14 | Qoder | feat/maui-caja | Pestaña Caja operativa: cierre con diferencia justificada y observaciones obligatorias, ingresos, retiros con confirmación, abonos de fiado y último corte; 171 pruebas sin cambios | b8dfad6 |
 
 ## Tareas
 
@@ -57,14 +58,14 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 | T4 | Bitácora y permisos en servicios | Hecho | — | En `feat/integracion-t4-t9`. Esquema v5: bitácora inmutable, matriz de permisos y validación en servicios. |
 | T5 | Reportes de utilidad | Hecho | T2 | En `feat/reportes-utilidad` (sobre `feat/integracion-t4-t9`). Utilidad bruta y neta por periodo con filtros por fecha; permiso `Consultar`. |
 | T6 | Importación Excel/CSV | Libre | T2 recomendado | Dependencia nueva requiere ADR. |
-| T7 | Interfaz definitiva | Tomada | ADR, T12 | Decisión MAUI validada y base implementada en T12. POS entregado en T13; faltan cierre de corte, inventario y anulación en la app. |
+| T7 | Interfaz definitiva | Tomada | ADR, T12 | Decisión MAUI validada y base implementada en T12. POS entregado en T13 y caja operativa en T14; faltan inventario y anulación en la app. |
 | T8 | Corte de caja | Hecho | T2 | En `feat/corte-caja` (parte de `feat/ventas-pos`). Esquema v3: cortes, movimientos de caja y abonos con historial. |
 | T9 | Cobertura adicional de pruebas | Hecho | T1–T3 | En `feat/integracion-t4-t9`. 25 pruebas de borde en gastos, saldos, inventario, usuarios y mapeo de tipos. Hallazgos sin corregir: `AjustarStock` no valida que el producto exista; se permiten PIN duplicados y `VerificarAcceso` devuelve el primer usuario por nombre; `AgregarGasto` no recorta el concepto; la búsqueda por nombre no ignora acentos. Ver [deuda-tecnica.md](deuda-tecnica.md). |
 | T10 | Respaldo automático por intervalo | Hecho | T1 | En `feat/respaldo-automatico` (sobre `feat/reportes-utilidad`). Se evalúa al iniciar sesión y al cerrar; `0` deshabilita; cualquier respaldo previo cuenta y la copia queda en `Bitacora`. Pendiente: copia a USB/nube y respaldo durante sesiones largas. |
 | T11 | Anulación de ventas | Hecho | T2, T4, T8 | En `feat/anulacion-ventas` (sobre `feat/respaldo-automatico`). Esquema v6; solo venta completa, bloqueada si ya está en un corte cerrado; devuelve stock con costo congelado y revierte fiado; reembolso en efectivo manual (ver [deuda-tecnica.md](deuda-tecnica.md)). |
 | T12 | App MAUI con login y tablero | Hecho | T7, T11 | En `feat/ui-maui` (sobre `feat/anulacion-ventas`). Asistente, login, tablero de solo lectura, respaldo y cierre de sesión; fuera de la solución y compilada en CI. Android pendiente de probar en dispositivo. Ver [interfaz-maui.md](02-modulos/interfaz-maui.md). |
 | T13 | POS en app MAUI | Hecho | T2, T12 | En `feat/maui-pos` (PR #4 contra `main`). Carrito, búsqueda/escaneo, cobro efectivo con recuadro de cambio, tarjeta, mixto, fiado y ticket copiable. Verificación manual en Windows el 2026-10-25 con ventas ficticias: los cuatro métodos de pago, cambio, límite y stock 0, ticket y totales en Ventas/Caja. Pendientes: botón Compartir y Android. |
-| T14 | Caja operativa en la app MAUI | Tomada | T8, T13 | En `feat/maui-caja` sobre `feat/maui-pos`. Cierre de corte con diferencia justificada, ingresos, retiros y abonos de fiado desde Caja. |
+| T14 | Caja operativa en la app MAUI | Hecho | T8, T13 | En `feat/maui-caja` sobre `feat/maui-pos`. Cierre de corte con diferencia justificada, ingresos, retiros y abonos de fiado desde Caja. Verificación manual en Windows el 2026-10-25: corte #1 con faltante y observación, ingreso, retiro con confirmación, abono y corte #2 sin diferencia. Pendientes: denominaciones, historial de cortes y roles distintos al dueño. |
 
 ## Plantilla para reclamar
 
@@ -90,3 +91,4 @@ Al terminar, mueve la fila a `Hecho` (o elimínala de En curso) y registra el co
 | 2026-10-23 | Qoder | feat/ui-maui | T12 terminado: app MAUI Windows/Android con asistente, login, tablero, respaldo y cierre de sesión, verificación manual en Windows, 170 pruebas y job `app-maui` | 20bcccd, 221fab0 |
 | 2026-10-23 | Qoder | feat/maui-pos | T13 terminado: POS en la app con carrito, cobro efectivo/tarjeta/mixto/fiado y ticket compartible; corrección de fecha local en inventario; 171 pruebas en local; PR #4 abierto | 09413fe..1fdf303 |
 | 2026-10-25 | Qoder | feat/maui-pos | Verificación manual del POS en Windows: cinco ventas ficticias, cuatro métodos de pago, cambio, límite y stock 0, ticket con copiar/cerrar y totales coherentes en Ventas/Caja; CI en verde. Pendientes: Compartir y Android | 1fdf303 |
+| 2026-10-25 | Qoder | feat/maui-caja | T14 terminado: Caja operativa en la app con cierre de corte, ingresos, retiros, abonos de fiado y último corte; verificación manual en Windows con dos cortes y operaciones ficticias; 171 pruebas en local | b8dfad6 |

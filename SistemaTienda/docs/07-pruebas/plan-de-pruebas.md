@@ -186,6 +186,29 @@ Pendiente del POS:
 - Probar “Compartir” con el diálogo del sistema en Windows.
 - Repetir el flujo en la tablet Android.
 
+## Verificación manual de Caja (T14)
+
+Ejecutada en Windows el 2026-10-25 sobre la misma base demo del POS (fondo inicial de $200.00). Se cerraron dos periodos y se registraron operaciones ficticias; los datos no forman parte del repositorio.
+
+| Caso | Resultado |
+|------|-----------|
+| Periodo abierto con ventas | Pasó (9 ventas; efectivo esperado $760.00 con fondo de $200.00 y desglose por método) |
+| Cierre con faltante sin observaciones | Pasó (mensaje “La diferencia exige explicar el motivo antes de cerrar.”; no se guardó el corte) |
+| Cierre con faltante y observación | Pasó (confirmación previa; corte #1 con contado $750.00, diferencia −$10.00 y usuario Dueño; el siguiente periodo inicia en $750.00) |
+| Ingreso de caja | Pasó ($50.00 con motivo; el efectivo esperado sube a $800.00) |
+| Retiro de caja | Pasó (confirmación; $20.00 con motivo; el efectivo esperado baja a $780.00) |
+| Abono de fiado desde Caja | Pasó ($10.00; el saldo de la clienta baja de $16.00 a $6.00 y el esperado sube a $790.00) |
+| Cierre sin diferencia | Pasó (contado $790.00; corte #2 con diferencia $0.00 y sin observaciones) |
+| Último corte cerrado | Pasó (muestra contado $790.00, diferencia $0.00 y responsable) |
+| Retiro con rol encargado | Pendiente (la matriz de permisos solo está cubierta por pruebas automatizadas) |
+| Conteo por denominaciones e historial de cortes | Pendiente (la app captura el total contado y muestra solo el último corte) |
+
+Pendiente de Caja:
+
+- Probar el cierre y las operaciones con un usuario encargado y otro empleado.
+- Repetir el flujo en la tablet Android.
+- Agregar el desglose por denominaciones y el historial de cortes.
+
 ## Herramientas de Prueba
 
 - **Datos de prueba ficticios**: Un script o conjunto de datos iniciales que incluir:

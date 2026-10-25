@@ -1,8 +1,8 @@
 # Corte de Caja
 
-## Estado de implementación (2026-10-23)
+## Estado de implementación (2026-10-25)
 
-Base implementada en consola sobre el esquema vigente (v6, importes en centavos, bitácora de cortes y movimientos y anulaciones de venta). El corte cierra un periodo, concilia el efectivo y queda inmutable.
+Base implementada en consola y en la app MAUI sobre el esquema vigente (v6, importes en centavos, bitácora de cortes y movimientos y anulaciones de venta). El corte cierra un periodo, concilia el efectivo y queda inmutable.
 
 | Elemento | Estado |
 |----------|--------|
@@ -16,7 +16,18 @@ Base implementada en consola sobre el esquema vigente (v6, importes en centavos,
 | Inmutabilidad | ✅ No hay edición ni borrado: se corrige con un movimiento o corte nuevo |
 | Ventas anuladas | ✅ Se excluyen de los totales; una venta incluida en un corte cerrado ya no se puede anular |
 | Permisos y aprobación de retiros | ✅ Corte e ingreso para dueño/encargado; retiro solo dueño; validado en `CorteCajaService` |
-| Denominaciones de billetes/monedas | ⛔ Pendiente; hoy solo se captura el total contado |
+| Operación desde la app MAUI | ✅ Cierre, ingresos, retiros y abonos de fiado en la pestaña Caja; verificado en Windows el 2026-10-25 |
+| Conteo por denominaciones e historial en la app | ⛔ Pendiente; la app captura el total contado y solo muestra el último corte cerrado |
+
+## Operación desde la app MAUI
+
+La pestaña **Caja** reutiliza `CorteCajaService` y `ConfiguracionService`; no reimplementa la fórmula ni los permisos. Muestra el periodo abierto con el desglose por método, el efectivo esperado y el último corte cerrado.
+
+- **Cierre**: el cajero confirma el fondo inicial y captura el efectivo contado. La diferencia se calcula en vivo; si no es cero, las observaciones son obligatorias y el servicio rechaza el cierre si faltan. Antes de guardar se pide confirmación porque el periodo queda inmutable. El siguiente periodo arranca con lo contado.
+- **Ingresos y retiros**: piden monto y motivo. El retiro confirma antes de guardar y solo lo autoriza el dueño; un rechazo del servicio se muestra en la propia pantalla.
+- **Abonos de fiado**: se muestran solo si el fiado está activado; el cliente se elige de la lista con saldo y el abono se registra como efectivo del periodo.
+
+Las validaciones de negocio siguen en `Application`: la app solo captura y muestra errores. El detalle de la pantalla está en [interfaz-maui.md](../02-modulos/interfaz-maui.md).
 
 ## Fórmula implementada
 

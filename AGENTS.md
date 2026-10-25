@@ -74,13 +74,14 @@ Cada agente: su carpeta, su rama y su PR.
 
 ## Estado del proyecto (2026-10-25)
 
-- Ramas publicadas con el trabajo actual: `feat/ui-maui` (sobre `feat/anulacion-ventas`, que parte de `feat/respaldo-automatico`) y `feat/maui-pos` (sobre `feat/ui-maui`, PR #4 contra `main`).
-- `main`: solo el commit base; los PR de `feat/base-compilable`, `feat/migraciones-respaldo`, `feat/ventas-pos`, `feat/corte-caja`, `feat/centavos-enteros`, `feat/integracion-t4-t9`, `feat/reportes-utilidad`, `feat/respaldo-automatico`, `feat/anulacion-ventas`, `feat/ui-maui` y `feat/maui-pos` siguen pendientes de integración, en ese orden.
+- Ramas publicadas con el trabajo actual: `feat/ui-maui` (sobre `feat/anulacion-ventas`, que parte de `feat/respaldo-automatico`), `feat/maui-pos` (sobre `feat/ui-maui`, PR #4 contra `main`) y `feat/maui-caja` (sobre `feat/maui-pos`, PR #5 contra `main`).
+- `main`: solo el commit base; los PR de `feat/base-compilable`, `feat/migraciones-respaldo`, `feat/ventas-pos`, `feat/corte-caja`, `feat/centavos-enteros`, `feat/integracion-t4-t9`, `feat/reportes-utilidad`, `feat/respaldo-automatico`, `feat/anulacion-ventas`, `feat/ui-maui`, `feat/maui-pos` y `feat/maui-caja` siguen pendientes de integración, en ese orden.
 - Build: 0 errores, 0 advertencias. Pruebas: **171 en verde** (verificadas localmente el 2026-10-23 y en GitHub Actions). La app MAUI compila para Windows en local y para Windows y Android en CI.
 - POS verificado manualmente en Windows el 2026-10-25 con datos ficticios: los cuatro métodos de pago, cambio, límite y stock 0, ticket con copiar/cerrar y totales coherentes en Ventas/Caja. Pendientes: botón Compartir y ejecución en Android.
-- Implementado: configuración inicial, usuarios/PIN/roles, gastos, inventario por movimientos, ventas/POS (efectivo, tarjeta, mixto y fiado; costo y precio congelados; comisión; anulación completa con reverso), fiado (cliente/abono con historial), proveedores (saldo/pago), corte de caja (efectivo esperado, diferencia justificada, ingresos/retiros e historial), bitácora inmutable y permisos validados en servicios, migraciones versionadas con respaldo, respaldo/restauración local y respaldo automático por intervalo al iniciar/cerrar, dinero en centavos enteros (`long`/`INTEGER`, esquema v4), reporte de utilidad por periodo (ventas − costo congelado − comisión − mermas − gastos), app MAUI para Windows y Android (asistente, login, tablero, POS con carrito, cobro y ticket compartible, respaldo y cierre de sesión) y consola provisional.
-- No implementado: anulación de ventas y cierre de corte desde la app MAUI, pantallas de inventario/clientes/proveedores, ticket con QR, copia de respaldos a USB/nube y conteo por denominaciones.
-- Deuda principal: pagos a proveedores sin historial inmutable, merma sin entidad propia, bitácora no atómica con la operación, corte sin desglose de billetes, POS y app MAUI sin pruebas automatizadas y validación de Android en dispositivo.
+- Caja verificada manualmente en Windows el 2026-10-25: cierre con faltante y observación (corte #1), ingreso, retiro con confirmación, abono de fiado y cierre sin diferencia (corte #2), con el efectivo esperado coincidiendo con la base. Pendientes: denominaciones, historial de cortes en la app y roles distintos al dueño.
+- Implementado: configuración inicial, usuarios/PIN/roles, gastos, inventario por movimientos, ventas/POS (efectivo, tarjeta, mixto y fiado; costo y precio congelados; comisión; anulación completa con reverso), fiado (cliente/abono con historial), proveedores (saldo/pago), corte de caja (efectivo esperado, diferencia justificada, ingresos/retiros e historial), bitácora inmutable y permisos validados en servicios, migraciones versionadas con respaldo, respaldo/restauración local y respaldo automático por intervalo al iniciar/cerrar, dinero en centavos enteros (`long`/`INTEGER`, esquema v4), reporte de utilidad por periodo (ventas − costo congelado − comisión − mermas − gastos), app MAUI para Windows y Android (asistente, login, tablero, POS con carrito, cobro y ticket compartible, caja operativa con cierre, ingresos, retiros y abonos, respaldo y cierre de sesión) y consola provisional.
+- No implementado: anulación de ventas desde la app MAUI, pantallas de inventario/clientes/proveedores, ticket con QR, copia de respaldos a USB/nube, conteo por denominaciones e historial de cortes en la app.
+- Deuda principal: pagos a proveedores sin historial inmutable, merma sin entidad propia, bitácora no atómica con la operación, corte sin desglose de billetes, POS/Caja y app MAUI sin pruebas automatizadas y validación de Android en dispositivo.
 
 ## Tareas disponibles
 
@@ -184,9 +185,18 @@ El detalle vive en el tablero. Resumen y criterios de terminado:
 - No incluye QR, anulación ni cierre de corte. Sin pruebas automatizadas de interfaz.
 - Detalle en [SistemaTienda/docs/02-modulos/interfaz-maui.md](SistemaTienda/docs/02-modulos/interfaz-maui.md) y [SistemaTienda/docs/03-procesos/venta.md](SistemaTienda/docs/03-procesos/venta.md).
 
+### T14 — Caja operativa en app MAUI (HECHO)
+
+- Completado en `feat/maui-caja` sobre `feat/maui-pos`.
+- Pestaña **Caja**: periodo abierto, efectivo esperado y desglose por método; cierre con diferencia en vivo, observaciones obligatorias y confirmación; ingresos y retiros con monto y motivo; abono de fiado con cliente y saldo; tarjeta del último corte cerrado.
+- Reutiliza `CorteCajaService` y `ConfiguracionService` sin lógica de negocio en la página; aplica `SesionApp.Aplicar()` antes de cada llamada.
+- Verificado manualmente en Windows el 2026-10-25: corte #1 con faltante de $10.00 y observación, ingreso de $50.00, retiro de $20.00 con confirmación, abono de $10.00 y corte #2 sin diferencia por $790.00.
+- No incluye conteo por denominaciones ni historial de cortes; sin pruebas automatizadas de interfaz.
+- Detalle en [SistemaTienda/docs/02-modulos/interfaz-maui.md](SistemaTienda/docs/02-modulos/interfaz-maui.md) y [SistemaTienda/docs/03-procesos/corte-caja.md](SistemaTienda/docs/03-procesos/corte-caja.md).
+
 ### T7 — Pantallas de operación en MAUI
 
-- El ADR de UI ya está decidido (MAUI). El punto de venta se entregó en T13; faltan el cierre de corte y el inventario en la app.
+- El ADR de UI ya está decidido (MAUI). El punto de venta se entregó en T13 y la caja operativa en T14; faltan la anulación de ventas y el inventario en la app.
 - Trabaja una pantalla a la vez, con sus pruebas y documentación, y espera confirmación antes de la siguiente.
 
 ## No rehacer

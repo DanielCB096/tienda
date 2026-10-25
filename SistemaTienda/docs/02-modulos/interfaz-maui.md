@@ -10,13 +10,14 @@ Alcance de esta entrega:
 - Inicio de sesión con PIN.
 - Tablero con cinco pestañas: Inicio, Vender, Ventas, Caja y Ajustes.
 - Punto de venta: búsqueda o escaneo, carrito, cobro en efectivo, tarjeta, mixto o fiado, y ticket interno que se puede compartir o copiar.
+- Caja operativa: cierre de corte con diferencia justificada, ingresos, retiros y abonos de fiado.
 - Respaldo automático al iniciar y cerrar sesión, y respaldo manual desde Ajustes.
 
-Esta entrega **no** incluye todavía el cierre de corte, la anulación de ventas ni la edición de inventario desde la app. Las pestañas Ventas y Caja son informativas de solo lectura.
+Esta entrega **no** incluye todavía la anulación de ventas, la edición de inventario ni el historial de cortes desde la app. La pestaña Ventas es informativa de solo lectura.
 
 ## Estado
 
-Base implementada y verificada manualmente en Windows: asistente, login, tablero y respaldo el 2026-10-23; punto de venta el 2026-10-25 (búsqueda, carrito, límite de stock, efectivo con cambio, tarjeta, mixto, fiado y ticket con copiar/cerrar). La compilación para Windows y Android está en verde en CI (PR #4). Quedan pendientes el botón Compartir del ticket (diálogo del sistema) y la ejecución en Android; el equipo de desarrollo no tiene Android SDK ni JDK instalados.
+Base implementada y verificada manualmente en Windows: asistente, login, tablero y respaldo el 2026-10-23; punto de venta el 2026-10-25 (búsqueda, carrito, límite de stock, efectivo con cambio, tarjeta, mixto, fiado y ticket con copiar/cerrar); caja operativa el 2026-10-25 (cierre con diferencia justificada, ingreso, retiro y abono). La compilación para Windows y Android está en verde en CI. Quedan pendientes el botón Compartir del ticket (diálogo del sistema) y la ejecución en Android; el equipo de desarrollo no tiene Android SDK ni JDK instalados.
 
 ## Plataformas y proyecto
 
@@ -50,7 +51,7 @@ SistemaTienda.Maui/
 │   ├── PosPage                    # Punto de venta: carrito, cobro y ticket
 │   ├── TicketPage                 # Ticket interno con compartir y copiar
 │   ├── VentasPage                 # Ventas de hoy (lectura)
-│   ├── CajaPage                   # Corte pendiente y último corte (lectura)
+│   ├── CajaPage                   # Cierre de corte, movimientos y abonos
 │   ├── AjustesPage                # Configuración, respaldo y cierre de sesión
 │   └── ErrorPage                  # Arranque fallido
 ├── Services/
@@ -75,16 +76,18 @@ SistemaTienda.Maui/
 | Inicio | Ventas de hoy (vigentes y anuladas), efectivo esperado del periodo, stock bajo, último respaldo y aviso si venció | Solo lectura |
 | Vender | Búsqueda por código o nombre, carrito con cantidades, total, cobro efectivo con cambio visible/tarjeta/mixto/fiado y ticket interno | Venta y salida de stock |
 | Ventas | Lista de ventas del día con folio, total, método, hora y estado (vigente/anulada) | Solo lectura |
-| Caja | Periodo abierto, efectivo esperado, fondo, ventas por método, abonos, ingresos/retiros, gastos y último corte cerrado | Solo lectura |
+| Caja | Periodo abierto, efectivo esperado, fondo, ventas por método, abonos, ingresos/retiros, gastos, cierre con conteo y diferencia, y último corte cerrado | Cierre de corte, ingresos, retiros y abonos |
 | Ajustes | Datos de la tienda, reglas configuradas, rutas de base y respaldos, último respaldo, crear respaldo y cerrar sesión | Respaldo manual y cierre de sesión |
 
 El POS reutiliza `VentaService`: la validación de stock, precios congelados, pagos y fiado ocurre en la capa de aplicación; la página solo arma el carrito y captura los importes. En efectivo, la página muestra un recuadro **Cambio a entregar** con el monto recibido y el cambio, y el ticket imprime ambos importes. El ticket es texto interno (sin QR) y se abre en una página modal con opciones de compartir y copiar.
+
+Caja reutiliza `CorteCajaService` y `ConfiguracionService`. Al cerrar, la página recalcula el efectivo esperado con el fondo capturado, muestra la diferencia en vivo y exige observaciones cuando no es cero; la confirmación advierte que el periodo queda inmutable. Los ingresos y retiros piden monto y motivo, y los retiros piden una confirmación adicional. Los abonos de fiado muestran el saldo del cliente y se listan solo si el fiado está activado. Después de cualquier operación se vuelve a leer el periodo desde la base, sin sumar importes en la interfaz.
 
 Las pestañas se muestran en una barra inferior en Android y en la parte superior en Windows. Los textos usan español de México y los importes se formatean con `Formato.Moneda` (centavos → `$0.00`).
 
 ## Sesión y permisos
 
-`SesionActual` usa `AsyncLocal`, que no sobrevive entre eventos de interfaz. Por eso `SesionApp` guarda el usuario autenticado y lo vuelve a aplicar (`SesionApp.Aplicar()`) antes de cada llamada a un servicio desde un manejador de eventos. Los permisos siguen validándose en `Application`, no en la interfaz: el POS exige `Vender` al confirmar el cobro.
+`SesionActual` usa `AsyncLocal`, que no sobrevive entre eventos de interfaz. Por eso `SesionApp` guarda el usuario autenticado y lo vuelve a aplicar (`SesionApp.Aplicar()`) antes de cada llamada a un servicio desde un manejador de eventos. Los permisos siguen validándose en `Application`, no en la interfaz: el POS exige `Vender` al confirmar el cobro; Caja exige `CorteCaja` e `IngresoCaja` a dueño o encargado, `RetiroCaja` solo al dueño y `RegistrarAbono` a dueño o encargado. La pantalla muestra las operaciones a todos los roles y el servicio rechaza las que no corresponden.
 
 Al cerrar sesión desde Ajustes se ejecuta el respaldo automático si corresponde, se limpia la sesión y se vuelve al login. No se conserva el usuario anterior.
 
@@ -119,7 +122,8 @@ No se usa `Shell` ni rutas jerárquicas. `NavegacionApp` cambia la página raíz
 
 ## Limitaciones de esta entrega
 
-- El punto de venta ya registra ventas desde la app; Caja sigue siendo de solo lectura y no hay cierre de corte ni anulación desde la app.
+- El punto de venta y la caja ya registran operaciones desde la app; la anulación de ventas y el inventario siguen en la consola.
+- Caja muestra el último corte cerrado, pero el historial completo solo se consulta en la consola; el conteo se captura como un total, sin desglose por denominaciones.
 - No hay pantallas de inventario, clientes, proveedores, gastos ni reportes.
 - El ticket es texto interno (sin QR) con opciones de compartir y copiar; copiar sí se verificó, compartir depende del diálogo de Windows y quedó pendiente de probar.
 - No hay cierre por inactividad; el bloqueo por PIN es manual (cerrar sesión).
@@ -152,6 +156,18 @@ Implementados en código y verificados manualmente en Windows el 2026-10-25, sal
 - [x] La venta se registra una sola vez y descuenta el stock.
 - [x] El ticket se muestra y se puede copiar.
 - [ ] El ticket se puede compartir con el diálogo del sistema (implementado, sin verificación manual).
+
+## Criterios de aceptación de T14 (Caja)
+
+Implementados en código y verificados manualmente en Windows el 2026-10-25:
+
+- [x] Caja muestra el periodo abierto, el efectivo esperado y el desglose por método.
+- [x] El cierre calcula la diferencia con el efectivo contado y exige observaciones cuando no es cero; sin ellas no se guarda.
+- [x] El cierre guarda el corte con el usuario de la sesión y el siguiente periodo inicia con lo contado.
+- [x] Los ingresos y retiros piden monto y motivo; el retiro pide confirmación y el servicio valida el permiso del rol.
+- [x] Los abonos de fiado descuentan el saldo del cliente y suman al efectivo esperado.
+- [x] El último corte cerrado se muestra con contado, diferencia y responsable.
+- [ ] El conteo por denominaciones y el historial de cortes se consultan en la app.
 
 ## Compilar y ejecutar
 

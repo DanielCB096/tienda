@@ -17,10 +17,10 @@ La base técnica está **compilando y con pruebas automatizadas**. El núcleo im
 - Migraciones de esquema versionadas (`PRAGMA user_version`) y respaldo/restauración local verificado.
 - Respaldo automático por intervalo configurado al iniciar y cerrar la aplicación, con aviso y bitácora.
 - Dinero en centavos enteros (`long`/`INTEGER`, esquema v4) con conversión y formato centralizados en `Dinero`.
-- App MAUI para Windows y Android con asistente de primera configuración, login por PIN, tablero (Inicio, Vender, Ventas, Caja y Ajustes), punto de venta con carrito y cobro, ticket interno compartible, respaldo manual y automático, y cierre de sesión. Caja sigue siendo de solo lectura.
-- Interfaz de consola provisional para las operaciones que todavía no están en la app (anular ventas, cerrar corte, inventario, clientes y proveedores).
+- App MAUI para Windows y Android con asistente de primera configuración, login por PIN, tablero (Inicio, Vender, Ventas, Caja y Ajustes), punto de venta con carrito y cobro, caja operativa (cierre de corte, ingresos, retiros y abonos de fiado), ticket interno compartible, respaldo manual y automático, y cierre de sesión.
+- Interfaz de consola provisional para las operaciones que todavía no están en la app (anular ventas, inventario, clientes y proveedores).
 
-Pendiente para el MVP: cierre de corte en MAUI, anulación desde la app, ticket con QR, copia de respaldos a USB/nube, conteo de caja por denominaciones y validación de Android en dispositivo. Ver [roadmap.md](roadmap.md) y [deuda-tecnica.md](deuda-tecnica.md).
+Pendiente para el MVP: anulación desde la app, ticket con QR, copia de respaldos a USB/nube, conteo de caja por denominaciones e historial de cortes en la app, y validación de Android en dispositivo. Ver [roadmap.md](roadmap.md) y [deuda-tecnica.md](deuda-tecnica.md).
 
 ## Índice
 
@@ -36,7 +36,7 @@ Pendiente para el MVP: cierre de corte en MAUI, anulación desde la app, ticket 
 | [03-procesos/cliente-fiado.md](03-procesos/cliente-fiado.md) | Fiado y abonos |
 | [03-procesos/proveedores.md](03-procesos/proveedores.md) | Proveedores y cuentas por pagar |
 | [03-procesos/venta.md](03-procesos/venta.md) | Venta / POS (base implementada en consola) |
-| [03-procesos/corte-caja.md](03-procesos/corte-caja.md) | Corte de caja (implementado en consola) |
+| [03-procesos/corte-caja.md](03-procesos/corte-caja.md) | Corte de caja (consola y app MAUI) |
 | [03-procesos/reportes.md](03-procesos/reportes.md) | Reportes y utilidad por periodo (implementado en consola) |
 | [03-procesos/respaldo-restauracion.md](03-procesos/respaldo-restauracion.md) | Respaldo y restauración (implementado) |
 | [05-decisiones/ADR-stack.md](05-decisiones/ADR-stack.md) | Decisión de stack |
