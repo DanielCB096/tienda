@@ -28,7 +28,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 
 | Tarea | Agente | Rama | Archivos reservados | Inicio | Estado |
 |-------|--------|------|---------------------|--------|--------|
-| — | Sin tareas activas al cierre de esta sesión | — | — | — | — |
+| T15 | Inventario y catálogo en la app MAUI | Qoder | feat/maui-inventario | `SistemaTienda.Maui/Pages/Inventario*`, `Models/`, `MauiProgram.cs`, `PrincipalPage.cs`, docs | 2026-10-25 | Tomada |
 
 ## Hecho
 

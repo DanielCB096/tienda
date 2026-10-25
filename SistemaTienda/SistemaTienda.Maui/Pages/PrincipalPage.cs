@@ -4,11 +4,12 @@ using Microsoft.Maui.Controls.PlatformConfiguration.AndroidSpecific;
 namespace SistemaTienda.Maui.Pages;
 
 /// <summary>
-/// Raíz después del login: inicio, punto de venta, ventas, caja y ajustes.
+/// Raíz después del login: inicio, punto de venta, inventario, ventas, caja y ajustes.
 /// </summary>
 public sealed class PrincipalPage : Microsoft.Maui.Controls.TabbedPage
 {
-    public PrincipalPage(InicioPage inicio, PosPage pos, VentasPage ventas, CajaPage caja, AjustesPage ajustes)
+    public PrincipalPage(InicioPage inicio, PosPage pos, InventarioPage inventario,
+        VentasPage ventas, CajaPage caja, AjustesPage ajustes)
     {
         BarBackgroundColor = Color.FromArgb("#2E6B4F");
         BarTextColor = Colors.White;
@@ -16,6 +17,7 @@ public sealed class PrincipalPage : Microsoft.Maui.Controls.TabbedPage
 
         Children.Add(inicio);
         Children.Add(pos);
+        Children.Add(inventario);
         Children.Add(ventas);
         Children.Add(caja);
         Children.Add(ajustes);
