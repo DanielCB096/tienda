@@ -9,6 +9,13 @@ public static class Formato
 
     public static string Moneda(long centavos) => $"${Dinero.Formatear(centavos)}";
 
+    public static string MonedaConSigno(long centavos) => centavos switch
+    {
+        > 0 => $"+{Moneda(centavos)}",
+        < 0 => $"-{Moneda(-centavos)}",
+        _ => Moneda(0)
+    };
+
     public static string FechaHora(DateTime fecha) => fecha.ToString("dd/MM/yyyy HH:mm", Cultura);
 
     public static string FechaLarga(DateTime fecha) =>

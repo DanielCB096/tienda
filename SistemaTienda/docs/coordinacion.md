@@ -1,6 +1,6 @@
 # Coordinación entre agentes
 
-Actualizado: 2026-10-23. Tablero único: cualquier IA o persona que trabaje en este repositorio debe reclamar su tarea aquí antes de empezar.
+Actualizado: 2026-10-25. Tablero único: cualquier IA o persona que trabaje en este repositorio debe reclamar su tarea aquí antes de empezar.
 
 Instrucciones generales: [AGENTS.md](../../AGENTS.md).
 
@@ -28,7 +28,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 
 | Tarea | Agente | Rama | Archivos reservados | Inicio | Estado |
 |-------|--------|------|---------------------|--------|--------|
-| — | Sin tareas activas al cierre de esta sesión | — | — | — | — |
+| T14 Caja operativa en MAUI | Qoder | feat/maui-caja | `SistemaTienda.Maui/Pages/CajaPage.*`, `MauiProgram.cs` | 2026-10-25 | Tomada |
 
 ## Hecho
 
@@ -64,6 +64,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 | T11 | Anulación de ventas | Hecho | T2, T4, T8 | En `feat/anulacion-ventas` (sobre `feat/respaldo-automatico`). Esquema v6; solo venta completa, bloqueada si ya está en un corte cerrado; devuelve stock con costo congelado y revierte fiado; reembolso en efectivo manual (ver [deuda-tecnica.md](deuda-tecnica.md)). |
 | T12 | App MAUI con login y tablero | Hecho | T7, T11 | En `feat/ui-maui` (sobre `feat/anulacion-ventas`). Asistente, login, tablero de solo lectura, respaldo y cierre de sesión; fuera de la solución y compilada en CI. Android pendiente de probar en dispositivo. Ver [interfaz-maui.md](02-modulos/interfaz-maui.md). |
 | T13 | POS en app MAUI | Hecho | T2, T12 | En `feat/maui-pos` (PR #4 contra `main`). Carrito, búsqueda/escaneo, cobro efectivo con recuadro de cambio, tarjeta, mixto, fiado y ticket copiable. Verificación manual en Windows el 2026-10-25 con ventas ficticias: los cuatro métodos de pago, cambio, límite y stock 0, ticket y totales en Ventas/Caja. Pendientes: botón Compartir y Android. |
+| T14 | Caja operativa en la app MAUI | Tomada | T8, T13 | En `feat/maui-caja` sobre `feat/maui-pos`. Cierre de corte con diferencia justificada, ingresos, retiros y abonos de fiado desde Caja. |
 
 ## Plantilla para reclamar
 
