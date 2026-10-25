@@ -10,6 +10,7 @@
 8. [Corte de caja](#8-corte-de-caja)
 9. [Reportes y utilidad](#9-reportes-y-utilidad)
 10. [Respaldo y restauración](#10-respaldo-y-restauracion)
+11. [Interfaz MAUI](interfaz-maui.md) (app para Windows y Android con login, tablero, POS, inventario, ventas con anulación y caja operativa)
 
 ## Estado Actual: MVP Planificado
 

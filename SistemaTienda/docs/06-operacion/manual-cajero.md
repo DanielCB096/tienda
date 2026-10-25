@@ -6,7 +6,7 @@
 - **Roles y permisos**:
   - **Dueño/Administrador**: Ve todo, configura impuestos, usuarios, cortes, reportes.
   - **Encargado/Cajero**: Vende, cobra, registra compras, mermas, gastos permitidos, hace corte de caja.
-  - **Empleado básico**: Solo vende y consulta precios (no puede acceder a configuración, reportes, cortes, mermas, proveedores).
+  - **Empleado básico**: Solo vende, consulta precios y ventas, y reimprime tickets (no puede acceder a configuración, reportes, cortes, mermas, proveedores ni anular ventas).
 
 ## Pantallas Principales
 
@@ -14,8 +14,10 @@
 
 1. Al abrir la app, se solicita el PIN.
 2. El usuario ingresa su PIN.
-3. El sistema valida y muestra la interfaz según su rol.
-4. Si el PIN está mal tres veces seguidas, la app se cierra temporalmente (o requiere esperar 30 segundos) para evitar intentos brutos.
+3. El sistema valida y muestra el tablero (Inicio, Vender, Inventario, Ventas, Caja y Ajustes).
+4. Si el PIN está mal tres veces seguidas, la app bloquea el acceso hasta cerrarla y abrirla de nuevo.
+
+> **Estado de la app (2026-10-25)**: el tablero muestra ventas del día, efectivo esperado del corte, stock bajo y último respaldo. **Vender** registra ventas con carrito, cobros y ticket interno con QR compartible como texto. **Inventario** permite consultar, escanear, dar de alta o editar productos, y registrar entradas, mermas y ajustes según el rol. **Ventas** muestra el detalle de cada venta, permite reimprimir el ticket con su QR y anular la venta completa (solo dueño o encargado). **Caja** ya permite cerrar el corte, registrar ingresos y retiros, y abonar al fiado. El conteo de caja se captura como un total, sin desglose de billetes y monedas. La anulación también sigue disponible en la consola provisional. El manual describe el flujo completo planeado; revisa en cada versión qué partes ya están en la app.
 
 ### 2. Catálogo / Búsqueda de Producto
 
@@ -48,22 +50,40 @@ Flujo paso a paso:
      - El ticket se genera indicando "Venta a Fiado".
 6. **Pagar y generar ticket**: Tocar "Finalizar Venta".
    - El sistema registra la venta, actualiza inventario (si es que corresponde) y genera el ticket digital.
-   - Se ofrece compartir el ticket (WhastApp, correo, mostrar en pantalla).
+   - El ticket muestra un QR informativo (no fiscal) y se puede compartir como texto con el sistema o copiar. El QR no se guarda como imagen.
+
+**Ver el detalle, reimprimir o anular una venta**
+
+En la pestaña **Ventas**, toca una venta para abrir su detalle con líneas, pagos, comisión y estado:
+
+- **Ver ticket** reabre el ticket con el QR. Si la venta está anulada, muestra el sello, el usuario, la fecha y el motivo.
+- **Anular venta** (solo dueño o encargado): escribe el motivo y confirma con la palabra `ANULAR`. El sistema devuelve el stock con el costo original, revierte el saldo si fue fiado y deja el registro en la bitácora.
+- El reembolso en efectivo se entrega manualmente. La venta anulada se excluye del corte; si el reembolso se paga después de cerrar el corte, el dueño lo registra como retiro en el corte siguiente.
+- No se puede anular una venta que ya quedó incluida en un corte cerrado.
+
+### 4. Inventario (pestaña Inventario)
+
+Muestra el número de productos, los que están en stock bajo y el valorizado. La búsqueda acepta nombre o el código del lector; Enter abre el producto si el código existe. Un código desconocido de al menos ocho dígitos ofrece darlo de alta.
+
+- **Consultar**: Toca **Ver** para abrir el detalle; **Ver movimientos** muestra los últimos 200 con usuario, motivo y cantidad firmada.
+- **Alta**: **+ Nuevo** pide código, nombre, categoría, costo, precio, stock inicial, stock mínimo e impuesto. El código ya no se puede cambiar después.
+- **Editar**: Cambia nombre, categoría, stock mínimo e impuesto. Solo el dueño puede cambiar costo y precio; el stock no se edita aquí.
+- **Entrada**: Recibe unidades con costo unitario y motivo. El costo del movimiento queda en el historial, pero no cambia el costo del catálogo.
+- **Merma**: Descuenta unidades por daño, caducidad o robo, con motivo obligatorio.
+- **Ajustar stock**: Solo el dueño; fija el stock al conteo físico con motivo. La diferencia queda en el historial.
+
+El encargado puede editar y registrar entradas o mermas, pero no ajustar stock ni cambiar precios. El empleado solo consulta.
 
 ### 5. Registrar Merma
 
-Acceso: Menú → "Mermas" (requiere rol Encargado o Dueño).
+Acceso: pestaña **Inventario** → **Ver** → **Registrar merma** (requiere rol Encargado o Dueño).
 
-1. Tocar "Nueva Merma".
-2. Seleccionar producto (o buscar).
-3. Ingresar:
-   - **Motivo** (lista desplegable: Dañado, Caducado, Robado, Consumo propio, Regalo, Otra).
-   - **Cantidad** (unidades o peso).
-   - **Costo perdido** (automático: costo unitario × cantidad, o manual).
-   - **Usuario** (seleccionado de la lista o propio PIN).
-4. Tocar "Registrar".
-5. El sistema reduce el stock y registra la merma en la bitácora.
-6. Se muestra mensaje: "✓ Merma registrada, stock reducido".
+1. Abrir el producto y tocar **Registrar merma**.
+2. Ingresar la cantidad y el motivo (por ejemplo, dañado, caducado o robo).
+3. El sistema muestra el costo perdido estimado con el costo actual del producto.
+4. Tocar **Registrar merma**.
+5. El sistema reduce el stock y registra el movimiento con el usuario de la sesión; no se puede editar ni borrar.
+6. Se muestra el mensaje de confirmación y el detalle actualizado.
 
 ### 6. Registrar Gasto
 
@@ -90,21 +110,20 @@ Acceso: Menú → "Reportes" (ver resumen).
 
 ### 8. Corte de Caja (Parcial o Diario)
 
-Acceso: Menú → "Corte de Caja" (requiere PIN de cajero o debido).
+Acceso en la app: pestaña **Caja** (requiere sesión de dueño o encargado para operar; el retiro es solo del dueño).
 
 1. El sistema muestra:
-   - Fondo inicial del día.
-   - Ventas en efectivo acumuladas del día.
+   - Fondo inicial del periodo.
+   - Ventas en efectivo acumuladas.
    - Ventas en tarjeta acumuladas.
-   - Retiros de caja (si hubo durante el día).
-   - Gastos pagados de caja.
-   - **Efectivo esperado** (fórmula: fondo + ventas efectivo + abonos efectivo - retiros - gastos de caja).
+   - Abonos, ingresos, retiros y gastos de caja.
+   - **Efectivo esperado** (fórmula: fondo + ventas efectivo + abonos efectivo + ingresos − retiros − gastos de caja).
    - **Efectivo contado**: Cuánto cuenta el cajero al cerrar.
-   - **Diferencia**: Esperado - Contado.
+   - **Diferencia**: Contado − Esperado (positiva es sobrante y negativa faltante).
 
 2. **Acciones**:
-   - **Cerrar corte**: Registrar el corte con el resultado y el responsable. Reinicia el fondo para el próximo día.
-   - **Salir sin cerrar**: Volver al menú sin guardar el corte (los datos del día se mantienen, pero no se considera "oficial" hasta que se cierra).
+   - **Cerrar corte**: Registrar el corte con el resultado y el responsable. Si hay diferencia, hay que explicar el motivo. El siguiente periodo inicia con lo contado.
+   - **Salir sin cerrar**: Volver al menú sin guardar el corte (los datos del periodo se mantienen, pero no se considera "oficial" hasta que se cierra).
 
 ## Flujo de Cierre del Día (Resumen para el Cajero)
 
@@ -120,7 +139,8 @@ Acceso: Menú → "Corte de Caja" (requiere PIN de cajero o debido).
 ### "Me equivoqué al poner la cantidad"
 
 - Si la venta aún no se ha finalizado (aún está en el carrito), se puede quitar el producto del carrito y volver a agregar con la cantidad correcta.
-- Si la venta ya se registró, no se puede editar. Se debe registrar una **devolución** o **contramovimiento** (nueva venta inversa con motivo "Error en captura").
+- Si la venta ya se registró, no se puede editar. Solicita al dueño o encargado que la **anule** desde Ventas → detalle de la venta → **Anular venta** (o en la consola, Ventas → [3]): se anula la venta completa, se devuelve el stock y, si fue fiado, se revierte el saldo del cliente.
+- El reembolso en efectivo se entrega manualmente. La venta anulada ya se excluye del corte; si el reembolso se paga después de cerrar el corte, el dueño lo registra como retiro en el corte siguiente.
 
 ### "El cliente no tiene código de barras"
 
