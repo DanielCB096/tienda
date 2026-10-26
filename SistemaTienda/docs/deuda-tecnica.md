@@ -30,11 +30,12 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 - **Impacto**: el QR es informativo y no fiscal; resume hasta diez productos, no se guarda ni se comparte como imagen, no permite validar la venta contra nada y no se ha probado en Android. La reimpresión reconstruye el ticket, pero no incluye el efectivo recibido ni el cambio porque la venta solo guarda el total. WhatsApp y correo dependen del diálogo de compartir del sistema, que sigue sin verificarse. Ver [ADR-qr-ticket.md](05-decisiones/ADR-qr-ticket.md).
 - **Cierre**: renderizar el QR a PNG y compartirlo como archivo, decidir si se sube el límite de productos, guardar el efectivo recibido si se quiere reimprimir el cambio y validar el QR en un dispositivo Android.
 
-### Corte de caja sin conteo por denominaciones
+### Conteo por denominaciones sin persistencia
 
-- **Dónde**: `CajaPage` y `Program.CerrarCorte`; registro de abonos.
-- **Impacto**: el retiro ya requiere permiso de dueño y queda en bitácora; el conteo se captura como un solo importe, sin desglose de billetes y monedas, y el abono de fiado siempre se registra como efectivo (no se pregunta el método). La app tampoco muestra el historial de cortes, solo el último cerrado.
-- **Cierre**: captura por denominaciones, consulta del historial en Caja y método de pago en abonos.
+- **Dónde**: `ConteoEfectivo` (Core), `CajaPage` y `Program.CerrarCorte`; registro de abonos.
+- **Por qué**: T17 agregó el conteo en la app sin cambiar el esquema; el corte sigue guardando solo esperado, contado y diferencia.
+- **Impacto**: el desglose de billetes y monedas se usa para calcular el contado, pero no se guarda, así que no se puede auditar después ni reconstruir un faltante por denominación. La consola todavía captura un total directo y el abono de fiado siempre se registra como efectivo (no se pregunta el método).
+- **Cierre**: tabla de desglose por corte si se requiere auditoría, captura por denominaciones en la consola y método de pago en abonos.
 
 ## Media prioridad
 
@@ -67,14 +68,14 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 ### La app MAUI no cubre todas las operaciones
 
 - **Dónde**: `SistemaTienda.Maui/Pages`.
-- **Por qué**: el punto de venta se entregó en T13, la caja operativa en T14, el inventario en T15 y el detalle/anulación de ventas en T16; el resto de las operaciones de escritura se hará en tareas posteriores.
-- **Impacto**: desde la app se vende, se opera el inventario, se cierra el corte, se registran ingresos, retiros y abonos de fiado, se anulan ventas, se reimprime el ticket y se crea respaldo. Gestionar clientes, proveedores y gastos sigue en la consola, que no es usable por el cajero; el historial completo de cortes y la consulta de ventas de fechas anteriores tampoco están en la app.
-- **Cierre**: pantallas de clientes, proveedores y gastos en MAUI, módulo por módulo y con sus pruebas; después, historial de cortes y consulta histórica de ventas.
+- **Por qué**: el punto de venta se entregó en T13, la caja operativa en T14, el inventario en T15, el detalle/anulación de ventas en T16 y el conteo con historial de cortes en T17; el resto de las operaciones de escritura se hará en tareas posteriores.
+- **Impacto**: desde la app se vende, se opera el inventario, se cierra el corte con conteo, se registran ingresos, retiros y abonos de fiado, se anulan ventas, se reimprime el ticket, se consulta el historial de cortes y se crea respaldo. Gestionar clientes, proveedores y gastos sigue en la consola, que no es usable por el cajero; la consulta de ventas de fechas anteriores tampoco está en la app.
+- **Cierre**: pantallas de clientes, proveedores y gastos en MAUI, módulo por módulo y con sus pruebas; después, consulta histórica de ventas.
 
 ### App MAUI sin pruebas automatizadas
 
 - **Dónde**: `SistemaTienda.Maui`.
-- **Impacto**: CI solo compila para Windows y Android. Una regresión de navegación, sesión, POS, Ventas, anulación, inventario, caja o formato no se detecta hasta la verificación manual. El cierre de corte, los movimientos de inventario y la anulación desde la app dependen de esa verificación. `TicketServiceTests` cubre el texto y el contenido del QR, no la interfaz.
+- **Impacto**: CI solo compila para Windows y Android. Una regresión de navegación, sesión, POS, Ventas, anulación, inventario, caja, historial o formato no se detecta hasta la verificación manual. El cierre de corte, el conteo, los movimientos de inventario y la anulación desde la app dependen de esa verificación. `TicketServiceTests` y `ConteoEfectivoTests` cubren cálculos y textos, no la interfaz.
 - **Cierre**: extraer la lógica de cada página a modelos de vista probables y agregar pruebas; valorar pruebas de interfaz más adelante.
 
 ### Android sin validación en dispositivo

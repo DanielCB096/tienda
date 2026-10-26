@@ -74,15 +74,15 @@ Cada agente: su carpeta, su rama y su PR.
 
 ## Estado del proyecto (2026-10-25)
 
-- Ramas publicadas con el trabajo actual: `feat/ui-maui` (sobre `feat/anulacion-ventas`, que parte de `feat/respaldo-automatico`), `feat/maui-pos` (sobre `feat/ui-maui`, PR #4 contra `main`), `feat/maui-caja` (sobre `feat/maui-pos`, PR #5 contra `main`), `feat/maui-inventario` (sobre `feat/maui-caja`, PR #7 contra `main`) y `feat/maui-anulacion-qr` (sobre `feat/maui-inventario`, PR #8 contra `main`).
-- `main`: solo el commit base; los PR de `feat/base-compilable`, `feat/migraciones-respaldo`, `feat/ventas-pos`, `feat/corte-caja`, `feat/centavos-enteros`, `feat/integracion-t4-t9`, `feat/reportes-utilidad`, `feat/respaldo-automatico`, `feat/anulacion-ventas`, `feat/ui-maui`, `feat/maui-pos`, `feat/maui-caja`, `feat/maui-inventario` y `feat/maui-anulacion-qr` siguen pendientes de integración, en ese orden.
-- Build: 0 errores, 0 advertencias. Pruebas: **177 en verde** (verificadas localmente el 2026-10-25 y en GitHub Actions). La app MAUI compila para Windows en local y para Windows y Android en CI. El CI del PR #8 quedó en verde el 2026-10-25: compilación y pruebas, y app MAUI para Windows y Android.
+- Ramas publicadas con el trabajo actual: `feat/ui-maui` (sobre `feat/anulacion-ventas`, que parte de `feat/respaldo-automatico`), `feat/maui-pos` (sobre `feat/ui-maui`, PR #4 contra `main`), `feat/maui-caja` (sobre `feat/maui-pos`, PR #5 contra `main`), `feat/maui-inventario` (sobre `feat/maui-caja`, PR #7 contra `main`), `feat/maui-anulacion-qr` (sobre `feat/maui-inventario`, PR #8 contra `main`) y `feat/maui-caja-denominaciones` (sobre `feat/maui-anulacion-qr`, PR #9 contra `main`).
+- `main`: solo el commit base; los PR de `feat/base-compilable`, `feat/migraciones-respaldo`, `feat/ventas-pos`, `feat/corte-caja`, `feat/centavos-enteros`, `feat/integracion-t4-t9`, `feat/reportes-utilidad`, `feat/respaldo-automatico`, `feat/anulacion-ventas`, `feat/ui-maui`, `feat/maui-pos`, `feat/maui-caja`, `feat/maui-inventario`, `feat/maui-anulacion-qr` y `feat/maui-caja-denominaciones` siguen pendientes de integración, en ese orden.
+- Build: 0 errores, 0 advertencias. Pruebas: **183 en verde** (verificadas localmente el 2026-10-25). La app MAUI compila para Windows en local y para Windows y Android en CI. El CI del PR #8 quedó en verde el 2026-10-25: compilación y pruebas, y app MAUI para Windows y Android.
 - POS verificado manualmente en Windows el 2026-10-25 con datos ficticios: los cuatro métodos de pago, cambio, límite y stock 0, ticket con copiar/cerrar y totales coherentes en Ventas/Caja. Pendientes: botón Compartir y ejecución en Android.
-- Caja verificada manualmente en Windows el 2026-10-25: cierre con faltante y observación (corte #1), ingreso, retiro con confirmación, abono de fiado y cierre sin diferencia (corte #2), con el efectivo esperado coincidiendo con la base. Pendientes: denominaciones, historial de cortes en la app y roles distintos al dueño.
+- Caja verificada manualmente en Windows el 2026-10-25: cierre con faltante y observación (corte #1), ingreso, retiro con confirmación, abono de fiado y cierre sin diferencia (corte #2), y en T17 conteo por denominaciones e historial de cortes (corte #3), con el efectivo esperado coincidiendo con la base. Pendientes: desglose persistido, roles distintos al dueño y Android.
 - Ventas (T16) verificado manualmente en Windows el 2026-10-25: venta #10 de tres productos, ticket con QR decodificado offline, reimpresión, anulación con motivo y confirmación `ANULAR`, restauración de stock y bitácora; rechazo con motivo vacío, confirmación incorrecta y corte cerrado; encargado ve la acción y empleado no.
-- Implementado: configuración inicial, usuarios/PIN/roles, gastos, inventario por movimientos, ventas/POS (efectivo, tarjeta, mixto y fiado; costo y precio congelados; comisión; anulación completa con reverso), fiado (cliente/abono con historial), proveedores (saldo/pago), corte de caja (efectivo esperado, diferencia justificada, ingresos/retiros e historial), bitácora inmutable y permisos validados en servicios, migraciones versionadas con respaldo, respaldo/restauración local y respaldo automático por intervalo al iniciar/cerrar, dinero en centavos enteros (`long`/`INTEGER`, esquema v4), reporte de utilidad por periodo (ventas − costo congelado − comisión − mermas − gastos), app MAUI para Windows y Android (asistente, login, tablero, POS con carrito, cobro y ticket con QR compartible, inventario con escaneo/alta/edición/entradas/mermas/ajustes/historial, caja operativa con cierre, ingresos, retiros y abonos, anulación de ventas con reimpresión de ticket, respaldo y cierre de sesión) y consola provisional.
-- No implementado: pantallas de clientes/proveedores/gastos, filtro por categoría y desactivación de productos en la app, copia de respaldos a USB/nube, conteo por denominaciones e historial de cortes en la app, y compartir el QR como imagen.
-- Deuda principal: pagos a proveedores sin historial inmutable, merma sin entidad propia, bitácora no atómica con la operación, entrada de inventario que no actualiza el costo del catálogo, corte sin desglose de billetes, QR limitado a diez productos y sin imagen compartible, app MAUI sin pruebas automatizadas y validación de Android en dispositivo.
+- Implementado: configuración inicial, usuarios/PIN/roles, gastos, inventario por movimientos, ventas/POS (efectivo, tarjeta, mixto y fiado; costo y precio congelados; comisión; anulación completa con reverso), fiado (cliente/abono con historial), proveedores (saldo/pago), corte de caja (efectivo esperado, diferencia justificada, ingresos/retiros e historial), conteo por denominaciones, bitácora inmutable y permisos validados en servicios, migraciones versionadas con respaldo, respaldo/restauración local y respaldo automático por intervalo al iniciar/cerrar, dinero en centavos enteros (`long`/`INTEGER`, esquema v4), reporte de utilidad por periodo (ventas − costo congelado − comisión − mermas − gastos), app MAUI para Windows y Android (asistente, login, tablero, POS con carrito, cobro y ticket con QR compartible, inventario con escaneo/alta/edición/entradas/mermas/ajustes/historial, caja operativa con cierre, conteo, ingresos, retiros, abonos e historial de cortes, anulación de ventas con reimpresión de ticket, respaldo y cierre de sesión) y consola provisional.
+- No implementado: pantallas de clientes/proveedores/gastos, filtro por categoría y desactivación de productos en la app, copia de respaldos a USB/nube, persistencia del desglose por denominaciones y compartir el QR como imagen.
+- Deuda principal: pagos a proveedores sin historial inmutable, merma sin entidad propia, bitácora no atómica con la operación, entrada de inventario que no actualiza el costo del catálogo, conteo sin desglose persistido, QR limitado a diez productos y sin imagen compartible, app MAUI sin pruebas automatizadas y validación de Android en dispositivo.
 
 ## Tareas disponibles
 
@@ -115,7 +115,7 @@ El detalle vive en el tablero. Resumen y criterios de terminado:
 - Abonos de fiado con historial en la misma transacción que descuenta el saldo.
 - Menú [8] Corte de caja: resumen/cierre, ingreso, retiro e historial; Configuración pasa a [9].
 - Pruebas en `CorteCajaTests` (13 casos); total: 94.
-- Pendiente fuera de T8: conteo por denominaciones.
+- El conteo por denominaciones se agregó en T17, solo en la app y sin persistir el desglose.
 
 ### T3 — Dinero en centavos enteros (HECHO)
 
@@ -192,7 +192,7 @@ El detalle vive en el tablero. Resumen y criterios de terminado:
 - Pestaña **Caja**: periodo abierto, efectivo esperado y desglose por método; cierre con diferencia en vivo, observaciones obligatorias y confirmación; ingresos y retiros con monto y motivo; abono de fiado con cliente y saldo; tarjeta del último corte cerrado.
 - Reutiliza `CorteCajaService` y `ConfiguracionService` sin lógica de negocio en la página; aplica `SesionApp.Aplicar()` antes de cada llamada.
 - Verificado manualmente en Windows el 2026-10-25: corte #1 con faltante de $10.00 y observación, ingreso de $50.00, retiro de $20.00 con confirmación, abono de $10.00 y corte #2 sin diferencia por $790.00.
-- No incluye conteo por denominaciones ni historial de cortes; sin pruebas automatizadas de interfaz.
+- En T14 no incluía conteo por denominaciones ni historial de cortes; ambos se completaron en T17. Sin pruebas automatizadas de interfaz.
 - Detalle en [SistemaTienda/docs/02-modulos/interfaz-maui.md](SistemaTienda/docs/02-modulos/interfaz-maui.md) y [SistemaTienda/docs/03-procesos/corte-caja.md](SistemaTienda/docs/03-procesos/corte-caja.md).
 
 ### T15 — Inventario y catálogo en la app MAUI (HECHO)
@@ -215,9 +215,19 @@ El detalle vive en el tablero. Resumen y criterios de terminado:
 - Limitaciones: el QR no se comparte como imagen, la reimpresión no incluye el efectivo recibido y el QR no se ha validado en Android. Ver [ADR-qr-ticket.md](SistemaTienda/docs/05-decisiones/ADR-qr-ticket.md) y [deuda-tecnica.md](SistemaTienda/docs/deuda-tecnica.md).
 - Detalle en [SistemaTienda/docs/02-modulos/interfaz-maui.md](SistemaTienda/docs/02-modulos/interfaz-maui.md) y [SistemaTienda/docs/03-procesos/venta.md](SistemaTienda/docs/03-procesos/venta.md).
 
+### T17 — Conteo por denominaciones e historial de cortes en Caja (HECHO)
+
+- Completado en `feat/maui-caja-denominaciones` sobre `feat/maui-anulacion-qr` (PR #9 contra `main`, sin merge).
+- **Caja**: conteo opcional con los 11 billetes y monedas en pesos, subtotal por fila y total automático en **Efectivo contado** (solo lectura); cantidades inválidas bloquean el cierre; **Limpiar conteo** devuelve la captura manual; borrar la última cantidad también limpia el total derivado.
+- **Historial**: últimos 20 cortes cerrados con folio, periodo, esperado, contado, diferencia coloreada, responsable, fecha y observaciones; se recarga después de cada cierre.
+- `ConteoEfectivo` vive en `Core` con el catálogo y la suma verificada; 6 pruebas nuevas en `ConteoEfectivoTests`.
+- El esquema no cambió: el corte guarda solo esperado, contado y diferencia, y el desglose no se persiste.
+- Verificado manualmente en Windows el 2026-10-25: cantidad inválida, conteo de $790.00, limpieza, total manual, corte #3 sin diferencia, historial #3–#1 y corrección del total derivado viejo.
+- Detalle en [SistemaTienda/docs/02-modulos/interfaz-maui.md](SistemaTienda/docs/02-modulos/interfaz-maui.md) y [SistemaTienda/docs/03-procesos/corte-caja.md](SistemaTienda/docs/03-procesos/corte-caja.md).
+
 ### T7 — Pantallas de operación en MAUI
 
-- El ADR de UI ya está decidido (MAUI). El punto de venta se entregó en T13, la caja operativa en T14, el inventario en T15 y el detalle/anulación de ventas con ticket QR en T16; faltan las pantallas de clientes, proveedores y gastos.
+- El ADR de UI ya está decidido (MAUI). El punto de venta se entregó en T13, la caja operativa en T14, el inventario en T15, el detalle/anulación de ventas con ticket QR en T16 y el conteo con historial de cortes en T17; faltan las pantallas de clientes, proveedores y gastos.
 - Trabaja una pantalla a la vez, con sus pruebas y documentación, y espera confirmación antes de la siguiente.
 
 ## No rehacer
@@ -255,7 +265,7 @@ dotnet build SistemaTienda/SistemaTienda.Maui/SistemaTienda.Maui.csproj -f net10
 
 Entorno conocido: el equipo tiene runtime **.NET 10** y SDK 10; los proyectos `net8.0` usan `RollForward=Major` para ejecutarse. Si creas un nuevo ejecutable o proyecto de pruebas, agrega la misma propiedad o fallará al arrancar. La app MAUI usa los frameworks `net10.0-android` y `net10.0-windows10.0.19041.0` y requiere las cargas de trabajo `maui-windows` y `maui-android` instaladas.
 
-**Nota local (2026-10-25)**: en este equipo las pruebas y la consola ya se ejecutan; `dotnet test` terminó con 177 pruebas en verde. La nota anterior sobre Smart App Control (error `0x800711C7` al cargar ensamblados locales) ya no aplica; si reaparece, revisa Seguridad de Windows → Control de aplicaciones y navegador.
+**Nota local (2026-10-25)**: en este equipo las pruebas y la consola ya se ejecutan; `dotnet test` terminó con 183 pruebas en verde. La nota anterior sobre Smart App Control (error `0x800711C7` al cargar ensamblados locales) ya no aplica; si reaparece, revisa Seguridad de Windows → Control de aplicaciones y navegador.
 
 ## Convención de pruebas
 

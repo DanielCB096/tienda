@@ -14,9 +14,9 @@
    - **Vender**: punto de venta con búsqueda o escaneo, carrito, cobro en efectivo, tarjeta, mixto o fiado, y ticket interno con QR que se puede compartir como texto o copiar.
    - **Inventario**: catálogo con stock bajo y valorizado, búsqueda o escaneo, alta/edición, entradas, mermas, ajustes e historial; el dueño controla costos, precios y ajustes.
    - **Ventas**: lista de ventas del día con folio, total, método, hora y estado; al tocar una venta se abre su detalle con líneas, pagos, comisión y datos de anulación, y se puede reimprimir el ticket o anular la venta con permiso.
-   - **Caja**: periodo abierto (efectivo esperado, fondo, ventas por método, abonos, ingresos/retiros y gastos), cierre de corte con diferencia justificada, registro de ingresos y retiros, abonos de fiado y datos del último corte cerrado.
+   - **Caja**: periodo abierto (efectivo esperado, fondo, ventas por método, abonos, ingresos/retiros y gastos), cierre de corte con diferencia justificada, conteo por billetes y monedas, registro de ingresos y retiros, abonos de fiado e historial de los últimos 20 cortes.
    - **Ajustes**: datos de la tienda, reglas configuradas, rutas de la base y de los respaldos, último respaldo, botón para crear un respaldo y cierre de sesión.
-4. **Importante**: desde la app ya se vende, se opera el inventario (alta, edición, entradas, mermas y ajustes), se opera la caja (cierre, ingresos, retiros y abonos) y se anulan ventas desde Ventas (dueño o encargado). El conteo de caja se captura como un total, sin desglose de billetes y monedas; el catálogo aún no filtra por categoría ni desactiva productos.
+4. **Importante**: desde la app ya se vende, se opera el inventario (alta, edición, entradas, mermas y ajustes), se opera la caja (cierre con conteo por denominaciones, ingresos, retiros, abonos e historial) y se anulan ventas desde Ventas (dueño o encargado). El desglose del conteo no se guarda en el corte: solo el total contado; el catálogo aún no filtra por categoría ni desactiva productos.
 5. **Dónde están los datos**: en Windows, `%LOCALAPPDATA%\SistemaTienda\com.sistematienda.tienda\Data\tienda.db` y los respaldos en la carpeta `respaldos` junto a ese archivo. En Android están en el almacenamiento privado de la app. Las rutas exactas se muestran en Ajustes.
 
 ## Pantallas Principales
@@ -61,9 +61,11 @@ Acceso rápido desde el panel principal o menú.
 
 ### 4. Corte de Caja
 
-- Acceso: Menú → "Corte de Caja" (requiere PIN).
-- Ver resultado: Efectivo esperado vs. contado, diferencia, responsable.
-- Registrar el cierre y reiniciar el fondo para el siguiente día.
+Acceso en la app: pestaña **Caja** (requiere PIN de dueño o encargado; el retiro es solo del dueño).
+
+- **Conteo por denominaciones**: anota cuántos billetes y monedas hay de cada valor; el subtotal y el total se calculan solos y el importe pasa a **Efectivo contado** en solo lectura. También puedes capturar el total directamente. **Limpiar conteo** borra las cantidades y devuelve la captura manual.
+- **Cierre**: revisa el efectivo esperado contra el contado, justifica cualquier diferencia y confirma; el periodo queda cerrado e inmutable y el siguiente arranca con lo contado.
+- **Historial**: consulta los últimos 20 cortes con periodo, esperado, contado, diferencia coloreada, responsable, fecha y observaciones. El desglose de billetes y monedas no se guarda.
 
 ### 5. Reportes y Utilidad
 

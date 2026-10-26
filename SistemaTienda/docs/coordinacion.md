@@ -47,6 +47,7 @@ Sin tareas tomadas al cierre de esta sesión.
 | T14 | Qoder | feat/maui-caja | Pestaña Caja operativa: cierre con diferencia justificada y observaciones obligatorias, ingresos, retiros con confirmación, abonos de fiado y último corte; 171 pruebas sin cambios; PR #5 contra `main` | b8dfad6, 7db70da |
 | T15 | Qoder | feat/maui-inventario | Pestaña Inventario: catálogo, escaneo/búsqueda, alta/edición, entradas, mermas, ajustes, historial y filtro de stock bajo; permisos de dueño/encargado/empleado; 171 pruebas sin cambios; PR #7 contra `main` | 735766f |
 | T16 | Qoder | feat/maui-anulacion-qr | Detalle de venta en Ventas, reimpresión con QR informativo offline y anulación con motivo/`ANULAR`; permiso validado en `VentaService`; 6 pruebas nuevas; 177 pruebas; PR #8 contra `main` con CI en verde | e474bcb, dc23434, 0eefeba, d6f9cf0 |
+| T17 | Qoder | feat/maui-caja-denominaciones | Conteo por denominaciones en Caja con total automático, validación y limpieza; historial de los últimos 20 cortes; 6 pruebas nuevas; 183 pruebas | dab055f, 0496869 |
 
 ## Tareas
 
@@ -68,6 +69,7 @@ Sin tareas tomadas al cierre de esta sesión.
 | T14 | Caja operativa en la app MAUI | Hecho | T8, T13 | En `feat/maui-caja` sobre `feat/maui-pos` (PR #5 contra `main`). Cierre de corte con diferencia justificada, ingresos, retiros y abonos de fiado desde Caja. Verificación manual en Windows el 2026-10-25: corte #1 con faltante y observación, ingreso, retiro con confirmación, abono y corte #2 sin diferencia. Pendientes: denominaciones, historial de cortes y roles distintos al dueño. |
 | T15 | Inventario y catálogo en la app MAUI | Hecho | T12, T14 | En `feat/maui-inventario` sobre `feat/maui-caja` (PR #7 contra `main`). Catálogo, escaneo/búsqueda, alta/edición, entradas, mermas, ajustes, historial y stock bajo; permisos por rol. Verificación manual en Windows el 2026-10-25 con datos ficticios: entrada, merma, ajuste, edición, alta desde código desconocido y roles dueño/encargado/empleado. Pendientes: filtro por categoría, desactivación, costo de entrada al catálogo y pruebas automatizadas de interfaz. |
 | T16 | Anulación y QR en la app MAUI | Hecho | T11, T13, T15 | En `feat/maui-anulacion-qr` sobre `feat/maui-inventario` (PR #8 contra `main`, CI en verde). Detalle de venta con reimpresión, QR informativo offline y anulación completa (motivo y confirmación `ANULAR`, permiso dueño/encargado). Verificación manual en Windows el 2026-10-25; 177 pruebas. Pendientes: compartir el QR como imagen, reimpresión con efectivo recibido y validación en Android. |
+| T17 | Conteo por denominaciones e historial de cortes en Caja | Hecho | T8, T14 | En `feat/maui-caja-denominaciones` sobre `feat/maui-anulacion-qr`. El conteo por billetes y monedas alimenta el efectivo contado sin cambiar el esquema; el historial muestra los últimos 20 cortes cerrados. Verificación manual en Windows el 2026-10-25; 183 pruebas. Pendientes: persistir el desglose y validar en Android. |
 
 ## Plantilla para reclamar
 
@@ -99,3 +101,4 @@ Al terminar, mueve la fila a `Hecho` (o elimínala de En curso) y registra el co
 | 2026-10-25 | Qoder | feat/maui-inventario | CI en verde para el PR #7: compilación y pruebas, y app MAUI para Windows y Android | b0f0094 |
 | 2026-10-25 | Qoder | feat/maui-anulacion-qr | T16 terminado: ticket con QR offline, detalle y reimpresión en Ventas, anulación con motivo y confirmación, permisos y 6 pruebas nuevas; verificación manual en Windows con venta ficticia y QR decodificado offline; 177 pruebas en local; documentación actualizada; PR #8 abierto | e474bcb, dc23434, 0eefeba, d6f9cf0 |
 | 2026-10-25 | Qoder | feat/maui-anulacion-qr | CI en verde para el PR #8: compilación y pruebas (177 en verde), y app MAUI para Windows y Android | d6f9cf0 |
+| 2026-10-25 | Qoder | feat/maui-caja-denominaciones | T17 terminado: conteo por denominaciones e historial de cortes en Caja, 6 pruebas nuevas; verificación manual en Windows con conteo de $790.00, corte #3 e historial; 183 pruebas en local; documentación actualizada | dab055f, 0496869 |

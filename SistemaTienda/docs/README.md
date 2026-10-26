@@ -11,16 +11,16 @@ La base técnica está **compilando y con pruebas automatizadas**. El núcleo im
 - Gastos simples y su totalización.
 - Clientes con fiado (saldo y abonos con historial) y proveedores (saldo y pagos).
 - Ventas / POS: venta atómica multi-línea con costo y precio congelados, pagos en efectivo, tarjeta (comisión), mixto y fiado, ticket de texto con QR informativo y anulación completa con devolución de stock y reverso de fiado.
-- Corte de caja: periodo desde el corte anterior, efectivo esperado, diferencia con motivo obligatorio, ingresos/retiros e historial.
+- Corte de caja: periodo desde el corte anterior, efectivo esperado, diferencia con motivo obligatorio, ingresos/retiros e historial; conteo por denominaciones e historial de los últimos 20 cortes en la app.
 - Reporte de utilidad por periodo: ventas, costo congelado, comisión de tarjeta, mermas y gastos.
 - Bitácora inmutable de operaciones sensibles (antes/después, usuario y motivo) y permisos validados en la capa de aplicación.
 - Migraciones de esquema versionadas (`PRAGMA user_version`) y respaldo/restauración local verificado.
 - Respaldo automático por intervalo configurado al iniciar y cerrar la aplicación, con aviso y bitácora.
 - Dinero en centavos enteros (`long`/`INTEGER`, esquema v4) con conversión y formato centralizados en `Dinero`.
-- App MAUI para Windows y Android con asistente de primera configuración, login por PIN, tablero (Inicio, Vender, Inventario, Ventas, Caja y Ajustes), punto de venta con carrito, cobro y ticket con QR, inventario con escaneo/alta/edición/entradas/mermas/ajustes/historial, ventas con detalle, reimpresión y anulación, caja operativa (cierre de corte, ingresos, retiros y abonos de fiado), respaldo manual y automático, y cierre de sesión.
+- App MAUI para Windows y Android con asistente de primera configuración, login por PIN, tablero (Inicio, Vender, Inventario, Ventas, Caja y Ajustes), punto de venta con carrito, cobro y ticket con QR, inventario con escaneo/alta/edición/entradas/mermas/ajustes/historial, ventas con detalle, reimpresión y anulación, caja operativa (cierre de corte con conteo por denominaciones, ingresos, retiros, abonos de fiado e historial de cortes), respaldo manual y automático, y cierre de sesión.
 - Interfaz de consola provisional para tareas de administración y para las operaciones que todavía no están en la app (clientes, proveedores y gastos).
 
-Pendiente para el MVP: pantallas de clientes/proveedores/gastos, conteo de caja por denominaciones e historial de cortes en la app, compartir el QR como imagen y validación de Android en dispositivo. Ver [roadmap.md](roadmap.md) y [deuda-tecnica.md](deuda-tecnica.md).
+Pendiente para el MVP: pantallas de clientes/proveedores/gastos, persistir el desglose por denominaciones, compartir el QR como imagen y validación de Android en dispositivo. Ver [roadmap.md](roadmap.md) y [deuda-tecnica.md](deuda-tecnica.md).
 
 ## Índice
 
