@@ -15,7 +15,10 @@ public partial class CajaPage : ContentPage
     private readonly CorteCajaService _cortes;
     private readonly ConfiguracionService _config;
     private readonly SesionApp _sesion;
+    private readonly List<LineaConteo> _lineasConteo = new();
     private CorteCaja? _pendiente;
+    private bool _actualizandoConteo;
+    private bool _conteoAplicado;
 
     public CajaPage(CorteCajaService cortes, ConfiguracionService config, SesionApp sesion)
     {
@@ -26,6 +29,7 @@ public partial class CajaPage : ContentPage
 
         MovimientoPicker.ItemsSource = new[] { TipoMovimientoCaja.Ingreso, TipoMovimientoCaja.Retiro };
         MovimientoPicker.SelectedIndex = 0;
+        ConstruirConteo();
     }
 
     protected override void OnAppearing()
@@ -80,24 +84,18 @@ public partial class CajaPage : ContentPage
             AbonoSaldoLabel.Text = string.Empty;
         }
 
-        var ultimo = _cortes.ObtenerUltimoCorte();
-        if (ultimo.IsSuccess && ultimo.Value != null)
-        {
-            var corte = ultimo.Value;
-            UltimoCorteLabel.Text = $"Cerrado el {Formato.FechaHora(corte.FechaRegistro)}";
-            UltimoCorteDetalleLabel.Text =
-                $"Contado {Formato.Moneda(corte.EfectivoContado)} · Diferencia {Formato.MonedaConSigno(corte.Diferencia)} · {corte.Usuario}";
-        }
-        else
-        {
-            UltimoCorteLabel.Text = "Todavía no hay cortes cerrados.";
-            UltimoCorteDetalleLabel.Text = string.Empty;
-        }
+        var historial = _cortes.ObtenerCortes(20);
+        var cortesCerrados = historial.IsSuccess && historial.Value != null
+            ? historial.Value
+            : new List<CorteCaja>();
+        BindableLayout.SetItemsSource(HistorialCortes,
+            cortesCerrados.Select(CrearCorteFila).ToList());
+        HistorialVacioLabel.IsVisible = cortesCerrados.Count == 0;
 
         if (reiniciarCierre)
         {
             FondoEntry.Text = _pendiente != null ? Pesos(_pendiente.FondoInicial) : string.Empty;
-            ContadoEntry.Text = string.Empty;
+            LimpiarConteo(limpiarContado: true);
             ObservacionesEditor.Text = string.Empty;
             MovimientoPicker.SelectedIndex = 0;
             CierreErrorLabel.IsVisible = false;
@@ -126,6 +124,202 @@ public partial class CajaPage : ContentPage
     }
 
     private void OnCierreChanged(object sender, TextChangedEventArgs e) => ActualizarCierre();
+
+    private void ConstruirConteo()
+    {
+        var grupo = string.Empty;
+        foreach (var denominacion in ConteoEfectivo.Denominaciones)
+        {
+            if (denominacion.Grupo != grupo)
+            {
+                grupo = denominacion.Grupo;
+                var titulo = new Label
+                {
+                    Text = grupo,
+                    Margin = new Thickness(0, 6, 0, 0)
+                };
+                titulo.SetDynamicResource(Label.StyleProperty, "EtiquetaSeccion");
+                DenominacionesPanel.Children.Add(titulo);
+            }
+
+            var fila = new Grid
+            {
+                ColumnDefinitions = new ColumnDefinitionCollection
+                {
+                    new ColumnDefinition(GridLength.Star),
+                    new ColumnDefinition(GridLength.Auto),
+                    new ColumnDefinition(GridLength.Auto)
+                },
+                ColumnSpacing = 10
+            };
+
+            var etiqueta = new Label
+            {
+                Text = denominacion.Etiqueta,
+                VerticalOptions = LayoutOptions.Center
+            };
+
+            var entrada = new Entry
+            {
+                Placeholder = "0",
+                Keyboard = Keyboard.Numeric,
+                WidthRequest = 76,
+                MaxLength = 6,
+                HorizontalTextAlignment = TextAlignment.End
+            };
+            entrada.SetDynamicResource(Entry.StyleProperty, "CampoTexto");
+            entrada.TextChanged += OnConteoChanged;
+
+            var subtotal = new Label
+            {
+                Text = Formato.Moneda(0),
+                WidthRequest = 92,
+                FontAttributes = FontAttributes.Bold,
+                HorizontalTextAlignment = TextAlignment.End,
+                VerticalOptions = LayoutOptions.Center
+            };
+
+            Grid.SetColumn(entrada, 1);
+            Grid.SetColumn(subtotal, 2);
+            fila.Children.Add(etiqueta);
+            fila.Children.Add(entrada);
+            fila.Children.Add(subtotal);
+
+            DenominacionesPanel.Children.Add(fila);
+            _lineasConteo.Add(new LineaConteo(denominacion, entrada, subtotal));
+        }
+    }
+
+    private void OnConteoChanged(object? sender, TextChangedEventArgs e)
+    {
+        if (!_actualizandoConteo)
+            ActualizarConteo();
+    }
+
+    private void ActualizarConteo()
+    {
+        _actualizandoConteo = true;
+        try
+        {
+            long total = 0;
+            var hayCaptura = false;
+            var hayInvalido = false;
+
+            foreach (var linea in _lineasConteo)
+            {
+                var texto = linea.Entrada.Text?.Trim() ?? string.Empty;
+                if (texto.Length > 0)
+                    hayCaptura = true;
+
+                var cantidad = LeerCantidad(texto);
+                if (!cantidad.HasValue)
+                {
+                    hayInvalido = true;
+                    linea.Subtotal.Text = "—";
+                    continue;
+                }
+
+                var subtotal = linea.Denominacion.Subtotal(cantidad.Value);
+                linea.Subtotal.Text = Formato.Moneda(subtotal);
+                total = checked(total + subtotal);
+            }
+
+            ConteoErrorLabel.IsVisible = hayInvalido;
+            if (hayInvalido)
+            {
+                ConteoErrorLabel.Text = "Revisa las cantidades: solo se aceptan números enteros.";
+                ConteoTotalLabel.Text = "—";
+                ContadoEntry.IsReadOnly = true;
+                ContadoEntry.Text = string.Empty;
+                ContadoAyudaLabel.Text = "Corrige el conteo para calcular el total contado.";
+                _conteoAplicado = false;
+            }
+            else if (hayCaptura)
+            {
+                ConteoTotalLabel.Text = Formato.Moneda(total);
+                ContadoEntry.IsReadOnly = true;
+                ContadoEntry.Text = Pesos(total);
+                ContadoAyudaLabel.Text = "El total contado se calcula del conteo por denominaciones.";
+                _conteoAplicado = true;
+            }
+            else
+            {
+                ConteoTotalLabel.Text = "—";
+                ContadoEntry.IsReadOnly = false;
+                if (_conteoAplicado)
+                {
+                    ContadoEntry.Text = string.Empty;
+                    _conteoAplicado = false;
+                }
+                ContadoAyudaLabel.Text =
+                    "Captura el total directamente o usa el conteo por denominaciones.";
+            }
+        }
+        finally
+        {
+            _actualizandoConteo = false;
+        }
+
+        ActualizarCierre();
+    }
+
+    private void OnLimpiarConteoClicked(object sender, EventArgs e)
+    {
+        LimpiarConteo(limpiarContado: true);
+        ActualizarCierre();
+    }
+
+    private void LimpiarConteo(bool limpiarContado)
+    {
+        _actualizandoConteo = true;
+        try
+        {
+            foreach (var linea in _lineasConteo)
+            {
+                linea.Entrada.Text = string.Empty;
+                linea.Subtotal.Text = Formato.Moneda(0);
+            }
+
+            ConteoTotalLabel.Text = "—";
+            ConteoErrorLabel.IsVisible = false;
+            ContadoEntry.IsReadOnly = false;
+            _conteoAplicado = false;
+            ContadoAyudaLabel.Text =
+                "Captura el total directamente o usa el conteo por denominaciones.";
+            if (limpiarContado)
+                ContadoEntry.Text = string.Empty;
+        }
+        finally
+        {
+            _actualizandoConteo = false;
+        }
+    }
+
+    private static int? LeerCantidad(string? texto)
+    {
+        if (string.IsNullOrWhiteSpace(texto))
+            return 0;
+
+        if (!int.TryParse(texto.Trim(), NumberStyles.None, CultureInfo.InvariantCulture,
+                out var cantidad))
+            return null;
+
+        return cantidad is >= 0 and <= 100_000 ? cantidad : null;
+    }
+
+    private static CorteFila CrearCorteFila(CorteCaja corte) => new()
+    {
+        Folio = $"Corte #{corte.Id}",
+        Periodo = $"Del {Formato.FechaHora(corte.Desde)} al {Formato.FechaHora(corte.Hasta)}",
+        Montos = $"Esperado {Formato.Moneda(corte.EfectivoEsperado)} · " +
+                 $"Contado {Formato.Moneda(corte.EfectivoContado)}",
+        Cierre = $"Cerrado el {Formato.FechaHora(corte.FechaRegistro)} por {corte.Usuario}",
+        Diferencia = Formato.MonedaConSigno(corte.Diferencia),
+        DiferenciaColor = corte.Diferencia == 0 ? ColorCuadra : ColorDiferencia,
+        Observaciones = string.IsNullOrWhiteSpace(corte.Observaciones)
+            ? string.Empty
+            : $"Nota: {corte.Observaciones}"
+    };
 
     private void ActualizarCierre()
     {
@@ -362,4 +556,7 @@ public partial class CajaPage : ContentPage
 
         return Dinero.DePesos(pesos);
     }
+
+    private sealed record LineaConteo(
+        DenominacionEfectivo Denominacion, Entry Entrada, Label Subtotal);
 }
