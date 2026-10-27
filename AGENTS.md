@@ -72,11 +72,11 @@ git worktree add ../tienda-ia2 -b feat/mi-tarea feat/base-compilable
 
 Cada agente: su carpeta, su rama y su PR.
 
-## Estado del proyecto (2026-10-25)
+## Estado del proyecto (2026-10-26)
 
-- Ramas publicadas con el trabajo actual: `feat/ui-maui` (sobre `feat/anulacion-ventas`, que parte de `feat/respaldo-automatico`), `feat/maui-pos` (sobre `feat/ui-maui`, PR #4 contra `main`), `feat/maui-caja` (sobre `feat/maui-pos`, PR #5 contra `main`), `feat/maui-inventario` (sobre `feat/maui-caja`, PR #7 contra `main`), `feat/maui-anulacion-qr` (sobre `feat/maui-inventario`, PR #8 contra `main`), `feat/maui-caja-denominaciones` (sobre `feat/maui-anulacion-qr`, PR #9 contra `main`) y `feat/maui-clientes` (sobre `feat/maui-caja-denominaciones`).
+- Ramas publicadas con el trabajo actual: `feat/ui-maui` (sobre `feat/anulacion-ventas`, que parte de `feat/respaldo-automatico`), `feat/maui-pos` (sobre `feat/ui-maui`, PR #4 contra `main`), `feat/maui-caja` (sobre `feat/maui-pos`, PR #5 contra `main`), `feat/maui-inventario` (sobre `feat/maui-caja`, PR #7 contra `main`), `feat/maui-anulacion-qr` (sobre `feat/maui-inventario`, PR #8 contra `main`), `feat/maui-caja-denominaciones` (sobre `feat/maui-anulacion-qr`, PR #9 contra `main`) y `feat/maui-clientes` (sobre `feat/maui-caja-denominaciones`, PR #10 contra `main`).
 - `main`: solo el commit base; los PR de `feat/base-compilable`, `feat/migraciones-respaldo`, `feat/ventas-pos`, `feat/corte-caja`, `feat/centavos-enteros`, `feat/integracion-t4-t9`, `feat/reportes-utilidad`, `feat/respaldo-automatico`, `feat/anulacion-ventas`, `feat/ui-maui`, `feat/maui-pos`, `feat/maui-caja`, `feat/maui-inventario`, `feat/maui-anulacion-qr`, `feat/maui-caja-denominaciones` y `feat/maui-clientes` siguen pendientes de integración, en ese orden.
-- Build: 0 errores, 0 advertencias. Pruebas: **187 en verde** (verificadas localmente el 2026-10-25). La app MAUI compila para Windows en local y para Windows y Android en CI. El CI del PR #8 quedó en verde el 2026-10-25: compilación y pruebas, y app MAUI para Windows y Android. El CI del PR #9 también quedó en verde el 2026-10-25 con 183 pruebas.
+- Build: 0 errores, 0 advertencias. Pruebas: **187 en verde** (verificadas localmente el 2026-10-25). La app MAUI compila para Windows en local y para Windows y Android en CI. El CI del PR #8 quedó en verde el 2026-10-25: compilación y pruebas, y app MAUI para Windows y Android. El CI del PR #9 también quedó en verde el 2026-10-25 con 183 pruebas. El CI del PR #10 quedó en verde el 2026-10-26 con 187 pruebas.
 - POS verificado manualmente en Windows el 2026-10-25 con datos ficticios: los cuatro métodos de pago, cambio, límite y stock 0, ticket con copiar/cerrar y totales coherentes en Ventas/Caja. Pendientes: botón Compartir y ejecución en Android.
 - Caja verificada manualmente en Windows el 2026-10-25: cierre con faltante y observación (corte #1), ingreso, retiro con confirmación, abono de fiado y cierre sin diferencia (corte #2), y en T17 conteo por denominaciones e historial de cortes (corte #3), con el efectivo esperado coincidiendo con la base. Pendientes: desglose persistido, roles distintos al dueño y Android.
 - Ventas (T16) verificado manualmente en Windows el 2026-10-25: venta #10 de tres productos, ticket con QR decodificado offline, reimpresión, anulación con motivo y confirmación `ANULAR`, restauración de stock y bitácora; rechazo con motivo vacío, confirmación incorrecta y corte cerrado; encargado ve la acción y empleado no.
@@ -228,7 +228,7 @@ El detalle vive en el tablero. Resumen y criterios de terminado:
 
 ### T18 — Pantalla de Clientes en la app MAUI (HECHO)
 
-- Completado en `feat/maui-clientes` sobre `feat/maui-caja-denominaciones`.
+- Completado en `feat/maui-clientes` sobre `feat/maui-caja-denominaciones` (PR #10 contra `main`, CI en verde; sin merge).
 - Pestaña **Clientes** entre Ventas y Caja: resumen (clientes, con saldo y por cobrar), búsqueda por nombre o teléfono sin distinguir mayúsculas ni acentos, filtros **Todos** / **Con saldo**, alta con teléfono y saldo inicial opcionales, y abono con validación de saldo.
 - `ConfiguracionService.BuscarClientes` centraliza la búsqueda; `AgregarClienteFiado` recorta nombre y teléfono y registra `AccionBitacora.Cliente`; el abono reutiliza `RegistrarAbonoCliente` con el permiso `RegistrarAbono` para dueño y encargado.
 - 4 pruebas nuevas en `FiadoProveedoresTests` (búsqueda sin filtro, filtro por nombre/teléfono con acentos y mayúsculas, filtro con saldo y alta con bitácora); total del proyecto: 187.
@@ -276,7 +276,7 @@ dotnet build SistemaTienda/SistemaTienda.Maui/SistemaTienda.Maui.csproj -f net10
 
 Entorno conocido: el equipo tiene runtime **.NET 10** y SDK 10; los proyectos `net8.0` usan `RollForward=Major` para ejecutarse. Si creas un nuevo ejecutable o proyecto de pruebas, agrega la misma propiedad o fallará al arrancar. La app MAUI usa los frameworks `net10.0-android` y `net10.0-windows10.0.19041.0` y requiere las cargas de trabajo `maui-windows` y `maui-android` instaladas.
 
-**Nota local (2026-10-25)**: en este equipo las pruebas y la consola ya se ejecutan; `dotnet test` terminó con 187 pruebas en verde. La nota anterior sobre Smart App Control (error `0x800711C7` al cargar ensamblados locales) ya no aplica; si reaparece, revisa Seguridad de Windows → Control de aplicaciones y navegador.
+**Nota local (2026-10-26)**: en este equipo las pruebas y la consola ya se ejecutan; `dotnet test` terminó con 187 pruebas en verde. La nota anterior sobre Smart App Control (error `0x800711C7` al cargar ensamblados locales) ya no aplica; si reaparece, revisa Seguridad de Windows → Control de aplicaciones y navegador.
 
 ## Convención de pruebas
 

@@ -40,6 +40,7 @@ Próximamente después de completar los módulos críticos.
 - *Modificado*: el tablero de la app pasa a siete pestañas (Inicio, Vender, Inventario, Ventas, Clientes, Caja y Ajustes).
 - *Limitación*: no se edita ni se borra un cliente, no hay estado de cuenta por cliente y el abono se registra siempre como efectivo.
 - *Verificación*: compilación de la solución y de la app MAUI para Windows sin errores; pruebas de servicio en verde. La verificación manual de la pantalla quedó pendiente porque el entorno de desarrollo no permitió abrir la GUI.
+- *CI*: PR #10 contra `main` en verde el 2026-10-26: compilación y pruebas (187 en verde) y app MAUI para Windows y Android.
 - Total del proyecto: 187 pruebas.
 
 ### v0.0.16 - 2026-10-25: Conteo por denominaciones e historial de cortes en Caja
