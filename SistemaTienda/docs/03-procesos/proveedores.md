@@ -38,7 +38,7 @@ El módulo de proveedores y cuentas por pagar permite a la tienda gestionar sus 
 | Clave | TEXT | RFC o nombre comercial |
 | Telefono | TEXT | Teléfono de contacto |
 | Direccion | TEXT | Dirección del proveedor |
-| SaldoPendiente | DECIMAL | Monto total pendiente de pago |
+| SaldoPendiente | INTEGER | Monto total pendiente de pago en centavos |
 | FechaRegistro | DATETIME | Fecha en que se registró el proveedor |
 | UltimaActualizacion | DATETIME | Última fecha de movimiento (pago/crédito) |
 
@@ -153,3 +153,12 @@ Reporte de proveedores muestra saldos actualizados
 - No hay historial detallado de compras por proveedor (solo saldo actual)
 - Los saldos son informativos y no tienen consecuencias legales dentro del sistema
 - No hay clasificación de proveedores (por categoría, confianza, etc.)
+
+---
+
+**Estado actual (2026-10-26)**: base implementada en consola y app MAUI (T19).
+
+- *Implementado*: alta con nombre obligatorio y saldo inicial opcional; directorio ordenado por nombre; en la app, búsqueda por nombre, clave o teléfono sin distinguir mayúsculas ni acentos y filtro **Con saldo**; pago que descuenta el saldo con el permiso `PagarProveedor` para dueño y encargado. El alta y el pago dejan registro en la bitácora (`Proveedor` y `PagoProveedor`). Cuatro pruebas nuevas en `FiadoProveedoresTests`; total del proyecto: 191.
+- *Desviaciones del diseño*: el pago **no** genera un historial propio ni entra al corte de caja (a diferencia de 7.2.3 y 7.4.2); solo actualiza el saldo y la bitácora. La app advierte que, si el pago es en efectivo, debe registrarse además un retiro en Caja. La consola conserva sus menús y no pregunta método de pago.
+- *Pendiente*: edición y borrado, estado de cuenta, detección de duplicados e historial de pagos con su movimiento de caja. Ver [deuda-tecnica.md](../deuda-tecnica.md).
+- *Verificación*: compilación y pruebas en verde; la verificación manual de la pantalla en Windows y Android quedó pendiente porque el entorno de desarrollo no permitió abrir la GUI.

@@ -5,12 +5,14 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>disable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <RollForward>Major</RollForward>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="C:\proyectos\tienda\SistemaTienda\SistemaTienda.Core\Core.csproj" />
-    <ProjectReference Include="C:\proyectos\tienda\SistemaTienda\SistemaTienda.Infrastructure\Infrastructure.csproj" />
-    <ProjectReference Include="C:\proyectos\tienda\SistemaTienda\SistemaTienda.Application\Application.csproj" />
+    <ProjectReference Include="..\SistemaTienda.Core\Core.csproj" />
+    <ProjectReference Include="..\SistemaTienda.Infrastructure\Infrastructure.csproj" />
+    <ProjectReference Include="..\SistemaTienda.Application\Application.csproj" />
   </ItemGroup>
 
 </Project>
