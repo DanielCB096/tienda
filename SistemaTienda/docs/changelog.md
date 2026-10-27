@@ -32,6 +32,16 @@ Próximamente después de completar los módulos críticos.
 - Configuración básica de tienda (nombre, giro, impuestos, métodos de pago).
 - Documentación inicial (glosario, stack, módulos, ADR).
 
+### v0.0.18 - 2026-10-26: Proveedores y pagos en la app MAUI
+
+- *Agregado*: pestaña **Proveedores** con resumen de proveedores, con saldo y total por pagar; directorio con búsqueda por nombre, clave o teléfono, filtro **Con saldo**, alta con clave/teléfono/dirección y saldo inicial opcionales, y pago del saldo pendiente.
+- *Agregado*: `ConfiguracionService.BuscarProveedores` filtra por nombre, clave o teléfono sin distinguir mayúsculas ni acentos; 4 pruebas nuevas en `FiadoProveedoresTests`.
+- *Modificado*: el alta de proveedor recorta nombre, clave, teléfono y dirección y deja un registro en la bitácora (`AccionBitacora.Proveedor`).
+- *Modificado*: el tablero de la app pasa a ocho pestañas (Inicio, Vender, Inventario, Ventas, Clientes, Proveedores, Caja y Ajustes).
+- *Limitación*: el pago solo reduce el saldo y deja bitácora; no genera historial propio ni entra al corte de caja, así que un pago en efectivo debe registrarse también como retiro en Caja. No se edita ni se borra un proveedor y no hay estado de cuenta.
+- *Verificación*: compilación de la solución y de la app MAUI para Windows sin errores; 191 pruebas de servicio en verde. La verificación manual de la pantalla quedó pendiente porque el entorno de desarrollo no permitió abrir la GUI.
+- Total del proyecto: 191 pruebas.
+
 ### v0.0.17 - 2026-10-25: Clientes y abonos en la app MAUI
 
 - *Agregado*: pestaña **Clientes** con resumen de clientes, con saldo y total por cobrar; directorio con búsqueda por nombre o teléfono, filtro **Con saldo**, alta con saldo inicial opcional y abono en efectivo al fiado.

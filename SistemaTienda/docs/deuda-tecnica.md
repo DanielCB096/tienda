@@ -14,8 +14,8 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 ### Pagos a proveedores sin historial inmutable
 
 - **Dónde**: `ActualizarSaldoProveedor`.
-- **Impacto**: se actualiza el saldo, pero no se guarda el movimiento de pago. No se puede auditar ni reconstruir el saldo. Contradice "el historial no se edita". Los abonos de fiado ya tienen historial (`AbonosFiado`), los pagos a proveedores no.
-- **Cierre**: tabla `PagosProveedor` inmutable; el saldo se actualiza dentro de la misma transacción.
+- **Impacto**: se actualiza el saldo, pero no se guarda el movimiento de pago. No se puede auditar ni reconstruir el saldo. Contradice "el historial no se edita". Los abonos de fiado ya tienen historial (`AbonosFiado`), los pagos a proveedores no. Desde T19 la pestaña Proveedores de la app permite pagar, así que la limitación es más visible: el pago solo reduce el saldo y deja un registro en la bitácora, pero no genera un movimiento de pago ni entra al corte de caja; si se paga en efectivo, el cajero debe registrar además un retiro en Caja.
+- **Cierre**: tabla `PagosProveedor` inmutable; el saldo se actualiza dentro de la misma transacción y el pago se refleja en el corte con su método.
 
 ### Ventas sin descuentos
 
@@ -72,17 +72,24 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 - **Impacto**: no se puede corregir el nombre o teléfono de un cliente ni retirarlo del directorio, y el alta no detecta duplicados. El abono se registra siempre como efectivo (no se pregunta el método) y no hay estado de cuenta con ventas fiadas y abonos; la consola conserva las mismas limitaciones. La pantalla aún no se ha verificado a mano en Windows ni en Android.
 - **Cierre**: edición con permiso y bitácora, detección de duplicados, estado de cuenta de solo lectura y método de pago en el abono.
 
+### Proveedores sin edición, estado de cuenta ni pago en caja
+
+- **Dónde**: `ConfiguracionService` y la pestaña Proveedores de la app MAUI.
+- **Por qué**: T19 cubrió el directorio, la búsqueda, el alta y el pago del saldo; la edición, el borrado y el historial de pagos quedaron fuera del alcance.
+- **Impacto**: no se puede corregir la clave, el teléfono o la dirección de un proveedor ni retirarlo del directorio, y el alta no detecta duplicados. El pago no pide método ni entra al corte; si es en efectivo, el usuario debe registrar por separado un retiro en Caja para que el efectivo esperado cuadre. La pantalla aún no se ha verificado a mano en Windows ni en Android.
+- **Cierre**: edición con permiso y bitácora, detección de duplicados, tabla `PagosProveedor` con método y movimiento de caja ligado al pago.
+
 ### La app MAUI no cubre todas las operaciones
 
 - **Dónde**: `SistemaTienda.Maui/Pages`.
-- **Por qué**: el punto de venta se entregó en T13, la caja operativa en T14, el inventario en T15, el detalle/anulación de ventas en T16, el conteo con historial de cortes en T17 y la pantalla de clientes en T18; el resto de las operaciones de escritura se hará en tareas posteriores.
-- **Impacto**: desde la app se vende, se opera el inventario, se cierra el corte con conteo, se registran ingresos, retiros y abonos de fiado, se anulan ventas, se reimprime el ticket, se consulta el historial de cortes, se gestiona el directorio de clientes con sus abonos y se crea respaldo. Gestionar proveedores y gastos sigue en la consola, que no es usable por el cajero; la edición y el estado de cuenta de clientes y la consulta de ventas de fechas anteriores tampoco están en la app.
-- **Cierre**: pantallas de proveedores y gastos en MAUI, módulo por módulo y con sus pruebas; después, edición/estado de cuenta de clientes y consulta histórica de ventas.
+- **Por qué**: el punto de venta se entregó en T13, la caja operativa en T14, el inventario en T15, el detalle/anulación de ventas en T16, el conteo con historial de cortes en T17, la pantalla de clientes en T18 y la de proveedores en T19; el resto de las operaciones de escritura se hará en tareas posteriores.
+- **Impacto**: desde la app se vende, se opera el inventario, se cierra el corte con conteo, se registran ingresos, retiros y abonos de fiado, se anulan ventas, se reimprime el ticket, se consulta el historial de cortes, se gestiona el directorio de clientes con sus abonos, se gestiona el directorio de proveedores con sus pagos y se crea respaldo. Registrar gastos sigue en la consola, que no es usable por el cajero; la edición/estado de cuenta de clientes y proveedores y la consulta de ventas de fechas anteriores tampoco están en la app.
+- **Cierre**: pantalla de gastos en MAUI con sus pruebas; después, edición/estado de cuenta de clientes y proveedores y consulta histórica de ventas.
 
 ### App MAUI sin pruebas automatizadas
 
 - **Dónde**: `SistemaTienda.Maui`.
-- **Impacto**: CI solo compila para Windows y Android. Una regresión de navegación, sesión, POS, Ventas, anulación, inventario, clientes, caja, historial o formato no se detecta hasta la verificación manual. El cierre de corte, el conteo, los movimientos de inventario, la anulación y los abonos desde la app dependen de esa verificación. `TicketServiceTests`, `ConteoEfectivoTests` y las pruebas de búsqueda y alta de clientes cubren cálculos, textos y servicios, no la interfaz.
+- **Impacto**: CI solo compila para Windows y Android. Una regresión de navegación, sesión, POS, Ventas, anulación, inventario, clientes, proveedores, caja, historial o formato no se detecta hasta la verificación manual. El cierre de corte, el conteo, los movimientos de inventario, la anulación y los abonos y pagos desde la app dependen de esa verificación. `TicketServiceTests`, `ConteoEfectivoTests` y las pruebas de búsqueda, alta y permisos de clientes y proveedores cubren cálculos, textos y servicios, no la interfaz.
 - **Cierre**: extraer la lógica de cada página a modelos de vista probables y agregar pruebas; valorar pruebas de interfaz más adelante.
 
 ### Android sin validación en dispositivo

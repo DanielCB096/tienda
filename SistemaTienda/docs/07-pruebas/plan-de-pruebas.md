@@ -108,7 +108,7 @@ dotnet test SistemaTienda/SistemaTienda.sln
 |---------|-------|
 | `ConfiguracionTests` | Asistente inicial, PIN hasheado, login, roles, gastos |
 | `InventarioTests` | Alta, duplicados, venta, merma, entrada, ajuste, stock bajo, búsqueda, valorizado |
-| `FiadoProveedoresTests` | Cliente, abono, saldo, proveedor, pago, validaciones, búsqueda por nombre o teléfono sin mayúsculas ni acentos, filtro con saldo, recorte de datos y bitácora de alta |
+| `FiadoProveedoresTests` | Cliente, abono, saldo, proveedor y pago; búsqueda de clientes por nombre o teléfono y de proveedores por nombre, clave o teléfono sin mayúsculas ni acentos; filtro con saldo; recorte de datos y bitácora de alta de ambos |
 | `BaseDatosTests` | Inicialización idempotente, tablas, mapeo de tipos |
 | `DineroTests` | Conversión pesos ↔ centavos con redondeo `AwayFromZero`, multiplicación con desbordamiento, porcentaje a centavos y formato invariante |
 | `MigracionesRespaldoTests` | Runner de migraciones con respaldo previo, idempotencia, fallo con rollback, rechazo de base más nueva, respaldo verificado, restauración exacta con respaldo de seguridad, confirmación obligatoria, migración v3 → v4 a centavos con integridad de FKs |
@@ -126,7 +126,7 @@ dotnet test SistemaTienda/SistemaTienda.sln
 | `TicketServiceTests` | Texto del ticket (efectivo con recibido y cambio, mixto con comisión, fiado con cliente), marcador de anulación, contenido del QR con estado, límite de diez productos y nombre de tienda por defecto |
 | `ConteoEfectivoTests` | Catálogo de 11 denominaciones de mayor a menor y sin duplicados, subtotal por cantidad, cantidades cero o negativas ignoradas, total de billetes y monedas y líneas sin cantidad |
 
-Total actual: 187 casos, todos en verde. Los puntos 1, 2, 3, 5, 6, 7, 8 y 9 del listado de áreas críticas tienen cobertura parcial; falta rendimiento y la interfaz MAUI sigue sin pruebas automatizadas. La restauración se prueba sobre una base temporal: se verifica que el contenido vuelve al del respaldo (no byte a byte).
+Total actual: 191 casos, todos en verde. Los puntos 1, 2, 3, 5, 6, 7, 8 y 9 del listado de áreas críticas tienen cobertura parcial; falta rendimiento y la interfaz MAUI sigue sin pruebas automatizadas. La restauración se prueba sobre una base temporal: se verifica que el contenido vuelve al del respaldo (no byte a byte).
 
 La verificación se ejecuta en GitHub Actions (`windows-latest`) en cada push y también puede correr localmente con `dotnet test`; ver `CLAUDE-tienda.md` para el entorno actual.
 
@@ -311,6 +311,30 @@ Pendiente de la pantalla:
 
 - Editar nombre y teléfono, borrar clientes y consultar el estado de cuenta por cliente.
 - Elegir el método del abono (hoy siempre efectivo).
+- Repetir el flujo en la tablet Android.
+- Cubrir la interfaz con pruebas automatizadas.
+
+## Verificación manual de Proveedores (T19) — pendiente
+
+La pantalla compila para Windows y las pruebas de servicio están en verde, pero el entorno de desarrollo de esta sesión no permitió abrir la interfaz gráfica. La verificación manual queda pendiente en Windows sobre una base demo, sin datos reales:
+
+| Caso | Resultado |
+|------|-----------|
+| Abrir la pestaña Proveedores y ver el resumen y el directorio | Pendiente |
+| Alta con solo nombre, sin clave, teléfono, dirección ni saldo | Pendiente |
+| Alta con clave, teléfono, dirección y saldo inicial | Pendiente |
+| Alta sin nombre | Pendiente (debe mostrar el error y no guardar) |
+| Búsqueda por nombre con minúsculas y sin acentos | Pendiente |
+| Búsqueda por clave, por teléfono y filtro **Con saldo** | Pendiente |
+| Pago mayor al saldo | Pendiente (debe mostrar el error y no modificar) |
+| Pago válido y actualización del saldo y el resumen | Pendiente |
+| Sesión de empleado: directorio y alta visibles, **Pagar** oculto | Pendiente |
+| Alta y pago se reflejan en la bitácora | Pendiente |
+
+Pendiente de la pantalla:
+
+- Editar o borrar proveedores y consultar el estado de cuenta por proveedor.
+- Historial de pagos con método y su entrada al corte de caja.
 - Repetir el flujo en la tablet Android.
 - Cubrir la interfaz con pruebas automatizadas.
 
