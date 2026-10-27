@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="SistemaTienda.Maui.Pages.ConfiguracionInicialPage"
+             BackgroundColor="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray950}}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20,32" Spacing="12">
+
+            <Label Text="Configuración inicial"
+                   Style="{StaticResource TituloPagina}" />
+            <Label Text="Datos de la tienda y PIN del dueño. Puedes ajustarlos después; el PIN no se puede recuperar, anótalo."
+                   Style="{StaticResource TextoNota}"
+                   Margin="0,0,0,8" />
+
+            <Border Style="{StaticResource Tarjeta}"
+                    MaximumWidthRequest="520"
+                    HorizontalOptions="Center">
+                <VerticalStackLayout Spacing="8">
+
+                    <Label Text="DATOS DE LA TIENDA" Style="{StaticResource EtiquetaSeccion}" />
+                    <Label Text="Nombre de la tienda" Style="{StaticResource TextoNota}" />
+                    <Entry x:Name="NombreEntry" Style="{StaticResource CampoTexto}" Placeholder="Ej. Abarrotes La Esquina" />
+
+                    <Label Text="Giro del negocio" Style="{StaticResource TextoNota}" Margin="0,8,0,0" />
+                    <Entry x:Name="GiroEntry" Style="{StaticResource CampoTexto}" />
+
+                    <Label Text="Impuesto predeterminado (%)" Style="{StaticResource TextoNota}" Margin="0,8,0,0" />
+                    <Entry x:Name="ImpuestoEntry" Style="{StaticResource CampoTexto}" Keyboard="Numeric" />
+
+                    <Label Text="Comisión de tarjeta (%)" Style="{StaticResource TextoNota}" Margin="0,8,0,0" />
+                    <Entry x:Name="ComisionEntry" Style="{StaticResource CampoTexto}" Keyboard="Numeric" />
+
+                    <Label Text="Fondo de caja inicial ($)" Style="{StaticResource TextoNota}" Margin="0,8,0,0" />
+                    <Entry x:Name="FondoEntry" Style="{StaticResource CampoTexto}" Keyboard="Numeric" />
+
+                    <HorizontalStackLayout Spacing="12" Margin="0,12,0,0">
+                        <Switch x:Name="FiadoSwitch" />
+                        <Label Text="Activar fiado a clientes" VerticalOptions="Center" />
+                    </HorizontalStackLayout>
+
+                    <Label Text="Límite de crédito por cliente ($, 0 = sin límite)" Style="{StaticResource TextoNota}" Margin="0,8,0,0" />
+                    <Entry x:Name="LimiteEntry" Style="{StaticResource CampoTexto}" Keyboard="Numeric" />
+
+                    <Label Text="Días entre respaldos (0 = deshabilitado)" Style="{StaticResource TextoNota}" Margin="0,8,0,0" />
+                    <Entry x:Name="RespaldoEntry" Style="{StaticResource CampoTexto}" Keyboard="Numeric" />
+
+                    <BoxView HeightRequest="1" Color="{StaticResource Gray200}" Margin="0,12" />
+
+                    <Label Text="ACCESO DEL DUEÑO" Style="{StaticResource EtiquetaSeccion}" />
+                    <Label Text="PIN del dueño (4 a 6 dígitos)" Style="{StaticResource TextoNota}" />
+                    <Entry x:Name="PinEntry" Style="{StaticResource CampoTexto}" IsPassword="True" Keyboard="Numeric" MaxLength="6" />
+
+                    <Label Text="Confirma el PIN" Style="{StaticResource TextoNota}" Margin="0,8,0,0" />
+                    <Entry x:Name="PinConfirmacionEntry" Style="{StaticResource CampoTexto}" IsPassword="True" Keyboard="Numeric" MaxLength="6" />
+
+                    <Label x:Name="ErrorLabel" Style="{StaticResource Error}" IsVisible="False" Margin="0,8,0,0" />
+
+                    <Button x:Name="CrearButton"
+                            Text="Crear tienda"
+                            Style="{StaticResource BotonPrincipal}"
+                            Clicked="OnCrearClicked"
+                            Margin="0,12,0,0" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Label Text="Los datos viven solo en este dispositivo. Configura un respaldo desde Ajustes."
+                   Style="{StaticResource TextoNota}"
+                   HorizontalTextAlignment="Center"
+                   Margin="0,8,0,0" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

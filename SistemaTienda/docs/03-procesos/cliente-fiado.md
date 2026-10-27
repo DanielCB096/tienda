@@ -8,7 +8,7 @@ El módulo de clientes y fiado permite a la tienda ofrecer ventas a crédito a s
 ### 6.2.1. Nueva Venta a Fiado
 1. El cajero selecciona la opción "[1] Nueva venta a fiado" en el menú principal
 2. Ingresa el nombre del cliente (o busca en la lista existente)
-3. Ingresa opcionalmente la cédula o RFC del cliente
+3. Ingresa opcionalmente el teléfono del cliente (único dato de contacto; no se piden RFC ni cédula por privacidad)
 4. Ingresa el monto total de la compra
 5. Ingresa el abono inicial (puede ser 0 para venta al contado total)
 6. El sistema calcula y muestra el saldo pendiente
@@ -34,8 +34,8 @@ El módulo de clientes y fiado permite a la tienda ofrecer ventas a crédito a s
 |-------|------|-------------|
 | Id | INTEGER PRIMARY KEY | Identificador único |
 | Nombre | TEXT | Nombre del cliente |
-| Clave | TEXT | Cédula de identidad o RFC |
-| SaldoActual | DECIMAL | Saldo pendiente actual |
+| Telefono | TEXT | Teléfono de contacto (opcional) |
+| SaldoActual | INTEGER | Saldo pendiente actual en centavos |
 | FechaRegistro | DATETIME | Fecha en que se registró el cliente |
 | UltimaActualizacion | DATETIME | Última fecha de movimiento |
 
@@ -43,7 +43,7 @@ El módulo de clientes y fiado permite a la tienda ofrecer ventas a crédito a s
 ```
 Id: 1
 Nombre: "Juan Pérez"
-Clave: "JAZ950101ABC"
+Telefono: "555-123-4567"
 SaldoActual: 150.50
 FechaRegistro: 2024-01-15 10:30:00
 UltimaActualizacion: 2024-03-20 14:20:00
@@ -123,5 +123,13 @@ Nueva Venta a Fiado
 - No hay límites de crédito personalizados por cliente (se usa el configurado en ajustes)
 - No hay cálculo de intereses automáticos
 - No hay recordatorios automáticos por WhatsApp/SMS
-- No hay historial de pagos detallado por cliente (solo saldo actual)
+- No hay historial de abonos en la interfaz por cliente (la tabla `AbonosFiado` ya guarda fecha, monto, método y usuario)
 - Los saldos son informativos y no tienen consecuencias legales dentro del sistema
+
+## 6.9. Estado de implementación (2026-10-25)
+
+- *Implementado*: alta de cliente con nombre, teléfono y saldo inicial; consulta de clientes con saldo; venta a fiado desde el POS (cliente obligatorio, saldo y límite de crédito); abono con validación de monto positivo y de no exceder el saldo; historial inmutable en `AbonosFiado` (fecha, monto, método, usuario) escrito en la misma transacción que descuenta el saldo; el menú de fiado solo aparece si `FiadoActivado` es verdadero.
+- *Implementado en la app (T18)*: pestaña **Clientes** con resumen de cartera, búsqueda por nombre o teléfono sin distinguir mayúsculas ni acentos, filtro **Con saldo**, alta con nombre, teléfono y saldo inicial opcional, y abono en efectivo con actualización inmediata del saldo. El alta recorta espacios y queda en la bitácora. La compilación y las pruebas de servicio están en verde; la verificación manual de la pantalla quedó pendiente porque el entorno de desarrollo no permitió abrir la GUI.
+- *Pendiente*: pantalla de estado de cuenta por cliente (ventas y abonos), edición o baja de cliente, cancelación de venta a fiado, límite de crédito por cliente y recordatorios.
+- *Deuda*: el abono se registra siempre como efectivo porque ni la consola ni la app preguntan el método (ver [deuda-técnica](../deuda-tecnica.md)).
+- *Pruebas*: `FiadoProveedoresTests` (incluye búsqueda y bitácora de alta), `VentasTests` y `CorteCajaTests`.

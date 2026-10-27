@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:models="clr-namespace:SistemaTienda.Maui.Models"
+             x:Class="SistemaTienda.Maui.Pages.CajaPage"
+             Title="Caja">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="12">
+
+            <Label Text="Corte de caja" Style="{StaticResource TituloPagina}" />
+            <Label x:Name="PeriodoLabel" Style="{StaticResource TextoNota}" Margin="0,0,0,8" />
+
+            <Border Style="{StaticResource Tarjeta}">
+                <VerticalStackLayout Spacing="6">
+                    <Label Text="EFECTIVO ESPERADO" Style="{StaticResource EtiquetaSeccion}" />
+                    <Label x:Name="EfectivoLabel" Text="$0.00" Style="{StaticResource ValorGrande}" />
+                    <Label x:Name="FondoLabel" Style="{StaticResource TextoNota}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Style="{StaticResource Tarjeta}">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="MOVIMIENTOS DEL PERIODO" Style="{StaticResource EtiquetaSeccion}" />
+
+                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="6">
+                        <Label Text="Ventas en efectivo" />
+                        <Label x:Name="VentasEfectivoLabel" Grid.Column="1" FontAttributes="Bold" />
+                        <Label Grid.Row="1" Text="Ventas con tarjeta" />
+                        <Label x:Name="VentasTarjetaLabel" Grid.Row="1" Grid.Column="1" FontAttributes="Bold" />
+                        <Label Grid.Row="2" Text="Ventas a fiado" />
+                        <Label x:Name="VentasFiadoLabel" Grid.Row="2" Grid.Column="1" FontAttributes="Bold" />
+                        <Label Grid.Row="3" Text="Abonos en efectivo" />
+                        <Label x:Name="AbonosLabel" Grid.Row="3" Grid.Column="1" FontAttributes="Bold" />
+                        <Label Grid.Row="4" Text="Ingresos y retiros" />
+                        <Label x:Name="MovimientosLabel" Grid.Row="4" Grid.Column="1" FontAttributes="Bold" />
+                        <Label Grid.Row="5" Text="Gastos pagados de caja" />
+                        <Label x:Name="GastosLabel" Grid.Row="5" Grid.Column="1" FontAttributes="Bold" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Style="{StaticResource Tarjeta}">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="CERRAR EL CORTE" Style="{StaticResource EtiquetaSeccion}" />
+                    <Label Text="Cuenta el efectivo físico de la caja. Al cerrar, el periodo queda inmutable y el siguiente inicia con lo contado."
+                           Style="{StaticResource TextoNota}" />
+
+                    <Label Text="Fondo inicial del periodo" Style="{StaticResource EtiquetaSeccion}" />
+                    <Entry x:Name="FondoEntry"
+                           Style="{StaticResource CampoTexto}"
+                           Keyboard="Numeric"
+                           Placeholder="0.00"
+                           TextChanged="OnCierreChanged" />
+
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <Label Text="Efectivo esperado" VerticalOptions="Center" />
+                        <Label x:Name="EsperadoCierreLabel"
+                               Grid.Column="1"
+                               Text="—"
+                               FontAttributes="Bold"
+                               HorizontalTextAlignment="End" />
+                    </Grid>
+
+                    <Label Text="Conteo por denominaciones" Style="{StaticResource EtiquetaSeccion}" />
+                    <Label Text="Opcional. Anota cuántos billetes y monedas hay de cada valor y el total se calcula solo."
+                           Style="{StaticResource TextoNota}" />
+                    <VerticalStackLayout x:Name="DenominacionesPanel" Spacing="4" />
+
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10" Margin="0,4,0,0">
+                        <VerticalStackLayout Spacing="0">
+                            <Label Text="TOTAL DEL CONTEO" Style="{StaticResource EtiquetaSeccion}" />
+                            <Label x:Name="ConteoTotalLabel" Text="—" FontSize="20" FontAttributes="Bold" />
+                        </VerticalStackLayout>
+                        <Button Grid.Column="1"
+                                Text="Limpiar conteo"
+                                Style="{StaticResource BotonSecundario}"
+                                HeightRequest="40"
+                                FontSize="14"
+                                VerticalOptions="Center"
+                                Clicked="OnLimpiarConteoClicked" />
+                    </Grid>
+                    <Label x:Name="ConteoErrorLabel" Style="{StaticResource Error}" IsVisible="False" />
+
+                    <Label Text="Efectivo contado" Style="{StaticResource EtiquetaSeccion}" />
+                    <Entry x:Name="ContadoEntry"
+                           Style="{StaticResource CampoTexto}"
+                           Keyboard="Numeric"
+                           Placeholder="0.00"
+                           TextChanged="OnCierreChanged" />
+                    <Label x:Name="ContadoAyudaLabel"
+                           Text="Captura el total directamente o usa el conteo por denominaciones."
+                           Style="{StaticResource TextoNota}" />
+
+                    <Border BackgroundColor="{AppThemeBinding Light={StaticResource Secondary}, Dark={StaticResource Tertiary}}"
+                            StrokeThickness="0"
+                            StrokeShape="RoundRectangle 10"
+                            Padding="12">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                            <Label Text="DIFERENCIA" Style="{StaticResource EtiquetaSeccion}" VerticalOptions="Center" />
+                            <Label x:Name="DiferenciaCorteLabel"
+                                   Grid.Column="1"
+                                   Text="—"
+                                   FontSize="24"
+                                   FontAttributes="Bold"
+                                   HorizontalTextAlignment="End" />
+                        </Grid>
+                    </Border>
+                    <Label x:Name="DiferenciaAyudaLabel" Style="{StaticResource TextoNota}" />
+
+                    <Label Text="Observaciones (obligatorias si hay diferencia)" Style="{StaticResource EtiquetaSeccion}" />
+                    <Editor x:Name="ObservacionesEditor"
+                            HeightRequest="72"
+                            Placeholder="Explica el sobrante o faltante" />
+
+                    <Label x:Name="CierreErrorLabel" Style="{StaticResource Error}" IsVisible="False" />
+                    <Button x:Name="CerrarCorteButton"
+                            Text="Cerrar corte"
+                            Style="{StaticResource BotonPrincipal}"
+                            IsEnabled="False"
+                            Clicked="OnCerrarCorteClicked" />
+                    <Label Text="Requiere permiso de dueño o encargado." Style="{StaticResource TextoNota}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Style="{StaticResource Tarjeta}">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="INGRESOS Y RETIROS" Style="{StaticResource EtiquetaSeccion}" />
+                    <Label Text="Registra el efectivo que entra o sale de la caja fuera de las ventas."
+                           Style="{StaticResource TextoNota}" />
+
+                    <Label Text="Tipo de movimiento" Style="{StaticResource EtiquetaSeccion}" />
+                    <Picker x:Name="MovimientoPicker" Title="Selecciona el tipo" />
+
+                    <Label Text="Monto" Style="{StaticResource EtiquetaSeccion}" />
+                    <Entry x:Name="MovimientoMontoEntry"
+                           Style="{StaticResource CampoTexto}"
+                           Keyboard="Numeric"
+                           Placeholder="0.00" />
+
+                    <Label Text="Motivo" Style="{StaticResource EtiquetaSeccion}" />
+                    <Entry x:Name="MovimientoMotivoEntry"
+                           Style="{StaticResource CampoTexto}"
+                           Placeholder="Ej. cambio de billetes, compra de bolsas" />
+
+                    <Label x:Name="MovimientoErrorLabel" Style="{StaticResource Error}" IsVisible="False" />
+                    <Button x:Name="MovimientoButton"
+                            Text="Registrar movimiento"
+                            Style="{StaticResource BotonSecundario}"
+                            Clicked="OnRegistrarMovimientoClicked" />
+                    <Label Text="Los ingresos y el cierre requieren dueño o encargado; los retiros, solo dueño."
+                           Style="{StaticResource TextoNota}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border x:Name="PanelAbono" Style="{StaticResource Tarjeta}" IsVisible="False">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="ABONO DE FIADO" Style="{StaticResource EtiquetaSeccion}" />
+                    <Label Text="El abono se registra como efectivo y entra al corte del periodo."
+                           Style="{StaticResource TextoNota}" />
+
+                    <Label Text="Cliente" Style="{StaticResource EtiquetaSeccion}" />
+                    <Picker x:Name="ClienteAbonoPicker"
+                            ItemDisplayBinding="{Binding NombreConSaldo}"
+                            SelectedIndexChanged="OnClienteAbonoChanged"
+                            Title="Selecciona el cliente" />
+                    <Label x:Name="AbonoSaldoLabel" Style="{StaticResource TextoNota}" />
+
+                    <Label Text="Monto del abono" Style="{StaticResource EtiquetaSeccion}" />
+                    <Entry x:Name="AbonoMontoEntry"
+                           Style="{StaticResource CampoTexto}"
+                           Keyboard="Numeric"
+                           Placeholder="0.00" />
+
+                    <Label x:Name="AbonoErrorLabel" Style="{StaticResource Error}" IsVisible="False" />
+                    <Button x:Name="AbonoButton"
+                            Text="Registrar abono"
+                            Style="{StaticResource BotonSecundario}"
+                            Clicked="OnRegistrarAbonoClicked" />
+                    <Label Text="Requiere permiso para registrar abonos." Style="{StaticResource TextoNota}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Style="{StaticResource Tarjeta}">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="HISTORIAL DE CORTES" Style="{StaticResource EtiquetaSeccion}" />
+                    <Label Text="Últimos 20 cortes cerrados, del más reciente al más antiguo."
+                           Style="{StaticResource TextoNota}" />
+                    <Label x:Name="HistorialVacioLabel"
+                           Text="Todavía no hay cortes cerrados."
+                           Style="{StaticResource TextoNota}"
+                           IsVisible="False" />
+                    <VerticalStackLayout x:Name="HistorialCortes" Spacing="8">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="models:CorteFila">
+                                <Border StrokeThickness="1"
+                                        Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
+                                        StrokeShape="RoundRectangle 10"
+                                        Padding="12">
+                                    <VerticalStackLayout Spacing="4">
+                                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                            <Label Text="{Binding Folio}" FontAttributes="Bold" />
+                                            <Label Text="{Binding Diferencia}"
+                                                   Grid.Column="1"
+                                                   FontAttributes="Bold"
+                                                   TextColor="{Binding DiferenciaColor}"
+                                                   HorizontalTextAlignment="End" />
+                                        </Grid>
+                                        <Label Text="{Binding Periodo}" Style="{StaticResource TextoNota}" />
+                                        <Label Text="{Binding Montos}" Style="{StaticResource TextoNota}" />
+                                        <Label Text="{Binding Cierre}" Style="{StaticResource TextoNota}" />
+                                        <Label Text="{Binding Observaciones}"
+                                               Style="{StaticResource TextoNota}"
+                                               FontAttributes="Italic"
+                                               IsVisible="{Binding TieneObservaciones}" />
+                                    </VerticalStackLayout>
+                                </Border>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
+            <Label Text="Los cortes cerrados no se editan ni se borran. Si falta un movimiento, se corrige con uno nuevo."
+                   Style="{StaticResource TextoNota}"
+                   Margin="0,8,0,0" />
+
+            <Button Text="Actualizar"
+                    Style="{StaticResource BotonSecundario}"
+                    Clicked="OnActualizarClicked" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
