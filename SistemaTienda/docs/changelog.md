@@ -32,6 +32,16 @@ Próximamente después de completar los módulos críticos.
 - Configuración básica de tienda (nombre, giro, impuestos, métodos de pago).
 - Documentación inicial (glosario, stack, módulos, ADR).
 
+### v0.0.17 - 2026-10-25: Clientes y abonos en la app MAUI
+
+- *Agregado*: pestaña **Clientes** con resumen de clientes, con saldo y total por cobrar; directorio con búsqueda por nombre o teléfono, filtro **Con saldo**, alta con saldo inicial opcional y abono en efectivo al fiado.
+- *Agregado*: `ConfiguracionService.BuscarClientes` filtra por nombre o teléfono sin distinguir mayúsculas ni acentos; 4 pruebas nuevas en `FiadoProveedoresTests`.
+- *Modificado*: el alta de cliente recorta el nombre y el teléfono y deja un registro en la bitácora (`AccionBitacora.Cliente`).
+- *Modificado*: el tablero de la app pasa a siete pestañas (Inicio, Vender, Inventario, Ventas, Clientes, Caja y Ajustes).
+- *Limitación*: no se edita ni se borra un cliente, no hay estado de cuenta por cliente y el abono se registra siempre como efectivo.
+- *Verificación*: compilación de la solución y de la app MAUI para Windows sin errores; pruebas de servicio en verde. La verificación manual de la pantalla quedó pendiente porque el entorno de desarrollo no permitió abrir la GUI.
+- Total del proyecto: 187 pruebas.
+
 ### v0.0.16 - 2026-10-25: Conteo por denominaciones e historial de cortes en Caja
 
 - *Agregado*: sección de conteo por denominaciones en la pestaña **Caja**, con los 11 billetes y monedas en pesos mexicanos (`$1000` a `$0.50`), agrupados en billetes y monedas, subtotal por fila y total automático que alimenta **Efectivo contado** en modo solo lectura.

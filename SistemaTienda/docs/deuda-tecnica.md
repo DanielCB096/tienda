@@ -34,7 +34,7 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 
 - **Dónde**: `ConteoEfectivo` (Core), `CajaPage` y `Program.CerrarCorte`; registro de abonos.
 - **Por qué**: T17 agregó el conteo en la app sin cambiar el esquema; el corte sigue guardando solo esperado, contado y diferencia.
-- **Impacto**: el desglose de billetes y monedas se usa para calcular el contado, pero no se guarda, así que no se puede auditar después ni reconstruir un faltante por denominación. La consola todavía captura un total directo y el abono de fiado siempre se registra como efectivo (no se pregunta el método).
+- **Impacto**: el desglose de billetes y monedas se usa para calcular el contado, pero no se guarda, así que no se puede auditar después ni reconstruir un faltante por denominación. La consola todavía captura un total directo y el abono de fiado siempre se registra como efectivo (no se pregunta el método ni en Caja ni en Clientes).
 - **Cierre**: tabla de desglose por corte si se requiere auditoría, captura por denominaciones en la consola y método de pago en abonos.
 
 ## Media prioridad
@@ -65,17 +65,24 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 - **Impacto**: la restauración reemplaza toda la base y no deja registro de quién la ejecutó ni de qué archivo se usó. El respaldo `antes-restaurar` evita la pérdida de datos, pero la acción no queda auditada.
 - **Cierre**: registrar `AccionBitacora.Respaldo` con motivo `Restauracion` y la ruta usada inmediatamente después de restaurar.
 
+### Clientes sin edición, estado de cuenta ni método de abono
+
+- **Dónde**: `ConfiguracionService` y la pestaña Clientes de la app MAUI.
+- **Por qué**: T18 cubrió el directorio, la búsqueda, el alta y el abono; la edición, el borrado lógico y el estado de cuenta quedaron fuera del alcance.
+- **Impacto**: no se puede corregir el nombre o teléfono de un cliente ni retirarlo del directorio, y el alta no detecta duplicados. El abono se registra siempre como efectivo (no se pregunta el método) y no hay estado de cuenta con ventas fiadas y abonos; la consola conserva las mismas limitaciones. La pantalla aún no se ha verificado a mano en Windows ni en Android.
+- **Cierre**: edición con permiso y bitácora, detección de duplicados, estado de cuenta de solo lectura y método de pago en el abono.
+
 ### La app MAUI no cubre todas las operaciones
 
 - **Dónde**: `SistemaTienda.Maui/Pages`.
-- **Por qué**: el punto de venta se entregó en T13, la caja operativa en T14, el inventario en T15, el detalle/anulación de ventas en T16 y el conteo con historial de cortes en T17; el resto de las operaciones de escritura se hará en tareas posteriores.
-- **Impacto**: desde la app se vende, se opera el inventario, se cierra el corte con conteo, se registran ingresos, retiros y abonos de fiado, se anulan ventas, se reimprime el ticket, se consulta el historial de cortes y se crea respaldo. Gestionar clientes, proveedores y gastos sigue en la consola, que no es usable por el cajero; la consulta de ventas de fechas anteriores tampoco está en la app.
-- **Cierre**: pantallas de clientes, proveedores y gastos en MAUI, módulo por módulo y con sus pruebas; después, consulta histórica de ventas.
+- **Por qué**: el punto de venta se entregó en T13, la caja operativa en T14, el inventario en T15, el detalle/anulación de ventas en T16, el conteo con historial de cortes en T17 y la pantalla de clientes en T18; el resto de las operaciones de escritura se hará en tareas posteriores.
+- **Impacto**: desde la app se vende, se opera el inventario, se cierra el corte con conteo, se registran ingresos, retiros y abonos de fiado, se anulan ventas, se reimprime el ticket, se consulta el historial de cortes, se gestiona el directorio de clientes con sus abonos y se crea respaldo. Gestionar proveedores y gastos sigue en la consola, que no es usable por el cajero; la edición y el estado de cuenta de clientes y la consulta de ventas de fechas anteriores tampoco están en la app.
+- **Cierre**: pantallas de proveedores y gastos en MAUI, módulo por módulo y con sus pruebas; después, edición/estado de cuenta de clientes y consulta histórica de ventas.
 
 ### App MAUI sin pruebas automatizadas
 
 - **Dónde**: `SistemaTienda.Maui`.
-- **Impacto**: CI solo compila para Windows y Android. Una regresión de navegación, sesión, POS, Ventas, anulación, inventario, caja, historial o formato no se detecta hasta la verificación manual. El cierre de corte, el conteo, los movimientos de inventario y la anulación desde la app dependen de esa verificación. `TicketServiceTests` y `ConteoEfectivoTests` cubren cálculos y textos, no la interfaz.
+- **Impacto**: CI solo compila para Windows y Android. Una regresión de navegación, sesión, POS, Ventas, anulación, inventario, clientes, caja, historial o formato no se detecta hasta la verificación manual. El cierre de corte, el conteo, los movimientos de inventario, la anulación y los abonos desde la app dependen de esa verificación. `TicketServiceTests`, `ConteoEfectivoTests` y las pruebas de búsqueda y alta de clientes cubren cálculos, textos y servicios, no la interfaz.
 - **Cierre**: extraer la lógica de cada página a modelos de vista probables y agregar pruebas; valorar pruebas de interfaz más adelante.
 
 ### Android sin validación en dispositivo

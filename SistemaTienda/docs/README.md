@@ -17,10 +17,10 @@ La base técnica está **compilando y con pruebas automatizadas**. El núcleo im
 - Migraciones de esquema versionadas (`PRAGMA user_version`) y respaldo/restauración local verificado.
 - Respaldo automático por intervalo configurado al iniciar y cerrar la aplicación, con aviso y bitácora.
 - Dinero en centavos enteros (`long`/`INTEGER`, esquema v4) con conversión y formato centralizados en `Dinero`.
-- App MAUI para Windows y Android con asistente de primera configuración, login por PIN, tablero (Inicio, Vender, Inventario, Ventas, Caja y Ajustes), punto de venta con carrito, cobro y ticket con QR, inventario con escaneo/alta/edición/entradas/mermas/ajustes/historial, ventas con detalle, reimpresión y anulación, caja operativa (cierre de corte con conteo por denominaciones, ingresos, retiros, abonos de fiado e historial de cortes), respaldo manual y automático, y cierre de sesión.
-- Interfaz de consola provisional para tareas de administración y para las operaciones que todavía no están en la app (clientes, proveedores y gastos).
+- App MAUI para Windows y Android con asistente de primera configuración, login por PIN, tablero (Inicio, Vender, Inventario, Ventas, Clientes, Caja y Ajustes), punto de venta con carrito, cobro y ticket con QR, inventario con escaneo/alta/edición/entradas/mermas/ajustes/historial, ventas con detalle, reimpresión y anulación, clientes con búsqueda por nombre o teléfono, alta y abonos de fiado, caja operativa (cierre de corte con conteo por denominaciones, ingresos, retiros, abonos de fiado e historial de cortes), respaldo manual y automático, y cierre de sesión.
+- Interfaz de consola provisional para tareas de administración y para las operaciones que todavía no están en la app (proveedores y gastos).
 
-Pendiente para el MVP: pantallas de clientes/proveedores/gastos, persistir el desglose por denominaciones, compartir el QR como imagen y validación de Android en dispositivo. Ver [roadmap.md](roadmap.md) y [deuda-tecnica.md](deuda-tecnica.md).
+Pendiente para el MVP: verificar a mano la pantalla de clientes en Windows y Android, pantallas de proveedores/gastos, persistir el desglose por denominaciones, compartir el QR como imagen y validación de Android en dispositivo. Ver [roadmap.md](roadmap.md) y [deuda-tecnica.md](deuda-tecnica.md).
 
 ## Índice
 

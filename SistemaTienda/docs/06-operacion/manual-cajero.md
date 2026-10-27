@@ -14,10 +14,10 @@
 
 1. Al abrir la app, se solicita el PIN.
 2. El usuario ingresa su PIN.
-3. El sistema valida y muestra el tablero (Inicio, Vender, Inventario, Ventas, Caja y Ajustes).
+3. El sistema valida y muestra el tablero (Inicio, Vender, Inventario, Ventas, Clientes, Caja y Ajustes).
 4. Si el PIN está mal tres veces seguidas, la app bloquea el acceso hasta cerrarla y abrirla de nuevo.
 
-> **Estado de la app (2026-10-25)**: el tablero muestra ventas del día, efectivo esperado del corte, stock bajo y último respaldo. **Vender** registra ventas con carrito, cobros y ticket interno con QR compartible como texto. **Inventario** permite consultar, escanear, dar de alta o editar productos, y registrar entradas, mermas y ajustes según el rol. **Ventas** muestra el detalle de cada venta, permite reimprimir el ticket con su QR y anular la venta completa (solo dueño o encargado). **Caja** permite cerrar el corte con conteo por billetes y monedas o con el total directo, registrar ingresos y retiros, abonar al fiado y consultar los últimos 20 cortes. El desglose del conteo no se guarda en el corte. La anulación también sigue disponible en la consola provisional. El manual describe el flujo completo planeado; revisa en cada versión qué partes ya están en la app.
+> **Estado de la app (2026-10-25)**: el tablero muestra ventas del día, efectivo esperado del corte, stock bajo y último respaldo. **Vender** registra ventas con carrito, cobros y ticket interno con QR compartible como texto. **Inventario** permite consultar, escanear, dar de alta o editar productos, y registrar entradas, mermas y ajustes según el rol. **Ventas** muestra el detalle de cada venta, permite reimprimir el ticket con su QR y anular la venta completa (solo dueño o encargado). **Clientes** muestra el directorio, permite buscar, dar de alta y abonar al fiado (solo dueño o encargado). **Caja** permite cerrar el corte con conteo por billetes y monedas o con el total directo, registrar ingresos y retiros, abonar al fiado y consultar los últimos 20 cortes. El desglose del conteo no se guarda en el corte. La anulación también sigue disponible en la consola provisional. El manual describe el flujo completo planeado; revisa en cada versión qué partes ya están en la app.
 
 ### 2. Catálogo / Búsqueda de Producto
 
@@ -60,6 +60,14 @@ En la pestaña **Ventas**, toca una venta para abrir su detalle con líneas, pag
 - **Anular venta** (solo dueño o encargado): escribe el motivo y confirma con la palabra `ANULAR`. El sistema devuelve el stock con el costo original, revierte el saldo si fue fiado y deja el registro en la bitácora.
 - El reembolso en efectivo se entrega manualmente. La venta anulada se excluye del corte; si el reembolso se paga después de cerrar el corte, el dueño lo registra como retiro en el corte siguiente.
 - No se puede anular una venta que ya quedó incluida en un corte cerrado.
+
+### 3.1 Clientes y abonos (pestaña Clientes)
+
+El directorio muestra nombre, teléfono, saldo y estado; la búsqueda acepta nombre o teléfono sin distinguir mayúsculas ni acentos, y los filtros **Todos** y **Con saldo** acotan la lista.
+
+- **Nuevo**: cualquier usuario puede dar de alta un cliente con nombre, teléfono opcional y saldo inicial opcional (solo para deudas que ya existían).
+- **Abonar** (dueño o encargado): abre el cliente, captura el monto y confirma. El abono no puede superar el saldo, se registra como efectivo y entra al corte del periodo. El empleado puede consultar el directorio, pero no ve el botón.
+- **Pendiente**: editar o retirar clientes, estado de cuenta con ventas y abonos y elegir el método del abono. La verificación manual de esta pantalla está pendiente (2026-10-25).
 
 ### 4. Inventario (pestaña Inventario)
 
