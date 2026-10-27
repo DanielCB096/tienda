@@ -1,4 +1,5 @@
 // Servicio de configuración - lógica de negocio
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using SistemaTienda.Core;
@@ -270,9 +271,15 @@ public class ConfiguracionService
         if (nuevoCliente.SaldoActual < 0)
             return ProcessResult<AgregarClienteFiadoResponse>.Error("El saldo inicial no puede ser negativo");
 
+        nuevoCliente.Nombre = nuevoCliente.Nombre.Trim();
+        nuevoCliente.Telefono = (nuevoCliente.Telefono ?? string.Empty).Trim();
+
         try
         {
             _db.AgregarClienteFiado(nuevoCliente);
+            _bitacora.Registrar(AccionBitacora.Cliente, "ClienteFiado", nuevoCliente.Id.ToString(),
+                string.Empty,
+                $"Alta: {nuevoCliente.Nombre};Saldo={Dinero.Formatear(nuevoCliente.SaldoActual)}");
             return ProcessResult<AgregarClienteFiadoResponse>.OK(new AgregarClienteFiadoResponse
             {
                 ClienteId = nuevoCliente.Id,
@@ -290,6 +297,41 @@ public class ConfiguracionService
 
     public ProcessResult<List<ClienteFiado>> ObtenerClientesConSaldo() =>
         ProcessResult<List<ClienteFiado>>.OK(_db.ObtenerClientesConSaldo());
+
+    /// <summary>
+    /// Filtra por nombre o teléfono sin distinguir mayúsculas ni acentos.
+    /// </summary>
+    public ProcessResult<List<ClienteFiado>> BuscarClientes(string texto = "", bool soloConSaldo = false)
+    {
+        var clientes = soloConSaldo
+            ? _db.ObtenerClientesConSaldo()
+            : _db.ObtenerTodosLosClientes();
+
+        var filtro = (texto ?? string.Empty).Trim();
+        if (filtro.Length == 0)
+            return ProcessResult<List<ClienteFiado>>.OK(clientes);
+
+        var filtroNormalizado = SinAcentos(filtro);
+        var lista = clientes.Where(c =>
+            SinAcentos(c.Nombre).Contains(filtroNormalizado, StringComparison.OrdinalIgnoreCase) ||
+            SinAcentos(c.Telefono ?? string.Empty).Contains(filtroNormalizado, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        return ProcessResult<List<ClienteFiado>>.OK(lista);
+    }
+
+    private static string SinAcentos(string texto)
+    {
+        var normalizado = texto.Normalize(NormalizationForm.FormD);
+        var constructor = new StringBuilder(normalizado.Length);
+        foreach (var caracter in normalizado)
+        {
+            if (CharUnicodeInfo.GetUnicodeCategory(caracter) != UnicodeCategory.NonSpacingMark)
+                constructor.Append(caracter);
+        }
+
+        return constructor.ToString().Normalize(NormalizationForm.FormC);
+    }
 
     public ProcessResult<RegistrarAbonoResponse> RegistrarAbonoCliente(int clienteId, long montoAbono,
         string usuario = "")
