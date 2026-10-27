@@ -239,7 +239,7 @@ El detalle vive en el tablero. Resumen y criterios de terminado:
 
 ### T19 — Pantalla de Proveedores en la app MAUI (HECHO)
 
-- Completado en `feat/maui-proveedores` sobre `feat/maui-clientes` (PR pendiente de abrir contra `main`; sin merge).
+- Completado en `feat/maui-proveedores` sobre `feat/maui-clientes` (PR #11 contra `main`; sin merge).
 - Pestaña **Proveedores** entre Clientes y Caja: resumen (proveedores, con saldo y por pagar), búsqueda por nombre, clave o teléfono sin distinguir mayúsculas ni acentos, filtros **Todos** / **Con saldo**, alta con clave/RFC, teléfono, dirección y saldo inicial opcionales, y pago con validación de saldo.
 - `ConfiguracionService.BuscarProveedores` centraliza la búsqueda; `AgregarProveedor` recorta nombre, clave, teléfono y dirección y registra `AccionBitacora.Proveedor`; el pago reutiliza `RegistrarPagoProveedor` con el permiso `PagarProveedor` para dueño y encargado.
 - 4 pruebas nuevas en `FiadoProveedoresTests` (búsqueda sin filtro, filtro por nombre/clave/teléfono con acentos y mayúsculas, filtro con saldo y alta con bitácora); total del proyecto: 191.
