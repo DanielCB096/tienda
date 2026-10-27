@@ -374,9 +374,17 @@ public class ConfiguracionService
         if (nuevoProveedor.SaldoPendiente < 0)
             return ProcessResult<AgregarProveedorResponse>.Error("El saldo inicial no puede ser negativo");
 
+        nuevoProveedor.Nombre = nuevoProveedor.Nombre.Trim();
+        nuevoProveedor.Clave = (nuevoProveedor.Clave ?? string.Empty).Trim();
+        nuevoProveedor.Telefono = (nuevoProveedor.Telefono ?? string.Empty).Trim();
+        nuevoProveedor.Direccion = (nuevoProveedor.Direccion ?? string.Empty).Trim();
+
         try
         {
             _db.AgregarProveedor(nuevoProveedor);
+            _bitacora.Registrar(AccionBitacora.Proveedor, "Proveedor", nuevoProveedor.Id.ToString(),
+                string.Empty,
+                $"Alta: {nuevoProveedor.Nombre};Saldo={Dinero.Formatear(nuevoProveedor.SaldoPendiente)}");
             return ProcessResult<AgregarProveedorResponse>.OK(new AgregarProveedorResponse
             {
                 ProveedorId = nuevoProveedor.Id,
@@ -391,6 +399,29 @@ public class ConfiguracionService
 
     public ProcessResult<List<Proveedor>> ObtenerTodosLosProveedores() =>
         ProcessResult<List<Proveedor>>.OK(_db.ObtenerTodosLosProveedores());
+
+    /// <summary>
+    /// Filtra por nombre, clave o teléfono sin distinguir mayúsculas ni acentos.
+    /// </summary>
+    public ProcessResult<List<Proveedor>> BuscarProveedores(string texto = "", bool soloConSaldo = false)
+    {
+        var proveedores = _db.ObtenerTodosLosProveedores();
+        if (soloConSaldo)
+            proveedores = proveedores.Where(p => p.SaldoPendiente > 0).ToList();
+
+        var filtro = (texto ?? string.Empty).Trim();
+        if (filtro.Length == 0)
+            return ProcessResult<List<Proveedor>>.OK(proveedores);
+
+        var filtroNormalizado = SinAcentos(filtro);
+        var lista = proveedores.Where(p =>
+            SinAcentos(p.Nombre).Contains(filtroNormalizado, StringComparison.OrdinalIgnoreCase) ||
+            SinAcentos(p.Clave ?? string.Empty).Contains(filtroNormalizado, StringComparison.OrdinalIgnoreCase) ||
+            SinAcentos(p.Telefono ?? string.Empty).Contains(filtroNormalizado, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        return ProcessResult<List<Proveedor>>.OK(lista);
+    }
 
     public ProcessResult<RegistrarPagoProveedorResponse> RegistrarPagoProveedor(int proveedorId, long montoPago)
     {

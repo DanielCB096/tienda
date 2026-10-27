@@ -28,7 +28,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 
 | Tarea | Agente | Rama | Archivos | Fecha | Estado |
 |-------|--------|------|-----------|-------|--------|
-| — | — | — | — | — | Sin tareas en curso |
+| T19 | Qoder | feat/maui-proveedores | ConfiguracionService.cs, Bitacora.cs, FiadoProveedoresTests.cs, SistemaTienda.Maui/Pages/ProveedoresPage.*, SistemaTienda.Maui/Models/ProveedorFila.cs, PrincipalPage.cs, MauiProgram.cs, docs/ | 2026-10-26 | Tomada |
 
 ## Hecho
 
@@ -62,7 +62,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 | T4 | Bitácora y permisos en servicios | Hecho | — | En `feat/integracion-t4-t9`. Esquema v5: bitácora inmutable, matriz de permisos y validación en servicios. |
 | T5 | Reportes de utilidad | Hecho | T2 | En `feat/reportes-utilidad` (sobre `feat/integracion-t4-t9`). Utilidad bruta y neta por periodo con filtros por fecha; permiso `Consultar`. |
 | T6 | Importación Excel/CSV | Libre | T2 recomendado | Dependencia nueva requiere ADR. |
-| T7 | Interfaz definitiva | Tomada | ADR, T12 | Decisión MAUI validada y base implementada en T12. POS entregado en T13, caja operativa en T14, inventario en T15, detalle/anulación con QR en T16, conteo e historial de cortes en T17 y clientes en T18; faltan las pantallas de proveedores y gastos en la app. |
+| T7 | Interfaz definitiva | Tomada | ADR, T12 | Decisión MAUI validada y base implementada en T12. POS entregado en T13, caja operativa en T14, inventario en T15, detalle/anulación con QR en T16, conteo e historial de cortes en T17, clientes en T18 y proveedores en T19; falta la pantalla de gastos en la app. |
 | T8 | Corte de caja | Hecho | T2 | En `feat/corte-caja` (parte de `feat/ventas-pos`). Esquema v3: cortes, movimientos de caja y abonos con historial. |
 | T9 | Cobertura adicional de pruebas | Hecho | T1–T3 | En `feat/integracion-t4-t9`. 25 pruebas de borde en gastos, saldos, inventario, usuarios y mapeo de tipos. Hallazgos sin corregir: `AjustarStock` no valida que el producto exista; se permiten PIN duplicados y `VerificarAcceso` devuelve el primer usuario por nombre; `AgregarGasto` no recorta el concepto; la búsqueda por nombre no ignora acentos. Ver [deuda-tecnica.md](deuda-tecnica.md). |
 | T10 | Respaldo automático por intervalo | Hecho | T1 | En `feat/respaldo-automatico` (sobre `feat/reportes-utilidad`). Se evalúa al iniciar sesión y al cerrar; `0` deshabilita; cualquier respaldo previo cuenta y la copia queda en `Bitacora`. Pendiente: copia a USB/nube y respaldo durante sesiones largas. |
@@ -74,6 +74,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 | T16 | Anulación y QR en la app MAUI | Hecho | T11, T13, T15 | En `feat/maui-anulacion-qr` sobre `feat/maui-inventario` (PR #8 contra `main`, CI en verde). Detalle de venta con reimpresión, QR informativo offline y anulación completa (motivo y confirmación `ANULAR`, permiso dueño/encargado). Verificación manual en Windows el 2026-10-25; 177 pruebas. Pendientes: compartir el QR como imagen, reimpresión con efectivo recibido y validación en Android. |
 | T17 | Conteo por denominaciones e historial de cortes en Caja | Hecho | T8, T14 | En `feat/maui-caja-denominaciones` sobre `feat/maui-anulacion-qr`. El conteo por billetes y monedas alimenta el efectivo contado sin cambiar el esquema; el historial muestra los últimos 20 cortes cerrados. Verificación manual en Windows el 2026-10-25; 183 pruebas. Pendientes: persistir el desglose y validar en Android. |
 | T18 | Pantalla de clientes en la app MAUI | Hecho | T7, T14 | En `feat/maui-clientes` sobre `feat/maui-caja-denominaciones` (PR #10 contra `main`, CI en verde). Directorio con búsqueda por nombre/teléfono, filtros, alta y abono en efectivo; 187 pruebas. Verificación manual en Windows/Android pendiente porque el entorno no pudo abrir la GUI. |
+| T19 | Pantalla de proveedores en la app MAUI | Tomada | T7, T18 | En `feat/maui-proveedores` sobre `feat/maui-clientes`. Directorio con búsqueda por nombre, clave o teléfono, filtro de saldo, alta con bitácora y pago con permiso; el pago sigue sin entrar al corte ni tener historial propio. |
 
 ## Plantilla para reclamar
 

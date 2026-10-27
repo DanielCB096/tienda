@@ -166,6 +166,83 @@ public sealed class FiadoProveedoresTests
     }
 
     [Fact]
+    public void BuscarProveedores_SinTexto_DevuelveTodosOrdenadosPorNombre()
+    {
+        using var bd = new BaseDatosPrueba();
+        bd.ConfigurarTienda();
+        bd.Config.AgregarProveedor(new Proveedor { Nombre = "Zeta Distribuciones" });
+        bd.Config.AgregarProveedor(new Proveedor { Nombre = "Abarrotes del Valle" });
+
+        var proveedores = bd.Config.BuscarProveedores().Value;
+
+        Assert.Equal(new[] { "Abarrotes del Valle", "Zeta Distribuciones" },
+            proveedores.Select(p => p.Nombre));
+    }
+
+    [Fact]
+    public void BuscarProveedores_FiltraNombreClaveYTelefono_IgnorandoMayusculasYAcentos()
+    {
+        using var bd = new BaseDatosPrueba();
+        bd.ConfigurarTienda();
+        bd.Config.AgregarProveedor(new Proveedor
+        {
+            Nombre = "Distribuidora Núñez", Clave = "DNU010101ABC", Telefono = "818-000-1111"
+        });
+        bd.Config.AgregarProveedor(new Proveedor
+        {
+            Nombre = "Abarrotes del Valle", Clave = "AVL020202XYZ", Telefono = "555-123-4567"
+        });
+
+        var porNombre = bd.Config.BuscarProveedores("NUNEZ").Value;
+        var porClave = bd.Config.BuscarProveedores("dnu010101").Value;
+        var porTelefono = bd.Config.BuscarProveedores("000-1111").Value;
+
+        Assert.Equal("Distribuidora Núñez", Assert.Single(porNombre).Nombre);
+        Assert.Equal("Distribuidora Núñez", Assert.Single(porClave).Nombre);
+        Assert.Equal("Distribuidora Núñez", Assert.Single(porTelefono).Nombre);
+    }
+
+    [Fact]
+    public void BuscarProveedores_SoloConSaldo_ExcluyeProveedoresAlDia()
+    {
+        using var bd = new BaseDatosPrueba();
+        bd.ConfigurarTienda();
+        bd.Config.AgregarProveedor(new Proveedor { Nombre = "Con saldo", SaldoPendiente = 5_000 });
+        bd.Config.AgregarProveedor(new Proveedor { Nombre = "Al día", SaldoPendiente = 0 });
+
+        var proveedores = bd.Config.BuscarProveedores(soloConSaldo: true).Value;
+
+        Assert.Equal("Con saldo", Assert.Single(proveedores).Nombre);
+    }
+
+    [Fact]
+    public void AgregarProveedor_RecortaDatosYRegistraBitacora()
+    {
+        using var bd = new BaseDatosPrueba();
+        bd.ConfigurarTienda();
+
+        var alta = bd.Config.AgregarProveedor(new Proveedor
+        {
+            Nombre = "  Distribuidora del Norte  ",
+            Clave = "  DNO010101ABC  ",
+            Telefono = "  818-000-1111  ",
+            Direccion = "  Av. Constitución 123  ",
+            SaldoPendiente = 25_000
+        });
+
+        Assert.True(alta.IsSuccess, alta.Message);
+        var proveedor = bd.Db.ObtenerProveedorPorId(alta.Value.ProveedorId);
+        Assert.Equal("Distribuidora del Norte", proveedor.Nombre);
+        Assert.Equal("DNO010101ABC", proveedor.Clave);
+        Assert.Equal("818-000-1111", proveedor.Telefono);
+        Assert.Equal("Av. Constitución 123", proveedor.Direccion);
+
+        var registro = Assert.Single(bd.Db.ObtenerBitacora(accion: AccionBitacora.Proveedor));
+        Assert.Contains("Distribuidora del Norte", registro.DatosDespues);
+        Assert.Equal("Dueño", registro.Usuario);
+    }
+
+    [Fact]
     public void BuscarClientes_SinTexto_DevuelveTodosOrdenadosPorNombre()
     {
         using var bd = new BaseDatosPrueba();
