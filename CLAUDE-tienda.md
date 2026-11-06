@@ -77,7 +77,9 @@ dotnet test SistemaTienda/SistemaTienda.sln
 # Formato (cuando se adopte; no bloquea todavía)
 dotnet format SistemaTienda/SistemaTienda.sln
 
-# Migraciones: PENDIENTE — esquema v1 fijado con PRAGMA user_version; sin runner
+# Migraciones: runner idempotente en `SistemaTienda.Infrastructure/Migraciones.cs`;
+# esquema actual v2 con historial en `MigracionesAplicadas`. Respaldo obligatorio
+# y verificado antes de migrar (ver `RespaldoService`).
 ```
 
 Después de cualquier cambio: ejecuta pruebas y lint. No des una tarea por terminada si fallan.

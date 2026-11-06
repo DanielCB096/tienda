@@ -1,5 +1,11 @@
 # Respaldo y Restauración
 
+> Estado: la base está implementada (T1, 2026-11-06): servicio local
+> `RespaldoService` (crear, verificar, listar y restaurar) con `VACUUM INTO`
+> e integridad verificada, y respaldo obligatorio antes de cada migración.
+> Pendientes: menú en la consola, respaldo automático programado por intervalo
+> o por ventas, y respaldo a memoria USB.
+
 ## ¿Por qué es crítico?
 
 En una arquitectura local-first con un solo dispositivo por tienda, **el respaldo es la única protección contra pérdida de datos**. Si la tablet se daña, se pierde, se robo o se formatea, los datos desaparecen si no hay respaldo.

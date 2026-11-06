@@ -1,6 +1,10 @@
-# Modelo de Datos (esquema v1)
+# Modelo de Datos (esquema v2)
 
-Base local SQLite, un solo archivo. `PRAGMA user_version = 1`; no hay runner de migraciones todavía (ver [deuda-tecnica.md](../deuda-tecnica.md)).
+Base local SQLite, un solo archivo. `PRAGMA user_version = 2`; el runner de
+migraciones (`SistemaTienda.Infrastructure/Migraciones.cs`) aplica las
+migraciones pendientes al iniciar la aplicación y registra cada una en
+`MigracionesAplicadas`. Antes de migrar una base con datos se crea un
+respaldo obligatorio y se verifica su integridad (regla #11).
 
 El acceso vive en `SistemaTienda.Infrastructure/Database.cs` (`DatabaseTools`). Todas las consultas son parametrizadas.
 
@@ -47,6 +51,7 @@ Fila única (Id = 1) creada al inicializar la base.
 | Precio | DECIMAL | ≥ 0 |
 | Stock | INTEGER | **Caché** de la suma de movimientos |
 | StockMinimo | INTEGER | Alerta si `Stock <= StockMinimo` |
+| Activo | INTEGER | 0/1; false retira el producto del catálogo sin borrarlo (v2) |
 | Categoria | TEXT | Libre |
 | Impuesto | DECIMAL | Override del global |
 | FechaCreacion | DATETIME | |
@@ -120,6 +125,27 @@ Reglas implementadas:
 ## Índices
 
 `Productos(CodigoBarras)`, `Productos(Nombre)`, `Productos(Stock)`, `MovimientoInventario(ProductoId)`, `MovimientoInventario(Fecha)`, `Gastos(Fecha)`, `ClientesFiado(Nombre)`, `Proveedores(Nombre)`.
+
+## MigracionesAplicadas
+
+Historial de migraciones aplicadas por el runner (esquema v2).
+
+| Columna | Tipo | Notas |
+|---------|------|-------|
+| Version | INTEGER PK | Versión destino de la migración |
+| Nombre | TEXT | Descripción de la migración |
+| FechaAplicacion | DATETIME | `datetime('now')` |
+| RespaldoRuta | TEXT | Respaldo creado antes de migrar (vacío si no hizo falta) |
+
+## Migración v1 → v2
+
+- Agrega `Productos.Activo INTEGER NOT NULL DEFAULT 1` (los productos
+  existentes quedan activos).
+- Crea la tabla `MigracionesAplicadas` y registra la migración.
+
+El runner es idempotente: una base ya en v2 no se toca ni genera respaldo.
+Si una migración falla, la transacción se revierte y se restaura el respaldo
+previo, así que la base queda en su estado original.
 
 ## Notas de tipado
 

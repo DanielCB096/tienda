@@ -10,9 +10,10 @@ La base técnica está **compilando y con pruebas automatizadas**. El núcleo im
 - Catálogo de productos e inventario por movimientos (entradas, ventas, mermas, ajustes).
 - Gastos simples y su totalización.
 - Clientes con fiado (saldo y abonos) y proveedores (saldo y pagos).
+- Migraciones versionadas del esquema (v2) con respaldo automático previo y servicio local de respaldo y restauración (`RespaldoService`).
 - Interfaz de consola provisional.
 
-Pendiente para el MVP: ventas/POS, corte de caja, respaldo/restauración, reportes de utilidad, migraciones versionadas, bitácora y la interfaz definitiva (ADR pendiente). Ver [roadmap.md](roadmap.md) y [deuda-tecnica.md](deuda-tecnica.md).
+Pendiente para el MVP: ventas/POS, corte de caja, reportes de utilidad, bitácora y la interfaz definitiva (ADR pendiente). El menú de respaldo en consola y el respaldo a USB siguen pendientes. Ver [roadmap.md](roadmap.md) y [deuda-tecnica.md](deuda-tecnica.md).
 
 ## Índice
 

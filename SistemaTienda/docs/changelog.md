@@ -21,6 +21,16 @@ Cada entrada tiene formato:
 
 Próximamente después de completar los módulos críticos.
 
+### v0.0.3 - 2026-11-06: Migraciones versionadas y respaldo local (T1)
+
+- *Agregado*: runner idempotente de migraciones basado en `PRAGMA user_version` (`Migraciones.cs`); la base migra de v1 a v2 al iniciar.
+- *Agregado*: tabla `MigracionesAplicadas` con el historial de migraciones y el respaldo usado en cada una.
+- *Agregado*: migración v1→v2 que añade `Productos.Activo` (retirar del catálogo sin borrar) y la propiedad `Activo` en la entidad `Producto`.
+- *Agregado*: servicio local de respaldo y restauración (`RespaldoService`): crear, verificar, listar y restaurar respaldos del archivo `.db`, 100% offline.
+- *Agregado*: respaldo obligatorio y verificado antes de migrar una base con datos; si la migración falla, la transacción se revierte y se restaura el respaldo.
+- *Agregado*: 8 pruebas nuevas de migraciones, respaldo y restauración (67 pruebas en total).
+- *Modificado*: `InicializarBaseDeDatos` ya no fija la versión a 1: delega al runner de migraciones.
+
 ### [En desarrollo] v0.1.0-base
 
 - Estructura de solución y proyectos (.NET 8).

@@ -2,6 +2,18 @@
 
 Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qué la cerraría.
 
+## Cerrada en T1 (2026-11-06)
+
+### Sin migraciones versionadas ni respaldo previo — cerrada
+
+- **Dónde**: `DatabaseTools.InicializarBaseDeDatos` creaba tablas con `IF NOT EXISTS` y fijaba `PRAGMA user_version = 1`.
+- **Cierre**: runner de migraciones idempotentes 1→N (`Migraciones.cs`) con respaldo automático verificado antes de migrar y servicio local de respaldo/restauración (`RespaldoService`). Esquema actual: v2.
+
+### Sin `Activo` en productos — cerrada
+
+- **Dónde**: no se podía retirar un producto del catálogo sin borrarlo.
+- **Cierre**: migración v1→v2 agrega `Productos.Activo INTEGER NOT NULL DEFAULT 1` y la propiedad `Activo` en la entidad `Producto`.
+
 ## Alta prioridad
 
 ### Dinero en `decimal` en lugar de centavos enteros
@@ -10,12 +22,6 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 - **Por qué**: la regla del proyecto pide centavos enteros; la base actual usa `decimal` para no rehacer el modelo antes de tener ventas.
 - **Impacto**: riesgo de diferencias por redondeo y comparaciones de decimales frágiles. SQLite no tiene tipo decimal nativo: los valores se guardan como texto/numérico con afinidad.
 - **Cierre**: migración a `long Centavos` en entidades y `INTEGER` en base, con utilidades de formato/parseo y pruebas de aritmética.
-
-### Sin migraciones versionadas ni respaldo previo
-
-- **Dónde**: `DatabaseTools.InicializarBaseDeDatos` crea tablas con `IF NOT EXISTS` y fija `PRAGMA user_version = 1`.
-- **Impacto**: cualquier cambio de esquema sobre una base existente no se aplica; habría que recrear el archivo y perder datos.
-- **Cierre**: runner de migraciones idempotentes 1→N con respaldo automático antes de migrar (regla #11).
 
 ### Sin bitácora ni validación de permisos en servicios
 
@@ -60,6 +66,5 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 - `Merma` comparte historial con ajustes y ventas; falta filtrar por tipo en la interfaz.
 - `ConfiguracionTienda.UsuarioDueñoPINHash` existe en la tabla pero no se usa (el hash vive en `UsuariosSistema`). Eliminar en la próxima migración.
 - `Rol` se documentó como texto en algunos documentos; en la base es `INTEGER` con enum. Unificar documentación.
-- Sin `Activo` en productos: no se puede retirar un producto del catálogo sin borrarlo.
 - Sin pruebas de rendimiento con volúmenes realistas (10 000 productos / 500 ventas por día).
 - Comentarios XML heredados de la versión anterior en `InventoryService`; no afectan.
