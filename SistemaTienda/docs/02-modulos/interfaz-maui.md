@@ -21,7 +21,7 @@ Esta entrega **no** incluye todavía las pantallas de gastos o reportes.
 
 ## Estado
 
-Base implementada y verificada manualmente en Windows: asistente, login, tablero y respaldo el 2026-10-23; punto de venta el 2026-10-25 (búsqueda, carrito, límite de stock, efectivo con cambio, tarjeta, mixto, fiado y ticket con copiar/cerrar); caja operativa el 2026-10-25 (cierre con diferencia justificada, ingreso, retiro y abono; conteo por denominaciones e historial de cortes verificados también el 2026-10-25); inventario el 2026-10-25 (catálogo, escaneo, alta, edición, entrada, merma, ajuste, historial y permisos por rol); ventas y anulación el 2026-10-25 (detalle, reimpresión, QR decodificado offline, anulación con motivo y confirmación, devolución de stock, bloqueo por corte cerrado y visibilidad por rol). Clientes quedó implementado en T18 con compilación y pruebas de servicio; la verificación manual de la pantalla quedó pendiente porque el entorno de desarrollo no permitió abrir la interfaz gráfica. Proveedores quedó implementado en T19 con la misma situación: compilación, pruebas de servicio y tablero de ocho pestañas en verde, pero sin verificación manual. La compilación para Windows y Android está en verde en CI. Quedan pendientes el botón Compartir del ticket (diálogo del sistema), compartir el QR como imagen, la reimpresión con efectivo recibido y la ejecución en Android; el equipo de desarrollo no tiene Android SDK ni JDK instalados.
+Base implementada y verificada manualmente en Windows: asistente, login, tablero y respaldo el 2026-10-23; punto de venta el 2026-10-25 (búsqueda, carrito, límite de stock, efectivo con cambio, tarjeta, mixto, fiado y ticket con copiar/cerrar); caja operativa el 2026-10-25 (cierre con diferencia justificada, ingreso, retiro y abono; conteo por denominaciones e historial de cortes verificados también el 2026-10-25); inventario el 2026-10-25 (catálogo, escaneo, alta, edición, entrada, merma, ajuste, historial y permisos por rol); ventas y anulación el 2026-10-25 (detalle, reimpresión, QR decodificado offline, anulación con motivo y confirmación, devolución de stock, bloqueo por corte cerrado y visibilidad por rol). Clientes quedó implementado en T18 con compilación y pruebas de servicio; la verificación manual de la pantalla quedó pendiente porque el entorno de desarrollo no permitió abrir la interfaz gráfica. Proveedores quedó implementado en T19 con la misma situación: compilación, pruebas de servicio y tablero de ocho pestañas en verde, pero sin verificación manual. La desactivación de productos llegó en T20 también con pruebas de servicio y sin verificación manual. La compilación para Windows y Android está en verde en CI. Quedan pendientes el botón Compartir del ticket (diálogo del sistema), compartir el QR como imagen, la reimpresión con efectivo recibido y la ejecución en Android; el equipo de desarrollo no tiene Android SDK ni JDK instalados.
 
 ## Plataformas y proyecto
 
@@ -254,6 +254,18 @@ Implementados en código y cubiertos por pruebas de servicio. La verificación m
 - [x] La app advierte que el pago no entra solo al corte y que, si es en efectivo, debe registrarse también como retiro en Caja.
 - [ ] La pantalla se verifica manualmente en Windows.
 - [ ] El proveedor se puede editar o borrar, tiene estado de cuenta y el pago tiene historial propio y entra al corte.
+
+## Criterios de aceptación de T20 (Desactivación de productos)
+
+Implementados en código y cubiertos por pruebas de servicio (`DesactivacionProductosTests`). La verificación manual en Windows quedó pendiente porque el entorno de desarrollo no permitió abrir la GUI:
+
+- [x] Los filtros **Todos/Activos/Stock bajo/Inactivos** funcionan en el catálogo y aplican también a la búsqueda por nombre.
+- [x] El detalle muestra el aviso de producto inactivo y oculta entrada/merma/ajuste mientras dure; editar y ver movimientos siguen disponibles.
+- [x] **Desactivar/Reactivar producto** solo aparece para el dueño, pide confirmación y la validación real ocurre en `InventoryService`.
+- [x] El POS no muestra inactivos en la búsqueda y avisa si se escanea su código; `VentaService` rechaza venderlos.
+- [x] El stock se conserva al desactivar y vuelve a estar disponible al reactivar.
+- [ ] La pantalla se verifica manualmente en Windows con roles dueño/encargado/empleado.
+- [ ] El flujo se repite en la tablet Android.
 
 ## Criterios de aceptación de T17 (conteo e historial)
 
