@@ -27,13 +27,13 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 
 | Tarea | Agente | Rama | Archivos reservados | Inicio | Estado |
 |-------|--------|------|---------------------|--------|--------|
-| — | — | — | — | — | — |
+| T1 | Luffy | feat/migraciones-respaldo | Database.cs, Migraciones.cs, RespaldoService.cs | 2026-11-06 | Tomada |
 
 ## Tareas
 
 | ID | Tarea | Estado | Depende de | Notas |
 |----|-------|--------|------------|-------|
-| T1 | Migraciones versionadas + respaldo | Libre | — | Prioridad alta. Reserva `Database.cs`. |
+| T1 | Migraciones versionadas + respaldo | Tomada | — | Prioridad alta. Reserva `Database.cs`. |
 | T2 | Ventas / POS | Libre | T1 recomendado | Reserva `Database.cs` y `Program.cs`. |
 | T3 | Dinero en centavos | Libre | T1 | Cross-cutting; no simultáneo con T2. |
 | T4 | Bitácora y permisos en servicios | Libre | — | Toca `Application` e `Infrastructure`. |

@@ -7,12 +7,19 @@ namespace SistemaTienda.Infrastructure;
 
 public class DatabaseTools
 {
-    private const int VersionEsquemaActual = 1;
     private readonly string _connectionString;
+
+    /// <summary>Ruta completa del archivo de base de datos.</summary>
+    public string RutaBaseDeDatos { get; }
+
+    /// <summary>Carpeta donde se guardan los respaldos (junto a la base de datos).</summary>
+    public string CarpetaRespaldos => Path.Combine(
+        Path.GetDirectoryName(RutaBaseDeDatos) ?? ".", "respaldos");
 
     public DatabaseTools(string databasePath)
     {
         var fullPath = Path.GetFullPath(databasePath);
+        RutaBaseDeDatos = fullPath;
         var directory = Path.GetDirectoryName(fullPath);
         if (!string.IsNullOrEmpty(directory))
             Directory.CreateDirectory(directory);
@@ -27,8 +34,17 @@ public class DatabaseTools
 
     public SqliteConnection CreateConnection() => new(_connectionString);
 
+    /// <summary>Versión del esquema guardada en la base de datos (PRAGMA user_version).</summary>
+    public int ObtenerVersionEsquema() =>
+        ExecuteScalar<int>("PRAGMA user_version");
+
     public void InicializarBaseDeDatos()
     {
+        // Se registra si el archivo ya existía con datos: solo en ese caso el
+        // respaldo previo a migrar es obligatorio (regla de negocio #11).
+        var baseExistia = File.Exists(RutaBaseDeDatos)
+            && new FileInfo(RutaBaseDeDatos).Length > 0;
+
         using var conn = CreateConnection();
         conn.Open();
 
@@ -142,9 +158,151 @@ public class DatabaseTools
             insert.ExecuteNonQuery();
         }
 
-        using var version = conn.CreateCommand();
-        version.CommandText = $"PRAGMA user_version = {VersionEsquemaActual}";
-        version.ExecuteNonQuery();
+        // Una base recién creada nace como esquema v1; las bases existentes
+        // conservan su versión para que el runner decida qué migrar.
+        using (var versionActual = conn.CreateCommand())
+        {
+            versionActual.CommandText = "PRAGMA user_version";
+            if (Convert.ToInt32(versionActual.ExecuteScalar(), CultureInfo.InvariantCulture) == 0)
+            {
+                using var version = conn.CreateCommand();
+                version.CommandText = "PRAGMA user_version = 1";
+                version.ExecuteNonQuery();
+            }
+        }
+
+        // Lleva el esquema a la versión actual con el runner de migraciones.
+        // En una base recién creada no hay datos que proteger, así que no se
+        // exige respaldo; en una base existente el respaldo es obligatorio.
+        var runner = new MigracionRunner(this, MigracionesRegistradas.Lista());
+        var resultado = runner.Migrar(respaldoObligatorio: baseExistia);
+        if (resultado.IsError)
+            throw new InvalidOperationException(resultado.Message);
+    }
+
+    // ---------- Respaldo y restauración ----------
+
+    /// <summary>
+    /// Crea un respaldo consistente de la base de datos con VACUUM INTO
+    /// (copia válida aunque haya otra conexión abierta) y verifica su
+    /// integridad antes de devolver la ruta. El archivo se guarda en
+    /// <see cref="CarpetaRespaldos"/> con nombre por fecha y hora.
+    /// </summary>
+    public ProcessResult<string> CrearRespaldoSeguro()
+    {
+        try
+        {
+            Directory.CreateDirectory(CarpetaRespaldos);
+
+            var marca = DateTime.Now.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture);
+            var rutaRespaldo = Path.Combine(CarpetaRespaldos, $"tienda-{marca}.db");
+            var contador = 1;
+            while (File.Exists(rutaRespaldo))
+                rutaRespaldo = Path.Combine(CarpetaRespaldos, $"tienda-{marca}-{contador++}.db");
+
+            // VACUUM INTO no acepta parámetros: la ruta va como literal SQL.
+            var rutaEscapada = rutaRespaldo.Replace("'", "''");
+            using (var conn = CreateConnection())
+            {
+                conn.Open();
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = $"VACUUM INTO '{rutaEscapada}'";
+                cmd.ExecuteNonQuery();
+            }
+
+            var verificacion = VerificarArchivoRespaldo(rutaRespaldo);
+            if (verificacion.IsError)
+            {
+                if (File.Exists(rutaRespaldo)) File.Delete(rutaRespaldo);
+                return ProcessResult<string>.Error(
+                    $"El respaldo se creó pero no pasó la verificación de integridad: {verificacion.Message}");
+            }
+
+            return ProcessResult<string>.OK(rutaRespaldo, "Respaldo creado y verificado correctamente");
+        }
+        catch (Exception ex)
+        {
+            return ProcessResult<string>.Error($"No se pudo crear el respaldo: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Verifica que un archivo sea una base de datos SQLite íntegra con las
+    /// tablas base del sistema. No modifica el archivo.
+    /// </summary>
+    public static ProcessResult<bool> VerificarArchivoRespaldo(string rutaRespaldo)
+    {
+        if (string.IsNullOrWhiteSpace(rutaRespaldo) || !File.Exists(rutaRespaldo))
+            return ProcessResult<bool>.Error("El archivo de respaldo no existe");
+
+        try
+        {
+            var connectionString = new SqliteConnectionStringBuilder
+            {
+                DataSource = Path.GetFullPath(rutaRespaldo),
+                Mode = SqliteOpenMode.ReadOnly,
+                ForeignKeys = true
+            }.ToString();
+
+            using var conn = new SqliteConnection(connectionString);
+            conn.Open();
+
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.CommandText = "PRAGMA integrity_check";
+                var resultado = Convert.ToString(cmd.ExecuteScalar(), CultureInfo.InvariantCulture);
+                if (!string.Equals(resultado, "ok", StringComparison.OrdinalIgnoreCase))
+                    return ProcessResult<bool>.Error($"La verificación de integridad falló: {resultado}");
+            }
+
+            foreach (var tabla in new[]
+            {
+                "ConfiguracionTienda", "UsuariosSistema", "Productos",
+                "MovimientoInventario", "Gastos", "ClientesFiado", "Proveedores"
+            })
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = @nombre";
+                cmd.Parameters.AddWithValue("@nombre", tabla);
+                if (Convert.ToInt32(cmd.ExecuteScalar(), CultureInfo.InvariantCulture) != 1)
+                    return ProcessResult<bool>.Error($"Al respaldo le falta la tabla {tabla}");
+            }
+
+            return ProcessResult<bool>.OK(true, "Respaldo íntegro");
+        }
+        catch (Exception ex)
+        {
+            return ProcessResult<bool>.Error($"El archivo no es un respaldo válido: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Restaura la base de datos desde un respaldo previamente verificado.
+    /// Si el respaldo no es válido, la base actual no se toca.
+    /// </summary>
+    public ProcessResult<string> RestaurarDesdeRespaldo(string rutaRespaldo)
+    {
+        var verificacion = VerificarArchivoRespaldo(rutaRespaldo);
+        if (verificacion.IsError)
+            return ProcessResult<string>.Error(
+                $"No se restauró nada porque el respaldo no es válido: {verificacion.Message}");
+
+        try
+        {
+            SqliteConnection.ClearAllPools();
+            foreach (var sufijo in new[] { "-shm", "-wal" })
+            {
+                var archivo = RutaBaseDeDatos + sufijo;
+                if (File.Exists(archivo)) File.Delete(archivo);
+            }
+
+            File.Copy(Path.GetFullPath(rutaRespaldo), RutaBaseDeDatos, overwrite: true);
+            return ProcessResult<string>.OK(RutaBaseDeDatos, "Base de datos restaurada desde el respaldo");
+        }
+        catch (Exception ex)
+        {
+            return ProcessResult<string>.Error($"No se pudo restaurar el respaldo: {ex.Message}");
+        }
     }
 
     // ---------- Consultas genéricas ----------
