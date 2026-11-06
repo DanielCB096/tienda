@@ -32,6 +32,17 @@ Próximamente después de completar los módulos críticos.
 - Configuración básica de tienda (nombre, giro, impuestos, métodos de pago).
 - Documentación inicial (glosario, stack, módulos, ADR).
 
+### v0.0.19 - 2026-11-06: Desactivación de productos (esquema v7)
+
+- *Agregado*: migración **v7** con la columna `Productos.Activo` (`INTEGER NOT NULL DEFAULT 1`); los productos existentes quedan activos y el respaldo `antes-migrar` se crea como siempre.
+- *Agregado*: `InventoryService.DesactivarProducto` y `ReactivarProducto` con el permiso nuevo `DesactivarProducto`, exclusivo del **dueño**, y bitácora `CambiarEstadoProducto` con el estado antes/después.
+- *Agregado*: filtros **Todos/Activos/Stock bajo/Inactivos** en el catálogo de Inventario (también aplican a la búsqueda por nombre), distintivo **INACTIVO** en la lista y en el detalle, y botón **Desactivar/Reactivar producto** con confirmación.
+- *Modificado*: un producto inactivo no se vende (`VentaService` lo rechaza), no recibe entradas, mermas ni ajustes, y desaparece de la búsqueda y del escaneo del POS (la app avisa si se escanea su código); editar sus datos y consultar el historial siguen permitidos.
+- *Modificado*: el conteo de **stock bajo** de Inicio y de los menús de consola considera solo productos activos; el valorizado del inventario incluye a todos porque la mercancía sigue siendo de la tienda.
+- *Reglas de negocio*: definidas con el dueño el 2026-11-06 (oculto en Vender y visible en Inventario; se puede desactivar con stock; reactivable en cualquier momento; solo dueño). Detalle en [modulo-inventario.md](02-modulos/modulo-inventario.md).
+- *Verificación*: solución y app MAUI para Windows compiladas sin errores ni advertencias; 206 pruebas en verde (15 nuevas en `DesactivacionProductosTests`). Verificación manual de la pantalla pendiente de abrir la GUI.
+- Total del proyecto: 206 pruebas.
+
 ### v0.0.18 - 2026-10-26: Proveedores y pagos en la app MAUI
 
 - *Agregado*: pestaña **Proveedores** con resumen de proveedores, con saldo y total por pagar; directorio con búsqueda por nombre, clave o teléfono, filtro **Con saldo**, alta con clave/teléfono/dirección y saldo inicial opcionales, y pago del saldo pendiente.

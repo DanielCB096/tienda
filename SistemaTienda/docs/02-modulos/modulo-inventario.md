@@ -139,19 +139,34 @@ Este módulo maneja el catálogo de productos y el control de inventario. Es el 
 - **Producto con stock 0**: Se puede seguir vendiendo? No, el sistema bloquea la venta con "Stock insuficiente". Sin embargo, el producto sigue en catálogo y se puede reactivar al recibir nueva existencia.
 - **Mismo nombre, código distinto**: Está permitido siempre y cuando los códigos de barras sean diferentes.
 - **Modificar precio o costo**: El cambio afecta a partir de la próxima venta/transacción. Las transacciones ya registradas mantienen el precio/costo del momento.
-- **Producto inactivo**: No existe un campo "activo/inactivo" en el diseño actual; para "desactivar" un producto, se puede dejar con stock 0 y precio 0, o el usuario decide no ofrecerlo. (En futuras versiones se podría añadir un campo `Activo` booleano).
+- **Producto inactivo**: la desactivación (esquema v7) retira el producto de la venta sin borrarlo: su stock se conserva, no recibe entradas, mermas ni ajustes, y solo el dueño puede desactivarlo o reactivarlo. Ver la sección **Desactivación de productos**.
+
+## Desactivación de productos
+
+Desde el esquema **v7** cada producto tiene un estado `Activo`. Es un estado operativo, no una baja: el historial de movimientos y de ventas no se toca.
+
+**Reglas de negocio** (definidas con el dueño el 2026-11-06):
+
+1. **Efecto**: un producto inactivo desaparece de **Vender** (búsqueda y escaneo del POS) y sigue visible en **Inventario** con el filtro *Inactivos*; el detalle muestra un aviso rojo.
+2. **Stock**: se puede desactivar con existencias; el stock se conserva intacto y vuelve a estar disponible al reactivar.
+3. **Movimientos**: mientras esté inactivo se bloquean entradas, mermas y ajustes (`InventoryService`); editar sus datos y consultar el historial siguen permitidos.
+4. **Reactivación**: permitida en cualquier momento para el dueño; el producto vuelve al POS con su stock actual.
+5. **Permiso**: `PermisoSistema.DesactivarProducto`, exclusivo del **dueño**, validado en el servicio (no solo en la pantalla) y registrado en la bitácora como `CambiarEstadoProducto`.
+6. **Alertas**: el conteo de *stock bajo* del tablero y de la app considera solo productos activos (su stock está congelado y no se reabastece); el valorizado del inventario sí incluye a los inactivos porque la mercancía sigue siendo propiedad de la tienda.
+7. **Ventas**: `VentaService` rechaza cualquier venta que incluya un producto inactivo, aunque el carrito ya lo tuviera.
 
 ## Pantallas Clave
 
 Implementadas en la pestaña **Inventario** de la app MAUI desde T15:
 
-1. **Catálogo de productos** (resumen de productos/stock bajo/valorizado, búsqueda por nombre o escaneo de código, indicadores y filtro de stock bajo).
+1. **Catálogo de productos** (resumen de productos/stock bajo/valorizado, búsqueda por nombre o escaneo de código, indicadores y filtros Todos/Activos/Stock bajo/Inactivos).
 2. **Agregar producto** (formulario con código, nombre, categoría, costo, precio, stock inicial, stock mínimo e impuesto).
 3. **Editar producto** (dueño y encargado; costo y precio solo para el dueño).
 4. **Ajustar stock** (nuevo stock y motivo; solo dueño).
 5. **Entrada de inventario** (cantidad, costo unitario y motivo).
 6. **Registrar merma** (cantidad y motivo; reduce el stock).
 7. **Historial de movimientos** (últimos 200, con cantidad firmada, usuario y fecha).
+8. **Desactivar/Reactivar producto** (botón del detalle con confirmación; solo dueño; distintivo INACTIVO en la lista).
 
 ## Criterios de Aceptación
 
@@ -165,6 +180,7 @@ Implementadas en la pestaña **Inventario** de la app MAUI desde T15:
 - [x] El costo y precio se "congelan" al momento de cada venta (las ventas anteriores no se ven afectadas si se modifican los precios después).
 - [x] Los ajustes de stock requieren motivo y usuario, y actualizan el stock al valor indicado.
 - [x] Los historiales de movimientos se registran y son inmutables.
+- [x] Un producto desactivado no se vende ni recibe movimientos; solo el dueño lo desactiva o reactiva y la acción queda en la bitácora.
 
 ## Preguntas Abiertas ⚠️
 
@@ -175,12 +191,12 @@ Implementadas en la pestaña **Inventario** de la app MAUI desde T15:
 
 ---
 
-**Estado actual (2026-10-25)**: base implementada y probada, con pantalla de operación en la app MAUI.
+**Estado actual (2026-11-06)**: base implementada y probada, con pantalla de operación en la app MAUI.
 
-- *Implementado*: alta de producto con stock inicial como movimiento de entrada; código de barras único; edición sin tocar stock; búsqueda exacta por código y parcial por nombre; stock bajo; historial de movimientos; ajuste con diferencia y motivo; entradas; reducción por venta/merma; valorizado. La app MAUI ofrece catálogo, escaneo, alta/edición, entrada, merma, ajuste, historial y filtro de stock bajo, con acciones limitadas por rol.
-- *Desviaciones del diseño*: no existe borrado ni campo `Activo`; el filtro por categoría no está en la interfaz; el historial se limita a los últimos 200 movimientos; el stock mínimo es siempre por producto (no hay umbral global adicional); el costo de una entrada no actualiza el costo del catálogo; la búsqueda por nombre no sugiere mientras se teclea.
+- *Implementado*: alta de producto con stock inicial como movimiento de entrada; código de barras único; edición sin tocar stock; búsqueda exacta por código y parcial por nombre; stock bajo; historial de movimientos; ajuste con diferencia y motivo; entradas; reducción por venta/merma; valorizado; desactivación y reactivación con estado `Activo` (esquema v7). La app MAUI ofrece catálogo, escaneo, alta/edición, entrada, merma, ajuste, historial, filtros Todos/Activos/Stock bajo/Inactivos y desactivar/reactivar, con acciones limitadas por rol.
+- *Desviaciones del diseño*: no existe borrado (la desactivación cumple ese papel); el filtro por categoría no está en la interfaz; el historial se limita a los últimos 200 movimientos; el stock mínimo es siempre por producto (no hay umbral global adicional); el costo de una entrada no actualiza el costo del catálogo; la búsqueda por nombre no sugiere mientras se teclea.
 - *Pendiente*: importación Excel/CSV, edición masiva, reporte de valorizado histórico y filtro por categoría en la app.
-- *Pruebas*: `InventarioTests` (20 pruebas), `InventarioBordeTests` y la verificación manual de la app descrita en el plan de pruebas; la interfaz no tiene pruebas automatizadas.
+- *Pruebas*: `InventarioTests` (20 pruebas), `InventarioBordeTests`, `DesactivacionProductosTests` (15 pruebas) y la verificación manual de la app descrita en el plan de pruebas; la interfaz no tiene pruebas automatizadas.
 - *Riesgo conocido*: el costo perdido de una merma solo se muestra al registrarla; no queda almacenado (ver [deuda-técnica](../deuda-tecnica.md)). El costo de una entrada queda en el movimiento, no en el catálogo.
 
 **Siguiente módulo después de confirmar**: Módulo 3 - Ventas / POS (que dependerá fortemente de este módulo de inventario).

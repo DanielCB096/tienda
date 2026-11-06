@@ -83,14 +83,16 @@ SistemaTienda.Maui/
 | Login | Nombre de la tienda y PIN numérico; 3 intentos y luego bloqueo hasta reabrir la app | Inicia sesión y evalúa respaldo automático |
 | Inicio | Ventas de hoy (vigentes y anuladas), efectivo esperado del periodo, stock bajo, último respaldo y aviso si venció | Solo lectura |
 | Vender | Búsqueda por código o nombre, carrito con cantidades, total, cobro efectivo con cambio visible/tarjeta/mixto/fiado y ticket interno con QR | Venta y salida de stock |
-| Inventario | Resumen de productos, stock bajo y valorizado; búsqueda o escaneo, alta y edición, entrada, merma, ajuste, historial y filtro de stock bajo | Catálogo y movimientos de inventario |
+| Inventario | Resumen de productos, stock bajo y valorizado; búsqueda o escaneo, alta y edición, entrada, merma, ajuste, historial, filtros Todos/Activos/Stock bajo/Inactivos y desactivar/reactivar | Catálogo y movimientos de inventario |
 | Ventas | Lista de ventas del día con folio, total, método, hora y estado; detalle con líneas, pagos, comisión y datos de anulación; reimpresión del ticket y anulación | Anulación de venta completa |
 | Clientes | Resumen de clientes, con saldo y total por cobrar; búsqueda por nombre o teléfono, filtro con saldo, alta con saldo inicial y abono | Alta de cliente y abono en efectivo |
 | Proveedores | Resumen de proveedores, con saldo y total por pagar; búsqueda por nombre, clave o teléfono, filtro con saldo, alta con saldo inicial y pago | Alta de proveedor y pago del saldo pendiente |
 | Caja | Periodo abierto, efectivo esperado, fondo, ventas por método, abonos, ingresos/retiros, gastos, cierre con conteo por denominaciones o total directo, diferencia e historial de los últimos 20 cortes | Cierre de corte, ingresos, retiros y abonos |
 | Ajustes | Datos de la tienda, reglas configuradas, rutas de base y respaldos, último respaldo, crear respaldo y cerrar sesión | Respaldo manual y cierre de sesión |
 
-El POS reutiliza `VentaService`: la validación de stock, precios congelados, pagos y fiado ocurre en la capa de aplicación; la página solo arma el carrito y captura los importes. En efectivo, la página muestra un recuadro **Cambio a entregar** con el monto recibido y el cambio, y el ticket imprime ambos importes. El ticket se arma con `TicketService` (capa `Application`) y se abre en una página modal que muestra el QR, el texto completo y las opciones de compartir y copiar. El QR es informativo y offline: resume folio, fecha, estado, total, método de pago y hasta diez productos, y advierte que no es un comprobante fiscal. Se dibuja con `QrTicketView` sobre `GraphicsView`, sin guardarse como imagen.
+El POS reutiliza `VentaService`: la validación de stock, precios congelados, pagos y fiado ocurre en la capa de aplicación; la página solo arma el carrito y captura los importes. La búsqueda del POS devuelve solo productos activos y, si se escanea un producto desactivado, avisa que no se puede vender en lugar de agregarlo. En efectivo, la página muestra un recuadro **Cambio a entregar** con el monto recibido y el cambio, y el ticket imprime ambos importes. El ticket se arma con `TicketService` (capa `Application`) y se abre en una página modal que muestra el QR, el texto completo y las opciones de compartir y copiar. El QR es informativo y offline: resume folio, fecha, estado, total, método de pago y hasta diez productos, y advierte que no es un comprobante fiscal. Se dibuja con `QrTicketView` sobre `GraphicsView`, sin guardarse como imagen.
+
+Inventario reutiliza `InventoryService`. El catálogo se filtra con los chips **Todos**, **Activos**, **Stock bajo** e **Inactivos**, y el filtro también aplica a la búsqueda por nombre. El detalle muestra un aviso rojo para los productos inactivos, oculta entrada/merma/ajuste mientras duren, y ofrece **Desactivar producto** o **Reactivar producto** solo al dueño, con confirmación y aviso de que el stock se conserva. La acción valida `PermisoSistema.DesactivarProducto` en el servicio y queda en la bitácora como `CambiarEstadoProducto`.
 
 Ventas reutiliza `VentaService` y `TicketService`. Al tocar una venta se abre un detalle con fecha, cajero, estado, método de pago, cliente, líneas, total, pagos y comisión; si está anulada, muestra también el usuario, la fecha y el motivo de la anulación. **Ver ticket** reconstruye el ticket con `TicketService` (con el sello de anulación cuando corresponde) y lo abre en la misma página modal del POS. **Anular venta** solo aparece para dueño y encargado, pide el motivo y exige escribir `ANULAR`; luego llama a `VentaService.AnularVenta`, vuelve a leer la venta y la lista, y avisa que el reembolso en efectivo es manual.
 
@@ -147,7 +149,7 @@ No se usa `Shell` ni rutas jerárquicas. `NavegacionApp` cambia la página raíz
 
 - Desde la app se vende, se opera el inventario, se gestionan clientes y proveedores, se cierra la caja y se anulan ventas; falta la pantalla de gastos.
 - El conteo por denominaciones no se guarda: el corte conserva solo el total contado, así que no se puede auditar el desglose de billetes y monedas de un corte pasado.
-- Inventario no permite borrar ni desactivar productos, filtrar por categoría, actualizar el costo del catálogo al registrar una entrada ni reportar un valorizado histórico.
+- Inventario no permite borrar productos (la desactivación cumple ese papel), filtrar por categoría, actualizar el costo del catálogo al registrar una entrada ni reportar un valorizado histórico.
 - Clientes no permite editar nombre o teléfono, borrar clientes, consultar el estado de cuenta ni elegir el método del abono; el abono se registra siempre como efectivo.
 - Proveedores no permite editar ni borrar, no tiene estado de cuenta ni historial de pagos, y el pago no entra al corte ni elige método de pago; el saldo se actualiza, pero el pago solo queda en la bitácora.
 - No hay pantallas de gastos ni reportes.
@@ -208,7 +210,8 @@ Implementados en código y verificados manualmente en Windows el 2026-10-25:
 - [x] El encargado puede editar, registrar entradas y mermas, pero no cambiar costo/precio ni ajustar stock; el empleado solo consulta y ve movimientos.
 - [x] Cada entrada, merma o ajuste valida cantidad, costo o motivo, actualiza el stock y deja un movimiento con usuario y fecha.
 - [x] El historial muestra los últimos 200 movimientos con cantidad firmada.
-- [ ] El catálogo se puede filtrar por categoría y los productos se pueden desactivar o borrar desde la app.
+- [x] Los productos se pueden desactivar y reactivar desde la app (solo dueño), con filtros Todos/Activos/Stock bajo/Inactivos; no hay borrado.
+- [ ] El catálogo se puede filtrar por categoría desde la app.
 
 ## Criterios de aceptación de T16 (Ventas, QR y anulación)
 

@@ -1,6 +1,6 @@
-# Modelo de Datos (esquema v6)
+# Modelo de Datos (esquema v7)
 
-Base local SQLite, un solo archivo. `PRAGMA user_version = 6`.
+Base local SQLite, un solo archivo. `PRAGMA user_version = 7`.
 
 El acceso vive en `SistemaTienda.Infrastructure/Database.cs` (`DatabaseTools`). Todas las consultas son parametrizadas.
 
@@ -13,6 +13,7 @@ El acceso vive en `SistemaTienda.Infrastructure/Database.cs` (`DatabaseTools`). 
   - **v4** — convierte todos los importes de `DECIMAL` (pesos) a `INTEGER` (centavos enteros). Como SQLite no permite cambiar el tipo de una columna, reconstruye cada tabla con `CREATE ... _Nueva`, `INSERT ... SELECT CAST(ROUND(col * 100) AS INTEGER)`, `DROP` y `RENAME`, conservando Id, FKs e índices. Los porcentajes (`Impuesto`, `ImpuestoPredeterminado`, `ComisionTarjeta`) siguen en `DECIMAL`.
   - **v5** — crea `Bitacora` con sus índices y disparadores que impiden `UPDATE` y `DELETE` (auditoría inmutable).
   - **v6** — crea `AnulacionesVenta` con índice por fecha y disparadores que impiden `UPDATE` y `DELETE` (anulación inmutable de ventas).
+  - **v7** — agrega `Productos.Activo` (`INTEGER NOT NULL DEFAULT 1`): los productos existentes quedan activos. La desactivación es un estado operativo, no una baja del historial.
 - Una base nueva se crea directamente en la versión máxima (`Migraciones.VersionMaxima`): no se crea respaldo previo porque aún no hay datos.
 - `MigradorEsquema.Migrar()` se ejecuta dentro de `InicializarBaseDeDatos()` al arrancar:
   1. Lee `user_version`; si la base es más nueva que la app, aborta sin tocar nada.
@@ -85,6 +86,7 @@ Fila única (Id = 1) creada al inicializar la base.
 | StockMinimo | INTEGER | Alerta si `Stock <= StockMinimo` |
 | Categoria | TEXT | Libre |
 | Impuesto | DECIMAL | Porcentaje; override del global |
+| Activo | INTEGER | `1` activo (predeterminado); `0` inactivo (migración v7) |
 | FechaCreacion | DATETIME | |
 | UltimaActualizacion | DATETIME | |
 
