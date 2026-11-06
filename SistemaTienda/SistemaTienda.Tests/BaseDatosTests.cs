@@ -11,7 +11,7 @@ public sealed class BaseDatosTests
         bd.Db.InicializarBaseDeDatos();
 
         Assert.Equal(1, bd.Db.ExecuteScalar<int>("SELECT COUNT(*) FROM ConfiguracionTienda"));
-        Assert.Equal(1, bd.Db.ExecuteScalar<int>("PRAGMA user_version"));
+        Assert.Equal(2, bd.Db.ExecuteScalar<int>("PRAGMA user_version"));
     }
 
     [Fact]
