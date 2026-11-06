@@ -28,7 +28,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 
 | Tarea | Agente | Rama | Archivos | Fecha | Estado |
 |-------|--------|------|-----------|-------|--------|
-| — | — | — | Sin tareas en curso | — | — |
+| T20 — Desactivación de productos (esquema v7) | GLM (OpenCode) | feat/desactivacion-productos | Migraciones.cs, Database.cs, Core/Producto.cs, Core/Bitacora.cs, Application/InventoryService.cs, Application/VentaService.cs, Application/AutorizacionService.cs, Maui/Pages/InventarioPage.xaml(.cs), Maui/Pages/PosPage.xaml.cs, Presentation/Program.cs, Tests/ | 2026-11-06 | Tomada |
 
 ## Hecho
 

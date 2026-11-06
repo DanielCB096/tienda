@@ -72,6 +72,7 @@ public static class AutorizacionService
         PermisoSistema.RegistrarAbono => "registrar abonos",
         PermisoSistema.PagarProveedor => "pagar proveedores",
         PermisoSistema.EditarProducto => "editar productos",
+        PermisoSistema.DesactivarProducto => "desactivar o reactivar productos",
         PermisoSistema.CambiarPrecios => "cambiar precios o costos",
         PermisoSistema.AjustarInventario => "ajustar inventario",
         PermisoSistema.RegistrarEntrada => "registrar entradas de inventario",

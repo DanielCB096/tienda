@@ -35,7 +35,8 @@ public static class Migraciones
         new Migracion(3, "crea cortes de caja, movimientos de caja y abonos de fiado", AplicarVersion3),
         new Migracion(4, "convierte los importes a centavos enteros", AplicarVersion4),
         new Migracion(5, "crea la bitácora inmutable", AplicarVersion5),
-        new Migracion(6, "crea las anulaciones de venta", AplicarVersion6)
+        new Migracion(6, "crea las anulaciones de venta", AplicarVersion6),
+        new Migracion(7, "agrega el estado activo de los productos", AplicarVersion7)
     };
 
     private static void AplicarVersion2(SqliteConnection conn, SqliteTransaction tx)
@@ -491,6 +492,20 @@ public static class Migraciones
             BEGIN
                 SELECT RAISE(ABORT, 'Las anulaciones son inmutables: no se pueden borrar');
             END;
+        ";
+        cmd.ExecuteNonQuery();
+    }
+
+    /// <summary>
+    /// Agrega la columna Activo a los productos. Los productos existentes quedan activos:
+    /// la desactivación es un estado operativo y no una baja del historial.
+    /// </summary>
+    private static void AplicarVersion7(SqliteConnection conn, SqliteTransaction tx)
+    {
+        using var cmd = conn.CreateCommand();
+        cmd.Transaction = tx;
+        cmd.CommandText = @"
+            ALTER TABLE Productos ADD COLUMN Activo INTEGER NOT NULL DEFAULT 1;
         ";
         cmd.ExecuteNonQuery();
     }

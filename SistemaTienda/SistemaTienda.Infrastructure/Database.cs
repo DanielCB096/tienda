@@ -457,11 +457,13 @@ public class DatabaseTools
     public List<Producto> ObtenerProductos() =>
         ExecuteReportObjects<Producto>("SELECT * FROM Productos ORDER BY Nombre");
 
-    public List<Producto> BuscarProductosPorNombre(string texto)
+    public List<Producto> BuscarProductosPorNombre(string texto, bool soloActivos = false)
     {
         var patron = $"%{texto.Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_")}%";
-        return ExecuteReportObjects<Producto>(
-            "SELECT * FROM Productos WHERE Nombre LIKE @patron ESCAPE '\\' ORDER BY Nombre LIMIT 50",
+        var filtro = soloActivos
+            ? "SELECT * FROM Productos WHERE Nombre LIKE @patron ESCAPE '\\' AND Activo = 1 ORDER BY Nombre LIMIT 50"
+            : "SELECT * FROM Productos WHERE Nombre LIKE @patron ESCAPE '\\' ORDER BY Nombre LIMIT 50";
+        return ExecuteReportObjects<Producto>(filtro,
             new SqliteParameter("@patron", patron));
     }
 
@@ -473,9 +475,28 @@ public class DatabaseTools
         ExecuteReportObject<Producto>("SELECT * FROM Productos WHERE Id = @id",
             new SqliteParameter("@id", productoId));
 
-    public List<Producto> ObtenerProductosStockBajo() =>
-        ExecuteReportObjects<Producto>(
-            "SELECT * FROM Productos WHERE Stock <= StockMinimo ORDER BY Stock, Nombre");
+    public List<Producto> ObtenerProductosStockBajo(bool soloActivos = false)
+    {
+        var consulta = soloActivos
+            ? "SELECT * FROM Productos WHERE Stock <= StockMinimo AND Activo = 1 ORDER BY Stock, Nombre"
+            : "SELECT * FROM Productos WHERE Stock <= StockMinimo ORDER BY Stock, Nombre";
+        return ExecuteReportObjects<Producto>(consulta);
+    }
+
+    /// <summary>
+    /// Cambia el estado activo de un producto sin tocar su stock ni su historial.
+    /// </summary>
+    public bool CambiarEstadoProducto(int productoId, bool activo)
+    {
+        var filas = ExecuteCommand(@"
+            UPDATE Productos
+            SET Activo = @activo, UltimaActualizacion = datetime('now')
+            WHERE Id = @id",
+            new SqliteParameter("@id", productoId),
+            new SqliteParameter("@activo", activo ? 1 : 0));
+
+        return filas > 0;
+    }
 
     public long ObtenerValorizadoInventario() =>
         ExecuteScalar<long>("SELECT COALESCE(SUM(Stock * Costo), 0) FROM Productos");

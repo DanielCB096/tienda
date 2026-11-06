@@ -14,6 +14,11 @@ public class Producto
     public string Categoria { get; set; } = string.Empty;
     /// <summary>Porcentaje de impuesto; no es un importe.</summary>
     public decimal Impuesto { get; set; }
+    /// <summary>
+    /// Un producto inactivo no se vende ni recibe movimientos de inventario;
+    /// su stock se conserva. La edición de sus datos sigue permitida.
+    /// </summary>
+    public bool Activo { get; set; } = true;
     public DateTime FechaCreacion { get; set; } = DateTime.Now;
     public DateTime? UltimaActualizacion { get; set; }
 }
