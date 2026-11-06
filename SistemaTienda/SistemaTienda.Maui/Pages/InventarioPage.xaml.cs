@@ -20,6 +20,14 @@ public partial class InventarioPage : ContentPage
         Historial
     }
 
+    private enum FiltroCatalogo
+    {
+        Todos,
+        Activos,
+        StockBajo,
+        Inactivos
+    }
+
     private const int StockMaximo = 1_000_000;
 
     private readonly InventoryService _inventario;
@@ -28,16 +36,19 @@ public partial class InventarioPage : ContentPage
 
     private VistaInventario _vista;
     private Producto? _producto;
-    private bool _soloStockBajo;
+    private FiltroCatalogo _filtro = FiltroCatalogo.Todos;
     private bool _volverADetalle;
     private int _totalProductos;
+    private int _totalActivos;
     private int _totalBajos;
+    private int _totalInactivos;
 
     private bool _puedeEditar;
     private bool _puedeCambiarPrecios;
     private bool _puedeEntrada;
     private bool _puedeMerma;
     private bool _puedeAjuste;
+    private bool _puedeDesactivar;
     private decimal _impuestoPredeterminado = 16m;
 
     public InventarioPage(InventoryService inventario, ConfiguracionService configuracion,
@@ -67,6 +78,7 @@ public partial class InventarioPage : ContentPage
         _puedeEntrada = AutorizacionService.Puede(usuario, PermisoSistema.RegistrarEntrada);
         _puedeMerma = AutorizacionService.Puede(usuario, PermisoSistema.RegistrarMerma);
         _puedeAjuste = AutorizacionService.Puede(usuario, PermisoSistema.AjustarInventario);
+        _puedeDesactivar = AutorizacionService.Puede(usuario, PermisoSistema.DesactivarProducto);
         var puedeConsultar = AutorizacionService.Puede(usuario, PermisoSistema.Consultar);
 
         NuevoProductoButton.IsVisible = _puedeEditar;
@@ -80,7 +92,7 @@ public partial class InventarioPage : ContentPage
 
         PanelOverlay.IsVisible = false;
         BuscarEntry.Text = string.Empty;
-        _soloStockBajo = false;
+        _filtro = FiltroCatalogo.Todos;
         CargarCatalogo();
 
         if (DeviceInfo.Idiom == DeviceIdiom.Desktop)
@@ -95,9 +107,13 @@ public partial class InventarioPage : ContentPage
         _sesion.Aplicar();
 
         var todos = _inventario.ObtenerProductos();
-        var bajos = todos.Where(p => p.Stock <= p.StockMinimo).ToList();
+        var activos = todos.Where(p => p.Activo).ToList();
+        var bajos = activos.Where(p => p.Stock <= p.StockMinimo).ToList();
+        var inactivos = todos.Where(p => !p.Activo).ToList();
         _totalProductos = todos.Count;
+        _totalActivos = activos.Count;
         _totalBajos = bajos.Count;
+        _totalInactivos = inactivos.Count;
 
         TotalProductosLabel.Text = _totalProductos.ToString(CultureInfo.InvariantCulture);
         ValorizadoLabel.Text = Formato.Moneda(_inventario.ObtenerValorizadoInventario());
@@ -109,21 +125,33 @@ public partial class InventarioPage : ContentPage
 
         if (!string.IsNullOrWhiteSpace(busqueda))
         {
-            var coincidencias = _inventario.BuscarPorNombre(busqueda);
-            if (_soloStockBajo)
-                coincidencias = coincidencias.Where(p => p.Stock <= p.StockMinimo).ToList();
-
+            var coincidencias = Filtrar(_inventario.BuscarPorNombre(busqueda));
             MostrarLista(coincidencias, "No hay coincidencias.");
             ResultadosLabel.Text = $"{coincidencias.Count} resultado(s)";
             return;
         }
 
-        var lista = _soloStockBajo ? bajos : todos;
-        MostrarLista(lista, _soloStockBajo
-            ? "No hay productos en stock bajo."
-            : "No hay productos registrados. Usa + Nuevo o escanea un código.");
-        ResultadosLabel.Text = $"{lista.Count} producto(s)";
+        var (lista, textoVacio) = _filtro switch
+        {
+            FiltroCatalogo.Activos => (activos, "No hay productos activos."),
+            FiltroCatalogo.StockBajo => ((IEnumerable<Producto>)bajos, "No hay productos en stock bajo."),
+            FiltroCatalogo.Inactivos => ((IEnumerable<Producto>)inactivos, "No hay productos inactivos."),
+            _ => ((IEnumerable<Producto>)todos, "No hay productos registrados. Usa + Nuevo o escanea un código.")
+        };
+        MostrarLista(lista, textoVacio);
+        ResultadosLabel.Text = $"{lista.Count()} producto(s)";
     }
+
+    /// <summary>
+    /// Aplica el filtro de estado vigente a una lista; el catálogo ya filtrado no se toca.
+    /// </summary>
+    private List<Producto> Filtrar(IEnumerable<Producto> productos) => _filtro switch
+    {
+        FiltroCatalogo.Activos => productos.Where(p => p.Activo).ToList(),
+        FiltroCatalogo.StockBajo => productos.Where(p => p.Activo && p.Stock <= p.StockMinimo).ToList(),
+        FiltroCatalogo.Inactivos => productos.Where(p => !p.Activo).ToList(),
+        _ => productos.ToList()
+    };
 
     private void MostrarLista(IEnumerable<Producto> productos, string textoVacio)
     {
@@ -137,18 +165,34 @@ public partial class InventarioPage : ContentPage
     private void ActualizarFiltros()
     {
         FiltroTodosButton.Text = $"Todos ({_totalProductos})";
+        FiltroActivosButton.Text = $"Activos ({_totalActivos})";
         FiltroBajoButton.Text = $"Stock bajo ({_totalBajos})";
+        FiltroInactivosButton.Text = $"Inactivos ({_totalInactivos})";
 
         var primario = Color.FromArgb("#2E6B4F");
-        FiltroTodosButton.BackgroundColor = _soloStockBajo ? Colors.Transparent : primario;
-        FiltroTodosButton.TextColor = _soloStockBajo ? primario : Colors.White;
-        FiltroBajoButton.BackgroundColor = _soloStockBajo ? primario : Colors.Transparent;
-        FiltroBajoButton.TextColor = _soloStockBajo ? Colors.White : primario;
+        MarcarFiltro(FiltroTodosButton, _filtro == FiltroCatalogo.Todos, primario);
+        MarcarFiltro(FiltroActivosButton, _filtro == FiltroCatalogo.Activos, primario);
+        MarcarFiltro(FiltroBajoButton, _filtro == FiltroCatalogo.StockBajo, primario);
+        MarcarFiltro(FiltroInactivosButton, _filtro == FiltroCatalogo.Inactivos, primario);
+    }
+
+    private static void MarcarFiltro(Button boton, bool activo, Color primario)
+    {
+        boton.BackgroundColor = activo ? primario : Colors.Transparent;
+        boton.TextColor = activo ? Colors.White : primario;
     }
 
     private void OnFiltroTodosClicked(object sender, EventArgs e)
     {
-        _soloStockBajo = false;
+        _filtro = FiltroCatalogo.Todos;
+        BuscarEntry.Text = string.Empty;
+        MostrarMensaje(null);
+        CargarCatalogo();
+    }
+
+    private void OnFiltroActivosClicked(object sender, EventArgs e)
+    {
+        _filtro = FiltroCatalogo.Activos;
         BuscarEntry.Text = string.Empty;
         MostrarMensaje(null);
         CargarCatalogo();
@@ -156,7 +200,15 @@ public partial class InventarioPage : ContentPage
 
     private void OnFiltroBajoClicked(object sender, EventArgs e)
     {
-        _soloStockBajo = true;
+        _filtro = FiltroCatalogo.StockBajo;
+        BuscarEntry.Text = string.Empty;
+        MostrarMensaje(null);
+        CargarCatalogo();
+    }
+
+    private void OnFiltroInactivosClicked(object sender, EventArgs e)
+    {
+        _filtro = FiltroCatalogo.Inactivos;
         BuscarEntry.Text = string.Empty;
         MostrarMensaje(null);
         CargarCatalogo();
@@ -182,7 +234,7 @@ public partial class InventarioPage : ContentPage
         var texto = BuscarEntry.Text?.Trim() ?? string.Empty;
         if (texto.Length == 0)
         {
-            _soloStockBajo = false;
+            _filtro = FiltroCatalogo.Todos;
             MostrarMensaje(null);
             CargarCatalogo();
             return;
@@ -197,17 +249,12 @@ public partial class InventarioPage : ContentPage
             return;
         }
 
-        var coincidencias = _inventario.BuscarPorNombre(texto);
+        var coincidencias = Filtrar(_inventario.BuscarPorNombre(texto));
         if (coincidencias.Count > 0)
         {
-            if (_soloStockBajo)
-                coincidencias = coincidencias.Where(p => p.Stock <= p.StockMinimo).ToList();
-
             MostrarLista(coincidencias, "No hay coincidencias.");
             ResultadosLabel.Text = $"{coincidencias.Count} resultado(s)";
-            MostrarMensaje(coincidencias.Count == 0
-                ? "No hay coincidencias con stock bajo. Pulsa Todos para ver el catálogo."
-                : null);
+            MostrarMensaje(null);
             return;
         }
 
@@ -283,6 +330,15 @@ public partial class InventarioPage : ContentPage
         BajoDetalleLabel.Text = producto.Stock == 0
             ? "Sin stock disponible. Registra una entrada o ajusta el inventario."
             : $"Stock bajo: quedan {producto.Stock} y el mínimo es {producto.StockMinimo}.";
+
+        InactivoDetalleBorder.IsVisible = !producto.Activo;
+
+        // Mientras esté inactivo no hay movimientos; editar y consultar siguen permitidos.
+        EntradaButton.IsVisible = _puedeEntrada && producto.Activo;
+        MermaButton.IsVisible = _puedeMerma && producto.Activo;
+        AjusteButton.IsVisible = _puedeAjuste && producto.Activo;
+        EstadoButton.IsVisible = _puedeDesactivar;
+        EstadoButton.Text = producto.Activo ? "Desactivar producto" : "Reactivar producto";
 
         var categoria = string.IsNullOrWhiteSpace(producto.Categoria)
             ? "Sin categoría"
@@ -482,6 +538,60 @@ public partial class InventarioPage : ContentPage
             : $"{movimientos.Count} movimiento(s); se muestran los últimos 200.";
 
         AbrirOverlay(VistaInventario.Historial, "Movimientos", _producto.Nombre);
+    }
+
+    private void OnEstadoClicked(object sender, EventArgs e) => _ = CambiarEstadoAsync();
+
+    private async Task CambiarEstadoAsync()
+    {
+        if (!_puedeDesactivar || _producto == null)
+            return;
+
+        var actual = _inventario.BuscarPorId(_producto.Id);
+        if (actual == null)
+        {
+            MostrarErrorOverlay("No se encontró el producto.");
+            return;
+        }
+
+        _producto = actual;
+        _sesion.Aplicar();
+
+        if (actual.Activo)
+        {
+            var confirmar = await DisplayAlertAsync("Desactivar producto",
+                $"{actual.Nombre} dejará de venderse y no recibirá entradas, mermas ni ajustes. " +
+                $"Su stock ({actual.Stock}) se conserva. ¿Quieres desactivarlo?",
+                "Desactivar", "Cancelar");
+            if (!confirmar)
+                return;
+
+            var resultado = _inventario.DesactivarProducto(actual.Id);
+            if (resultado.IsError)
+            {
+                MostrarErrorOverlay(resultado.Message);
+                return;
+            }
+
+            OperacionExitosa(resultado.Message, actual.Id);
+            return;
+        }
+
+        var confirmarReactivar = await DisplayAlertAsync("Reactivar producto",
+            $"{actual.Nombre} volverá a venderse en el POS con su stock actual ({actual.Stock}). " +
+            "¿Quieres reactivarlo?",
+            "Reactivar", "Cancelar");
+        if (!confirmarReactivar)
+            return;
+
+        var reactivacion = _inventario.ReactivarProducto(actual.Id);
+        if (reactivacion.IsError)
+        {
+            MostrarErrorOverlay(reactivacion.Message);
+            return;
+        }
+
+        OperacionExitosa(reactivacion.Message, actual.Id);
     }
 
     private void OnEntradaChanged(object sender, TextChangedEventArgs e)

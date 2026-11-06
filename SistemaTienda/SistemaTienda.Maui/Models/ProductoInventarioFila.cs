@@ -11,6 +11,7 @@ public sealed class ProductoInventarioFila
         : $"{Producto.CodigoBarras} · {Producto.Categoria}";
     public string Precio => Formato.Moneda(Producto.Precio);
     public bool StockBajo => Producto.Stock <= Producto.StockMinimo;
+    public bool Inactivo => !Producto.Activo;
     public string StockTexto => $"Stock {Producto.Stock} · mínimo {Producto.StockMinimo}";
     public Color StockColor => StockBajo
         ? Color.FromArgb("#B3261E")
