@@ -1,14 +1,18 @@
 # Gastos y Pagos
 
+## Estado
+
+Implementado en la consola y en la app MAUI (T21): resumen por origen, historial de los últimos 200 gastos y alta con concepto, monto, método, origen y observaciones; solo dueño y encargado registran. En la app el gasto se guarda con la fecha del momento (sin retroactividad), no se edita ni se borra y el reporte por categoría o periodo sigue en la consola.
+
 ## Registro de Gastos
 
 ### Flujo
 
 1. **Concepto**: Se ingresa qué es el gasto (renta, luz, agua, mantenimiento, nómina, salarios, bolsas, productos de limpieza, etc.).
-2. **Monto**: El amount exacto pagado.
-3. **Fecha**: Por defecto la fecha actual, pero se puede retroactivar.
+2. **Monto**: El monto exacto pagado.
+3. **Fecha**: Por defecto la fecha actual, pero se puede retroactivar en la consola; la app registra el momento del alta.
 4. **Método de pago**: Efectivo (si salió de la caja) o Tarjeta (si salió de la terminal), Transferencia, Otro.
-5. **Origen**: ¿Saldó de la Caja? o ¿Saldó de otra fuente? (ej. transferencia empresarial, tarjeta corporativa).
+5. **Origen**: ¿Salió de la Caja? o ¿Salió de otra fuente? (ej. transferencia empresarial, tarjeta corporativa).
 
 ### Reglas de Negocio
 

@@ -32,6 +32,15 @@ Próximamente después de completar los módulos críticos.
 - Configuración básica de tienda (nombre, giro, impuestos, métodos de pago).
 - Documentación inicial (glosario, stack, módulos, ADR).
 
+### v0.0.20 - 2026-11-10: Pantalla de gastos en la app MAUI
+
+- *Agregado*: pestaña **Gastos** con resumen del total, lo pagado del efectivo de la caja y lo pagado con otra fuente, historial de los últimos 200 gastos y alta con concepto, monto, método, origen y observaciones.
+- *Agregado*: `ResumenGastos` y `ConfiguracionService.ObtenerResumenGastos` separan los gastos de caja (afectan el corte) de los externos (solo afectan la utilidad).
+- *Modificado*: el alta solo aparece para dueño y encargado; `AgregarGasto` vuelve a validar `RegistrarGasto`, la pantalla recorta el concepto y observaciones, y el alta queda en la bitácora como `Gasto`.
+- *Reglas de negocio*: un gasto de caja reduce el efectivo esperado del corte; uno externo no. El reporte por categoría o periodo sigue en la consola.
+- *Verificación*: solución y app MAUI para Windows compiladas sin errores ni advertencias; 210 pruebas en verde (4 nuevas en `GastosTests`). Verificación manual de la pantalla pendiente de abrir la GUI.
+- Total del proyecto: 210 pruebas.
+
 ### v0.0.19 - 2026-11-06: Desactivación de productos (esquema v7)
 
 - *Agregado*: migración **v7** con la columna `Productos.Activo` (`INTEGER NOT NULL DEFAULT 1`); los productos existentes quedan activos y el respaldo `antes-migrar` se crea como siempre.

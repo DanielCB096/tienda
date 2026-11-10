@@ -82,21 +82,28 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 ### La app MAUI no cubre todas las operaciones
 
 - **Dónde**: `SistemaTienda.Maui/Pages`.
-- **Por qué**: el punto de venta se entregó en T13, la caja operativa en T14, el inventario en T15, el detalle/anulación de ventas en T16, el conteo con historial de cortes en T17, la pantalla de clientes en T18 y la de proveedores en T19; el resto de las operaciones de escritura se hará en tareas posteriores.
-- **Impacto**: desde la app se vende, se opera el inventario, se cierra el corte con conteo, se registran ingresos, retiros y abonos de fiado, se anulan ventas, se reimprime el ticket, se consulta el historial de cortes, se gestiona el directorio de clientes con sus abonos, se gestiona el directorio de proveedores con sus pagos y se crea respaldo. Registrar gastos sigue en la consola, que no es usable por el cajero; la edición/estado de cuenta de clientes y proveedores y la consulta de ventas de fechas anteriores tampoco están en la app.
-- **Cierre**: pantalla de gastos en MAUI con sus pruebas; después, edición/estado de cuenta de clientes y proveedores y consulta histórica de ventas.
+- **Por qué**: el punto de venta se entregó en T13, la caja operativa en T14, el inventario en T15, el detalle/anulación de ventas en T16, el conteo con historial de cortes en T17, la pantalla de clientes en T18, la de proveedores en T19 y la de gastos en T21; el resto de las operaciones de escritura se hará en tareas posteriores.
+- **Impacto**: desde la app se vende, se opera el inventario, se cierra el corte con conteo, se registran ingresos, retiros y abonos de fiado, se anulan ventas, se reimprime el ticket, se consulta el historial de cortes, se gestiona el directorio de clientes con sus abonos, se gestiona el directorio de proveedores con sus pagos, se registran gastos y se crea respaldo. La edición/estado de cuenta de clientes y proveedores, los reportes y la consulta de ventas de fechas anteriores tampoco están en la app.
+- **Cierre**: edición/estado de cuenta de clientes y proveedores, reportes en la app y consulta histórica de ventas.
+
+### Gastos sin edición, fecha retroactiva ni reporte en la app
+
+- **Dónde**: `SistemaTienda.Maui/Pages/GastosPage.xaml(.cs)` y `ConfiguracionService.AgregarGasto`.
+- **Por qué**: T21 cubrió el resumen por origen, el historial y el alta; la edición, el borrado y los reportes quedaron fuera del alcance.
+- **Impacto**: un gasto mal capturado no se corrige desde la app (solo se compensa con otro gasto) y siempre se registra con la fecha del momento, aunque el proceso admita retroactividad. El resumen por categoría o periodo sigue en la consola. La pantalla recorta concepto y observaciones, pero `AgregarGasto` no lo hace para otros clientes del servicio.
+- **Cierre**: edición o anulación con bitácora, captura de fecha y reporte por categoría o periodo en la app.
 
 ### App MAUI sin pruebas automatizadas
 
 - **Dónde**: `SistemaTienda.Maui`.
-- **Impacto**: CI solo compila para Windows y Android. Una regresión de navegación, sesión, POS, Ventas, anulación, inventario, clientes, proveedores, caja, historial o formato no se detecta hasta la verificación manual. El cierre de corte, el conteo, los movimientos de inventario, la anulación y los abonos y pagos desde la app dependen de esa verificación. `TicketServiceTests`, `ConteoEfectivoTests` y las pruebas de búsqueda, alta y permisos de clientes y proveedores cubren cálculos, textos y servicios, no la interfaz.
+- **Impacto**: CI solo compila para Windows y Android. Una regresión de navegación, sesión, POS, Ventas, anulación, inventario, clientes, proveedores, gastos, caja, historial o formato no se detecta hasta la verificación manual. El cierre de corte, el conteo, los movimientos de inventario, la anulación, los abonos, los pagos y los gastos desde la app dependen de esa verificación. `TicketServiceTests`, `ConteoEfectivoTests` y las pruebas de búsqueda, alta, permisos y resumen de clientes, proveedores y gastos cubren cálculos, textos y servicios, no la interfaz.
 - **Cierre**: extraer la lógica de cada página a modelos de vista probables y agregar pruebas; valorar pruebas de interfaz más adelante.
 
 ### Android sin validación en dispositivo
 
 - **Dónde**: job `app-maui` de GitHub Actions.
 - **Impacto**: la app compila para Android, pero no se ha instalado ni probado en la tablet objetivo. Puede haber diferencias de diseño, rendimiento o rutas de almacenamiento.
-- **Cierre**: instalar el APK en la tablet real y ejecutar el checklist de primera configuración, login, tablero, respaldo y cierre de sesión.
+- **Cierre**: instalar el APK en la tablet real y ejecutar el checklist de primera configuración, login, tablero, respaldo, cierre de sesión y una pantalla de escritura (gastos o inventario).
 
 ### App MAUI en .NET 10 con bibliotecas en .NET 8
 

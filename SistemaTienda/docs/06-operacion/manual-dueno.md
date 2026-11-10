@@ -16,9 +16,10 @@
    - **Ventas**: lista de ventas del día con folio, total, método, hora y estado; al tocar una venta se abre su detalle con líneas, pagos, comisión y datos de anulación, y se puede reimprimir el ticket o anular la venta con permiso.
    - **Clientes**: directorio con búsqueda por nombre o teléfono, filtro de saldo, alta de clientes y registro de abonos (dueño o encargado). El abono se registra como efectivo y entra al corte; no hay edición, estado de cuenta ni recordatorio por WhatsApp.
    - **Proveedores**: directorio con búsqueda por nombre, clave o teléfono, filtro de saldo, alta de proveedores y pago del saldo pendiente (dueño o encargado). El pago no entra solo al corte: si es en efectivo, regístralo además como retiro en Caja.
+   - **Gastos**: resumen de lo gastado en total, lo pagado del efectivo de la caja y lo pagado con otra fuente; historial de los últimos 200 gastos y alta de gastos con concepto, monto, método, origen y observaciones (dueño o encargado).
    - **Caja**: periodo abierto (efectivo esperado, fondo, ventas por método, abonos, ingresos/retiros y gastos), cierre de corte con diferencia justificada, conteo por billetes y monedas, registro de ingresos y retiros, abonos de fiado e historial de los últimos 20 cortes.
    - **Ajustes**: datos de la tienda, reglas configuradas, rutas de la base y de los respaldos, último respaldo, botón para crear un respaldo y cierre de sesión.
-4. **Importante**: desde la app ya se vende, se opera el inventario (alta, edición, entradas, mermas, ajustes, desactivación y reactivación de productos), se gestionan los clientes (alta, búsqueda y abonos) y los proveedores (alta, búsqueda y pagos), se opera la caja (cierre con conteo por denominaciones, ingresos, retiros, abonos e historial) y se anulan ventas desde Ventas (dueño o encargado). El desglose del conteo no se guarda en el corte: solo el total contado; el catálogo aún no filtra por categoría.
+4. **Importante**: desde la app ya se vende, se opera el inventario (alta, edición, entradas, mermas, ajustes, desactivación y reactivación de productos), se gestionan los clientes (alta, búsqueda y abonos) y los proveedores (alta, búsqueda y pagos), se registran gastos, se opera la caja (cierre con conteo por denominaciones, ingresos, retiros, abonos e historial) y se anulan ventas desde Ventas (dueño o encargado). El desglose del conteo no se guarda en el corte: solo el total contado; el catálogo aún no filtra por categoría.
 5. **Dónde están los datos**: en Windows, `%LOCALAPPDATA%\SistemaTienda\com.sistematienda.tienda\Data\tienda.db` y los respaldos en la carpeta `respaldos` junto a ese archivo. En Android están en el almacenamiento privado de la app. Las rutas exactas se muestran en Ajustes.
 
 ## Pantallas Principales
@@ -110,6 +111,16 @@ Acceso en la app: pestaña **Proveedores**.
 - **Nuevo proveedor**: pide nombre; clave o RFC, teléfono, dirección y saldo inicial son opcionales. El saldo inicial solo sirve para deudas que ya existían.
 - **Registrar pago**: dueño o encargado; el monto no puede superar el saldo. El pago reduce el saldo y queda en la bitácora, pero **no** entra solo al corte ni genera un historial propio de pagos. Si pagas en efectivo, registra además el retiro en **Caja** para que el efectivo esperado cuadre.
 - **Pendiente**: editar o retirar proveedores, estado de cuenta, detección de duplicados e historial de pagos con su método. La verificación manual de esta pantalla en Windows y Android está pendiente (2026-10-26).
+
+### 9. Gastos (pestaña Gastos)
+
+Acceso en la app: pestaña **Gastos**.
+
+- **Resumen**: total gastado, lo pagado del efectivo de la caja y lo pagado con otra fuente, más el número de gastos registrados.
+- **Historial**: los últimos 200 gastos del más reciente al más antiguo, con concepto, fecha, método, origen y observaciones.
+- **Nuevo gasto**: solo dueño o encargado. Pide concepto y monto; método de pago (Efectivo, Tarjeta, Transferencia u Otro), el interruptor **Salió del efectivo de la caja** y observaciones opcionales.
+- **Efecto en el corte**: si el gasto salió del efectivo de la caja, reduce el efectivo esperado del corte; si es externo, no toca la caja y solo reduce la utilidad.
+- **Pendiente**: editar o borrar gastos, capturar una fecha retroactiva y ver el reporte por categoría o periodo en la app (sigue en la consola). La verificación manual de esta pantalla en Windows y Android está pendiente (2026-11-10).
 
 ## Ticket interno y QR
 
