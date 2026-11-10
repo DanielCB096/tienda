@@ -39,6 +39,7 @@ Próximamente después de completar los módulos críticos.
 - *Modificado*: el alta solo aparece para dueño y encargado; `AgregarGasto` vuelve a validar `RegistrarGasto`, la pantalla recorta el concepto y observaciones, y el alta queda en la bitácora como `Gasto`.
 - *Reglas de negocio*: un gasto de caja reduce el efectivo esperado del corte; uno externo no. El reporte por categoría o periodo sigue en la consola.
 - *Verificación*: solución y app MAUI para Windows compiladas sin errores ni advertencias; 210 pruebas en verde (4 nuevas en `GastosTests`). Verificación manual de la pantalla pendiente de abrir la GUI.
+- *CI*: el PR #14 (`feat/maui-gastos` contra `main`) quedó en verde el 2026-11-10: compilación y pruebas, y app MAUI para Windows y Android.
 - Total del proyecto: 210 pruebas.
 
 ### v0.0.19 - 2026-11-06: Desactivación de productos (esquema v7)
