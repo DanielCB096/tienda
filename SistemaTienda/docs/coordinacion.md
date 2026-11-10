@@ -28,7 +28,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 
 | Tarea | Agente | Rama | Archivos | Fecha | Estado |
 |-------|--------|------|-----------|-------|--------|
-| — | — | — | Sin tareas en curso | — | — |
+| T21 — Pantalla de gastos en la app MAUI | GLM (OpenCode) | feat/maui-gastos | Core/Gasto.cs, Application/ConfiguracionService.cs, Maui/Pages/GastosPage.xaml(.cs), Maui/Models/GastoFila.cs, Maui/Pages/PrincipalPage.cs, Maui/MauiProgram.cs, Tests/GastosTests.cs, documentación | 2026-11-10 | Tomada |
 
 ## Hecho
 

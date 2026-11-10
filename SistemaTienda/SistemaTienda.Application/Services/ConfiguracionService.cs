@@ -263,6 +263,21 @@ public class ConfiguracionService
     public ProcessResult<List<Gasto>> ObtenerTodosLosGastos() =>
         ProcessResult<List<Gasto>>.OK(_db.ObtenerGastos());
 
+    public ProcessResult<ResumenGastos> ObtenerResumenGastos()
+    {
+        var gastos = _db.ObtenerGastos();
+        var total = gastos.Sum(g => g.Monto);
+        var deCaja = gastos.Where(g => g.Origen == OrigenGasto.Caja).Sum(g => g.Monto);
+
+        return ProcessResult<ResumenGastos>.OK(new ResumenGastos
+        {
+            Cantidad = gastos.Count,
+            Total = total,
+            DeCaja = deCaja,
+            Externos = total - deCaja
+        });
+    }
+
     public ProcessResult<AgregarClienteFiadoResponse> AgregarClienteFiado(ClienteFiado nuevoCliente)
     {
         if (string.IsNullOrWhiteSpace(nuevoCliente.Nombre))
