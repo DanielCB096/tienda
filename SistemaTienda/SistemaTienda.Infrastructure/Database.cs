@@ -789,6 +789,39 @@ public class DatabaseTools
     }
 
     /// <summary>
+    /// Corrige nombre y teléfono. El saldo no se toca: solo cambia con ventas y abonos.
+    /// </summary>
+    public bool ActualizarDatosCliente(int clienteId, string nombre, string telefono)
+    {
+        var filas = ExecuteCommand(@"
+            UPDATE ClientesFiado
+            SET Nombre = @nombre, Telefono = @telefono, UltimaActualizacion = datetime('now')
+            WHERE Id = @id",
+            new SqliteParameter("@id", clienteId),
+            new SqliteParameter("@nombre", nombre),
+            new SqliteParameter("@telefono", telefono ?? string.Empty));
+
+        return filas > 0;
+    }
+
+    public List<VentaFiadaCliente> ObtenerVentasFiadasDeCliente(int clienteId) =>
+        ExecuteReportObjects<VentaFiadaCliente>(@"
+            SELECT v.Id, v.Fecha, v.Total, v.PagoFiado, v.MetodoPago, v.Usuario
+            FROM Ventas v
+            WHERE v.ClienteId = @id
+              AND NOT EXISTS (SELECT 1 FROM AnulacionesVenta a WHERE a.VentaId = v.Id)
+            ORDER BY v.Fecha DESC, v.Id DESC",
+            new SqliteParameter("@id", clienteId));
+
+    public List<AbonoFiadoCliente> ObtenerAbonosDeCliente(int clienteId) =>
+        ExecuteReportObjects<AbonoFiadoCliente>(@"
+            SELECT Id, Fecha, Monto, MetodoPago, Usuario
+            FROM AbonosFiado
+            WHERE ClienteId = @id
+            ORDER BY Fecha DESC, Id DESC",
+            new SqliteParameter("@id", clienteId));
+
+    /// <summary>
     /// Guarda el abono en el historial y actualiza el saldo en la misma transacción.
     /// El historial permite reconstruir el efectivo recibido por periodo.
     /// </summary>

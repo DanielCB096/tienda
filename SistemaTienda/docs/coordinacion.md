@@ -28,7 +28,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 
 | Tarea | Agente | Rama | Archivos | Fecha | Estado |
 |-------|--------|------|-----------|-------|--------|
-| — | — | — | Sin tareas en curso | — | — |
+| T22 — Edición y estado de cuenta de clientes | GLM (OpenCode) | feat/maui-clientes-edicion | Core/Bitacora.cs, Core/ClienteFiado.cs, Application/AutorizacionService.cs, Application/ConfiguracionService.cs, Infrastructure/Database.cs, Maui/Pages/ClientesPage.xaml(.cs), Maui/Models/ClienteFila.cs, Maui/Models/EstadoCuentaFila.cs, Tests/EstadoCuentaClientesTests.cs, documentación | 2026-11-10 | Tomada |
 
 ## Hecho
 

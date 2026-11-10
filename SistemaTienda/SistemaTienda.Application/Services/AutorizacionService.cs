@@ -39,6 +39,7 @@ public static class AutorizacionService
                 PermisoSistema.RegistrarMerma or
                 PermisoSistema.RegistrarGasto or
                 PermisoSistema.RegistrarAbono or
+                PermisoSistema.EditarCliente or
                 PermisoSistema.PagarProveedor or
                 PermisoSistema.EditarProducto or
                 PermisoSistema.RegistrarEntrada or
@@ -70,6 +71,7 @@ public static class AutorizacionService
         PermisoSistema.RegistrarMerma => "registrar mermas",
         PermisoSistema.RegistrarGasto => "registrar gastos",
         PermisoSistema.RegistrarAbono => "registrar abonos",
+        PermisoSistema.EditarCliente => "editar clientes",
         PermisoSistema.PagarProveedor => "pagar proveedores",
         PermisoSistema.EditarProducto => "editar productos",
         PermisoSistema.DesactivarProducto => "desactivar o reactivar productos",
