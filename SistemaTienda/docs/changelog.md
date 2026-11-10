@@ -41,6 +41,7 @@ Próximamente después de completar los módulos críticos.
 - *Modificado*: el conteo de **stock bajo** de Inicio y de los menús de consola considera solo productos activos; el valorizado del inventario incluye a todos porque la mercancía sigue siendo de la tienda.
 - *Reglas de negocio*: definidas con el dueño el 2026-11-06 (oculto en Vender y visible en Inventario; se puede desactivar con stock; reactivable en cualquier momento; solo dueño). Detalle en [modulo-inventario.md](02-modulos/modulo-inventario.md).
 - *Verificación*: solución y app MAUI para Windows compiladas sin errores ni advertencias; 206 pruebas en verde (15 nuevas en `DesactivacionProductosTests`). Verificación manual de la pantalla pendiente de abrir la GUI.
+- *CI*: PR #13 contra `main` en verde el 2026-11-06: compilación y pruebas (206 en verde) y app MAUI para Windows y Android.
 - Total del proyecto: 206 pruebas.
 
 ### v0.0.18 - 2026-10-26: Proveedores y pagos en la app MAUI
