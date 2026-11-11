@@ -16,6 +16,7 @@ public partial class ClientesPage : ContentPage
     private readonly SesionApp _sesion;
     private bool _soloConSaldo;
     private ClienteFila? _clienteAbono;
+    private ClienteFila? _clienteEstado;
 
     public ClientesPage(ConfiguracionService config, SesionApp sesion)
     {
@@ -48,16 +49,20 @@ public partial class ClientesPage : ContentPage
 
         var puedeAbonar = _sesion.Usuario != null &&
             AutorizacionService.Puede(_sesion.Usuario, PermisoSistema.RegistrarAbono);
+        var puedeEditar = _sesion.Usuario != null &&
+            AutorizacionService.Puede(_sesion.Usuario, PermisoSistema.EditarCliente);
 
         ListaClientes.ItemsSource = mostrados.Select(c => new ClienteFila
         {
             Id = c.Id,
             Nombre = c.Nombre,
             Telefono = string.IsNullOrWhiteSpace(c.Telefono) ? "Sin teléfono" : c.Telefono,
+            TelefonoReal = c.Telefono ?? string.Empty,
             Saldo = Formato.Moneda(c.SaldoActual),
             Estado = c.SaldoActual > 0 ? "Con saldo pendiente" : "Al día",
             EstadoColor = c.SaldoActual > 0 ? ColorSaldo : ColorAlDia,
-            PuedeAbonar = puedeAbonar && c.SaldoActual > 0
+            PuedeAbonar = puedeAbonar && c.SaldoActual > 0,
+            PuedeEditar = puedeEditar
         }).ToList();
 
         ListaVaciaLabel.Text = filtro.Length > 0 || _soloConSaldo
@@ -183,6 +188,11 @@ public partial class ClientesPage : ContentPage
         if (sender is not Button { CommandParameter: ClienteFila fila })
             return;
 
+        AbrirAbono(fila);
+    }
+
+    private void AbrirAbono(ClienteFila fila)
+    {
         if (_sesion.Usuario == null ||
             !AutorizacionService.Puede(_sesion.Usuario, PermisoSistema.RegistrarAbono))
         {
@@ -201,10 +211,179 @@ public partial class ClientesPage : ContentPage
             AbonoMontoEntry.Focus();
     }
 
+    private void OnEstadoCuentaClicked(object sender, EventArgs e)
+    {
+        if (sender is not Button { CommandParameter: ClienteFila fila })
+            return;
+
+        _clienteEstado = fila;
+        AbrirEstadoCuenta();
+    }
+
+    private void AbrirEstadoCuenta()
+    {
+        if (_clienteEstado == null)
+            return;
+
+        _sesion.Aplicar();
+        var resultado = _config.ObtenerEstadoCuentaCliente(_clienteEstado.Id);
+        if (resultado.IsError)
+        {
+            _ = DisplayAlertAsync("No se pudo abrir", resultado.Message, "Continuar");
+            return;
+        }
+
+        var estado = resultado.Value;
+        EstadoClienteLabel.Text = estado.Cliente.Nombre;
+        EstadoContactoLabel.Text = string.IsNullOrWhiteSpace(estado.Cliente.Telefono)
+            ? $"Sin teléfono · Cliente desde {Formato.FechaHora(estado.Cliente.FechaRegistro)}"
+            : $"{estado.Cliente.Telefono} · Cliente desde {Formato.FechaHora(estado.Cliente.FechaRegistro)}";
+        EstadoSaldoLabel.Text = Formato.Moneda(estado.SaldoActual);
+        EstadoSaldoLabel.TextColor = estado.SaldoActual > 0 ? ColorSaldo : ColorAlDia;
+        EstadoFiadoLabel.Text = Formato.Moneda(estado.TotalFiado);
+        EstadoAbonadoLabel.Text = Formato.Moneda(estado.TotalAbonado);
+
+        var movimientos = estado.Ventas
+            .Select(v => new EstadoCuentaFila
+            {
+                FechaOrden = v.Fecha,
+                Fecha = Formato.FechaHora(v.Fecha),
+                Tipo = $"Venta #{v.Id} a fiado",
+                Detalle = $"Atendió {v.Usuario}",
+                Monto = Formato.MonedaConSigno(v.PagoFiado),
+                MontoColor = ColorSaldo
+            })
+            .Concat(estado.Abonos.Select(a => new EstadoCuentaFila
+            {
+                FechaOrden = a.Fecha,
+                Fecha = Formato.FechaHora(a.Fecha),
+                Tipo = "Abono",
+                Detalle = string.IsNullOrWhiteSpace(a.Usuario)
+                    ? a.MetodoPago
+                    : $"{a.MetodoPago} · Registró {a.Usuario}",
+                Monto = Formato.MonedaConSigno(-a.Monto),
+                MontoColor = ColorAlDia
+            }))
+            .OrderByDescending(m => m.FechaOrden)
+            .ToList();
+
+        ListaMovimientos.ItemsSource = movimientos;
+        EstadoMovimientosLabel.Text = movimientos.Count == 1
+            ? "1 movimiento"
+            : $"{movimientos.Count} movimientos";
+
+        var puedeEditar = _sesion.Usuario != null &&
+            AutorizacionService.Puede(_sesion.Usuario, PermisoSistema.EditarCliente);
+        EditarClienteButton.IsVisible = puedeEditar;
+        AbonarDesdeEstadoButton.IsVisible = _sesion.Usuario != null &&
+            AutorizacionService.Puede(_sesion.Usuario, PermisoSistema.RegistrarAbono) &&
+            estado.SaldoActual > 0;
+
+        EstadoOverlay.IsVisible = true;
+    }
+
+    private void OnEstadoRefrescando(object sender, EventArgs e)
+    {
+        AbrirEstadoCuenta();
+        EstadoRefresco.IsRefreshing = false;
+    }
+
+    private void OnCerrarEstadoClicked(object sender, EventArgs e)
+    {
+        EstadoOverlay.IsVisible = false;
+        _clienteEstado = null;
+    }
+
+    private void OnEditarClienteClicked(object sender, EventArgs e)
+    {
+        if (_clienteEstado == null)
+            return;
+
+        if (_sesion.Usuario == null ||
+            !AutorizacionService.Puede(_sesion.Usuario, PermisoSistema.EditarCliente))
+        {
+            _ = DisplayAlertAsync("Sin permiso", "Tu rol no permite editar clientes.", "Continuar");
+            return;
+        }
+
+        EditarNombreEntry.Text = _clienteEstado.Nombre;
+        EditarTelefonoEntry.Text = _clienteEstado.TelefonoReal;
+        EditarErrorLabel.IsVisible = false;
+        EstadoOverlay.IsVisible = false;
+        EditarOverlay.IsVisible = true;
+
+        if (DeviceInfo.Idiom == DeviceIdiom.Desktop)
+            EditarNombreEntry.Focus();
+    }
+
+    private void OnCancelarEdicionClicked(object sender, EventArgs e)
+    {
+        EditarOverlay.IsVisible = false;
+        if (_clienteEstado != null)
+            AbrirEstadoCuenta();
+    }
+
+    private async void OnGuardarEdicionClicked(object sender, EventArgs e)
+    {
+        if (_clienteEstado == null)
+            return;
+
+        if (string.IsNullOrWhiteSpace(EditarNombreEntry.Text))
+        {
+            MostrarError(EditarErrorLabel, "Escribe el nombre del cliente.");
+            return;
+        }
+
+        EditarErrorLabel.IsVisible = false;
+        GuardarEdicionButton.IsEnabled = false;
+        try
+        {
+            _sesion.Aplicar();
+            var resultado = _config.EditarClienteFiado(
+                _clienteEstado.Id,
+                EditarNombreEntry.Text ?? string.Empty,
+                EditarTelefonoEntry.Text ?? string.Empty);
+
+            if (resultado.IsError)
+            {
+                MostrarError(EditarErrorLabel, resultado.Message);
+                return;
+            }
+
+            EditarOverlay.IsVisible = false;
+            Cargar();
+
+            var nombre = (EditarNombreEntry.Text ?? string.Empty).Trim();
+            var telefono = (EditarTelefonoEntry.Text ?? string.Empty).Trim();
+            _clienteEstado.Nombre = nombre;
+            _clienteEstado.TelefonoReal = telefono;
+            _clienteEstado.Telefono = string.IsNullOrWhiteSpace(telefono) ? "Sin teléfono" : telefono;
+
+            AbrirEstadoCuenta();
+            await DisplayAlertAsync("Cliente actualizado", resultado.Message, "Continuar");
+        }
+        finally
+        {
+            GuardarEdicionButton.IsEnabled = true;
+        }
+    }
+
+    private void OnAbonarDesdeEstadoClicked(object sender, EventArgs e)
+    {
+        if (_clienteEstado == null)
+            return;
+
+        var fila = _clienteEstado;
+        EstadoOverlay.IsVisible = false;
+        AbrirAbono(fila);
+    }
+
     private void OnCancelarAbonoClicked(object sender, EventArgs e)
     {
         _clienteAbono = null;
         AbonoOverlay.IsVisible = false;
+        if (_clienteEstado != null)
+            AbrirEstadoCuenta();
     }
 
     private async void OnRegistrarAbonoClicked(object sender, EventArgs e)
@@ -236,6 +415,8 @@ public partial class ClientesPage : ContentPage
             AbonoOverlay.IsVisible = false;
             _clienteAbono = null;
             Cargar();
+            if (_clienteEstado != null)
+                AbrirEstadoCuenta();
             await DisplayAlertAsync("Abono registrado",
                 $"Saldo restante: {Formato.Moneda(resultado.Value.SaldoRestante)}", "Continuar");
         }
