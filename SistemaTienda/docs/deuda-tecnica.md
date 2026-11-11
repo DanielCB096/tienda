@@ -65,12 +65,12 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 - **Impacto**: la restauración reemplaza toda la base y no deja registro de quién la ejecutó ni de qué archivo se usó. El respaldo `antes-restaurar` evita la pérdida de datos, pero la acción no queda auditada.
 - **Cierre**: registrar `AccionBitacora.Respaldo` con motivo `Restauracion` y la ruta usada inmediatamente después de restaurar.
 
-### Clientes sin edición, estado de cuenta ni método de abono
+### Clientes sin baja, detección de duplicados ni método de abono
 
 - **Dónde**: `ConfiguracionService` y la pestaña Clientes de la app MAUI.
-- **Por qué**: T18 cubrió el directorio, la búsqueda, el alta y el abono; la edición, el borrado lógico y el estado de cuenta quedaron fuera del alcance.
-- **Impacto**: no se puede corregir el nombre o teléfono de un cliente ni retirarlo del directorio, y el alta no detecta duplicados. El abono se registra siempre como efectivo (no se pregunta el método) y no hay estado de cuenta con ventas fiadas y abonos; la consola conserva las mismas limitaciones. La pantalla aún no se ha verificado a mano en Windows ni en Android.
-- **Cierre**: edición con permiso y bitácora, detección de duplicados, estado de cuenta de solo lectura y método de pago en el abono.
+- **Por qué**: T18 cubrió el directorio, la búsqueda, el alta y el abono, y T22 la edición de nombre/teléfono y el estado de cuenta; la baja, la detección de duplicados y el método del abono quedaron fuera del alcance.
+- **Impacto**: no se puede retirar a un cliente del directorio y el alta no detecta duplicados. El abono se registra siempre como efectivo (no se pregunta el método). El estado de cuenta es de solo lectura y no se imprime ni exporta. La pantalla aún no se ha verificado a mano en Windows ni en Android.
+- **Cierre**: baja lógica con permiso y bitácora, detección de duplicados por nombre o teléfono, método de pago en el abono e impresión/exportación del estado de cuenta.
 
 ### Proveedores sin edición, estado de cuenta ni pago en caja
 
@@ -82,9 +82,9 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 ### La app MAUI no cubre todas las operaciones
 
 - **Dónde**: `SistemaTienda.Maui/Pages`.
-- **Por qué**: el punto de venta se entregó en T13, la caja operativa en T14, el inventario en T15, el detalle/anulación de ventas en T16, el conteo con historial de cortes en T17, la pantalla de clientes en T18, la de proveedores en T19 y la de gastos en T21; el resto de las operaciones de escritura se hará en tareas posteriores.
-- **Impacto**: desde la app se vende, se opera el inventario, se cierra el corte con conteo, se registran ingresos, retiros y abonos de fiado, se anulan ventas, se reimprime el ticket, se consulta el historial de cortes, se gestiona el directorio de clientes con sus abonos, se gestiona el directorio de proveedores con sus pagos, se registran gastos y se crea respaldo. La edición/estado de cuenta de clientes y proveedores, los reportes y la consulta de ventas de fechas anteriores tampoco están en la app.
-- **Cierre**: edición/estado de cuenta de clientes y proveedores, reportes en la app y consulta histórica de ventas.
+- **Por qué**: el punto de venta se entregó en T13, la caja operativa en T14, el inventario en T15, el detalle/anulación de ventas en T16, el conteo con historial de cortes en T17, la pantalla de clientes en T18, la de proveedores en T19, la de gastos en T21 y la edición/estado de cuenta de clientes en T22; el resto de las operaciones de escritura se hará en tareas posteriores.
+- **Impacto**: desde la app se vende, se opera el inventario, se cierra el corte con conteo, se registran ingresos, retiros y abonos de fiado, se anulan ventas, se reimprime el ticket, se consulta el historial de cortes, se gestiona el directorio de clientes con sus abonos, edición y estado de cuenta, se gestiona el directorio de proveedores con sus pagos, se registran gastos y se crea respaldo. La edición/estado de cuenta de proveedores, los reportes y la consulta de ventas de fechas anteriores tampoco están en la app.
+- **Cierre**: edición/estado de cuenta de proveedores, reportes en la app y consulta histórica de ventas.
 
 ### Gastos sin edición, fecha retroactiva ni reporte en la app
 

@@ -1,6 +1,6 @@
 # Coordinación entre agentes
 
-Actualizado: 2026-11-06. Tablero único: cualquier IA o persona que trabaje en este repositorio debe reclamar su tarea aquí antes de empezar.
+Actualizado: 2026-11-11. Tablero único: cualquier IA o persona que trabaje en este repositorio debe reclamar su tarea aquí antes de empezar.
 
 Instrucciones generales: [AGENTS.md](../../AGENTS.md).
 
@@ -28,7 +28,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 
 | Tarea | Agente | Rama | Archivos | Fecha | Estado |
 |-------|--------|------|-----------|-------|--------|
-| T22 — Edición y estado de cuenta de clientes | GLM (OpenCode) | feat/maui-clientes-edicion | Core/Bitacora.cs, Core/ClienteFiado.cs, Application/AutorizacionService.cs, Application/ConfiguracionService.cs, Infrastructure/Database.cs, Maui/Pages/ClientesPage.xaml(.cs), Maui/Models/ClienteFila.cs, Maui/Models/EstadoCuentaFila.cs, Tests/EstadoCuentaClientesTests.cs, documentación | 2026-11-10 | Tomada |
+| — | — | — | — | — | Sin tareas tomadas |
 
 ## Hecho
 
@@ -54,6 +54,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 | T19 | Qoder | feat/maui-proveedores | Pantalla de proveedores con directorio, búsqueda por nombre/clave/teléfono sin acentos, filtro con saldo, alta con bitácora y pago con permiso `PagarProveedor`; 4 pruebas nuevas; 191 pruebas; PR #11 contra `main` | 59f27c0, b32c006 |
 | T20 | GLM (OpenCode) | feat/desactivacion-productos | Desactivación de productos: esquema v7 (`Productos.Activo`), desactivar/reactivar solo dueño con bitácora, venta y movimientos bloqueados para inactivos, filtros Todos/Activos/Stock bajo/Inactivos y acciones en la app, POS oculta inactivos; 15 pruebas nuevas; 206 pruebas | 8a2f08c, 1d979b4 |
 | T21 | GLM (OpenCode) | feat/maui-gastos | Pantalla de gastos: resumen por origen, historial de los últimos 200 y alta con permiso de dueño/encargado; `ResumenGastos` y `ObtenerResumenGastos`; 4 pruebas nuevas; 210 pruebas | a91c8bd, c6122c8 |
+| T22 | GLM (OpenCode) | feat/maui-clientes-edicion | Edición de nombre y teléfono con permiso `EditarCliente` y bitácora, y estado de cuenta con saldo vigente, total fiado, total abonado e historial de ventas fiadas y abonos (sin anuladas); 8 pruebas nuevas; 218 pruebas | 56bee3c, 8091179 |
 
 ## Tareas
 
@@ -65,7 +66,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 | T4 | Bitácora y permisos en servicios | Hecho | — | En `feat/integracion-t4-t9`. Esquema v5: bitácora inmutable, matriz de permisos y validación en servicios. |
 | T5 | Reportes de utilidad | Hecho | T2 | En `feat/reportes-utilidad` (sobre `feat/integracion-t4-t9`). Utilidad bruta y neta por periodo con filtros por fecha; permiso `Consultar`. |
 | T6 | Importación Excel/CSV | Libre | T2 recomendado | Dependencia nueva requiere ADR. |
-| T7 | Interfaz definitiva | Tomada | ADR, T12 | Decisión MAUI validada y base implementada en T12. POS entregado en T13, caja operativa en T14, inventario en T15, detalle/anulación con QR en T16, conteo e historial de cortes en T17, clientes en T18, proveedores en T19 y gastos en T21; faltan reportes y la edición/estado de cuenta de clientes y proveedores. |
+| T7 | Interfaz definitiva | Tomada | ADR, T12 | Decisión MAUI validada y base implementada en T12. POS entregado en T13, caja operativa en T14, inventario en T15, detalle/anulación con QR en T16, conteo e historial de cortes en T17, clientes en T18, proveedores en T19, gastos en T21 y edición/estado de cuenta de clientes en T22; faltan reportes y la edición/estado de cuenta de proveedores. |
 | T8 | Corte de caja | Hecho | T2 | En `feat/corte-caja` (parte de `feat/ventas-pos`). Esquema v3: cortes, movimientos de caja y abonos con historial. |
 | T9 | Cobertura adicional de pruebas | Hecho | T1–T3 | En `feat/integracion-t4-t9`. 25 pruebas de borde en gastos, saldos, inventario, usuarios y mapeo de tipos. Hallazgos sin corregir: `AjustarStock` no valida que el producto exista; se permiten PIN duplicados y `VerificarAcceso` devuelve el primer usuario por nombre; `AgregarGasto` no recorta el concepto; la búsqueda por nombre no ignora acentos. Ver [deuda-tecnica.md](deuda-tecnica.md). |
 | T10 | Respaldo automático por intervalo | Hecho | T1 | En `feat/respaldo-automatico` (sobre `feat/reportes-utilidad`). Se evalúa al iniciar sesión y al cerrar; `0` deshabilita; cualquier respaldo previo cuenta y la copia queda en `Bitacora`. Pendiente: copia a USB/nube y respaldo durante sesiones largas. |
@@ -80,6 +81,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 | T19 | Pantalla de proveedores en la app MAUI | Hecho | T7, T18 | En `feat/maui-proveedores` sobre `feat/maui-clientes` (PR #11 contra `main`). Directorio con búsqueda por nombre, clave o teléfono, filtro de saldo, alta con bitácora y pago con permiso; 191 pruebas. Verificación manual en Windows/Android pendiente porque el entorno no pudo abrir la GUI. El pago sigue sin entrar al corte ni tener historial propio. |
 | T20 | Desactivación de productos (esquema v7) | Hecho | T4, T7, T15 | En `feat/desactivacion-productos` sobre `feat/maui-proveedores` (PR #13 contra `main`, CI en verde). Migración v7 (`Productos.Activo`, los existentes quedan activos); desactivar/reactivar solo dueño con permiso `DesactivarProducto` y bitácora; inactivos sin venta ni entradas/mermas/ajustes y ocultos del POS; filtros Todos/Activos/Stock bajo/Inactivos, distintivo y aviso en Inventario; stock conservado y stock bajo de solo activos; 206 pruebas. Verificación manual de la pantalla pendiente (la GUI no pudo abrirse en el entorno). |
 | T21 | Pantalla de gastos en la app MAUI | Hecho | T7, T14 | En `feat/maui-gastos` sobre `feat/desactivacion-productos` (PR #14 contra `main`, CI en verde). Resumen del total, gastos de caja y externos; historial de los últimos 200; alta con concepto, monto, método, origen y observaciones solo para dueño y encargado; `ResumenGastos` y 4 pruebas nuevas; 210 pruebas. Verificación manual pendiente (la GUI no pudo abrirse en el entorno). |
+| T22 | Edición y estado de cuenta de clientes | Hecho | T7, T18 | En `feat/maui-clientes-edicion` sobre `feat/maui-gastos` (PR contra `main`, CI en verde). **Estado** por cliente con saldo vigente, total fiado, total abonado e historial de ventas fiadas y abonos sin anuladas; **Editar datos** solo dueño y encargado con permiso `EditarCliente`, bitácora y sin tocar el saldo; no hay baja de clientes; 8 pruebas nuevas; 218 pruebas. Verificación manual pendiente (la GUI no pudo abrirse en el entorno). |
 
 ## Plantilla para reclamar
 
@@ -121,3 +123,5 @@ Al terminar, mueve la fila a `Hecho` (o elimínala de En curso) y registra el co
 | 2026-11-06 | GLM (OpenCode) | feat/desactivacion-productos | CI en verde para el PR #13: compilación y pruebas (206 en verde), y app MAUI para Windows y Android; verificación manual de la pantalla pendiente (la GUI no abre en el entorno) | 5afe99a |
 | 2026-11-10 | GLM (OpenCode) | feat/maui-gastos | T21 terminado: pestaña de gastos con resumen por origen, historial de los últimos 200 y alta con permiso de dueño/encargado; `ResumenGastos` y 4 pruebas nuevas; 210 pruebas en local; verificación manual pendiente por bloqueo del entorno; documentación actualizada | a91c8bd, c6122c8, 17614a8 |
 | 2026-11-10 | GLM (OpenCode) | feat/maui-gastos | CI en verde para el PR #14: compilación y pruebas (210 en verde), y app MAUI para Windows y Android | 17614a8 |
+| 2026-11-11 | GLM (OpenCode) | feat/maui-clientes-edicion | T22 terminado: edición de nombre/teléfono con permiso `EditarCliente` y bitácora, estado de cuenta con saldo, totales e historial sin anuladas, y abono desde el estado de cuenta; 8 pruebas nuevas; 218 pruebas en CI; verificación manual pendiente por bloqueo del entorno; documentación actualizada | 56bee3c, 8091179 |
+| 2026-11-11 | GLM (OpenCode) | feat/maui-clientes-edicion | CI en verde para el PR de T22: compilación y pruebas (218 en verde), y app MAUI para Windows y Android | 8091179 |

@@ -67,7 +67,9 @@ El directorio muestra nombre, teléfono, saldo y estado; la búsqueda acepta nom
 
 - **Nuevo**: cualquier usuario puede dar de alta un cliente con nombre, teléfono opcional y saldo inicial opcional (solo para deudas que ya existían).
 - **Abonar** (dueño o encargado): abre el cliente, captura el monto y confirma. El abono no puede superar el saldo, se registra como efectivo y entra al corte del periodo. El empleado puede consultar el directorio, pero no ve el botón.
-- **Pendiente**: editar o retirar clientes, estado de cuenta con ventas y abonos y elegir el método del abono. La verificación manual de esta pantalla está pendiente (2026-10-25).
+- **Estado** (todos los roles): muestra el saldo vigente, el total fiado, el total abonado y la lista de ventas a fiado y abonos del cliente, del más reciente al más antiguo. Las ventas anuladas no aparecen.
+- **Editar datos** (dueño o encargado, dentro del estado de cuenta): corrige nombre y teléfono; no cambia el saldo y queda en la bitácora.
+- **Pendiente**: dar de baja clientes, detectar duplicados, imprimir o exportar el estado de cuenta y elegir el método del abono. La verificación manual de esta pantalla está pendiente (2026-11-11).
 
 ### 3.2 Proveedores y pagos (pestaña Proveedores)
 

@@ -100,7 +100,9 @@ Acceso en la app: pestaña **Clientes**.
 - **Buscar y filtrar**: busca por nombre o teléfono sin distinguir mayúsculas ni acentos; alterna entre **Todos** y **Con saldo**.
 - **Nuevo cliente**: pide nombre, teléfono opcional y saldo inicial opcional (solo para deudas que ya existían).
 - **Registrar abono**: dueño o encargado; el monto no puede superar el saldo. El abono se registra como efectivo, entra al corte del periodo y queda en la bitácora.
-- **Pendiente**: editar o retirar clientes, estado de cuenta con ventas y abonos, recordatorio por WhatsApp y elegir el método del abono. La verificación manual de esta pantalla en Windows y Android está pendiente (2026-10-25).
+- **Estado de cuenta**: toca **Estado** en el renglón del cliente. Muestra su teléfono, la fecha en que se registró, el saldo vigente, el total fiado, el total abonado y la lista de ventas a fiado y abonos del más reciente al más antiguo. Las ventas anuladas no aparecen. Desde ahí también puedes abonar.
+- **Editar datos**: dueño o encargado, desde el estado de cuenta. Corrige nombre y teléfono; queda en la bitácora con los datos anteriores y nuevos. El saldo no se edita: solo cambia con ventas y abonos.
+- **Pendiente**: dar de baja clientes, detectar duplicados al dar de alta, imprimir o exportar el estado de cuenta, recordatorio por WhatsApp y elegir el método del abono. La verificación manual de esta pantalla en Windows y Android está pendiente (2026-11-11).
 
 ### 8. Proveedores (pestaña Proveedores)
 

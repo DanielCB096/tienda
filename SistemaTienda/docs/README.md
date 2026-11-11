@@ -9,7 +9,7 @@ La base técnica está **compilando y con pruebas automatizadas**. El núcleo im
 - Configuración inicial de la tienda y usuarios con PIN hasheado (PBKDF2-SHA256).
 - Catálogo de productos e inventario por movimientos (entradas, ventas, mermas, ajustes) con desactivación de productos (esquema v7): un producto inactivo no se vende ni recibe movimientos, conserva su stock y solo el dueño lo reactiva.
 - Gastos simples con resumen por origen, historial y alta en la app; total y agrupación por concepto en la consola.
-- Clientes con fiado (saldo y abonos con historial) y proveedores (saldo y pagos).
+- Clientes con fiado (saldo y abonos con historial), edición de nombre y teléfono y estado de cuenta con ventas fiadas y abonos; proveedores con saldo y pagos.
 - Ventas / POS: venta atómica multi-línea con costo y precio congelados, pagos en efectivo, tarjeta (comisión), mixto y fiado, ticket de texto con QR informativo y anulación completa con devolución de stock y reverso de fiado.
 - Corte de caja: periodo desde el corte anterior, efectivo esperado, diferencia con motivo obligatorio, ingresos/retiros e historial; conteo por denominaciones e historial de los últimos 20 cortes en la app.
 - Reporte de utilidad por periodo: ventas, costo congelado, comisión de tarjeta, mermas y gastos.
@@ -17,10 +17,10 @@ La base técnica está **compilando y con pruebas automatizadas**. El núcleo im
 - Migraciones de esquema versionadas (`PRAGMA user_version`) y respaldo/restauración local verificado.
 - Respaldo automático por intervalo configurado al iniciar y cerrar la aplicación, con aviso y bitácora.
 - Dinero en centavos enteros (`long`/`INTEGER`, esquema v4) con conversión y formato centralizados en `Dinero`.
-- App MAUI para Windows y Android con asistente de primera configuración, login por PIN, tablero (Inicio, Vender, Inventario, Ventas, Clientes, Proveedores, Gastos, Caja y Ajustes), punto de venta con carrito, cobro y ticket con QR, inventario con escaneo/alta/edición/entradas/mermas/ajustes/historial/desactivación, ventas con detalle, reimpresión y anulación, clientes con búsqueda por nombre o teléfono, alta y abonos de fiado, proveedores con búsqueda por nombre, clave o teléfono, alta y pagos, gastos con resumen por origen, historial y alta, caja operativa (cierre de corte con conteo por denominaciones, ingresos, retiros, abonos de fiado e historial de cortes), respaldo manual y automático, y cierre de sesión.
+- App MAUI para Windows y Android con asistente de primera configuración, login por PIN, tablero (Inicio, Vender, Inventario, Ventas, Clientes, Proveedores, Gastos, Caja y Ajustes), punto de venta con carrito, cobro y ticket con QR, inventario con escaneo/alta/edición/entradas/mermas/ajustes/historial/desactivación, ventas con detalle, reimpresión y anulación, clientes con búsqueda por nombre o teléfono, alta, abonos de fiado, edición de nombre y teléfono y estado de cuenta, proveedores con búsqueda por nombre, clave o teléfono, alta y pagos, gastos con resumen por origen, historial y alta, caja operativa (cierre de corte con conteo por denominaciones, ingresos, retiros, abonos de fiado e historial de cortes), respaldo manual y automático, y cierre de sesión.
 - Interfaz de consola provisional para tareas de administración, reportes y las operaciones que todavía no están en la app.
 
-Pendiente para el MVP: verificar a mano las pantallas de clientes, proveedores, desactivación de productos y gastos en Windows y Android, persistir el desglose por denominaciones, compartir el QR como imagen y validación de Android en dispositivo. Ver [roadmap.md](roadmap.md) y [deuda-tecnica.md](deuda-tecnica.md).
+Pendiente para el MVP: verificar a mano las pantallas de clientes (con edición y estado de cuenta), proveedores, desactivación de productos y gastos en Windows y Android, persistir el desglose por denominaciones, compartir el QR como imagen y validación de Android en dispositivo. Ver [roadmap.md](roadmap.md) y [deuda-tecnica.md](deuda-tecnica.md).
 
 ## Índice
 
