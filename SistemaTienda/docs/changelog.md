@@ -40,7 +40,7 @@ Próximamente después de completar los módulos críticos.
 - *Agregado*: desde el estado de cuenta se puede **Abonar** con el flujo existente y la vista se refresca con el nuevo saldo y los nuevos movimientos.
 - *Reglas de negocio*: definidas con el dueño el 2026-11-10. No hay baja ni borrado de clientes; el saldo nunca se edita a mano y solo cambia con ventas a fiado y abonos. El saldo inicial del alta no aparece como movimiento y la pantalla lo advierte.
 - *Verificación*: solución y app MAUI para Windows compiladas sin errores ni advertencias; 218 pruebas en verde en CI (8 nuevas en `EstadoCuentaClientesTests`). Verificación manual de la pantalla pendiente de abrir la GUI.
-- *CI*: PR contra `main` en verde el 2026-11-11: compilación y pruebas (218 en verde) y app MAUI para Windows y Android.
+- *CI*: PR #15 contra `main` en verde el 2026-11-11: compilación y pruebas (218 en verde) y app MAUI para Windows y Android.
 - Total del proyecto: 218 pruebas.
 
 ### v0.0.20 - 2026-11-10: Pantalla de gastos en la app MAUI
