@@ -499,6 +499,69 @@ public class ConfiguracionService
         return ProcessResult<List<Proveedor>>.OK(lista);
     }
 
+    /// <summary>
+    /// Corrige nombre, clave, teléfono y dirección de un proveedor existente.
+    /// No toca el saldo: solo cambia con pagos. No hay baja de proveedores.
+    /// </summary>
+    public ProcessResult EditarProveedor(int proveedorId, string nombre, string clave,
+        string telefono, string direccion)
+    {
+        var autorizacion = Autorizar(PermisoSistema.EditarProveedor);
+        if (autorizacion.IsError)
+            return ProcessResult.Error(autorizacion.Message);
+
+        if (string.IsNullOrWhiteSpace(nombre))
+            return ProcessResult.Error("El nombre del proveedor es obligatorio");
+
+        var proveedor = _db.ObtenerProveedorPorId(proveedorId);
+        if (proveedor == null)
+            return ProcessResult.Error("Proveedor no encontrado");
+
+        var nombreRecortado = nombre.Trim();
+        var claveRecortada = (clave ?? string.Empty).Trim();
+        var telefonoRecortado = (telefono ?? string.Empty).Trim();
+        var direccionRecortada = (direccion ?? string.Empty).Trim();
+
+        try
+        {
+            if (!_db.ActualizarDatosProveedor(proveedorId, nombreRecortado, claveRecortada,
+                    telefonoRecortado, direccionRecortada))
+                return ProcessResult.Error("No se pudo actualizar el proveedor");
+
+            _bitacora.Registrar(AccionBitacora.EditarProveedor, "Proveedor", proveedorId.ToString(),
+                $"Nombre={proveedor.Nombre};Clave={proveedor.Clave};Telefono={proveedor.Telefono};Direccion={proveedor.Direccion}",
+                $"Nombre={nombreRecortado};Clave={claveRecortada};Telefono={telefonoRecortado};Direccion={direccionRecortada}",
+                "Corrección de datos del proveedor");
+
+            return ProcessResult.Success("Proveedor actualizado correctamente");
+        }
+        catch (Exception ex)
+        {
+            return ProcessResult.Error($"Error al actualizar proveedor: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Estado de cuenta del proveedor: datos, saldo pendiente e historial de pagos.
+    /// Los pagos anteriores a la migración v8 no se pueden reconstruir.
+    /// </summary>
+    public ProcessResult<EstadoCuentaProveedor> ObtenerEstadoCuentaProveedor(int proveedorId)
+    {
+        var proveedor = _db.ObtenerProveedorPorId(proveedorId);
+        if (proveedor == null)
+            return ProcessResult<EstadoCuentaProveedor>.Error("Proveedor no encontrado");
+
+        var pagos = _db.ObtenerPagosDeProveedor(proveedorId);
+
+        return ProcessResult<EstadoCuentaProveedor>.OK(new EstadoCuentaProveedor
+        {
+            Proveedor = proveedor,
+            Pagos = pagos,
+            TotalPagado = pagos.Sum(p => p.Monto),
+            SaldoPendiente = proveedor.SaldoPendiente
+        });
+    }
+
     public ProcessResult<RegistrarPagoProveedorResponse> RegistrarPagoProveedor(int proveedorId, long montoPago)
     {
         var autorizacion = Autorizar(PermisoSistema.PagarProveedor);
@@ -517,7 +580,9 @@ public class ConfiguracionService
                 $"El pago (${Dinero.Formatear(montoPago)}) supera el saldo pendiente (${Dinero.Formatear(proveedor.SaldoPendiente)})");
 
         var nuevoSaldo = proveedor.SaldoPendiente - montoPago;
-        if (!_db.ActualizarSaldoProveedor(proveedor.Id, nuevoSaldo))
+        var usuario = SesionActual.Usuario?.Nombre ?? string.Empty;
+        if (!_db.RegistrarPagoProveedor(proveedor.Id, montoPago, proveedor.SaldoPendiente,
+                nuevoSaldo, usuario))
             return ProcessResult<RegistrarPagoProveedorResponse>.Error("No se pudo registrar el pago");
 
         _bitacora.Registrar(AccionBitacora.PagoProveedor, "Proveedor", proveedor.Id.ToString(),

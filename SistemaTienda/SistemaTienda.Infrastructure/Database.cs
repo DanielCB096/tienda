@@ -895,16 +895,80 @@ public class DatabaseTools
         ExecuteReportObject<Proveedor>("SELECT * FROM Proveedores WHERE Id = @id",
             new SqliteParameter("@id", proveedorId));
 
-    public bool ActualizarSaldoProveedor(int proveedorId, long nuevoSaldo)
+    /// <summary>
+    /// Corrige los datos del proveedor. El saldo no se toca: solo cambia con pagos.
+    /// </summary>
+    public bool ActualizarDatosProveedor(int proveedorId, string nombre, string clave,
+        string telefono, string direccion)
     {
         var filas = ExecuteCommand(@"
             UPDATE Proveedores
-            SET SaldoPendiente = @saldo, UltimaActualizacion = datetime('now')
+            SET Nombre = @nombre, Clave = @clave, Telefono = @telefono,
+                Direccion = @direccion, UltimaActualizacion = datetime('now')
             WHERE Id = @id",
             new SqliteParameter("@id", proveedorId),
-            new SqliteParameter("@saldo", nuevoSaldo));
+            new SqliteParameter("@nombre", nombre),
+            new SqliteParameter("@clave", clave ?? string.Empty),
+            new SqliteParameter("@telefono", telefono ?? string.Empty),
+            new SqliteParameter("@direccion", direccion ?? string.Empty));
 
         return filas > 0;
+    }
+
+    public List<PagoProveedor> ObtenerPagosDeProveedor(int proveedorId) =>
+        ExecuteReportObjects<PagoProveedor>(@"
+            SELECT Id, ProveedorId, Fecha, Monto, SaldoAnterior, SaldoNuevo, Usuario
+            FROM PagosProveedor
+            WHERE ProveedorId = @id
+            ORDER BY Fecha DESC, Id DESC",
+            new SqliteParameter("@id", proveedorId));
+
+    /// <summary>
+    /// Guarda el pago en el historial inmutable y actualiza el saldo en la misma
+    /// transacción. Si una parte falla, no se guarda nada.
+    /// </summary>
+    public bool RegistrarPagoProveedor(int proveedorId, long monto, long saldoAnterior,
+        long nuevoSaldo, string usuario)
+    {
+        using var conn = CreateConnection();
+        conn.Open();
+        using var tx = conn.BeginTransaction();
+
+        using (var update = conn.CreateCommand())
+        {
+            update.Transaction = tx;
+            update.CommandText = @"
+                UPDATE Proveedores
+                SET SaldoPendiente = @saldo, UltimaActualizacion = datetime('now')
+                WHERE Id = @id";
+            update.Parameters.AddWithValue("@saldo", nuevoSaldo);
+            update.Parameters.AddWithValue("@id", proveedorId);
+
+            if (update.ExecuteNonQuery() == 0)
+            {
+                tx.Rollback();
+                return false;
+            }
+        }
+
+        using (var insert = conn.CreateCommand())
+        {
+            insert.Transaction = tx;
+            insert.CommandText = @"
+                INSERT INTO PagosProveedor
+                    (ProveedorId, Fecha, Monto, SaldoAnterior, SaldoNuevo, Usuario)
+                VALUES (@proveedor, @fecha, @monto, @anterior, @nuevo, @usuario)";
+            insert.Parameters.AddWithValue("@proveedor", proveedorId);
+            insert.Parameters.AddWithValue("@fecha", DateTime.Now);
+            insert.Parameters.AddWithValue("@monto", monto);
+            insert.Parameters.AddWithValue("@anterior", saldoAnterior);
+            insert.Parameters.AddWithValue("@nuevo", nuevoSaldo);
+            insert.Parameters.AddWithValue("@usuario", usuario ?? string.Empty);
+            insert.ExecuteNonQuery();
+        }
+
+        tx.Commit();
+        return true;
     }
 
     // ---------- Ventas ----------

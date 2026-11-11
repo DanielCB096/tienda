@@ -28,7 +28,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 
 | Tarea | Agente | Rama | Archivos | Fecha | Estado |
 |-------|--------|------|-----------|-------|--------|
-| — | — | — | — | — | Sin tareas tomadas |
+| T23 — Edición y estado de cuenta de proveedores | GLM (OpenCode) | feat/maui-proveedores-edicion | Core/Bitacora.cs, Core/Proveedor.cs, Application/AutorizacionService.cs, Application/ConfiguracionService.cs, Infrastructure/Database.cs, Infrastructure/Migraciones.cs, Maui/Pages/ProveedoresPage.xaml(.cs), Maui/Models/ProveedorFila.cs, Maui/Models/EstadoCuentaProveedorFila.cs, Tests/EstadoCuentaProveedoresTests.cs, documentación | 2026-11-11 | Tomada |
 
 ## Hecho
 
@@ -82,6 +82,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 | T20 | Desactivación de productos (esquema v7) | Hecho | T4, T7, T15 | En `feat/desactivacion-productos` sobre `feat/maui-proveedores` (PR #13 contra `main`, CI en verde). Migración v7 (`Productos.Activo`, los existentes quedan activos); desactivar/reactivar solo dueño con permiso `DesactivarProducto` y bitácora; inactivos sin venta ni entradas/mermas/ajustes y ocultos del POS; filtros Todos/Activos/Stock bajo/Inactivos, distintivo y aviso en Inventario; stock conservado y stock bajo de solo activos; 206 pruebas. Verificación manual de la pantalla pendiente (la GUI no pudo abrirse en el entorno). |
 | T21 | Pantalla de gastos en la app MAUI | Hecho | T7, T14 | En `feat/maui-gastos` sobre `feat/desactivacion-productos` (PR #14 contra `main`, CI en verde). Resumen del total, gastos de caja y externos; historial de los últimos 200; alta con concepto, monto, método, origen y observaciones solo para dueño y encargado; `ResumenGastos` y 4 pruebas nuevas; 210 pruebas. Verificación manual pendiente (la GUI no pudo abrirse en el entorno). |
 | T22 | Edición y estado de cuenta de clientes | Hecho | T7, T18 | En `feat/maui-clientes-edicion` sobre `feat/maui-gastos` (PR #15 contra `main`, CI en verde). **Estado** por cliente con saldo vigente, total fiado, total abonado e historial de ventas fiadas y abonos sin anuladas; **Editar datos** solo dueño y encargado con permiso `EditarCliente`, bitácora y sin tocar el saldo; no hay baja de clientes; 8 pruebas nuevas; 218 pruebas. Verificación manual pendiente (la GUI no pudo abrirse en el entorno). |
+| T23 | Edición y estado de cuenta de proveedores | Tomada | T7, T19 | En `feat/maui-proveedores-edicion` sobre `feat/maui-clientes-edicion`. Esquema v8 con `PagosProveedor` inmutable; **Estado** con saldo pendiente, total pagado e historial de pagos; **Editar datos** (nombre, clave, teléfono y dirección) solo dueño y encargado con permiso `EditarProveedor` y bitácora; sin baja ni método de pago. |
 
 ## Plantilla para reclamar
 
