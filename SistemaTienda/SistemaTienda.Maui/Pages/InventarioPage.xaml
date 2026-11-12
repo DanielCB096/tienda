@@ -1,0 +1,408 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:models="clr-namespace:SistemaTienda.Maui.Models"
+             x:Class="SistemaTienda.Maui.Pages.InventarioPage"
+             Title="Inventario">
+
+    <Grid>
+        <Grid RowDefinitions="Auto,Auto,Auto,Auto,*,Auto" RowSpacing="10" Padding="16">
+
+            <Grid Grid.Row="0" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                <VerticalStackLayout Spacing="2">
+                    <Label Text="Inventario" Style="{StaticResource TituloPagina}" />
+                    <Label x:Name="UsuarioLabel" Style="{StaticResource TextoNota}" />
+                </VerticalStackLayout>
+                <Button x:Name="NuevoProductoButton"
+                        Grid.Column="1"
+                        Text="+ Nuevo"
+                        Style="{StaticResource BotonSecundario}"
+                        WidthRequest="104"
+                        HeightRequest="42"
+                        VerticalOptions="Center"
+                        Clicked="OnNuevoProductoClicked" />
+            </Grid>
+
+            <Border Grid.Row="1" Style="{StaticResource Tarjeta}" Padding="14">
+                <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="6">
+                    <VerticalStackLayout Spacing="0">
+                        <Label Text="PRODUCTOS" Style="{StaticResource EtiquetaSeccion}" />
+                        <Label x:Name="TotalProductosLabel" Text="0" FontSize="20" FontAttributes="Bold" />
+                    </VerticalStackLayout>
+                    <VerticalStackLayout Grid.Column="1" Spacing="0">
+                        <Label Text="STOCK BAJO" Style="{StaticResource EtiquetaSeccion}" />
+                        <Label x:Name="StockBajoLabel" Text="0" FontSize="20" FontAttributes="Bold"
+                               TextColor="#2E6B4F" />
+                    </VerticalStackLayout>
+                    <VerticalStackLayout Grid.Row="1" Grid.ColumnSpan="2" Spacing="0">
+                        <Label Text="VALORIZADO DEL INVENTARIO" Style="{StaticResource EtiquetaSeccion}" />
+                        <Label x:Name="ValorizadoLabel" Text="$0.00" FontSize="20" FontAttributes="Bold" />
+                    </VerticalStackLayout>
+                </Grid>
+            </Border>
+
+            <Grid Grid.Row="2" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                <Entry x:Name="BuscarEntry"
+                       Style="{StaticResource CampoTexto}"
+                       Placeholder="Escanea un código o busca por nombre"
+                       ReturnType="Search"
+                       Completed="OnBuscarCompleted" />
+                <Button Grid.Column="1"
+                        Text="Buscar"
+                        Style="{StaticResource BotonSecundario}"
+                        WidthRequest="96"
+                        HeightRequest="48"
+                        Clicked="OnBuscarClicked" />
+            </Grid>
+
+            <Grid Grid.Row="3" ColumnDefinitions="Auto,Auto,*" ColumnSpacing="8">
+                <Button x:Name="FiltroTodosButton"
+                        Text="Todos"
+                        Style="{StaticResource BotonSecundario}"
+                        HeightRequest="38"
+                        Padding="12,0"
+                        FontSize="13"
+                        Clicked="OnFiltroTodosClicked" />
+                <Button x:Name="FiltroBajoButton"
+                        Grid.Column="1"
+                        Text="Stock bajo"
+                        Style="{StaticResource BotonSecundario}"
+                        HeightRequest="38"
+                        Padding="12,0"
+                        FontSize="13"
+                        Clicked="OnFiltroBajoClicked" />
+                <Label x:Name="ResultadosLabel"
+                       Grid.Column="2"
+                       Style="{StaticResource TextoNota}"
+                       VerticalOptions="Center"
+                       HorizontalTextAlignment="End" />
+            </Grid>
+
+            <Border Grid.Row="4" Style="{StaticResource Tarjeta}" Padding="12">
+                <Grid RowDefinitions="Auto,*" RowSpacing="6">
+                    <Label Text="CATÁLOGO" Style="{StaticResource EtiquetaSeccion}" />
+                    <RefreshView x:Name="Refresco" Grid.Row="1" Refreshing="OnRefrescando">
+                        <CollectionView x:Name="ListaProductos" SelectionMode="None">
+                            <CollectionView.EmptyView>
+                                <Label x:Name="ListaVaciaLabel"
+                                       Text="No hay productos para mostrar."
+                                       Style="{StaticResource TextoNota}"
+                                       HorizontalTextAlignment="Center"
+                                       Margin="0,40,0,0" />
+                            </CollectionView.EmptyView>
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate x:DataType="models:ProductoInventarioFila">
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Padding="0,8">
+                                        <VerticalStackLayout Spacing="1">
+                                            <Label Text="{Binding Nombre}" FontAttributes="Bold" FontSize="16" />
+                                            <Label Text="{Binding Detalle}" Style="{StaticResource TextoNota}" />
+                                            <Label Text="{Binding Precio}" Style="{StaticResource TextoNota}" />
+                                            <Label Text="{Binding StockTexto}"
+                                                   TextColor="{Binding StockColor}"
+                                                   FontSize="12"
+                                                   FontAttributes="Bold" />
+                                        </VerticalStackLayout>
+                                        <VerticalStackLayout Grid.Column="1" Spacing="6" VerticalOptions="Center">
+                                            <Label Text="STOCK BAJO"
+                                                   IsVisible="{Binding StockBajo}"
+                                                   TextColor="#B3261E"
+                                                   FontSize="11"
+                                                   FontAttributes="Bold"
+                                                   HorizontalTextAlignment="End" />
+                                            <Button Text="Ver"
+                                                    CommandParameter="{Binding .}"
+                                                    Clicked="OnVerProductoClicked"
+                                                    Style="{StaticResource BotonSecundario}"
+                                                    WidthRequest="76"
+                                                    HeightRequest="38" />
+                                        </VerticalStackLayout>
+                                    </Grid>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </RefreshView>
+                </Grid>
+            </Border>
+
+            <Label x:Name="MensajeLabel" Grid.Row="5" Style="{StaticResource TextoNota}" IsVisible="False" />
+        </Grid>
+
+        <Grid x:Name="PanelOverlay"
+              IsVisible="False"
+              BackgroundColor="#99000000"
+              Padding="16"
+              ZIndex="10">
+            <Border Style="{StaticResource Tarjeta}"
+                    Padding="18"
+                    HorizontalOptions="Fill"
+                    VerticalOptions="Fill"
+                    MaximumWidthRequest="640">
+                <ScrollView x:Name="OverlayScroll">
+                    <VerticalStackLayout Spacing="12">
+
+                        <Label x:Name="OverlayTitulo" Text="Producto" FontSize="24" FontAttributes="Bold" />
+                        <Label x:Name="OverlaySubtitulo" Style="{StaticResource TextoNota}" />
+
+                        <VerticalStackLayout x:Name="VistaDetalle" Spacing="10">
+                            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto"
+                                  ColumnSpacing="12" RowSpacing="8">
+                                <VerticalStackLayout Spacing="0">
+                                    <Label Text="COSTO" Style="{StaticResource EtiquetaSeccion}" />
+                                    <Label x:Name="DetalleCostoLabel" FontAttributes="Bold" />
+                                </VerticalStackLayout>
+                                <VerticalStackLayout Grid.Column="1" Spacing="0">
+                                    <Label Text="PRECIO" Style="{StaticResource EtiquetaSeccion}" />
+                                    <Label x:Name="DetallePrecioLabel" FontAttributes="Bold" />
+                                </VerticalStackLayout>
+                                <VerticalStackLayout Grid.Row="1" Spacing="0">
+                                    <Label Text="STOCK ACTUAL" Style="{StaticResource EtiquetaSeccion}" />
+                                    <Label x:Name="DetalleStockLabel" FontAttributes="Bold" />
+                                </VerticalStackLayout>
+                                <VerticalStackLayout Grid.Row="1" Grid.Column="1" Spacing="0">
+                                    <Label Text="STOCK MÍNIMO" Style="{StaticResource EtiquetaSeccion}" />
+                                    <Label x:Name="DetalleMinimoLabel" FontAttributes="Bold" />
+                                </VerticalStackLayout>
+                                <VerticalStackLayout Grid.Row="2" Spacing="0">
+                                    <Label Text="IMPUESTO" Style="{StaticResource EtiquetaSeccion}" />
+                                    <Label x:Name="DetalleImpuestoLabel" FontAttributes="Bold" />
+                                </VerticalStackLayout>
+                                <VerticalStackLayout Grid.Row="2" Grid.Column="1" Spacing="0">
+                                    <Label Text="VALOR EN INVENTARIO" Style="{StaticResource EtiquetaSeccion}" />
+                                    <Label x:Name="DetalleValorLabel" FontAttributes="Bold" />
+                                </VerticalStackLayout>
+                            </Grid>
+
+                            <Border x:Name="BajoDetalleBorder"
+                                    BackgroundColor="#FFF4D6"
+                                    StrokeThickness="0"
+                                    StrokeShape="RoundRectangle 10"
+                                    Padding="10"
+                                    IsVisible="False">
+                                <Label x:Name="BajoDetalleLabel" TextColor="#7A5B00" FontSize="13" />
+                            </Border>
+
+                            <Label x:Name="SoloConsultaLabel"
+                                   Text="Tu rol permite consultar el catálogo; las operaciones de inventario están restringidas."
+                                   Style="{StaticResource TextoNota}"
+                                   IsVisible="False" />
+
+                            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto"
+                                  ColumnSpacing="8" RowSpacing="8">
+                                <Button x:Name="EditarButton"
+                                        Text="Editar"
+                                        Style="{StaticResource BotonSecundario}"
+                                        HeightRequest="44"
+                                        FontSize="14"
+                                        Clicked="OnEditarClicked" />
+                                <Button x:Name="EntradaButton"
+                                        Grid.Column="1"
+                                        Text="Registrar entrada"
+                                        Style="{StaticResource BotonSecundario}"
+                                        HeightRequest="44"
+                                        FontSize="14"
+                                        Clicked="OnEntradaClicked" />
+                                <Button x:Name="MermaButton"
+                                        Grid.Row="1"
+                                        Text="Registrar merma"
+                                        Style="{StaticResource BotonSecundario}"
+                                        HeightRequest="44"
+                                        FontSize="14"
+                                        Clicked="OnMermaClicked" />
+                                <Button x:Name="AjusteButton"
+                                        Grid.Row="1"
+                                        Grid.Column="1"
+                                        Text="Ajustar stock"
+                                        Style="{StaticResource BotonSecundario}"
+                                        HeightRequest="44"
+                                        FontSize="14"
+                                        Clicked="OnAjusteClicked" />
+                                <Button x:Name="HistorialButton"
+                                        Grid.Row="2"
+                                        Grid.ColumnSpan="2"
+                                        Text="Ver movimientos"
+                                        Style="{StaticResource BotonSecundario}"
+                                        HeightRequest="44"
+                                        FontSize="14"
+                                        Clicked="OnHistorialClicked" />
+                            </Grid>
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout x:Name="VistaEditor" Spacing="6" IsVisible="False">
+                            <Label Text="Código de barras" Style="{StaticResource EtiquetaSeccion}" />
+                            <Entry x:Name="CodigoEditor"
+                                   Style="{StaticResource CampoTexto}"
+                                   Placeholder="Escanea o escribe el código" />
+                            <Label x:Name="CodigoNotaLabel"
+                                   Text="El código no se puede cambiar después de crear el producto."
+                                   Style="{StaticResource TextoNota}"
+                                   IsVisible="False" />
+
+                            <Label Text="Nombre" Style="{StaticResource EtiquetaSeccion}" Margin="0,4,0,0" />
+                            <Entry x:Name="NombreEditor"
+                                   Style="{StaticResource CampoTexto}"
+                                   Placeholder="Nombre del producto" />
+
+                            <Label Text="Categoría" Style="{StaticResource EtiquetaSeccion}" Margin="0,4,0,0" />
+                            <Entry x:Name="CategoriaEditor"
+                                   Style="{StaticResource CampoTexto}"
+                                   Placeholder="Ej. Bebidas (opcional)" />
+
+                            <Grid ColumnDefinitions="*,*" ColumnSpacing="8" Margin="0,4,0,0">
+                                <VerticalStackLayout Spacing="4">
+                                    <Label Text="Costo" Style="{StaticResource EtiquetaSeccion}" />
+                                    <Entry x:Name="CostoEditor"
+                                           Style="{StaticResource CampoTexto}"
+                                           Keyboard="Numeric"
+                                           Placeholder="0.00" />
+                                </VerticalStackLayout>
+                                <VerticalStackLayout Grid.Column="1" Spacing="4">
+                                    <Label Text="Precio" Style="{StaticResource EtiquetaSeccion}" />
+                                    <Entry x:Name="PrecioEditor"
+                                           Style="{StaticResource CampoTexto}"
+                                           Keyboard="Numeric"
+                                           Placeholder="0.00" />
+                                </VerticalStackLayout>
+                            </Grid>
+                            <Label x:Name="EditorNotaPreciosLabel"
+                                   Text="Solo el dueño puede cambiar costos y precios; se conservarán los valores actuales."
+                                   Style="{StaticResource TextoNota}"
+                                   IsVisible="False" />
+
+                            <VerticalStackLayout x:Name="CampoStockInicial" Spacing="4" Margin="0,4,0,0">
+                                <Label Text="Stock inicial" Style="{StaticResource EtiquetaSeccion}" />
+                                <Entry x:Name="StockInicialEditor"
+                                       Style="{StaticResource CampoTexto}"
+                                       Keyboard="Numeric"
+                                       Placeholder="0" />
+                            </VerticalStackLayout>
+
+                            <Label x:Name="StockEditorInfoLabel"
+                                   Style="{StaticResource TextoNota}"
+                                   IsVisible="False" />
+
+                            <VerticalStackLayout Spacing="4" Margin="0,4,0,0">
+                                <Label Text="Stock mínimo" Style="{StaticResource EtiquetaSeccion}" />
+                                <Entry x:Name="StockMinimoEditor"
+                                       Style="{StaticResource CampoTexto}"
+                                       Keyboard="Numeric"
+                                       Placeholder="5" />
+                            </VerticalStackLayout>
+
+                            <VerticalStackLayout Spacing="4" Margin="0,4,0,0">
+                                <Label Text="Impuesto (%)" Style="{StaticResource EtiquetaSeccion}" />
+                                <Entry x:Name="ImpuestoEditor"
+                                       Style="{StaticResource CampoTexto}"
+                                       Keyboard="Numeric"
+                                       Placeholder="16" />
+                            </VerticalStackLayout>
+
+                            <Label x:Name="EditorNotaStockLabel"
+                                   Text="El stock no se edita aquí: usa entrada, merma o ajuste para modificarlo."
+                                   Style="{StaticResource TextoNota}" />
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout x:Name="VistaEntrada" Spacing="6" IsVisible="False">
+                            <Label x:Name="StockEntradaLabel" Style="{StaticResource TextoNota}" />
+                            <Label Text="Cantidad recibida" Style="{StaticResource EtiquetaSeccion}" Margin="0,4,0,0" />
+                            <Entry x:Name="CantidadEntradaEntry"
+                                   Style="{StaticResource CampoTexto}"
+                                   Keyboard="Numeric"
+                                   Placeholder="0"
+                                   TextChanged="OnEntradaChanged" />
+                            <Label Text="Costo unitario" Style="{StaticResource EtiquetaSeccion}" Margin="0,4,0,0" />
+                            <Entry x:Name="CostoEntradaEntry"
+                                   Style="{StaticResource CampoTexto}"
+                                   Keyboard="Numeric"
+                                   Placeholder="0.00"
+                                   TextChanged="OnEntradaChanged" />
+                            <Label x:Name="TotalEntradaLabel" FontAttributes="Bold" />
+                            <Label Text="Motivo" Style="{StaticResource EtiquetaSeccion}" Margin="0,4,0,0" />
+                            <Entry x:Name="MotivoEntradaEntry"
+                                   Style="{StaticResource CampoTexto}"
+                                   Placeholder="Compra" />
+                            <Label Text="El costo del catálogo se edita por separado; aquí se registra el costo del movimiento."
+                                   Style="{StaticResource TextoNota}" />
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout x:Name="VistaMerma" Spacing="6" IsVisible="False">
+                            <Label x:Name="StockMermaLabel" Style="{StaticResource TextoNota}" />
+                            <Label Text="Cantidad perdida" Style="{StaticResource EtiquetaSeccion}" Margin="0,4,0,0" />
+                            <Entry x:Name="CantidadMermaEntry"
+                                   Style="{StaticResource CampoTexto}"
+                                   Keyboard="Numeric"
+                                   Placeholder="0"
+                                   TextChanged="OnMermaChanged" />
+                            <Label Text="Motivo" Style="{StaticResource EtiquetaSeccion}" Margin="0,4,0,0" />
+                            <Entry x:Name="MotivoMermaEntry"
+                                   Style="{StaticResource CampoTexto}"
+                                   Placeholder="Caducado, roto, robo..." />
+                            <Label x:Name="CostoPerdidoLabel" FontAttributes="Bold" />
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout x:Name="VistaAjuste" Spacing="6" IsVisible="False">
+                            <Label x:Name="StockAjusteLabel" Style="{StaticResource TextoNota}" />
+                            <Label Text="Nuevo stock" Style="{StaticResource EtiquetaSeccion}" Margin="0,4,0,0" />
+                            <Entry x:Name="NuevoStockAjusteEntry"
+                                   Style="{StaticResource CampoTexto}"
+                                   Keyboard="Numeric"
+                                   Placeholder="0"
+                                   TextChanged="OnAjusteChanged" />
+                            <Label Text="Motivo" Style="{StaticResource EtiquetaSeccion}" Margin="0,4,0,0" />
+                            <Entry x:Name="MotivoAjusteEntry"
+                                   Style="{StaticResource CampoTexto}"
+                                   Placeholder="Conteo físico, pérdida, error..." />
+                            <Label x:Name="DiferenciaAjusteLabel" FontAttributes="Bold" />
+                        </VerticalStackLayout>
+
+                        <VerticalStackLayout x:Name="VistaHistorial" Spacing="6" IsVisible="False">
+                            <Label x:Name="HistorialResumenLabel" Style="{StaticResource TextoNota}" />
+                            <CollectionView x:Name="ListaHistorial" HeightRequest="320" SelectionMode="None">
+                                <CollectionView.EmptyView>
+                                    <Label Text="Sin movimientos registrados."
+                                           Style="{StaticResource TextoNota}"
+                                           HorizontalTextAlignment="Center"
+                                           Margin="0,30,0,0" />
+                                </CollectionView.EmptyView>
+                                <CollectionView.ItemTemplate>
+                                    <DataTemplate x:DataType="models:MovimientoInventarioFila">
+                                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto"
+                                              ColumnSpacing="8" Padding="0,6">
+                                            <Label Text="{Binding Tipo}" FontAttributes="Bold" FontSize="13" />
+                                            <Label Text="{Binding CantidadTexto}"
+                                                   Grid.Column="1"
+                                                   TextColor="{Binding CantidadColor}"
+                                                   FontAttributes="Bold" />
+                                            <Label Text="{Binding Detalle}" Grid.Row="1"
+                                                   Style="{StaticResource TextoNota}" />
+                                            <Label Text="{Binding Fecha}" Grid.Row="1" Grid.Column="1"
+                                                   Style="{StaticResource TextoNota}"
+                                                   HorizontalTextAlignment="End" />
+                                            <Label Text="{Binding CostoTexto}" Grid.Row="2" Grid.ColumnSpan="2"
+                                                   Style="{StaticResource TextoNota}" FontSize="12" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </CollectionView.ItemTemplate>
+                            </CollectionView>
+                        </VerticalStackLayout>
+
+                        <Label x:Name="OverlayAvisoLabel"
+                               FontSize="14"
+                               TextColor="#2E6B4F"
+                               IsVisible="False" />
+                        <Label x:Name="OverlayErrorLabel" Style="{StaticResource Error}" IsVisible="False" />
+
+                        <Button x:Name="GuardarButton"
+                                Text="Guardar"
+                                Style="{StaticResource BotonPrincipal}"
+                                IsVisible="False"
+                                Clicked="OnGuardarClicked" />
+                        <Button x:Name="CerrarOverlayButton"
+                                Text="Cerrar"
+                                Style="{StaticResource BotonSecundario}"
+                                Clicked="OnCerrarOverlayClicked" />
+                    </VerticalStackLayout>
+                </ScrollView>
+            </Border>
+        </Grid>
+    </Grid>
+</ContentPage>

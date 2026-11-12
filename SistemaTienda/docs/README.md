@@ -17,10 +17,10 @@ La base técnica está **compilando y con pruebas automatizadas**. El núcleo im
 - Migraciones de esquema versionadas (`PRAGMA user_version`) y respaldo/restauración local verificado.
 - Respaldo automático por intervalo configurado al iniciar y cerrar la aplicación, con aviso y bitácora.
 - Dinero en centavos enteros (`long`/`INTEGER`, esquema v4) con conversión y formato centralizados en `Dinero`.
-- App MAUI para Windows y Android con asistente de primera configuración, login por PIN, tablero (Inicio, Vender, Ventas, Caja y Ajustes), punto de venta con carrito y cobro, caja operativa (cierre de corte, ingresos, retiros y abonos de fiado), ticket interno compartible, respaldo manual y automático, y cierre de sesión.
-- Interfaz de consola provisional para las operaciones que todavía no están en la app (anular ventas, inventario, clientes y proveedores).
+- App MAUI para Windows y Android con asistente de primera configuración, login por PIN, tablero (Inicio, Vender, Inventario, Ventas, Caja y Ajustes), punto de venta con carrito y cobro, inventario con escaneo/alta/edición/entradas/mermas/ajustes/historial, caja operativa (cierre de corte, ingresos, retiros y abonos de fiado), ticket interno compartible, respaldo manual y automático, y cierre de sesión.
+- Interfaz de consola provisional para las operaciones que todavía no están en la app (anular ventas, clientes, proveedores y gastos).
 
-Pendiente para el MVP: anulación desde la app, ticket con QR, copia de respaldos a USB/nube, conteo de caja por denominaciones e historial de cortes en la app, y validación de Android en dispositivo. Ver [roadmap.md](roadmap.md) y [deuda-tecnica.md](deuda-tecnica.md).
+Pendiente para el MVP: anulación desde la app, ticket con QR, pantallas de clientes/proveedores/gastos, conteo de caja por denominaciones e historial de cortes en la app, y validación de Android en dispositivo. Ver [roadmap.md](roadmap.md) y [deuda-tecnica.md](deuda-tecnica.md).
 
 ## Índice
 

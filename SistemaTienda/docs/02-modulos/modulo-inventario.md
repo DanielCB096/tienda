@@ -8,9 +8,9 @@ Este módulo maneja el catálogo de productos y el control de inventario. Es el 
 
 | Rol | Permisos | Descripción |
 |-----|----------|-------------|
-| **Dueño/Administrador** | - Agregar, editar, eliminar productos<br>- Ver valorizado de inventario<br>- Ajustar stock manualmente | Control total del catálogo |
-| **Encargado/Cajero** | - Ver catálogo y stock<br>- Registrar nuevas entradas (compras)<br>- Ver alertas de stock bajo | No puede eliminar productos ni modificar precios |
-| **Empleado básico** | - Buscar productos por nombre/código<br>- Ver información pública | Acceso de solo lectura |
+| **Dueño/Administrador** | - Agregar y editar productos<br>- Ver valorizado de inventario<br>- Ajustar stock manualmente<br>- Cambiar costo y precio | Control total del catálogo; en esta versión no hay borrado |
+| **Encargado/Cajero** | - Ver catálogo y stock<br>- Editar datos del producto<br>- Registrar nuevas entradas (compras) y mermas<br>- Ver alertas de stock bajo | No puede modificar precios ni ajustar stock |
+| **Empleado básico** | - Buscar productos por nombre/código<br>- Consultar stock y movimientos | Acceso de solo lectura |
 
 ## Flujos Paso a paso
 
@@ -30,7 +30,7 @@ Este módulo maneja el catálogo de productos y el control de inventario. Es el 
    - El costo y precio deben ser números positivos.
    - Si el stock inicial se proporciona, debe ser un entero no negativo.
 
-3. **Persistencia**: Se inserta el producto en la tabla `Productos` con `Stock = stock_inicial`.
+3. **Persistencia**: Se inserta el producto en la tabla `Productos` con stock 0 y, si hay stock inicial, se registra un movimiento de entrada `Stock inicial` en la misma transacción. El stock mostrado sigue siendo la suma de movimientos.
 
 4. **Confirmación**: Se muestra el producto guardado con su ID y se ofrece la opción de agregar otro o regresar al menú.
 
@@ -56,10 +56,10 @@ Este módulo maneja el catálogo de productos y el control de inventario. Es el 
 2. **Datos requeridos**:
    - Producto (seleccionado de la lista o código de barras).
    - Cantidad recibida (entera positiva).
-   - Costo unitario (opcional; si se provee, actualiza el costo del producto; si no, deja el costo existente).
+   - Costo unitario del movimiento (obligatorio en la app; queda en el historial). En esta versión **no** actualiza el costo del catálogo: el costo vigente se edita por separado desde Editar producto.
 3. **Lógica de actualización de stock**:
    - `NuevoStock = StockAnterior + CantidadRecibida`
-4. **Historial**: Cada entrada se registra en una tabla de movimientos de inventario (opcional, para auditoría), con fecha, cantidad, costo y usuario.
+4. **Historial**: Cada entrada se registra en la tabla de movimientos con fecha, cantidad, costo, motivo y usuario. El historial es inmutable.
 
 ### 4. Ajustar stock (manual)
 
@@ -76,10 +76,10 @@ Este módulo maneja el catálogo de productos y el control de inventario. Es el 
 
 ### 5. Conteo físico y alertas de stock bajo
 
-1. **Stock bajo**: Configurable por tienda (por defecto: cuando el stock ≤ 5 unidades o ≤ 10% del stock mínimo).
+1. **Stock bajo**: Se considera bajo cuando `Stock <= StockMinimo`. El umbral operativo es el mínimo de cada producto; no hay un umbral global adicional.
 2. **Stock mínimo**: Configurable por producto (cuántas unidades como mínimo deben tener siempre).
-3. **Alertas en la interfaz**: Al entrar al catálogo, los productos con stock bajo se marcan visualmente (ej. fondo rojo o icono de advertencia).
-4. **Reporte de stock bajo**: Lista de todos los productos que actualmente están por debajo del umbral de stock mínimo.
+3. **Alertas en la interfaz**: El catálogo marca visualmente los productos con stock bajo y muestra el conteo en el resumen.
+4. **Reporte de stock bajo**: El filtro **Stock bajo** lista todos los productos en esa condición.
 
 ## Entidades de Datos
 
@@ -123,7 +123,7 @@ Este módulo maneja el catálogo de productos y el control de inventario. Es el 
 3. **Código de barras único**: No se permiten dos productos con el mismo código de barras.
 4. **Categorías libres**: No hay catálogo cerrado de categorías. Se registran como texto libre. Esto permite que el sistema sea usable para cualquier giro.
 5. **Impuesto por producto**: Cada producto puede tener su propia tasa de impuesto, override del impuesto predeterminado de la configuración de la tienda. Si está vacío, se usa la configuración global.
-6. **Stock mínimo y alertas**: El stock mínimo se configura por producto. El sistema alerta cuándo `StockActual <= StockMinimo`. El umbral de "stock bajo" es configurable por tienda (por defecto: stock actual ≤ 5 o ≤ 10% de stock mínimo, lo que sea mayor).
+6. **Stock mínimo y alertas**: El stock mínimo se configura por producto. El sistema alerta cuándo `StockActual <= StockMinimo`; no hay un umbral global adicional.
 7. **Stock nunca negativo**: El sistema nunca debe permitir que el stock de un producto quede en negativo. Si una venta intenta quitar más de lo que hay, se bloquea con el mensaje "Stock insuficiente".
 
 ## Integración con Otros Módulos
@@ -143,41 +143,44 @@ Este módulo maneja el catálogo de productos y el control de inventario. Es el 
 
 ## Pantallas Clave
 
-1. **Catálogo de productos** (lista con búsqueda por nombre/código, indicadores de stock bajo).
-2. **Agregar producto** (formulario con todos los campos).
-3. **Editar producto** (solo dueño/encargado, campos modificables).
-4. **Ajustar stock** (formulario con producto, nueva cantidad, motivo).
-5. **Entrada de inventario** (producto, cantidad, costo unitario opcional).
-6. **Alertas de stock** (vista resumida de productos con stock ≤ mínimo).
+Implementadas en la pestaña **Inventario** de la app MAUI desde T15:
+
+1. **Catálogo de productos** (resumen de productos/stock bajo/valorizado, búsqueda por nombre o escaneo de código, indicadores y filtro de stock bajo).
+2. **Agregar producto** (formulario con código, nombre, categoría, costo, precio, stock inicial, stock mínimo e impuesto).
+3. **Editar producto** (dueño y encargado; costo y precio solo para el dueño).
+4. **Ajustar stock** (nuevo stock y motivo; solo dueño).
+5. **Entrada de inventario** (cantidad, costo unitario y motivo).
+6. **Registrar merma** (cantidad y motivo; reduce el stock).
+7. **Historial de movimientos** (últimos 200, con cantidad firmada, usuario y fecha).
 
 ## Criterios de Aceptación
 
-- [ ] Se puede agregar un producto con código de barras, nombre, costo, precio, stock inicial y categoría.
-- [ ] El código de barras debe ser único; intentar agregar uno duplicado falla con mensaje claro.
-- [ ] La búsqueda por nombre sugiere coincidencias mientras se teclea.
-- [ ] El stock se actualiza automáticamente al registrar una venta (módulo 3) o merma (módulo 4).
-- [ ] El sistema bloquea la venta si el stock es insuficiente.
-- [ ] Los productos con stock ≤ stock mínimo se marcan visualmente como "stock bajo".
-- [ ] Cada producto puede tener impuesto diferente al predeterminado de la tienda.
-- [ ] El costo y precio se "congelan" al momento de cada venta (las ventas anteriores no se ven afectadas si se modifican los precios después).
-- [ ] Los ajustes de stock requieren motivo y usuario, y actualizan el stock al valor indicado.
-- [ ] Los historiales de movimientos se registran (opcional pero recomendado).
+- [x] Se puede agregar un producto con código de barras, nombre, costo, precio, stock inicial y categoría.
+- [x] El código de barras debe ser único; intentar agregar uno duplicado falla con mensaje claro.
+- [ ] La búsqueda por nombre sugiere coincidencias mientras se teclea (hoy se ejecuta al pulsar Buscar o Enter).
+- [x] El stock se actualiza automáticamente al registrar una venta (módulo 3) o merma (módulo 4).
+- [x] El sistema bloquea la venta si el stock es insuficiente.
+- [x] Los productos con stock ≤ stock mínimo se marcan visualmente como "stock bajo".
+- [x] Cada producto puede tener impuesto diferente al predeterminado de la tienda.
+- [x] El costo y precio se "congelan" al momento de cada venta (las ventas anteriores no se ven afectadas si se modifican los precios después).
+- [x] Los ajustes de stock requieren motivo y usuario, y actualizan el stock al valor indicado.
+- [x] Los historiales de movimientos se registran y son inmutables.
 
 ## Preguntas Abiertas ⚠️
 
-- ¿El stock mínimo debe ser por producto individual o puede ser un valor global para todas las categorías?
+- ~~¿El stock mínimo debe ser por producto individual o puede ser un valor global para todas las categorías?~~ Resuelto: es por producto y no hay umbral global adicional.
 - ¿Se debe permitir la venta de productos con stock 0 (backorder) o siempre bloquear? El diseño actual bloquea, pero es una decisión de negocio.
 - ¿El impuesto por producto debe ser obligatorio o puede omitirse (usándose siempre el global)? El diseño actual lo hace opcional con fallback al global.
-- ¿Cómo manejar productos con peso/volumen (kg, litros) vs. piezas? El diseño actual usa enteros para stock, pero las cantidades en ventas pueden ser decimales.
+- ¿Cómo manejar productos con peso/volumen (kg, litros) vs. piezas? El diseño actual usa enteros para stock; las cantidades fraccionarias siguen pendientes.
 
 ---
 
-**Estado actual (2026-10-23)**: base implementada y probada.
+**Estado actual (2026-10-25)**: base implementada y probada, con pantalla de operación en la app MAUI.
 
-- *Implementado*: alta de producto con stock inicial como movimiento de entrada; código de barras único; edición sin tocar stock; búsqueda exacta por código y parcial por nombre; stock bajo; historial de movimientos; ajuste con diferencia y motivo; entradas; reducción por venta/merma; valorizado.
-- *Desviaciones del diseño*: no existe borrado ni campo `Activo`; el filtro por categoría no está en la interfaz; el historial se limita a los últimos 200 movimientos; el stock mínimo es siempre por producto (no hay umbral global adicional).
-- *Pendiente*: importación Excel/CSV, edición masiva y reporte de valorizado histórico.
-- *Pruebas*: `InventarioTests` (20 pruebas) y `BaseDatosTests`.
-- *Riesgo conocido*: el costo perdido de una merma solo se muestra al registrarla; no queda almacenado (ver [deuda-técnica](../deuda-tecnica.md)).
+- *Implementado*: alta de producto con stock inicial como movimiento de entrada; código de barras único; edición sin tocar stock; búsqueda exacta por código y parcial por nombre; stock bajo; historial de movimientos; ajuste con diferencia y motivo; entradas; reducción por venta/merma; valorizado. La app MAUI ofrece catálogo, escaneo, alta/edición, entrada, merma, ajuste, historial y filtro de stock bajo, con acciones limitadas por rol.
+- *Desviaciones del diseño*: no existe borrado ni campo `Activo`; el filtro por categoría no está en la interfaz; el historial se limita a los últimos 200 movimientos; el stock mínimo es siempre por producto (no hay umbral global adicional); el costo de una entrada no actualiza el costo del catálogo; la búsqueda por nombre no sugiere mientras se teclea.
+- *Pendiente*: importación Excel/CSV, edición masiva, reporte de valorizado histórico y filtro por categoría en la app.
+- *Pruebas*: `InventarioTests` (20 pruebas), `InventarioBordeTests` y la verificación manual de la app descrita en el plan de pruebas; la interfaz no tiene pruebas automatizadas.
+- *Riesgo conocido*: el costo perdido de una merma solo se muestra al registrarla; no queda almacenado (ver [deuda-técnica](../deuda-tecnica.md)). El costo de una entrada queda en el movimiento, no en el catálogo.
 
 **Siguiente módulo después de confirmar**: Módulo 3 - Ventas / POS (que dependerá fortemente de este módulo de inventario).

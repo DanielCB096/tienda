@@ -14,10 +14,10 @@
 
 1. Al abrir la app, se solicita el PIN.
 2. El usuario ingresa su PIN.
-3. El sistema valida y muestra el tablero (Inicio, Vender, Ventas, Caja y Ajustes).
+3. El sistema valida y muestra el tablero (Inicio, Vender, Inventario, Ventas, Caja y Ajustes).
 4. Si el PIN está mal tres veces seguidas, la app bloquea el acceso hasta cerrarla y abrirla de nuevo.
 
-> **Estado de la app (2026-10-25)**: el tablero muestra ventas del día, efectivo esperado del corte, stock bajo y último respaldo. **Vender** registra ventas con carrito, cobros y ticket interno compartible. **Caja** ya permite cerrar el corte, registrar ingresos y retiros, y abonar al fiado. **Anular ventas y editar inventario todavía se hacen en la consola provisional.** El conteo de caja se captura como un total, sin desglose de billetes y monedas. El manual describe el flujo completo planeado; revisa en cada versión qué partes ya están en la app.
+> **Estado de la app (2026-10-25)**: el tablero muestra ventas del día, efectivo esperado del corte, stock bajo y último respaldo. **Vender** registra ventas con carrito, cobros y ticket interno compartible. **Inventario** permite consultar, escanear, dar de alta o editar productos, y registrar entradas, mermas y ajustes según el rol. **Caja** ya permite cerrar el corte, registrar ingresos y retiros, y abonar al fiado. **Anular ventas todavía se hace en la consola provisional.** El conteo de caja se captura como un total, sin desglose de billetes y monedas. El manual describe el flujo completo planeado; revisa en cada versión qué partes ya están en la app.
 
 ### 2. Catálogo / Búsqueda de Producto
 
@@ -52,20 +52,29 @@ Flujo paso a paso:
    - El sistema registra la venta, actualiza inventario (si es que corresponde) y genera el ticket digital.
    - Se ofrece compartir el ticket (WhastApp, correo, mostrar en pantalla).
 
+### 4. Inventario (pestaña Inventario)
+
+Muestra el número de productos, los que están en stock bajo y el valorizado. La búsqueda acepta nombre o el código del lector; Enter abre el producto si el código existe. Un código desconocido de al menos ocho dígitos ofrece darlo de alta.
+
+- **Consultar**: Toca **Ver** para abrir el detalle; **Ver movimientos** muestra los últimos 200 con usuario, motivo y cantidad firmada.
+- **Alta**: **+ Nuevo** pide código, nombre, categoría, costo, precio, stock inicial, stock mínimo e impuesto. El código ya no se puede cambiar después.
+- **Editar**: Cambia nombre, categoría, stock mínimo e impuesto. Solo el dueño puede cambiar costo y precio; el stock no se edita aquí.
+- **Entrada**: Recibe unidades con costo unitario y motivo. El costo del movimiento queda en el historial, pero no cambia el costo del catálogo.
+- **Merma**: Descuenta unidades por daño, caducidad o robo, con motivo obligatorio.
+- **Ajustar stock**: Solo el dueño; fija el stock al conteo físico con motivo. La diferencia queda en el historial.
+
+El encargado puede editar y registrar entradas o mermas, pero no ajustar stock ni cambiar precios. El empleado solo consulta.
+
 ### 5. Registrar Merma
 
-Acceso: Menú → "Mermas" (requiere rol Encargado o Dueño).
+Acceso: pestaña **Inventario** → **Ver** → **Registrar merma** (requiere rol Encargado o Dueño).
 
-1. Tocar "Nueva Merma".
-2. Seleccionar producto (o buscar).
-3. Ingresar:
-   - **Motivo** (lista desplegable: Dañado, Caducado, Robado, Consumo propio, Regalo, Otra).
-   - **Cantidad** (unidades o peso).
-   - **Costo perdido** (automático: costo unitario × cantidad, o manual).
-   - **Usuario** (seleccionado de la lista o propio PIN).
-4. Tocar "Registrar".
-5. El sistema reduce el stock y registra la merma en la bitácora.
-6. Se muestra mensaje: "✓ Merma registrada, stock reducido".
+1. Abrir el producto y tocar **Registrar merma**.
+2. Ingresar la cantidad y el motivo (por ejemplo, dañado, caducado o robo).
+3. El sistema muestra el costo perdido estimado con el costo actual del producto.
+4. Tocar **Registrar merma**.
+5. El sistema reduce el stock y registra el movimiento con el usuario de la sesión; no se puede editar ni borrar.
+6. Se muestra el mensaje de confirmación y el detalle actualizado.
 
 ### 6. Registrar Gasto
 
