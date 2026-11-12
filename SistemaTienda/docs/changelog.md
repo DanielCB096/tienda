@@ -32,6 +32,17 @@ Próximamente después de completar los módulos críticos.
 - Configuración básica de tienda (nombre, giro, impuestos, métodos de pago).
 - Documentación inicial (glosario, stack, módulos, ADR).
 
+### v0.0.21 - 2026-11-11: Edición y estado de cuenta de clientes
+
+- *Agregado*: botón **Estado** en cada cliente del directorio; abre el estado de cuenta con nombre, teléfono, fecha de alta, saldo vigente, total fiado, total abonado y los movimientos (ventas a fiado vigentes y abonos) del más reciente al más antiguo, con fecha, usuario y método.
+- *Agregado*: `ConfiguracionService.ObtenerEstadoCuentaCliente` y los DTO `VentaFiadaCliente`, `AbonoFiadoCliente` y `EstadoCuentaCliente`; las ventas anuladas no aparecen ni suman al total fiado.
+- *Agregado*: **Editar datos** dentro del estado de cuenta para dueño y encargado, con el permiso nuevo `EditarCliente`; `EditarClienteFiado` recorta nombre y teléfono, rechaza el nombre vacío y al cliente inexistente, no toca `SaldoActual` y deja bitácora `EditarCliente` con los datos anteriores y nuevos.
+- *Agregado*: desde el estado de cuenta se puede **Abonar** con el flujo existente y la vista se refresca con el nuevo saldo y los nuevos movimientos.
+- *Reglas de negocio*: definidas con el dueño el 2026-11-10. No hay baja ni borrado de clientes; el saldo nunca se edita a mano y solo cambia con ventas a fiado y abonos. El saldo inicial del alta no aparece como movimiento y la pantalla lo advierte.
+- *Verificación*: solución y app MAUI para Windows compiladas sin errores ni advertencias; 218 pruebas en verde en CI (8 nuevas en `EstadoCuentaClientesTests`). Verificación manual de la pantalla pendiente de abrir la GUI.
+- *CI*: PR #15 contra `main` en verde el 2026-11-11: compilación y pruebas (218 en verde) y app MAUI para Windows y Android.
+- Total del proyecto: 218 pruebas.
+
 ### v0.0.20 - 2026-11-10: Pantalla de gastos en la app MAUI
 
 - *Agregado*: pestaña **Gastos** con resumen del total, lo pagado del efectivo de la caja y lo pagado con otra fuente, historial de los últimos 200 gastos y alta con concepto, monto, método, origen y observaciones.

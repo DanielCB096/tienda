@@ -101,15 +101,23 @@
                                                    FontSize="12"
                                                    FontAttributes="Bold" />
                                         </VerticalStackLayout>
-                                        <Button Grid.Column="1"
-                                                Text="Abonar"
-                                                CommandParameter="{Binding .}"
-                                                Clicked="OnAbonarClicked"
-                                                IsVisible="{Binding PuedeAbonar}"
-                                                Style="{StaticResource BotonSecundario}"
-                                                WidthRequest="88"
-                                                HeightRequest="38"
-                                                VerticalOptions="Center" />
+                                        <VerticalStackLayout Grid.Column="1"
+                                                             Spacing="6"
+                                                             VerticalOptions="Center">
+                                            <Button Text="Estado"
+                                                    CommandParameter="{Binding .}"
+                                                    Clicked="OnEstadoCuentaClicked"
+                                                    Style="{StaticResource BotonSecundario}"
+                                                    WidthRequest="88"
+                                                    HeightRequest="38" />
+                                            <Button Text="Abonar"
+                                                    CommandParameter="{Binding .}"
+                                                    Clicked="OnAbonarClicked"
+                                                    IsVisible="{Binding PuedeAbonar}"
+                                                    Style="{StaticResource BotonSecundario}"
+                                                    WidthRequest="88"
+                                                    HeightRequest="38" />
+                                        </VerticalStackLayout>
                                     </Grid>
                                 </DataTemplate>
                             </CollectionView.ItemTemplate>
@@ -210,6 +218,152 @@
                                     Text="Cancelar"
                                     Style="{StaticResource BotonSecundario}"
                                     Clicked="OnCancelarAbonoClicked" />
+                        </Grid>
+                    </VerticalStackLayout>
+                </ScrollView>
+            </Border>
+        </Grid>
+
+        <Grid x:Name="EstadoOverlay"
+              IsVisible="False"
+              BackgroundColor="#99000000"
+              Padding="16"
+              ZIndex="10">
+            <Border Style="{StaticResource Tarjeta}"
+                    Padding="18"
+                    HorizontalOptions="Fill"
+                    VerticalOptions="Fill"
+                    MaximumWidthRequest="640">
+                <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="10">
+                    <VerticalStackLayout Spacing="1">
+                        <Label Text="Estado de cuenta" FontSize="22" FontAttributes="Bold" />
+                        <Label x:Name="EstadoClienteLabel" FontAttributes="Bold" FontSize="17" />
+                        <Label x:Name="EstadoContactoLabel" Style="{StaticResource TextoNota}" />
+                    </VerticalStackLayout>
+
+                    <Border Grid.Row="1" Style="{StaticResource Tarjeta}" Padding="14">
+                        <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
+                            <VerticalStackLayout Spacing="0">
+                                <Label Text="SALDO ACTUAL" Style="{StaticResource EtiquetaSeccion}" />
+                                <Label x:Name="EstadoSaldoLabel" Text="$0.00" FontSize="22" FontAttributes="Bold" />
+                            </VerticalStackLayout>
+                            <VerticalStackLayout Grid.Column="1" Spacing="0">
+                                <Label Text="FIADO" Style="{StaticResource EtiquetaSeccion}" />
+                                <Label x:Name="EstadoFiadoLabel" Text="$0.00" FontSize="18" FontAttributes="Bold"
+                                       TextColor="#B3261E" />
+                            </VerticalStackLayout>
+                            <VerticalStackLayout Grid.Column="2" Spacing="0">
+                                <Label Text="ABONADO" Style="{StaticResource EtiquetaSeccion}" />
+                                <Label x:Name="EstadoAbonadoLabel" Text="$0.00" FontSize="18" FontAttributes="Bold"
+                                       TextColor="#2E6B4F" />
+                            </VerticalStackLayout>
+                        </Grid>
+                    </Border>
+
+                    <Label Grid.Row="2"
+                           Text="El saldo es el vigente del cliente. El saldo inicial del alta no aparece como movimiento; los importes son el historial desde que se registró."
+                           Style="{StaticResource TextoNota}" />
+
+                    <Grid Grid.Row="3" RowDefinitions="Auto,*" RowSpacing="6">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Label Text="MOVIMIENTOS" Style="{StaticResource EtiquetaSeccion}" />
+                            <Label x:Name="EstadoMovimientosLabel"
+                                   Grid.Column="1"
+                                   Style="{StaticResource TextoNota}"
+                                   HorizontalTextAlignment="End" />
+                        </Grid>
+                        <RefreshView x:Name="EstadoRefresco" Grid.Row="1" Refreshing="OnEstadoRefrescando">
+                            <CollectionView x:Name="ListaMovimientos" SelectionMode="None">
+                                <CollectionView.EmptyView>
+                                    <Label Text="Sin ventas a fiado ni abonos registrados."
+                                           Style="{StaticResource TextoNota}"
+                                           HorizontalTextAlignment="Center"
+                                           Margin="0,30,0,0" />
+                                </CollectionView.EmptyView>
+                                <CollectionView.ItemTemplate>
+                                    <DataTemplate x:DataType="models:EstadoCuentaFila">
+                                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Padding="0,8">
+                                            <VerticalStackLayout Spacing="1">
+                                                <Label Text="{Binding Tipo}" FontAttributes="Bold" FontSize="15" />
+                                                <Label Text="{Binding Detalle}" Style="{StaticResource TextoNota}" />
+                                                <Label Text="{Binding Fecha}" Style="{StaticResource TextoNota}" />
+                                            </VerticalStackLayout>
+                                            <Label Grid.Column="1"
+                                                   Text="{Binding Monto}"
+                                                   TextColor="{Binding MontoColor}"
+                                                   FontSize="16"
+                                                   FontAttributes="Bold"
+                                                   VerticalOptions="Center" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </CollectionView.ItemTemplate>
+                            </CollectionView>
+                        </RefreshView>
+                    </Grid>
+
+                    <Grid Grid.Row="4" ColumnDefinitions="*,*,*" ColumnSpacing="10" Margin="0,4,0,0">
+                        <Button x:Name="EditarClienteButton"
+                                Text="Editar datos"
+                                Style="{StaticResource BotonSecundario}"
+                                Clicked="OnEditarClienteClicked" />
+                        <Button x:Name="AbonarDesdeEstadoButton"
+                                Grid.Column="1"
+                                Text="Abonar"
+                                Style="{StaticResource BotonSecundario}"
+                                Clicked="OnAbonarDesdeEstadoClicked" />
+                        <Button Grid.Column="2"
+                                Text="Cerrar"
+                                Style="{StaticResource BotonPrincipal}"
+                                Clicked="OnCerrarEstadoClicked" />
+                    </Grid>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <Grid x:Name="EditarOverlay"
+              IsVisible="False"
+              BackgroundColor="#99000000"
+              Padding="16"
+              ZIndex="11">
+            <Border Style="{StaticResource Tarjeta}"
+                    Padding="18"
+                    HorizontalOptions="Fill"
+                    VerticalOptions="Center"
+                    MaximumWidthRequest="520">
+                <ScrollView>
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="Editar cliente" FontSize="22" FontAttributes="Bold" />
+                        <Label Text="Corrige el nombre o el teléfono. El saldo no se edita aquí: solo cambia con ventas a fiado y abonos."
+                               Style="{StaticResource TextoNota}" />
+
+                        <Label Text="Nombre" Style="{StaticResource EtiquetaSeccion}" />
+                        <Entry x:Name="EditarNombreEntry"
+                               Style="{StaticResource CampoTexto}"
+                               Placeholder="Nombre del cliente" />
+
+                        <Label Text="Teléfono (opcional)" Style="{StaticResource EtiquetaSeccion}" />
+                        <Entry x:Name="EditarTelefonoEntry"
+                               Style="{StaticResource CampoTexto}"
+                               Keyboard="Telephone"
+                               Placeholder="555-123-4567" />
+
+                        <Border Style="{StaticResource Aviso}">
+                            <Label Text="Cada cambio queda en la bitácora con el usuario, la fecha y los datos anteriores y nuevos."
+                                   FontSize="13"
+                                   TextColor="#7A4F01" />
+                        </Border>
+
+                        <Label x:Name="EditarErrorLabel" Style="{StaticResource Error}" IsVisible="False" />
+
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="10" Margin="0,4,0,0">
+                            <Button x:Name="GuardarEdicionButton"
+                                    Text="Guardar cambios"
+                                    Style="{StaticResource BotonPrincipal}"
+                                    Clicked="OnGuardarEdicionClicked" />
+                            <Button Grid.Column="1"
+                                    Text="Cancelar"
+                                    Style="{StaticResource BotonSecundario}"
+                                    Clicked="OnCancelarEdicionClicked" />
                         </Grid>
                     </VerticalStackLayout>
                 </ScrollView>

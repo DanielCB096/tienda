@@ -348,6 +348,67 @@ public class ConfiguracionService
         return constructor.ToString().Normalize(NormalizationForm.FormC);
     }
 
+    /// <summary>
+    /// Corrige nombre y teléfono de un cliente existente. No toca el saldo:
+    /// ese solo cambia con ventas a fiado y abonos.
+    /// </summary>
+    public ProcessResult EditarClienteFiado(int clienteId, string nombre, string telefono)
+    {
+        var autorizacion = Autorizar(PermisoSistema.EditarCliente);
+        if (autorizacion.IsError)
+            return autorizacion;
+
+        var nombreRecortado = (nombre ?? string.Empty).Trim();
+        if (nombreRecortado.Length == 0)
+            return ProcessResult.Error("El nombre del cliente es obligatorio");
+
+        var cliente = _db.ObtenerClienteFiadoPorId(clienteId);
+        if (cliente == null)
+            return ProcessResult.Error("Cliente no encontrado");
+
+        var telefonoRecortado = (telefono ?? string.Empty).Trim();
+
+        try
+        {
+            if (!_db.ActualizarDatosCliente(clienteId, nombreRecortado, telefonoRecortado))
+                return ProcessResult.Error("No se pudo actualizar el cliente");
+
+            _bitacora.Registrar(AccionBitacora.EditarCliente, "ClienteFiado", clienteId.ToString(),
+                $"Nombre={cliente.Nombre};Telefono={cliente.Telefono}",
+                $"Nombre={nombreRecortado};Telefono={telefonoRecortado}");
+
+            return ProcessResult.Success("Cliente actualizado correctamente");
+        }
+        catch (Exception ex)
+        {
+            return ProcessResult.Error($"Error al actualizar cliente: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Estado de cuenta del cliente: datos, saldo vigente, ventas a fiado
+    /// vigentes y abonos con historial. Excluye las ventas anuladas.
+    /// </summary>
+    public ProcessResult<EstadoCuentaCliente> ObtenerEstadoCuentaCliente(int clienteId)
+    {
+        var cliente = _db.ObtenerClienteFiadoPorId(clienteId);
+        if (cliente == null)
+            return ProcessResult<EstadoCuentaCliente>.Error("Cliente no encontrado");
+
+        var ventas = _db.ObtenerVentasFiadasDeCliente(clienteId);
+        var abonos = _db.ObtenerAbonosDeCliente(clienteId);
+
+        return ProcessResult<EstadoCuentaCliente>.OK(new EstadoCuentaCliente
+        {
+            Cliente = cliente,
+            Ventas = ventas,
+            Abonos = abonos,
+            TotalFiado = ventas.Sum(v => v.PagoFiado),
+            TotalAbonado = abonos.Sum(a => a.Monto),
+            SaldoActual = cliente.SaldoActual
+        });
+    }
+
     public ProcessResult<RegistrarAbonoResponse> RegistrarAbonoCliente(int clienteId, long montoAbono,
         string usuario = "")
     {

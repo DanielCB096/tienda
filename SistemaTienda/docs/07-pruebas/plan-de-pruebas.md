@@ -96,7 +96,7 @@ Qué pasa cuando las cosas van mal:
 - Búsqueda por nombre con 100 productos que coinciden.
 - Reporte de utilidad de un mes entero.
 
-## Pruebas automatizadas existentes (2026-10-25)
+## Pruebas automatizadas existentes (2026-11-11)
 
 Proyecto `SistemaTienda.Tests` (xUnit, net8.0). Cada prueba crea una base SQLite temporal aislada y la elimina al terminar.
 
@@ -126,8 +126,9 @@ dotnet test SistemaTienda/SistemaTienda.sln
 | `TicketServiceTests` | Texto del ticket (efectivo con recibido y cambio, mixto con comisión, fiado con cliente), marcador de anulación, contenido del QR con estado, límite de diez productos y nombre de tienda por defecto |
 | `ConteoEfectivoTests` | Catálogo de 11 denominaciones de mayor a menor y sin duplicados, subtotal por cantidad, cantidades cero o negativas ignoradas, total de billetes y monedas y líneas sin cantidad |
 | `DesactivacionProductosTests` | Migración v6 → v7 conserva productos y los marca activos, alta activa por defecto, desactivar conserva stock y bloquea la venta, reactivar devuelve a la venta, permiso solo dueño, bitácora, estados ya aplicados e inexistente, entrada/merma/ajuste bloqueados, búsqueda y stock bajo con filtro de activos y localización por código |
+| `EstadoCuentaClientesTests` | Edición de nombre y teléfono con permiso `EditarCliente` y bitácora, rechazo para empleado, saldo intacto, recorte y validaciones, totales fiado/abonado, exclusión de ventas anuladas del historial y del total, cliente sin movimientos y cliente inexistente |
 
-Total actual: 210 casos, todos en verde. Los puntos 1, 2, 3, 5, 6, 7, 8 y 9 del listado de áreas críticas tienen cobertura parcial; falta rendimiento y la interfaz MAUI sigue sin pruebas automatizadas. La restauración se prueba sobre una base temporal: se verifica que el contenido vuelve al del respaldo (no byte a byte).
+Total actual: 218 casos, todos en verde en CI (2026-11-11). Los puntos 1, 2, 3, 5, 6, 7, 8 y 9 del listado de áreas críticas tienen cobertura parcial; falta rendimiento y la interfaz MAUI sigue sin pruebas automatizadas. La restauración se prueba sobre una base temporal: se verifica que el contenido vuelve al del respaldo (no byte a byte).
 
 La verificación se ejecuta en GitHub Actions (`windows-latest`) en cada push y también puede correr localmente con `dotnet test`; ver `CLAUDE-tienda.md` para el entorno actual.
 
@@ -366,6 +367,30 @@ Pendiente de la pantalla:
 - Reporte por categoría o periodo en la app (hoy sigue en la consola).
 - Repetir el flujo en la tablet Android.
 - Cubrir la interfaz con pruebas automatizadas.
+
+## Verificación manual de Clientes, edición y estado de cuenta (T22) — pendiente
+
+La pantalla compila para Windows y las 8 pruebas de servicio están en verde, pero el entorno de desarrollo de esta sesión no permitió abrir la interfaz gráfica. La verificación manual queda pendiente en Windows sobre una base demo, sin datos reales:
+
+| Caso | Resultado |
+|------|-----------|
+| **Estado** abre el estado de cuenta con nombre, teléfono, alta, saldo y totales | Pendiente |
+| Los movimientos mezclan ventas a fiado y abonos del más reciente al más antiguo | Pendiente |
+| Una venta anulada no aparece ni suma al total fiado | Pendiente |
+| Cliente sin movimientos con saldo inicial: los totales quedan en cero y el saldo se conserva | Pendiente |
+| **Abonar** desde el estado de cuenta descuenta el saldo y refresca la lista | Pendiente |
+| **Editar datos** con dueño: recorta espacios, guarda y refresca el directorio | Pendiente |
+| Teléfono vacío permitido y nombre vacío rechazado con mensaje | Pendiente |
+| La edición no cambia el saldo y deja `EditarCliente` en la bitácora con antes/después | Pendiente |
+| Sesión de encargado: puede editar y abonar | Pendiente |
+| Sesión de empleado: ve **Estado**, pero no **Editar datos** ni **Abonar** | Pendiente |
+| Repetir el flujo en la tablet Android | Pendiente |
+
+Pendiente de la pantalla:
+
+- Dar de baja clientes y detectar duplicados al dar de alta.
+- Elegir el método del abono (hoy siempre es efectivo y entra al corte).
+- Imprimir o exportar el estado de cuenta y cubrir la interfaz con pruebas automatizadas.
 
 ## Herramientas de Prueba
 

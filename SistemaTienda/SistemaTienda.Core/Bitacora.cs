@@ -28,6 +28,7 @@ public enum PermisoSistema
     RegistrarMerma,
     RegistrarGasto,
     RegistrarAbono,
+    EditarCliente,
     PagarProveedor,
     EditarProducto,
     DesactivarProducto,
@@ -55,6 +56,7 @@ public static class AccionBitacora
     public const string Venta = "Venta";
     public const string AnulacionVenta = "AnulacionVenta";
     public const string Cliente = "Cliente";
+    public const string EditarCliente = "EditarCliente";
     public const string Abono = "Abono";
     public const string Proveedor = "Proveedor";
     public const string PagoProveedor = "PagoProveedor";
