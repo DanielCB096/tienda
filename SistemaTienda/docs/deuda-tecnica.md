@@ -31,9 +31,9 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 
 ### Corte de caja sin conteo por denominaciones
 
-- **Dónde**: `Program.CerrarCorte` y registro de abonos.
-- **Impacto**: el retiro ya requiere permiso de dueño y queda en bitácora; el conteo se captura como un solo importe, sin desglose de billetes y monedas, y el abono de fiado siempre se registra como efectivo (no se pregunta el método).
-- **Cierre**: captura por denominaciones y método de pago en abonos.
+- **Dónde**: `CajaPage` y `Program.CerrarCorte`; registro de abonos.
+- **Impacto**: el retiro ya requiere permiso de dueño y queda en bitácora; el conteo se captura como un solo importe, sin desglose de billetes y monedas, y el abono de fiado siempre se registra como efectivo (no se pregunta el método). La app tampoco muestra el historial de cortes, solo el último cerrado.
+- **Cierre**: captura por denominaciones, consulta del historial en Caja y método de pago en abonos.
 
 ## Media prioridad
 
@@ -56,17 +56,17 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 - **Impacto**: la restauración reemplaza toda la base y no deja registro de quién la ejecutó ni de qué archivo se usó. El respaldo `antes-restaurar` evita la pérdida de datos, pero la acción no queda auditada.
 - **Cierre**: registrar `AccionBitacora.Respaldo` con motivo `Restauracion` y la ruta usada inmediatamente después de restaurar.
 
-### La app MAUI solo permite vender
+### La app MAUI no cubre todas las operaciones
 
 - **Dónde**: `SistemaTienda.Maui/Pages`.
-- **Por qué**: el punto de venta se entregó en T13; las demás operaciones de escritura se harán en tareas posteriores.
-- **Impacto**: desde la app se vende y se consultan ventas y caja, se crea respaldo y se cierra sesión. Anular, cerrar corte, inventario, clientes y proveedores siguen en la consola, que no es usable por el cajero.
-- **Cierre**: pantallas de cierre de corte, anulación e inventario en MAUI, módulo por módulo y con sus pruebas.
+- **Por qué**: el punto de venta se entregó en T13 y la caja operativa en T14; el resto de las operaciones de escritura se hará en tareas posteriores.
+- **Impacto**: desde la app se vende, se cierra el corte, se registran ingresos, retiros y abonos de fiado, se crea respaldo y se cierra sesión. Anular ventas, inventario, clientes y proveedores siguen en la consola, que no es usable por el cajero.
+- **Cierre**: pantallas de anulación e inventario en MAUI, módulo por módulo y con sus pruebas.
 
 ### App MAUI sin pruebas automatizadas
 
 - **Dónde**: `SistemaTienda.Maui`.
-- **Impacto**: CI solo compila para Windows y Android. Una regresión de navegación, sesión, POS o formato no se detecta hasta la verificación manual.
+- **Impacto**: CI solo compila para Windows y Android. Una regresión de navegación, sesión, POS, caja o formato no se detecta hasta la verificación manual. El cierre de corte desde la app es irreversible y depende de esa verificación.
 - **Cierre**: extraer la lógica de cada página a modelos de vista probables y agregar pruebas; valorar pruebas de interfaz más adelante.
 
 ### Android sin validación en dispositivo

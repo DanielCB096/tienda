@@ -32,6 +32,18 @@ Próximamente después de completar los módulos críticos.
 - Configuración básica de tienda (nombre, giro, impuestos, métodos de pago).
 - Documentación inicial (glosario, stack, módulos, ADR).
 
+### v0.0.13 - 2026-10-25: Caja operativa en la app MAUI
+
+- *Agregado*: pestaña **Caja** con el periodo abierto, fondo inicial, efectivo esperado y desglose de ventas, abonos, ingresos, retiros y gastos de caja.
+- *Agregado*: cierre de corte desde la app con diferencia calculada en vivo, observaciones obligatorias cuando no es cero, confirmación por ser un periodo inmutable y arranque del siguiente periodo con lo contado.
+- *Agregado*: registro de ingresos y retiros con monto y motivo; el retiro pide confirmación y el permiso lo valida `CorteCajaService`.
+- *Agregado*: abono de fiado desde Caja con selección de cliente y saldo visible, solo cuando el fiado está activado.
+- *Agregado*: tarjeta del último corte cerrado con contado, diferencia y responsable; `Formato.MonedaConSigno` para mostrar sobrantes y faltantes.
+- *Modificado*: `CajaPage` deja de ser informativa y pasa a operar con los servicios existentes; no cambia el esquema ni la lógica de negocio.
+- *Limitación*: la app captura el total contado sin desglose por denominaciones y no muestra el historial de cortes; el ticket sigue sin QR y la interfaz no tiene pruebas automatizadas.
+- Verificación manual en Windows (2026-10-25): cierre con faltante y observación (corte #1), cierre sin diferencia (corte #2), ingreso, retiro con confirmación y abono de fiado, con el efectivo esperado coincidiendo con la base.
+- Total del proyecto: 171 pruebas (sin cambios).
+
 ### v0.0.12 - 2026-10-23: Punto de venta en la app MAUI
 
 - *Agregado*: pestaña **Vender** en la app MAUI con búsqueda por código o nombre, alta directa al escanear, lista de coincidencias y carrito con cantidades editables.
