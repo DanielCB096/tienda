@@ -32,6 +32,17 @@ Próximamente después de completar los módulos críticos.
 - Configuración básica de tienda (nombre, giro, impuestos, métodos de pago).
 - Documentación inicial (glosario, stack, módulos, ADR).
 
+### v0.0.24 - 2026-11-12: Método de pago y retiro automático en proveedores
+
+- *Agregado*: el pago a proveedores pide método **Efectivo**, **Tarjeta**, **Transferencia** u **Otro** en la consola y en la app MAUI.
+- *Agregado*: migración **v9** con `PagosProveedor.MetodoPago` y `MovimientoCajaId`; los pagos anteriores quedan con método vacío y sin movimiento.
+- *Agregado*: el pago en efectivo inserta un `Retiro` en `MovimientosCaja` con el motivo `Pago a proveedor: <nombre>` en la misma transacción que el saldo y el historial; reduce el efectivo esperado del corte.
+- *Modificado*: `MetodoPagoProveedor` (Core) centraliza el catálogo y la validación; la bitácora del pago guarda `Metodo=` y `RetiroCaja=`.
+- *Modificado*: el estado de cuenta muestra método, usuario, saldo antes/después y el retiro ligado; los pagos anteriores a la v9 se advierten como sin método.
+- *Modificado*: los métodos que no son efectivo no tocan la caja. Basta el permiso `PagarProveedor` (dueño y encargado) también para efectivo.
+- *Pruebas*: 12 casos nuevos en `PagoProveedorMetodoTests`; se ajustaron las pruebas de migración v1/v2/v3/v6 para simular bases sin la tabla o columnas nuevas. Total del proyecto: **246**, todos en verde en local.
+- *Verificación*: solución y app MAUI para Windows compiladas sin errores ni advertencias. La verificación manual de la pantalla queda pendiente porque el entorno no permitió abrir la GUI. CI del PR #18 en verde el 2026-11-12 con 246 pruebas y app MAUI para Windows y Android.
+
 ### v0.0.23 - 2026-11-12: Reportes de utilidad en la app
 
 - *Agregado*: pestaña **Reportes** entre Caja y Ajustes con filtros **Hoy**, **Este mes** y **Rango** de fechas mediante dos `DatePicker`.

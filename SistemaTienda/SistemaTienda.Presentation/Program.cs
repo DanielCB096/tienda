@@ -1007,10 +1007,35 @@ internal static class Program
         }
 
         var monto = LeerDinero($"Monto del pago (saldo ${Dinero.Formatear(proveedor.SaldoPendiente)})", 1, 0);
-        var resultado = _config.RegistrarPagoProveedor(proveedor.Id, monto);
-        Aviso(resultado.IsSuccess
-            ? $"Pago registrado. Nuevo saldo: ${Dinero.Formatear(resultado.Value.SaldoRestante)}"
-            : resultado.Message, resultado.IsSuccess);
+
+        Console.WriteLine("\n  Método de pago:");
+        Console.WriteLine("    [1] Efectivo (genera retiro de caja)");
+        Console.WriteLine("    [2] Tarjeta");
+        Console.WriteLine("    [3] Transferencia");
+        Console.WriteLine("    [4] Otro");
+        var opcion = LeerEntero("  Método", 0, 4, 0);
+        if (opcion == 0) return;
+
+        var metodo = opcion switch
+        {
+            1 => MetodoPagoProveedor.Efectivo,
+            2 => MetodoPagoProveedor.Tarjeta,
+            3 => MetodoPagoProveedor.Transferencia,
+            _ => MetodoPagoProveedor.Otro
+        };
+
+        var resultado = _config.RegistrarPagoProveedor(proveedor.Id, monto, metodo);
+        if (resultado.IsSuccess)
+        {
+            var mensaje = $"Pago registrado. Nuevo saldo: ${Dinero.Formatear(resultado.Value.SaldoRestante)}";
+            if (resultado.Value.MovimientoCajaId.HasValue)
+                mensaje += " Retiro de caja generado.";
+            Aviso(mensaje);
+        }
+        else
+        {
+            Aviso(resultado.Message, false);
+        }
     }
 
     // ---------------- Reportes ----------------

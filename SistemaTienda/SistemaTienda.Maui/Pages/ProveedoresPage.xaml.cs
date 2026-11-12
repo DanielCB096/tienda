@@ -14,6 +14,7 @@ public partial class ProveedoresPage : ContentPage
 
     private readonly ConfiguracionService _config;
     private readonly SesionApp _sesion;
+    private static readonly List<string> MetodosPago = new(MetodoPagoProveedor.Todos);
     private bool _soloConSaldo;
     private ProveedorFila? _proveedorPago;
     private ProveedorFila? _proveedorEstado;
@@ -23,6 +24,8 @@ public partial class ProveedoresPage : ContentPage
         InitializeComponent();
         _config = config;
         _sesion = sesion;
+        PagoMetodoPicker.ItemsSource = MetodosPago;
+        PagoMetodoPicker.SelectedIndex = 0;
     }
 
     protected override void OnAppearing()
@@ -239,9 +242,7 @@ public partial class ProveedoresPage : ContentPage
             FechaOrden = p.Fecha,
             Fecha = Formato.FechaHora(p.Fecha),
             Tipo = "Pago",
-            Detalle = string.IsNullOrWhiteSpace(p.Usuario)
-                ? $"Saldo {Formato.Moneda(p.SaldoAnterior)} → {Formato.Moneda(p.SaldoNuevo)}"
-                : $"Registró {p.Usuario} · saldo {Formato.Moneda(p.SaldoAnterior)} → {Formato.Moneda(p.SaldoNuevo)}",
+            Detalle = DetallePago(p),
             Monto = Formato.MonedaConSigno(-p.Monto),
             MontoColor = ColorAlDia
         }).ToList();
@@ -379,6 +380,8 @@ public partial class ProveedoresPage : ContentPage
         PagoProveedorLabel.Text = fila.Nombre;
         PagoSaldoLabel.Text = $"Saldo pendiente: {fila.Saldo}";
         PagoMontoEntry.Text = string.Empty;
+        PagoMetodoPicker.SelectedIndex = 0;
+        ActualizarAvisoMetodoPago();
         PagoErrorLabel.IsVisible = false;
         PagoOverlay.IsVisible = true;
 
@@ -404,6 +407,16 @@ public partial class ProveedoresPage : ContentPage
             AbrirEstadoCuenta();
     }
 
+    private void OnPagoMetodoChanged(object sender, EventArgs e) => ActualizarAvisoMetodoPago();
+
+    private void ActualizarAvisoMetodoPago()
+    {
+        var metodo = PagoMetodoPicker.SelectedItem as string ?? MetodoPagoProveedor.Efectivo;
+        PagoAvisoLabel.Text = metodo == MetodoPagoProveedor.Efectivo
+            ? "El pago en efectivo genera automáticamente un retiro de caja por el mismo monto y reduce el efectivo esperado del corte."
+            : "Este pago no afecta el efectivo de la caja; solo reduce el saldo del proveedor.";
+    }
+
     private async void OnRegistrarPagoClicked(object sender, EventArgs e)
     {
         if (_sesion.Usuario == null || _proveedorPago == null)
@@ -416,12 +429,14 @@ public partial class ProveedoresPage : ContentPage
             return;
         }
 
+        var metodo = PagoMetodoPicker.SelectedItem as string ?? MetodoPagoProveedor.Efectivo;
+
         PagoErrorLabel.IsVisible = false;
         RegistrarPagoButton.IsEnabled = false;
         try
         {
             _sesion.Aplicar();
-            var resultado = _config.RegistrarPagoProveedor(_proveedorPago.Id, monto.Value);
+            var resultado = _config.RegistrarPagoProveedor(_proveedorPago.Id, monto.Value, metodo);
 
             if (resultado.IsError)
             {
@@ -434,13 +449,30 @@ public partial class ProveedoresPage : ContentPage
             Cargar();
             if (_proveedorEstado != null)
                 AbrirEstadoCuenta();
-            await DisplayAlertAsync("Pago registrado",
-                $"Saldo restante: {Formato.Moneda(resultado.Value.SaldoRestante)}", "Continuar");
+            var detalle = $"Método: {resultado.Value.MetodoPago}\n" +
+                          $"Saldo restante: {Formato.Moneda(resultado.Value.SaldoRestante)}";
+            if (resultado.Value.MovimientoCajaId.HasValue)
+                detalle += $"\nRetiro de caja #{resultado.Value.MovimientoCajaId.Value} registrado.";
+            await DisplayAlertAsync("Pago registrado", detalle, "Continuar");
         }
         finally
         {
             RegistrarPagoButton.IsEnabled = true;
         }
+    }
+
+    private static string DetallePago(PagoProveedor pago)
+    {
+        var metodo = string.IsNullOrWhiteSpace(pago.MetodoPago)
+            ? "Método no registrado (pago anterior a v9)"
+            : pago.MetodoPago;
+        var usuario = string.IsNullOrWhiteSpace(pago.Usuario)
+            ? string.Empty
+            : $"Registró {pago.Usuario} · ";
+        var retiro = pago.MovimientoCajaId.HasValue
+            ? $" · retiro de caja #{pago.MovimientoCajaId.Value}"
+            : string.Empty;
+        return $"{usuario}{metodo} · saldo {Formato.Moneda(pago.SaldoAnterior)} → {Formato.Moneda(pago.SaldoNuevo)}{retiro}";
     }
 
     private static void MostrarError(Label label, string mensaje)

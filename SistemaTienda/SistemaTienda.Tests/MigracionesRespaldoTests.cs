@@ -209,9 +209,9 @@ public sealed class MigracionesRespaldoTests
             INSERT INTO AbonosFiado (ClienteId, Fecha, Monto, MetodoPago, Usuario)
                 SELECT Id, datetime('now'), 10.00, 'Efectivo', 'Cajero' FROM ClientesFiado LIMIT 1;
 
+            DROP TABLE PagosProveedor;
             PRAGMA user_version = 3;
         ");
-
         entorno.Db.InicializarBaseDeDatos();
 
         Assert.Equal(VersionActual, entorno.Db.ExecuteScalar<int>("PRAGMA user_version"));

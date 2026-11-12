@@ -318,6 +318,7 @@ public sealed class CorteCajaTests
         bd.Db.ExecuteCommand("DROP TABLE AbonosFiado");
         bd.Db.ExecuteCommand("DROP TABLE MovimientosCaja");
         bd.Db.ExecuteCommand("DROP TABLE CortesCaja");
+        bd.Db.ExecuteCommand("DROP TABLE PagosProveedor");
         bd.Db.ExecuteCommand("PRAGMA user_version = 2");
 
         bd.Db.InicializarBaseDeDatos();

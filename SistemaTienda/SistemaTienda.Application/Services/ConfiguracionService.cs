@@ -562,7 +562,8 @@ public class ConfiguracionService
         });
     }
 
-    public ProcessResult<RegistrarPagoProveedorResponse> RegistrarPagoProveedor(int proveedorId, long montoPago)
+    public ProcessResult<RegistrarPagoProveedorResponse> RegistrarPagoProveedor(int proveedorId,
+        long montoPago, string metodoPago)
     {
         var autorizacion = Autorizar(PermisoSistema.PagarProveedor);
         if (autorizacion.IsError)
@@ -570,6 +571,11 @@ public class ConfiguracionService
 
         if (montoPago <= 0)
             return ProcessResult<RegistrarPagoProveedorResponse>.Error("El pago debe ser mayor a cero");
+
+        var metodo = MetodoPagoProveedor.Normalizar(metodoPago);
+        if (!MetodoPagoProveedor.EsValido(metodo))
+            return ProcessResult<RegistrarPagoProveedorResponse>.Error(
+                "Selecciona un método de pago válido");
 
         var proveedor = _db.ObtenerProveedorPorId(proveedorId);
         if (proveedor == null)
@@ -581,18 +587,30 @@ public class ConfiguracionService
 
         var nuevoSaldo = proveedor.SaldoPendiente - montoPago;
         var usuario = SesionActual.Usuario?.Nombre ?? string.Empty;
-        if (!_db.RegistrarPagoProveedor(proveedor.Id, montoPago, proveedor.SaldoPendiente,
-                nuevoSaldo, usuario))
+        var esEfectivo = metodo == MetodoPagoProveedor.Efectivo;
+        var registro = _db.RegistrarPagoProveedor(proveedor.Id, proveedor.Nombre, montoPago,
+            proveedor.SaldoPendiente, nuevoSaldo, usuario, metodo, esEfectivo);
+
+        if (!registro.Exito)
             return ProcessResult<RegistrarPagoProveedorResponse>.Error("No se pudo registrar el pago");
+
+        var detalle = $"Metodo={metodo};Pago={Dinero.Formatear(montoPago)}";
+        if (registro.MovimientoCajaId.HasValue)
+            detalle += $";RetiroCaja={registro.MovimientoCajaId.Value}";
 
         _bitacora.Registrar(AccionBitacora.PagoProveedor, "Proveedor", proveedor.Id.ToString(),
             $"Saldo={Dinero.Formatear(proveedor.SaldoPendiente)}",
-            $"Saldo={Dinero.Formatear(nuevoSaldo)};Pago={Dinero.Formatear(montoPago)}");
+            $"Saldo={Dinero.Formatear(nuevoSaldo)};{detalle}");
+
         return ProcessResult<RegistrarPagoProveedorResponse>.OK(new RegistrarPagoProveedorResponse
         {
             ProveedorId = proveedor.Id,
             SaldoRestante = nuevoSaldo,
-            Mensaje = "Pago registrado correctamente"
+            MetodoPago = metodo,
+            MovimientoCajaId = registro.MovimientoCajaId,
+            Mensaje = esEfectivo
+                ? "Pago registrado y retiro de caja generado"
+                : "Pago registrado correctamente"
         });
     }
 }
@@ -620,6 +638,8 @@ public class RegistrarPagoProveedorResponse
 {
     public int ProveedorId { get; set; }
     public long SaldoRestante { get; set; }
+    public string MetodoPago { get; set; } = string.Empty;
+    public int? MovimientoCajaId { get; set; }
     public string Mensaje { get; set; } = string.Empty;
 }
 

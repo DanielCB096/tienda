@@ -129,8 +129,9 @@ dotnet test SistemaTienda/SistemaTienda.sln
 | `EstadoCuentaClientesTests` | Edición de nombre y teléfono con permiso `EditarCliente` y bitácora, rechazo para empleado, saldo intacto, recorte y validaciones, totales fiado/abonado, exclusión de ventas anuladas del historial y del total, cliente sin movimientos y cliente inexistente |
 | `EstadoCuentaProveedoresTests` | Edición con permiso `EditarProveedor` y bitácora, rechazo para empleado, saldo intacto, recorte y validaciones, pago atómico con historial y saldo antes/después, pago mayor al saldo sin historial, inmutabilidad de `PagosProveedor`, totales del estado de cuenta, proveedor sin pagos y proveedor inexistente; migración v8 con tabla y disparadores |
 | `PeriodoReporteTests` | Hoy ignora la hora, mes en curso empieza el día 1 y termina hoy, enero no se sale del año y el rango normaliza las horas de ambas fechas |
+| `PagoProveedorMetodoTests` | Pago en efectivo genera retiro y reduce el efectivo esperado (retiros y motivo), tarjeta/transferencia/otro no tocan la caja, método inválido o vacío no cambia saldo, historial, caja ni bitácora, recorte de espacios, encargado con efectivo y bitácora con método y retiro, empleado rechazado y migración v8 → v9 que conserva pagos con método vacío y movimiento nulo |
 
-Total actual: 234 casos, todos en verde en CI el 2026-11-12 (primer PR con la suite completa desde T24); 230 corrieron en local el 2026-11-11. Los puntos 1, 2, 3, 5, 6, 7, 8 y 9 del listado de áreas críticas tienen cobertura parcial; falta rendimiento y la interfaz MAUI sigue sin pruebas automatizadas. La restauración se prueba sobre una base temporal: se verifica que el contenido vuelve al del respaldo (no byte a byte).
+Total actual: 246 casos, todos en verde en local el 2026-11-12 y confirmados por el CI del PR #18 (234 de T24 más 12 de T25). Los puntos 1, 2, 3, 5, 6, 7, 8 y 9 del listado de áreas críticas tienen cobertura parcial; falta rendimiento y la interfaz MAUI sigue sin pruebas automatizadas. La restauración se prueba sobre una base temporal: se verifica que el contenido vuelve al del respaldo (no byte a byte).
 
 La verificación se ejecuta en GitHub Actions (`windows-latest`) en cada push y también puede correr localmente con `dotnet test`; ver `CLAUDE-tienda.md` para el entorno actual.
 
@@ -439,6 +440,27 @@ Pendiente de la pantalla:
 - Exportar o imprimir el reporte y comparar periodos entre sí.
 - Desglosar por método de pago, producto o categoría.
 - Cubrir la interfaz con pruebas automatizadas.
+
+## Verificación manual de método de pago en proveedores (T25) — pendiente
+
+La lógica está cubierta por las 12 pruebas de `PagoProveedorMetodoTests`, pero el entorno de desarrollo de esta sesión no permitió abrir la interfaz gráfica. La verificación manual queda pendiente en Windows sobre una base demo, sin datos reales:
+
+| Caso | Resultado |
+|------|-----------|
+| **Pagar** con **Efectivo**: el aviso indica que se generará un retiro de caja | Pendiente |
+| Tras el pago en efectivo, el saldo baja y Caja muestra un retiro por el mismo monto con el motivo `Pago a proveedor: <nombre>` | Pendiente |
+| El efectivo esperado del corte pendiente baja en el monto pagado | Pendiente |
+| El estado de cuenta muestra el método, el usuario, el saldo antes/después y el folio del retiro | Pendiente |
+| **Pagar** con **Tarjeta**, **Transferencia** u **Otro**: el saldo baja y Caja no registra ningún movimiento | Pendiente |
+| El aviso del formulario cambia al elegir el método | Pendiente |
+| Pago mayor al saldo rechazado con mensaje y sin retiro ni historial | Pendiente |
+| Pagos anteriores a la v9 se muestran como "Método no registrado (pago anterior a v9)" | Pendiente |
+| Repetir el flujo en la tablet Android | Pendiente |
+
+Pendiente de la pantalla:
+
+- Imprimir o exportar el estado de cuenta y cubrir la interfaz con pruebas automatizadas.
+- Baja y detección de duplicados de proveedores.
 
 ## Herramientas de Prueba
 
