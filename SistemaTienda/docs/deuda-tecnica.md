@@ -11,13 +11,6 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 - **Impacto**: si falla la escritura de la bitácora (por ejemplo, disco lleno), la operación ya quedó aplicada y falta su registro. La tabla sigue siendo inmutable y la operación normal sí queda auditada.
 - **Cierre**: pasar la transacción o un `UnitOfWork` a los servicios para insertar acción y bitácora en la misma transacción.
 
-### Pago a proveedores sin método ni entrada al corte
-
-- **Dónde**: `ConfiguracionService.RegistrarPagoProveedor` y `DatabaseTools.RegistrarPagoProveedor`.
-- **Por qué**: T23 agregó el historial inmutable `PagosProveedor` y la actualización atómica del saldo; el método de pago y su reflejo automático en el corte quedaron fuera del alcance.
-- **Impacto**: el pago ya se puede auditar y reconstruir con fecha, monto, usuario y saldo antes/después, pero no dice si fue en efectivo, tarjeta o transferencia ni reduce el efectivo esperado del corte. Si se paga en efectivo, el cajero debe registrar además un retiro en Caja para que el corte cuadre. Los pagos anteriores a la migración v8 no tienen historial y solo queda el saldo vigente, así que el total pagado puede no coincidir con el saldo inicial más los pagos.
-- **Cierre**: columna de método en `PagosProveedor` y movimiento de caja ligado al pago cuando sea en efectivo.
-
 ### Ventas sin descuentos
 
 - **Dónde**: `VentaService` y `DatabaseTools.RegistrarVenta`.
@@ -73,12 +66,12 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 - **Impacto**: no se puede retirar a un cliente del directorio y el alta no detecta duplicados. El abono se registra siempre como efectivo (no se pregunta el método). El estado de cuenta es de solo lectura y no se imprime ni exporta. La pantalla aún no se ha verificado a mano en Windows ni en Android.
 - **Cierre**: baja lógica con permiso y bitácora, detección de duplicados por nombre o teléfono, método de pago en el abono e impresión/exportación del estado de cuenta.
 
-### Proveedores sin baja, detección de duplicados ni método de pago
+### Proveedores sin baja ni detección de duplicados
 
 - **Dónde**: `ConfiguracionService` y la pestaña Proveedores de la app MAUI.
-- **Por qué**: T19 cubrió el directorio, la búsqueda, el alta y el pago del saldo, y T23 la edición de datos, el historial inmutable de pagos y el estado de cuenta; la baja, la detección de duplicados y el método del pago quedaron fuera del alcance.
-- **Impacto**: no se puede retirar a un proveedor del directorio y el alta no detecta duplicados. El pago no pide método ni entra al corte; si es en efectivo, el usuario debe registrar por separado un retiro en Caja para que el efectivo esperado cuadre. El estado de cuenta es de solo lectura, no se imprime ni exporta, y el historial solo cubre los pagos hechos desde el esquema v8. La pantalla aún no se ha verificado a mano en Windows ni en Android.
-- **Cierre**: baja lógica con permiso y bitácora, detección de duplicados, método de pago con movimiento de caja ligado al pago e impresión/exportación del estado de cuenta.
+- **Por qué**: T19 cubrió el directorio, la búsqueda, el alta y el pago del saldo, T23 la edición de datos, el historial inmutable de pagos y el estado de cuenta, y T25 el método de pago con retiro automático de caja; la baja y la detección de duplicados quedaron fuera del alcance.
+- **Impacto**: no se puede retirar a un proveedor del directorio y el alta no detecta duplicados. El estado de cuenta es de solo lectura, no se imprime ni exporta, y el historial solo cubre los pagos hechos desde el esquema v8 (los anteriores no tienen método ni movimiento de caja). La pantalla aún no se ha verificado a mano en Windows ni en Android.
+- **Cierre**: baja lógica con permiso y bitácora, detección de duplicados por nombre o clave e impresión/exportación del estado de cuenta.
 
 ### La app MAUI no cubre todas las operaciones
 

@@ -1,6 +1,6 @@
-# Modelo de Datos (esquema v8)
+# Modelo de Datos (esquema v9)
 
-Base local SQLite, un solo archivo. `PRAGMA user_version = 8`.
+Base local SQLite, un solo archivo. `PRAGMA user_version = 9`.
 
 El acceso vive en `SistemaTienda.Infrastructure/Database.cs` (`DatabaseTools`). Todas las consultas son parametrizadas.
 
@@ -14,7 +14,8 @@ El acceso vive en `SistemaTienda.Infrastructure/Database.cs` (`DatabaseTools`). 
   - **v5** — crea `Bitacora` con sus índices y disparadores que impiden `UPDATE` y `DELETE` (auditoría inmutable).
   - **v6** — crea `AnulacionesVenta` con índice por fecha y disparadores que impiden `UPDATE` y `DELETE` (anulación inmutable de ventas).
   - **v7** — agrega `Productos.Activo` (`INTEGER NOT NULL DEFAULT 1`): los productos existentes quedan activos. La desactivación es un estado operativo, no una baja del historial.
-  - **v8** — crea `PagosProveedor` con índices por proveedor y fecha y disparadores que impiden `UPDATE` y `DELETE` (historial inmutable de pagos a proveedores). Los pagos anteriores a esta migración no se pueden reconstruir.
+  - **v8** - crea `PagosProveedor` con índices por proveedor y fecha y disparadores que impiden `UPDATE` y `DELETE` (historial inmutable de pagos a proveedores). Los pagos anteriores a esta migración no se pueden reconstruir.
+- **v9** - agrega `MetodoPago` (texto, vacío para los pagos anteriores) y `MovimientoCajaId` (nullable) a `PagosProveedor`. Los pagos en efectivo registrados desde esta versión generan un retiro en `MovimientosCaja` en la misma transacción; los demás métodos no tocan la caja.
 - Una base nueva se crea directamente en la versión máxima (`Migraciones.VersionMaxima`): no se crea respaldo previo porque aún no hay datos.
 - `MigradorEsquema.Migrar()` se ejecuta dentro de `InicializarBaseDeDatos()` al arrancar:
   1. Lee `user_version`; si la base es más nueva que la app, aborta sin tocar nada.
@@ -190,7 +191,7 @@ Registro inmutable de la anulación de una venta completa (migración v6). Una v
 
 ### PagosProveedor
 
-Historial inmutable de pagos a proveedores (migración v8). Se inserta en la misma transacción que descuenta `Proveedores.SaldoPendiente`; los disparadores `TR_PagosProveedor_NoUpdate` y `TR_PagosProveedor_NoDelete` impiden modificar o borrar filas.
+Historial inmutable de pagos a proveedores (migración v8, ampliado en v9). Se inserta en la misma transacción que descuenta `Proveedores.SaldoPendiente`; los disparadores `TR_PagosProveedor_NoUpdate` y `TR_PagosProveedor_NoDelete` impiden modificar o borrar filas.
 
 | Columna | Tipo | Notas |
 |---------|------|-------|
@@ -200,9 +201,11 @@ Historial inmutable de pagos a proveedores (migración v8). Se inserta en la mis
 | Monto | INTEGER | Centavos; > 0 y ≤ saldo pendiente |
 | SaldoAnterior | INTEGER | Saldo pendiente antes del pago |
 | SaldoNuevo | INTEGER | Saldo pendiente después del pago |
+| MetodoPago | TEXT | `Efectivo`, `Tarjeta`, `Transferencia` u `Otro`; vacío en los pagos anteriores a v9 |
+| MovimientoCajaId | INTEGER | Retiro de caja generado; `NULL` si el método no es efectivo o el pago es anterior a v9 |
 | Usuario | TEXT | Quien registró el pago |
 
-El pago no guarda método ni genera un movimiento de caja: si fue en efectivo, se registra además un retiro en Caja. El estado de cuenta usa `Proveedores.SaldoPendiente` como fuente de verdad para el saldo y el historial solo para los pagos.
+El pago en efectivo inserta el retiro en `MovimientosCaja` antes de guardar el pago (la fila de `PagosProveedor` es inmutable) y ambos quedan en la misma transacción que actualiza el saldo. El estado de cuenta usa `Proveedores.SaldoPendiente` como fuente de verdad para el saldo y el historial solo para los pagos.
 
 ### AbonosFiado
 
