@@ -2,22 +2,22 @@
 
 ## Arquitectura Local-First
 
-- **Tipo de aplicación**: Aplicación de escritorio multiplataforma con .NET MAUI (.NET 8) o WPF para Windows, OPCIONALMENTE PWA con IndexedDB/SQLite WASM para navegadores.
-- **Lenguaje**: C# .NET 8 (misma base que el proyecto PilotTMS analizado, reutilizando conocimientos y patrones).
-- **Base de datos local**: SQLite (archivo .db único, ligero, funciona sin servidor).
-- **Interfaz de usuario**: MAUI (Windows + Android) o WPF (Windows solo), o PWA responsive.
+- **Tipo de aplicación**: Aplicación de escritorio/tablet multiplataforma con .NET MAUI para Windows y Android.
+- **Lenguaje**: C#. Las bibliotecas (`Core`, `Infrastructure`, `Application`), la consola y las pruebas usan `net8.0`; la app MAUI usa .NET 10 porque es el SDK con cargas de trabajo disponible.
+- **Base de datos local**: SQLite (archivo `.db` único, ligero, funciona sin servidor).
+- **Interfaz de usuario**: app MAUI (`SistemaTienda.Maui`) y consola provisional (`SistemaTienda.Presentation`) para las operaciones que aún no están en la app.
 
 ## Sin Costo Recurrente
 
 - **Sin hosting, sin servidores, sin suscripciones mensuales**.
 - El archivo SQLite es la "base de datos local": vive en el dispositivo.
-- Los respaldos son archivos `.copy` del archivo `.db` (copia exacta).
-- Distribución: archivo de instalación `.exe` (Windows) o `.app` (MAC), o para PWA: archivos estáticos en GitHub Pages (gratis).
+- Los respaldos son copias verificadas de la base (`.db`) creadas con `VACUUM INTO` en la carpeta `respaldos`.
+- Distribución: compilación de la app MAUI para Windows (sin MSIX por ahora) y APK para Android.
 
 ## Distribución e Instalación
 
-- **Windows**: Archivo ejecutable `.exe` creado con proyecto .NET MAUI/WPF, el usuario lo descarga y ejecuta.
-- **Android**: APK generado desde MAUI, o PWA añadida a pantalla principal.
+- **Windows**: build de la app MAUI que se ejecuta en la computadora de la tienda (instalador pendiente de definir).
+- **Android**: APK generado desde MAUI; todavía no se ha probado en dispositivo.
 - **Máquina única por tienda**: No hay sincronización entre dispositivos. Lo que sí existe: restauración desde respaldo si la tablet se daña, se pierde o se formatea.
 
 ## Seguridad

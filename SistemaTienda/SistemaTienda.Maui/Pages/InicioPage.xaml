@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="SistemaTienda.Maui.Pages.InicioPage"
+             Title="Inicio">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="12">
+
+            <Label x:Name="NombreTiendaLabel" Text="Mi tienda" Style="{StaticResource TituloPagina}" />
+            <Label x:Name="FechaLabel" Style="{StaticResource TextoNota}" />
+            <Label x:Name="UsuarioLabel" Style="{StaticResource TextoNota}" Margin="0,0,0,8" />
+
+            <Border x:Name="AvisoRespaldo" Style="{StaticResource Aviso}" IsVisible="False">
+                <Label x:Name="AvisoRespaldoLabel" FontSize="14" TextColor="#7A5B00" />
+            </Border>
+
+            <Border Style="{StaticResource Tarjeta}">
+                <Grid ColumnDefinitions="*,Auto">
+                    <VerticalStackLayout Spacing="2">
+                        <Label Text="VENTAS DE HOY" Style="{StaticResource EtiquetaSeccion}" />
+                        <Label x:Name="VentasHoyLabel" Text="0" Style="{StaticResource ValorGrande}" />
+                        <Label x:Name="VentasDetalleLabel" Style="{StaticResource TextoNota}" />
+                    </VerticalStackLayout>
+                    <Label x:Name="VentasEstadoLabel" Grid.Column="1" Text="Sin ventas" Style="{StaticResource TextoNota}" VerticalOptions="Center" />
+                </Grid>
+            </Border>
+
+            <Border Style="{StaticResource Tarjeta}">
+                <VerticalStackLayout Spacing="2">
+                    <Label Text="EFECTIVO ESPERADO EN CAJA" Style="{StaticResource EtiquetaSeccion}" />
+                    <Label x:Name="EfectivoLabel" Text="$0.00" Style="{StaticResource ValorGrande}" />
+                    <Label x:Name="CajaDetalleLabel" Style="{StaticResource TextoNota}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Style="{StaticResource Tarjeta}">
+                <Grid ColumnDefinitions="*,Auto">
+                    <VerticalStackLayout Spacing="2">
+                        <Label Text="PRODUCTOS CON STOCK BAJO" Style="{StaticResource EtiquetaSeccion}" />
+                        <Label x:Name="StockBajoLabel" Text="0" Style="{StaticResource ValorGrande}" />
+                        <Label Text="Revisa el inventario antes de que se agoten." Style="{StaticResource TextoNota}" />
+                    </VerticalStackLayout>
+                    <Label x:Name="StockBajoEstadoLabel" Grid.Column="1" Text="Todo en orden" Style="{StaticResource TextoNota}" VerticalOptions="Center" />
+                </Grid>
+            </Border>
+
+            <Border Style="{StaticResource Tarjeta}">
+                <VerticalStackLayout Spacing="2">
+                    <Label Text="ÚLTIMO RESPALDO" Style="{StaticResource EtiquetaSeccion}" />
+                    <Label x:Name="RespaldoLabel" Text="Sin respaldos" Style="{StaticResource ValorGrande}" />
+                    <Label x:Name="RespaldoDetalleLabel" Style="{StaticResource TextoNota}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Button Text="Actualizar"
+                    Style="{StaticResource BotonSecundario}"
+                    Clicked="OnActualizarClicked"
+                    Margin="0,8,0,0" />
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

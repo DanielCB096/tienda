@@ -10,25 +10,21 @@
 
 ### Pasos de Instalación en Windows
 
-1. **Descargar el instalador**: El archivo `.exe` se entrega como release en GitHub (o GitHub Pages para PWA).
-2. **Ejecutar el instalador**: Doble clic en `SistemaTienda.Setup.exe` (o similar).
-3. **Seleccionar carpeta**: La aplicación se instala en `C:\Program Files\SistemaTienda\` o la carpeta que el usuario elija.
-4. **Primera ejecución**:
-   - La app detecta que no hay base de datos local.
-   - El sistema pregunta: "¿Crear nueva base de datos?"
-   - El usuario confirma.
-   - Se crea `tienda.localdb` en la carpeta de la app o en `Documentos\SistemaTienda`.
-   - Se genera la configuración inicial (ver asistente a continuación).
+Todavía no hay instalador ni release publicados. Por ahora la app se compila y ejecuta desde el repositorio:
+
+1. Instalar el SDK de .NET 10 y las cargas de trabajo: `dotnet workload install maui-windows`.
+2. Compilar: `dotnet build SistemaTienda/SistemaTienda.Maui/SistemaTienda.Maui.csproj -f net10.0-windows10.0.19041.0`.
+3. Ejecutar: `dotnet run --project SistemaTienda/SistemaTienda.Maui/SistemaTienda.Maui.csproj -f net10.0-windows10.0.19041.0`.
+4. **Primera ejecución**: la app crea la base automáticamente, sin preguntar, en `%LOCALAPPDATA%\SistemaTienda\com.sistematienda.tienda\Data\tienda.db`, y abre el asistente.
 
 ### Pasos de Instalación en Android
 
-1. **Descargar el APK**: Desde la sección de Releases en GitHub.
-2. **Permitir fuentes desconocidas**: Configurar la tablet para instalar apps de fuera de Google Play (configuración de seguridad).
-3. **Instalar**: Tocar el archivo `SistemaTienda.apk`.
-4. **Permisos**: La primera vez, la app solicita:
-   - Acceso al almacenamiento (para guardar la base de datos y respaldos).
-   - Cámara (opcional, para fotos).
-   - Escaneo de código de barras (si se usa un lector externo Bluetooth/USB).
+Todavía no se publica un APK. La app compila en GitHub Actions y está pendiente probarla en un dispositivo real.
+
+1. **Compilar el APK**: `dotnet build SistemaTienda/SistemaTienda.Maui/SistemaTienda.Maui.csproj -f net10.0-android` (requiere Android SDK y JDK 17), o descargar el artefacto del job `app-maui`.
+2. **Permitir fuentes desconocidas**: Configurar la tablet para instalar apps de fuera de Google Play.
+3. **Instalar**: Tocar el archivo `.apk`.
+4. **Permisos**: la app no pide red ni almacenamiento externo; la base y los respaldos viven en su almacenamiento privado.
 
 ### Asistente de Primera Configuración (Onboarding)
 
@@ -36,17 +32,14 @@ Al primera vez que la app se abre, se muestra una serie de pasos guiados para po
 
 1. **Nombre de la tienda**: "Mi Abarrotería", "La Central", etc.
 2. **Giro de negocio**: Abarrotes, Ropa, Papelería, Ferretería, etc. (solo etiqueta, no afecta la lógica).
-3. **Configuración de impuestos**: 
-   - ¿Usar IVA? (Sí/No).
-   - Tasa de IVA: 16% (México), 0% (exentos), u otro configurado.
-   - Permitir configurar productos con impuesto 0% o exentos.
-4. **Métodos de pago**: Activar/desactivar Efectivo, Tarjeta, Mixto, Fiado.
-5. **Comisión de tarjeta**: Si se usa tarjeta, el % que cobra la terminal (ej. 3.5%). Esto afecta la utilidad neta.
-6. **Fondo de caja inicial**: El monto de efectivo con el que se inicia cada día.
-7. **PIN de acceso**: El dueño crea un PIN de 4-6 dígitos para acceder al sistema.
-8. **Respaldo inicial**: El sistema sugiere crear el primer respaldo manual.
+3. **Impuesto predeterminado**: tasa en porcentaje (16.00 por defecto).
+4. **Comisión de tarjeta**: % que cobra la terminal (3.50 por defecto). Afecta la utilidad neta.
+5. **Fondo de caja inicial**: efectivo con el que se inicia cada día (200.00 por defecto).
+6. **Fiado**: activar o desactivar y, si se activa, el límite de crédito por cliente (0 = sin límite).
+7. **Respaldo automático**: días entre respaldos (1 por defecto; 0 desactiva).
+8. **PIN del dueño**: se captura dos veces; se guarda hasheado con PBKDF2-SHA256.
 
-Al finalizar el asistente, la app lleva al usuario a la pantalla principal (catálogo/venta).
+Al finalizar el asistente, la app lleva al login para que el dueño entre con su PIN.
 
 ## Actualización de la Aplicación
 
@@ -56,27 +49,24 @@ El sistema soporta actualizaciones **offline**: el nuevo archivo de la aplicaci�
 
 ### Pasos para Actualizar
 
-1. **Verificar disponible**: En la pantalla de configuración o al iniciar, la app comprueba si hay una versión nueva disponible (comparando la versión local con la versión de los archivos de instalación).
-2. **Descargar release**: El dueño o el desarrollador descarga la nueva versión desde GitHub Releases (archivo `.exe` o `.apk`).
-3. **Crear respaldo OBLIGATORIO**: Antes de actualizar, el sistema obliga a crear un respaldo (ver sección de Respaldo y Restauración). El usuario debe confirmar.
-4. **Ejecutar instalador nuevo**: 
-   - **Windows**: Ejecutar el nuevo `.exe`. El instalador suele reemplazar los archivos viejos.
-   - **Android**: Instalar el nuevo APK sobre el existente (las apps modernas conservan los datos de la base de datos SQLite).
-5. **Aplicación migra la BD**: Al iniciar la app actualizada:
-   - El sistema compara versiones: "BD v1.0 → App v1.3".
-   - Ejecuta automáticamente las migraciones de esquema necesarias (añadir nuevas tablas o campos).
-   - ¡Listo! El usuario tiene la versión nueva con sus datos intactos.
+Todavía no hay canal de releases ni verificación automática de versiones. Por ahora la actualización se hace reemplazando la build:
+
+1. **Crear respaldo manual** desde Ajustes antes de actualizar (recomendado aunque la migración también respalde).
+2. **Compilar o instalar la versión nueva** sobre la anterior. En Android, instalar el APK nuevo conserva los datos de la app.
+3. **Aplicación migra la BD**: al iniciar, el runner compara `PRAGMA user_version` con la versión de la app y aplica las migraciones pendientes una por una.
+4. **Respaldo previo automático**: antes de la primera migración se crea un respaldo `antes-migrar` verificado en la carpeta `respaldos`.
+5. **Si una migración falla**: se revierte esa migración, la app no arranca el sistema y muestra la página de error con las rutas de la base y los respaldos. El respaldo previo queda disponible para restaurar.
 
 ### Migraciones de Base de Datos en Actualizaciones
 
-- **Versión a versión**: Cada release incluye un archivo de migraciones (scripts SQL leves).
-- **Ejemplo**: Si la v1.1 añadió la tabla de mermas, la v1.2 añade el campo `motivo` a esa tabla, la actualización aplica ambos cambios automáticamente.
-- **Si falla la migración**: El sistema vuelve a la versión anterior y muestra un error al usuario. Se recomienda tener el respaldo reciente.
+- **Versión a versión**: las migraciones viven en `SistemaTienda.Infrastructure/Migraciones.cs` y se aplican en orden.
+- **Ejemplo**: la v4 convirtió los importes a centavos y la v6 agregó `AnulacionesVenta`; una base vieja recibe todas las migraciones pendientes al abrir la app.
+- **Si falla la migración**: se revierte esa migración y la app queda detenida con un mensaje; no se pierde el respaldo anterior.
 
 ### Desinstalación y Pérdida de Datos
 
-- **Ojo**: Desinstalar la aplicación en Windows elimina los archivos de programa, pero la base de datos `tienda.localdb` puede quedarse en la carpeta de datos si el usuario no la elimina manualmente.
-- **Recomendación**: Antes de desinstalar, siempre hacer un respaldo manual. La eliminación completa debe hacerse desde el explorador de archivos borrando la carpeta completa de la aplicación y la base de datos.
+- **Ojo**: desinstalar la app en Windows elimina los archivos de programa, pero la base de datos queda en `%LOCALAPPDATA%\SistemaTienda\com.sistematienda.tienda\Data\tienda.db` hasta que se borre manualmente esa carpeta. En Android, desinstalar la app borra sus datos privados.
+- **Recomendación**: antes de desinstalar, hacer un respaldo manual y copiar la carpeta `respaldos` a una USB. La eliminación completa se hace desde el explorador de archivos borrando la carpeta de datos.
 
 ## Distribución a Múltiples Negocios
 
@@ -88,7 +78,7 @@ El sistema soporta actualizaciones **offline**: el nuevo archivo de la aplicaci�
 
 ### Mismo Sistema, Diferentes Tabletas
 
-- Cada tablet tiene su propia `tienda.localdb` independiente.
+- Cada tablet tiene su propia base `tienda.db` independiente.
 - Los reportes y análisis se pueden hacer reuniendo los datos (exportando a Excel y sumando), pero no hay nube que los una automáticamente.
 - **Ventaja**: Privacidad total (LFPDPPP), no hay mezclas de datos de un negocio con otro.
 
@@ -101,8 +91,8 @@ El sistema soporta actualizaciones **offline**: el nuevo archivo de la aplicaci�
 
 ### "La app se cierra al iniciar"
 
-- **Causa**: Base de datos corrupta o versión de BD incompatibles.
-- **Solución**: Restablecer a respaldo anterior (menú de configuración → "Restaurar base de datos") o reinstalar la app (lo cual creará una BD nueva vacía, se perderán los datos viejos si no hay respaldo).
+- **Causa**: Base de datos corrupta o versión de BD incompatible.
+- **Solución**: la app muestra una página de error con la ruta de la base y de los respaldos. Restaura un respaldo desde la consola (Configuración → Restaurar respaldo); la app MAUI todavía no tiene restauración. Si se reinstala, se crea una base nueva y se pierden los datos sin respaldo.
 
 ### "No hay suficiente espacio"
 

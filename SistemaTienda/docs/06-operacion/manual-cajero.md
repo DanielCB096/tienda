@@ -14,8 +14,10 @@
 
 1. Al abrir la app, se solicita el PIN.
 2. El usuario ingresa su PIN.
-3. El sistema valida y muestra la interfaz según su rol.
-4. Si el PIN está mal tres veces seguidas, la app se cierra temporalmente (o requiere esperar 30 segundos) para evitar intentos brutos.
+3. El sistema valida y muestra el tablero (Inicio, Vender, Ventas, Caja y Ajustes).
+4. Si el PIN está mal tres veces seguidas, la app bloquea el acceso hasta cerrarla y abrirla de nuevo.
+
+> **Estado de la app (2026-10-23)**: el tablero muestra ventas del día, efectivo esperado del corte, stock bajo y último respaldo. La pestaña **Vender** ya registra ventas con carrito, cobros y ticket interno compartible. **Anular ventas, cerrar corte y editar inventario todavía se hacen en la consola provisional.** No cierres la caja desde la app: aún no existe esa acción. El manual describe el flujo completo planeado; revisa en cada versión qué partes ya están en la app.
 
 ### 2. Catálogo / Búsqueda de Producto
 
@@ -120,7 +122,8 @@ Acceso: Menú → "Corte de Caja" (requiere PIN de cajero o debido).
 ### "Me equivoqué al poner la cantidad"
 
 - Si la venta aún no se ha finalizado (aún está en el carrito), se puede quitar el producto del carrito y volver a agregar con la cantidad correcta.
-- Si la venta ya se registró, no se puede editar. Se debe registrar una **devolución** o **contramovimiento** (nueva venta inversa con motivo "Error en captura").
+- Si la venta ya se registró, no se puede editar. Solicita al dueño o encargado que la **anule** desde Ventas → [3] Anular venta: se anula la venta completa, se devuelve el stock y, si fue fiado, se revierte el saldo del cliente.
+- El reembolso en efectivo se entrega manualmente. La venta anulada ya se excluye del corte; si el reembolso se paga después de cerrar el corte, el dueño lo registra como retiro en el corte siguiente.
 
 ### "El cliente no tiene código de barras"
 

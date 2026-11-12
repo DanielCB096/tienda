@@ -19,8 +19,8 @@ Este módulo maneja el catálogo de productos y el control de inventario. Es el 
 1. **Captura de datos**: Se solicitan los siguientes campos obligatorios:
    - **Código de barras**: Identificador único (obligatorio, debe ser único en la base de datos).
    - **Nombre**: Descripción del producto (obligatorio).
-   - **Costo**: Precio de adquisición del proveedor (obligatorio, decimal).
-   - **Precio**: Precio de venta al público (obligatorio, decimal).
+   - **Costo**: Precio de adquisición del proveedor (obligatorio, se captura en pesos y se guarda en centavos enteros).
+   - **Precio**: Precio de venta al público (obligatorio, se captura en pesos y se guarda en centavos enteros).
    - **Stock inicial**: Cantidad con la que se inicia el inventario (opcional, por defecto 0).
    - **Categoría**: Etiqueta para agrupar productos (opcional, libre).
    - **Impuesto**: Tasa específica para este producto (opcional, override del impuesto predeterminado de la configuración).
@@ -90,8 +90,8 @@ Este módulo maneja el catálogo de productos y el control de inventario. Es el 
 | Id | int | PK autogenerado |
 | CodigoBarras | varchar(50) | Código de barras único (obligatorio) |
 | Nombre | varchar(100) | Nombre del producto (obligatorio) |
-| Costo | decimal | Costo de adquisición (obligatorio) |
-| Precio | decimal | Precio de venta al público (obligatorio) |
+| Costo | integer | Costo de adquisición en centavos (obligatorio) |
+| Precio | integer | Precio de venta al público en centavos (obligatorio) |
 | Stock | int | Stock actual en la tienda (obligatorio, por defecto 0) |
 | StockMinimo | int | Stock mínimo alerta (obligatorio, por defecto 5) |
 | Categoria | varchar(50) | Categoría libre (obligatorio) |
@@ -107,7 +107,7 @@ Este módulo maneja el catálogo de productos y el control de inventario. Es el 
 | ProductoId | int | FK a Producto |
 | Tipo | enum | "ENTRADA", "SALIDA", "AJUSTE" |
 | Cantidad | int | Cantidad movida (positiva o negativa según tipo) |
-| CostoUnitario | decimal | Costo al momento del movimiento (para historial de costos) |
+| CostoUnitario | integer | Costo en centavos al momento del movimiento (para historial de costos) |
 | Motivo | varchar | "Compra", "Venta", "Merma", "Ajuste físico", etc. |
 | Usuario | varchar | Quién realizó el movimiento |
 | Fecha | datetime | Cuándo ocurrió |
@@ -172,6 +172,12 @@ Este módulo maneja el catálogo de productos y el control de inventario. Es el 
 
 ---
 
-**Estado actual**: Documentación completada. Próximo paso: Implementar las entidades `Producto` y `MovimientoInventario` en `SistemaTienda.Core`, el acceso a datos en `SistemaTienda.Infrastructure`, los servicios en `SistemaTienda.Application` y la interfaz en `SistemaTienda.Presentation`.
+**Estado actual (2026-10-23)**: base implementada y probada.
+
+- *Implementado*: alta de producto con stock inicial como movimiento de entrada; código de barras único; edición sin tocar stock; búsqueda exacta por código y parcial por nombre; stock bajo; historial de movimientos; ajuste con diferencia y motivo; entradas; reducción por venta/merma; valorizado.
+- *Desviaciones del diseño*: no existe borrado ni campo `Activo`; el filtro por categoría no está en la interfaz; el historial se limita a los últimos 200 movimientos; el stock mínimo es siempre por producto (no hay umbral global adicional).
+- *Pendiente*: importación Excel/CSV, edición masiva y reporte de valorizado histórico.
+- *Pruebas*: `InventarioTests` (20 pruebas) y `BaseDatosTests`.
+- *Riesgo conocido*: el costo perdido de una merma solo se muestra al registrarla; no queda almacenado (ver [deuda-técnica](../deuda-tecnica.md)).
 
 **Siguiente módulo después de confirmar**: Módulo 3 - Ventas / POS (que dependerá fortemente de este módulo de inventario).

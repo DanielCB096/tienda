@@ -31,7 +31,7 @@ Sistema para tiendas pequeñas en México, con estas restricciones clave:
 
 ## Decisión
 
-Seleccionar **MAIU (.NET 8) con SQLite local** por:
+Seleccionar **MAUI (inicialmente .NET 8) con SQLite local** por:
 
 1. **Un solo código base** para Windows (tabla de la tienda) y Android (misma arquitectura).
 2. **Cero costo recurrente**: El .NET runtime es distribuible sin royalties. SQLite es de dominio público. No hay servidores ni suscripciones.
@@ -54,7 +54,18 @@ Seleccionar **MAIU (.NET 8) con SQLite local** por:
 
 ⚠️ **Decisión sujeta a validar** con los requisitos finales de hardware (tipo de tablet exacta, capacidad de almacenamiento, pantallas táctiles) y la confirmación del dueño sobre el tipo de dispositivo a recomendar.
 
+## Estado de la decisión (2026-10-23)
+
+La decisión se mantiene y ya tiene una primera implementación:
+
+- `SistemaTienda.Maui` compila para Windows y Android.
+- En Windows se verificó manualmente el asistente de primera configuración, el login por PIN, el tablero, el respaldo manual y el cierre de sesión. El POS (T13) compila en Windows; su flujo de venta queda pendiente de verificación manual.
+- Android compila en GitHub Actions; falta probarlo en la tablet objetivo.
+- La app usa .NET 10 porque es el SDK con cargas de trabajo MAUI disponible en el equipo; las bibliotecas compartidas siguen en `net8.0` y se reutilizan sin cambios.
+- Pendiente para cerrar la validación de hardware: instalar el APK en el dispositivo objetivo y medir arranque, navegación y uso del teclado numérico.
+
 ---
 
-**Fecha**: 2026-10-16  
+**Fecha**: 2026-10-16 (actualizado 2026-10-23)
+
 **Autor**: Arquitectura basada en análisis de PilotTMS + restricciones del proyecto Tienda

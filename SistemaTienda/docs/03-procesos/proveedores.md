@@ -38,7 +38,7 @@ El módulo de proveedores y cuentas por pagar permite a la tienda gestionar sus 
 | Clave | TEXT | RFC o nombre comercial |
 | Telefono | TEXT | Teléfono de contacto |
 | Direccion | TEXT | Dirección del proveedor |
-| SaldoPendiente | DECIMAL | Monto total pendiente de pago |
+| SaldoPendiente | INTEGER | Monto total pendiente de pago en centavos |
 | FechaRegistro | DATETIME | Fecha en que se registró el proveedor |
 | UltimaActualizacion | DATETIME | Última fecha de movimiento (pago/crédito) |
 
