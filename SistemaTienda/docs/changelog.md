@@ -41,7 +41,7 @@ Próximamente después de completar los módulos críticos.
 - *Modificado*: el estado de cuenta muestra método, usuario, saldo antes/después y el retiro ligado; los pagos anteriores a la v9 se advierten como sin método.
 - *Modificado*: los métodos que no son efectivo no tocan la caja. Basta el permiso `PagarProveedor` (dueño y encargado) también para efectivo.
 - *Pruebas*: 12 casos nuevos en `PagoProveedorMetodoTests`; se ajustaron las pruebas de migración v1/v2/v3/v6 para simular bases sin la tabla o columnas nuevas. Total del proyecto: **246**, todos en verde en local.
-- *Verificación*: solución y app MAUI para Windows compiladas sin errores ni advertencias. La verificación manual de la pantalla queda pendiente porque el entorno no permitió abrir la GUI.
+- *Verificación*: solución y app MAUI para Windows compiladas sin errores ni advertencias. La verificación manual de la pantalla queda pendiente porque el entorno no permitió abrir la GUI. CI del PR #18 en verde el 2026-11-12 con 246 pruebas y app MAUI para Windows y Android.
 
 ### v0.0.23 - 2026-11-12: Reportes de utilidad en la app
 

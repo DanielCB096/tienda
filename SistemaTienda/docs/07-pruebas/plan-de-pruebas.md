@@ -131,7 +131,7 @@ dotnet test SistemaTienda/SistemaTienda.sln
 | `PeriodoReporteTests` | Hoy ignora la hora, mes en curso empieza el día 1 y termina hoy, enero no se sale del año y el rango normaliza las horas de ambas fechas |
 | `PagoProveedorMetodoTests` | Pago en efectivo genera retiro y reduce el efectivo esperado (retiros y motivo), tarjeta/transferencia/otro no tocan la caja, método inválido o vacío no cambia saldo, historial, caja ni bitácora, recorte de espacios, encargado con efectivo y bitácora con método y retiro, empleado rechazado y migración v8 → v9 que conserva pagos con método vacío y movimiento nulo |
 
-Total actual: 246 casos, todos en verde en local el 2026-11-12 (234 de T24 más 12 de T25). Los puntos 1, 2, 3, 5, 6, 7, 8 y 9 del listado de áreas críticas tienen cobertura parcial; falta rendimiento y la interfaz MAUI sigue sin pruebas automatizadas. La restauración se prueba sobre una base temporal: se verifica que el contenido vuelve al del respaldo (no byte a byte).
+Total actual: 246 casos, todos en verde en local el 2026-11-12 y confirmados por el CI del PR #18 (234 de T24 más 12 de T25). Los puntos 1, 2, 3, 5, 6, 7, 8 y 9 del listado de áreas críticas tienen cobertura parcial; falta rendimiento y la interfaz MAUI sigue sin pruebas automatizadas. La restauración se prueba sobre una base temporal: se verifica que el contenido vuelve al del respaldo (no byte a byte).
 
 La verificación se ejecuta en GitHub Actions (`windows-latest`) en cada push y también puede correr localmente con `dotnet test`; ver `CLAUDE-tienda.md` para el entorno actual.
 
