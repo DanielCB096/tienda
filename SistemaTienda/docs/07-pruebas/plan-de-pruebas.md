@@ -108,7 +108,7 @@ dotnet test SistemaTienda/SistemaTienda.sln
 |---------|-------|
 | `ConfiguracionTests` | Asistente inicial, PIN hasheado, login, roles, gastos |
 | `InventarioTests` | Alta, duplicados, venta, merma, entrada, ajuste, stock bajo, búsqueda, valorizado |
-| `FiadoProveedoresTests` | Cliente, abono, saldo, proveedor, pago, validaciones |
+| `FiadoProveedoresTests` | Cliente, abono, saldo, proveedor, pago, validaciones, búsqueda por nombre o teléfono sin mayúsculas ni acentos, filtro con saldo, recorte de datos y bitácora de alta |
 | `BaseDatosTests` | Inicialización idempotente, tablas, mapeo de tipos |
 | `DineroTests` | Conversión pesos ↔ centavos con redondeo `AwayFromZero`, multiplicación con desbordamiento, porcentaje a centavos y formato invariante |
 | `MigracionesRespaldoTests` | Runner de migraciones con respaldo previo, idempotencia, fallo con rollback, rechazo de base más nueva, respaldo verificado, restauración exacta con respaldo de seguridad, confirmación obligatoria, migración v3 → v4 a centavos con integridad de FKs |
@@ -126,7 +126,7 @@ dotnet test SistemaTienda/SistemaTienda.sln
 | `TicketServiceTests` | Texto del ticket (efectivo con recibido y cambio, mixto con comisión, fiado con cliente), marcador de anulación, contenido del QR con estado, límite de diez productos y nombre de tienda por defecto |
 | `ConteoEfectivoTests` | Catálogo de 11 denominaciones de mayor a menor y sin duplicados, subtotal por cantidad, cantidades cero o negativas ignoradas, total de billetes y monedas y líneas sin cantidad |
 
-Total actual: 183 casos, todos en verde. Los puntos 1, 2, 3, 5, 6, 7, 8 y 9 del listado de áreas críticas tienen cobertura parcial; falta rendimiento y la interfaz MAUI sigue sin pruebas automatizadas. La restauración se prueba sobre una base temporal: se verifica que el contenido vuelve al del respaldo (no byte a byte).
+Total actual: 187 casos, todos en verde. Los puntos 1, 2, 3, 5, 6, 7, 8 y 9 del listado de áreas críticas tienen cobertura parcial; falta rendimiento y la interfaz MAUI sigue sin pruebas automatizadas. La restauración se prueba sobre una base temporal: se verifica que el contenido vuelve al del respaldo (no byte a byte).
 
 La verificación se ejecuta en GitHub Actions (`windows-latest`) en cada push y también puede correr localmente con `dotnet test`; ver `CLAUDE-tienda.md` para el entorno actual.
 
@@ -288,6 +288,30 @@ Pendiente del conteo y el historial:
 
 - Repetir el flujo en la tablet Android.
 - Decidir si el desglose se guarda para auditoría.
+- Cubrir la interfaz con pruebas automatizadas.
+
+## Verificación manual de Clientes (T18) — pendiente
+
+La pantalla compila para Windows y las pruebas de servicio están en verde, pero el entorno de desarrollo de esta sesión no permitió abrir la interfaz gráfica. La verificación manual queda pendiente en Windows sobre una base demo, sin datos reales:
+
+| Caso | Resultado |
+|------|-----------|
+| Abrir la pestaña Clientes y ver el resumen y el directorio | Pendiente |
+| Alta con nombre y teléfono, sin saldo inicial | Pendiente |
+| Alta con saldo inicial y nombre con acentos | Pendiente |
+| Alta sin nombre | Pendiente (debe mostrar el error y no guardar) |
+| Búsqueda por nombre con minúsculas y sin acentos | Pendiente |
+| Búsqueda por teléfono y filtro **Con saldo** | Pendiente |
+| Abono parcial con dueño y actualización del saldo | Pendiente |
+| Abono mayor al saldo | Pendiente (debe rechazarse sin modificar la base) |
+| Sesión de empleado: directorio y alta visibles, **Abonar** oculto | Pendiente |
+| Alta y abono se reflejan en la bitácora y el corte | Pendiente |
+
+Pendiente de la pantalla:
+
+- Editar nombre y teléfono, borrar clientes y consultar el estado de cuenta por cliente.
+- Elegir el método del abono (hoy siempre efectivo).
+- Repetir el flujo en la tablet Android.
 - Cubrir la interfaz con pruebas automatizadas.
 
 ## Herramientas de Prueba

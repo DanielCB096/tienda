@@ -1,6 +1,6 @@
 # Coordinación entre agentes
 
-Actualizado: 2026-10-25. Tablero único: cualquier IA o persona que trabaje en este repositorio debe reclamar su tarea aquí antes de empezar.
+Actualizado: 2026-10-26. Tablero único: cualquier IA o persona que trabaje en este repositorio debe reclamar su tarea aquí antes de empezar.
 
 Instrucciones generales: [AGENTS.md](../../AGENTS.md).
 
@@ -26,7 +26,9 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 
 ## En curso
 
-Sin tareas tomadas al cierre de esta sesión.
+| Tarea | Agente | Rama | Archivos | Fecha | Estado |
+|-------|--------|------|-----------|-------|--------|
+| — | — | — | — | — | Sin tareas en curso |
 
 ## Hecho
 
@@ -48,6 +50,7 @@ Sin tareas tomadas al cierre de esta sesión.
 | T15 | Qoder | feat/maui-inventario | Pestaña Inventario: catálogo, escaneo/búsqueda, alta/edición, entradas, mermas, ajustes, historial y filtro de stock bajo; permisos de dueño/encargado/empleado; 171 pruebas sin cambios; PR #7 contra `main` | 735766f |
 | T16 | Qoder | feat/maui-anulacion-qr | Detalle de venta en Ventas, reimpresión con QR informativo offline y anulación con motivo/`ANULAR`; permiso validado en `VentaService`; 6 pruebas nuevas; 177 pruebas; PR #8 contra `main` con CI en verde | e474bcb, dc23434, 0eefeba, d6f9cf0 |
 | T17 | Qoder | feat/maui-caja-denominaciones | Conteo por denominaciones en Caja con total automático, validación y limpieza; historial de los últimos 20 cortes; 6 pruebas nuevas; 183 pruebas; PR #9 contra `main` | dab055f, 0496869 |
+| T18 | Qoder | feat/maui-clientes | Pantalla de clientes con directorio, búsqueda por nombre/teléfono sin acentos, filtros, alta con bitácora y abono en efectivo con permiso; 4 pruebas nuevas; 187 pruebas; PR #10 contra `main` con CI en verde | 9ee4c14, 314257b |
 
 ## Tareas
 
@@ -59,7 +62,7 @@ Sin tareas tomadas al cierre de esta sesión.
 | T4 | Bitácora y permisos en servicios | Hecho | — | En `feat/integracion-t4-t9`. Esquema v5: bitácora inmutable, matriz de permisos y validación en servicios. |
 | T5 | Reportes de utilidad | Hecho | T2 | En `feat/reportes-utilidad` (sobre `feat/integracion-t4-t9`). Utilidad bruta y neta por periodo con filtros por fecha; permiso `Consultar`. |
 | T6 | Importación Excel/CSV | Libre | T2 recomendado | Dependencia nueva requiere ADR. |
-| T7 | Interfaz definitiva | Tomada | ADR, T12 | Decisión MAUI validada y base implementada en T12. POS entregado en T13, caja operativa en T14, inventario en T15 y detalle/anulación con QR en T16; faltan las pantallas de clientes, proveedores y gastos en la app. |
+| T7 | Interfaz definitiva | Tomada | ADR, T12 | Decisión MAUI validada y base implementada en T12. POS entregado en T13, caja operativa en T14, inventario en T15, detalle/anulación con QR en T16, conteo e historial de cortes en T17 y clientes en T18; faltan las pantallas de proveedores y gastos en la app. |
 | T8 | Corte de caja | Hecho | T2 | En `feat/corte-caja` (parte de `feat/ventas-pos`). Esquema v3: cortes, movimientos de caja y abonos con historial. |
 | T9 | Cobertura adicional de pruebas | Hecho | T1–T3 | En `feat/integracion-t4-t9`. 25 pruebas de borde en gastos, saldos, inventario, usuarios y mapeo de tipos. Hallazgos sin corregir: `AjustarStock` no valida que el producto exista; se permiten PIN duplicados y `VerificarAcceso` devuelve el primer usuario por nombre; `AgregarGasto` no recorta el concepto; la búsqueda por nombre no ignora acentos. Ver [deuda-tecnica.md](deuda-tecnica.md). |
 | T10 | Respaldo automático por intervalo | Hecho | T1 | En `feat/respaldo-automatico` (sobre `feat/reportes-utilidad`). Se evalúa al iniciar sesión y al cerrar; `0` deshabilita; cualquier respaldo previo cuenta y la copia queda en `Bitacora`. Pendiente: copia a USB/nube y respaldo durante sesiones largas. |
@@ -70,6 +73,7 @@ Sin tareas tomadas al cierre de esta sesión.
 | T15 | Inventario y catálogo en la app MAUI | Hecho | T12, T14 | En `feat/maui-inventario` sobre `feat/maui-caja` (PR #7 contra `main`). Catálogo, escaneo/búsqueda, alta/edición, entradas, mermas, ajustes, historial y stock bajo; permisos por rol. Verificación manual en Windows el 2026-10-25 con datos ficticios: entrada, merma, ajuste, edición, alta desde código desconocido y roles dueño/encargado/empleado. Pendientes: filtro por categoría, desactivación, costo de entrada al catálogo y pruebas automatizadas de interfaz. |
 | T16 | Anulación y QR en la app MAUI | Hecho | T11, T13, T15 | En `feat/maui-anulacion-qr` sobre `feat/maui-inventario` (PR #8 contra `main`, CI en verde). Detalle de venta con reimpresión, QR informativo offline y anulación completa (motivo y confirmación `ANULAR`, permiso dueño/encargado). Verificación manual en Windows el 2026-10-25; 177 pruebas. Pendientes: compartir el QR como imagen, reimpresión con efectivo recibido y validación en Android. |
 | T17 | Conteo por denominaciones e historial de cortes en Caja | Hecho | T8, T14 | En `feat/maui-caja-denominaciones` sobre `feat/maui-anulacion-qr`. El conteo por billetes y monedas alimenta el efectivo contado sin cambiar el esquema; el historial muestra los últimos 20 cortes cerrados. Verificación manual en Windows el 2026-10-25; 183 pruebas. Pendientes: persistir el desglose y validar en Android. |
+| T18 | Pantalla de clientes en la app MAUI | Hecho | T7, T14 | En `feat/maui-clientes` sobre `feat/maui-caja-denominaciones` (PR #10 contra `main`, CI en verde). Directorio con búsqueda por nombre/teléfono, filtros, alta y abono en efectivo; 187 pruebas. Verificación manual en Windows/Android pendiente porque el entorno no pudo abrir la GUI. |
 
 ## Plantilla para reclamar
 
@@ -103,3 +107,5 @@ Al terminar, mueve la fila a `Hecho` (o elimínala de En curso) y registra el co
 | 2026-10-25 | Qoder | feat/maui-anulacion-qr | CI en verde para el PR #8: compilación y pruebas (177 en verde), y app MAUI para Windows y Android | d6f9cf0 |
 | 2026-10-25 | Qoder | feat/maui-caja-denominaciones | T17 terminado: conteo por denominaciones e historial de cortes en Caja, 6 pruebas nuevas; verificación manual en Windows con conteo de $790.00, corte #3 e historial; 183 pruebas en local; documentación actualizada; PR #9 abierto | dab055f, 0496869, e94d0c1 |
 | 2026-10-25 | Qoder | feat/maui-caja-denominaciones | CI en verde para el PR #9: compilación y pruebas (183 en verde), y app MAUI para Windows y Android | b0f68b5 |
+| 2026-10-26 | Qoder | feat/maui-clientes | T18 terminado: pantalla de clientes con búsqueda, filtros, alta y abono; 4 pruebas nuevas; 187 pruebas en local; verificación manual pendiente por bloqueo del entorno; documentación actualizada; PR #10 abierto | 9ee4c14, 314257b |
+| 2026-10-26 | Qoder | feat/maui-clientes | CI en verde para el PR #10: compilación y pruebas (187 en verde), y app MAUI para Windows y Android | 314257b |

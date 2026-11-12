@@ -14,9 +14,10 @@
    - **Vender**: punto de venta con búsqueda o escaneo, carrito, cobro en efectivo, tarjeta, mixto o fiado, y ticket interno con QR que se puede compartir como texto o copiar.
    - **Inventario**: catálogo con stock bajo y valorizado, búsqueda o escaneo, alta/edición, entradas, mermas, ajustes e historial; el dueño controla costos, precios y ajustes.
    - **Ventas**: lista de ventas del día con folio, total, método, hora y estado; al tocar una venta se abre su detalle con líneas, pagos, comisión y datos de anulación, y se puede reimprimir el ticket o anular la venta con permiso.
+   - **Clientes**: directorio con búsqueda por nombre o teléfono, filtro de saldo, alta de clientes y registro de abonos (dueño o encargado). El abono se registra como efectivo y entra al corte; no hay edición, estado de cuenta ni recordatorio por WhatsApp.
    - **Caja**: periodo abierto (efectivo esperado, fondo, ventas por método, abonos, ingresos/retiros y gastos), cierre de corte con diferencia justificada, conteo por billetes y monedas, registro de ingresos y retiros, abonos de fiado e historial de los últimos 20 cortes.
    - **Ajustes**: datos de la tienda, reglas configuradas, rutas de la base y de los respaldos, último respaldo, botón para crear un respaldo y cierre de sesión.
-4. **Importante**: desde la app ya se vende, se opera el inventario (alta, edición, entradas, mermas y ajustes), se opera la caja (cierre con conteo por denominaciones, ingresos, retiros, abonos e historial) y se anulan ventas desde Ventas (dueño o encargado). El desglose del conteo no se guarda en el corte: solo el total contado; el catálogo aún no filtra por categoría ni desactiva productos.
+4. **Importante**: desde la app ya se vende, se opera el inventario (alta, edición, entradas, mermas y ajustes), se gestionan los clientes (alta, búsqueda y abonos), se opera la caja (cierre con conteo por denominaciones, ingresos, retiros, abonos e historial) y se anulan ventas desde Ventas (dueño o encargado). El desglose del conteo no se guarda en el corte: solo el total contado; el catálogo aún no filtra por categoría ni desactiva productos.
 5. **Dónde están los datos**: en Windows, `%LOCALAPPDATA%\SistemaTienda\com.sistematienda.tienda\Data\tienda.db` y los respaldos en la carpeta `respaldos` junto a ese archivo. En Android están en el almacenamiento privado de la app. Las rutas exactas se muestran en Ajustes.
 
 ## Pantallas Principales
@@ -91,10 +92,13 @@ Acceso restringido (PIN de admin). Opciones:
 
 ### 7. Clientes (si fiado activado)
 
-- **Ver lista de clientes** con sus saldos.
-- **Registrar abono**: Recibir pago parcial o total de un cliente con fiado.
-- **Enviar recordatorio WhatsApp**: Generar enlace con mensaje prellenado.
-- **Nuevo cliente**: Crear cliente en el momento.
+Acceso en la app: pestaña **Clientes**.
+
+- **Directorio**: lista con nombre, teléfono, saldo y estado (“Con saldo pendiente” o “Al día”), más el resumen de clientes, con saldo y total por cobrar.
+- **Buscar y filtrar**: busca por nombre o teléfono sin distinguir mayúsculas ni acentos; alterna entre **Todos** y **Con saldo**.
+- **Nuevo cliente**: pide nombre, teléfono opcional y saldo inicial opcional (solo para deudas que ya existían).
+- **Registrar abono**: dueño o encargado; el monto no puede superar el saldo. El abono se registra como efectivo, entra al corte del periodo y queda en la bitácora.
+- **Pendiente**: editar o retirar clientes, estado de cuenta con ventas y abonos, recordatorio por WhatsApp y elegir el método del abono. La verificación manual de esta pantalla en Windows y Android está pendiente (2026-10-25).
 
 ### 8. Proveedores y Cuentas por Pagar
 

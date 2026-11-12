@@ -164,4 +164,73 @@ public sealed class FiadoProveedoresTests
 
         Assert.True(bd.Config.AgregarProveedor(new Proveedor { Nombre = "  " }).IsError);
     }
+
+    [Fact]
+    public void BuscarClientes_SinTexto_DevuelveTodosOrdenadosPorNombre()
+    {
+        using var bd = new BaseDatosPrueba();
+        bd.ConfigurarTienda();
+        bd.Config.AgregarClienteFiado(new ClienteFiado { Nombre = "Zulema", SaldoActual = 0 });
+        bd.Config.AgregarClienteFiado(new ClienteFiado { Nombre = "Ana", SaldoActual = 5_000 });
+
+        var clientes = bd.Config.BuscarClientes().Value;
+
+        Assert.Equal(new[] { "Ana", "Zulema" }, clientes.Select(c => c.Nombre));
+    }
+
+    [Fact]
+    public void BuscarClientes_FiltraNombreYTelefono_IgnorandoMayusculasYAcentos()
+    {
+        using var bd = new BaseDatosPrueba();
+        bd.ConfigurarTienda();
+        bd.Config.AgregarClienteFiado(new ClienteFiado
+        {
+            Nombre = "María López", Telefono = "555-123-4567", SaldoActual = 0
+        });
+        bd.Config.AgregarClienteFiado(new ClienteFiado
+        {
+            Nombre = "Juan Pérez", Telefono = "818-000-1111", SaldoActual = 0
+        });
+
+        var porNombre = bd.Config.BuscarClientes("MARIA").Value;
+        var porTelefono = bd.Config.BuscarClientes("000-1111").Value;
+
+        Assert.Equal("María López", Assert.Single(porNombre).Nombre);
+        Assert.Equal("Juan Pérez", Assert.Single(porTelefono).Nombre);
+    }
+
+    [Fact]
+    public void BuscarClientes_SoloConSaldo_ExcluyeClientesAlDia()
+    {
+        using var bd = new BaseDatosPrueba();
+        bd.ConfigurarTienda();
+        bd.Config.AgregarClienteFiado(new ClienteFiado { Nombre = "Con deuda", SaldoActual = 1_000 });
+        bd.Config.AgregarClienteFiado(new ClienteFiado { Nombre = "Al día", SaldoActual = 0 });
+
+        var clientes = bd.Config.BuscarClientes(soloConSaldo: true).Value;
+
+        Assert.Equal("Con deuda", Assert.Single(clientes).Nombre);
+    }
+
+    [Fact]
+    public void AgregarClienteFiado_RecortaNombreYTelefonoYRegistraBitacora()
+    {
+        using var bd = new BaseDatosPrueba();
+        bd.ConfigurarTienda();
+
+        var alta = bd.Config.AgregarClienteFiado(new ClienteFiado
+        {
+            Nombre = "  Doña Mari  ",
+            Telefono = "  555-123-4567  "
+        });
+
+        Assert.True(alta.IsSuccess, alta.Message);
+        var cliente = bd.Db.ObtenerClienteFiadoPorId(alta.Value.ClienteId);
+        Assert.Equal("Doña Mari", cliente.Nombre);
+        Assert.Equal("555-123-4567", cliente.Telefono);
+
+        var registro = Assert.Single(bd.Db.ObtenerBitacora(accion: AccionBitacora.Cliente));
+        Assert.Contains("Doña Mari", registro.DatosDespues);
+        Assert.Equal("Dueño", registro.Usuario);
+    }
 }

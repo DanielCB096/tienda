@@ -126,9 +126,10 @@ Nueva Venta a Fiado
 - No hay historial de abonos en la interfaz por cliente (la tabla `AbonosFiado` ya guarda fecha, monto, método y usuario)
 - Los saldos son informativos y no tienen consecuencias legales dentro del sistema
 
-## 6.9. Estado de implementación (2026-10-23)
+## 6.9. Estado de implementación (2026-10-25)
 
 - *Implementado*: alta de cliente con nombre, teléfono y saldo inicial; consulta de clientes con saldo; venta a fiado desde el POS (cliente obligatorio, saldo y límite de crédito); abono con validación de monto positivo y de no exceder el saldo; historial inmutable en `AbonosFiado` (fecha, monto, método, usuario) escrito en la misma transacción que descuenta el saldo; el menú de fiado solo aparece si `FiadoActivado` es verdadero.
-- *Pendiente*: pantalla de estado de cuenta por cliente (ventas y abonos), cancelación de venta a fiado, límite de crédito por cliente y recordatorios.
-- *Deuda*: el abono se registra siempre como efectivo porque la consola aún no pregunta el método (ver [deuda-técnica](../deuda-tecnica.md)).
-- *Pruebas*: `FiadoProveedoresTests`, `VentasTests` y `CorteCajaTests`.
+- *Implementado en la app (T18)*: pestaña **Clientes** con resumen de cartera, búsqueda por nombre o teléfono sin distinguir mayúsculas ni acentos, filtro **Con saldo**, alta con nombre, teléfono y saldo inicial opcional, y abono en efectivo con actualización inmediata del saldo. El alta recorta espacios y queda en la bitácora. La compilación y las pruebas de servicio están en verde; la verificación manual de la pantalla quedó pendiente porque el entorno de desarrollo no permitió abrir la GUI.
+- *Pendiente*: pantalla de estado de cuenta por cliente (ventas y abonos), edición o baja de cliente, cancelación de venta a fiado, límite de crédito por cliente y recordatorios.
+- *Deuda*: el abono se registra siempre como efectivo porque ni la consola ni la app preguntan el método (ver [deuda-técnica](../deuda-tecnica.md)).
+- *Pruebas*: `FiadoProveedoresTests` (incluye búsqueda y bitácora de alta), `VentasTests` y `CorteCajaTests`.
