@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:models="clr-namespace:SistemaTienda.Maui.Models"
              x:Class="SistemaTienda.Maui.Pages.CajaPage"
              Title="Caja">
 
@@ -61,12 +62,35 @@
                                HorizontalTextAlignment="End" />
                     </Grid>
 
+                    <Label Text="Conteo por denominaciones" Style="{StaticResource EtiquetaSeccion}" />
+                    <Label Text="Opcional. Anota cuántos billetes y monedas hay de cada valor y el total se calcula solo."
+                           Style="{StaticResource TextoNota}" />
+                    <VerticalStackLayout x:Name="DenominacionesPanel" Spacing="4" />
+
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10" Margin="0,4,0,0">
+                        <VerticalStackLayout Spacing="0">
+                            <Label Text="TOTAL DEL CONTEO" Style="{StaticResource EtiquetaSeccion}" />
+                            <Label x:Name="ConteoTotalLabel" Text="—" FontSize="20" FontAttributes="Bold" />
+                        </VerticalStackLayout>
+                        <Button Grid.Column="1"
+                                Text="Limpiar conteo"
+                                Style="{StaticResource BotonSecundario}"
+                                HeightRequest="40"
+                                FontSize="14"
+                                VerticalOptions="Center"
+                                Clicked="OnLimpiarConteoClicked" />
+                    </Grid>
+                    <Label x:Name="ConteoErrorLabel" Style="{StaticResource Error}" IsVisible="False" />
+
                     <Label Text="Efectivo contado" Style="{StaticResource EtiquetaSeccion}" />
                     <Entry x:Name="ContadoEntry"
                            Style="{StaticResource CampoTexto}"
                            Keyboard="Numeric"
                            Placeholder="0.00"
                            TextChanged="OnCierreChanged" />
+                    <Label x:Name="ContadoAyudaLabel"
+                           Text="Captura el total directamente o usa el conteo por denominaciones."
+                           Style="{StaticResource TextoNota}" />
 
                     <Border BackgroundColor="{AppThemeBinding Light={StaticResource Secondary}, Dark={StaticResource Tertiary}}"
                             StrokeThickness="0"
@@ -158,10 +182,42 @@
             </Border>
 
             <Border Style="{StaticResource Tarjeta}">
-                <VerticalStackLayout Spacing="6">
-                    <Label Text="ÚLTIMO CORTE CERRADO" Style="{StaticResource EtiquetaSeccion}" />
-                    <Label x:Name="UltimoCorteLabel" Text="Todavía no hay cortes cerrados." />
-                    <Label x:Name="UltimoCorteDetalleLabel" Style="{StaticResource TextoNota}" />
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="HISTORIAL DE CORTES" Style="{StaticResource EtiquetaSeccion}" />
+                    <Label Text="Últimos 20 cortes cerrados, del más reciente al más antiguo."
+                           Style="{StaticResource TextoNota}" />
+                    <Label x:Name="HistorialVacioLabel"
+                           Text="Todavía no hay cortes cerrados."
+                           Style="{StaticResource TextoNota}"
+                           IsVisible="False" />
+                    <VerticalStackLayout x:Name="HistorialCortes" Spacing="8">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="models:CorteFila">
+                                <Border StrokeThickness="1"
+                                        Stroke="{AppThemeBinding Light={StaticResource Gray200}, Dark={StaticResource Gray600}}"
+                                        StrokeShape="RoundRectangle 10"
+                                        Padding="12">
+                                    <VerticalStackLayout Spacing="4">
+                                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                            <Label Text="{Binding Folio}" FontAttributes="Bold" />
+                                            <Label Text="{Binding Diferencia}"
+                                                   Grid.Column="1"
+                                                   FontAttributes="Bold"
+                                                   TextColor="{Binding DiferenciaColor}"
+                                                   HorizontalTextAlignment="End" />
+                                        </Grid>
+                                        <Label Text="{Binding Periodo}" Style="{StaticResource TextoNota}" />
+                                        <Label Text="{Binding Montos}" Style="{StaticResource TextoNota}" />
+                                        <Label Text="{Binding Cierre}" Style="{StaticResource TextoNota}" />
+                                        <Label Text="{Binding Observaciones}"
+                                               Style="{StaticResource TextoNota}"
+                                               FontAttributes="Italic"
+                                               IsVisible="{Binding TieneObservaciones}" />
+                                    </VerticalStackLayout>
+                                </Border>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
                 </VerticalStackLayout>
             </Border>
 

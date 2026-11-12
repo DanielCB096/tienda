@@ -17,7 +17,7 @@
 3. El sistema valida y muestra el tablero (Inicio, Vender, Inventario, Ventas, Caja y Ajustes).
 4. Si el PIN está mal tres veces seguidas, la app bloquea el acceso hasta cerrarla y abrirla de nuevo.
 
-> **Estado de la app (2026-10-25)**: el tablero muestra ventas del día, efectivo esperado del corte, stock bajo y último respaldo. **Vender** registra ventas con carrito, cobros y ticket interno con QR compartible como texto. **Inventario** permite consultar, escanear, dar de alta o editar productos, y registrar entradas, mermas y ajustes según el rol. **Ventas** muestra el detalle de cada venta, permite reimprimir el ticket con su QR y anular la venta completa (solo dueño o encargado). **Caja** ya permite cerrar el corte, registrar ingresos y retiros, y abonar al fiado. El conteo de caja se captura como un total, sin desglose de billetes y monedas. La anulación también sigue disponible en la consola provisional. El manual describe el flujo completo planeado; revisa en cada versión qué partes ya están en la app.
+> **Estado de la app (2026-10-25)**: el tablero muestra ventas del día, efectivo esperado del corte, stock bajo y último respaldo. **Vender** registra ventas con carrito, cobros y ticket interno con QR compartible como texto. **Inventario** permite consultar, escanear, dar de alta o editar productos, y registrar entradas, mermas y ajustes según el rol. **Ventas** muestra el detalle de cada venta, permite reimprimir el ticket con su QR y anular la venta completa (solo dueño o encargado). **Caja** permite cerrar el corte con conteo por billetes y monedas o con el total directo, registrar ingresos y retiros, abonar al fiado y consultar los últimos 20 cortes. El desglose del conteo no se guarda en el corte. La anulación también sigue disponible en la consola provisional. El manual describe el flujo completo planeado; revisa en cada versión qué partes ya están en la app.
 
 ### 2. Catálogo / Búsqueda de Producto
 
@@ -121,9 +121,12 @@ Acceso en la app: pestaña **Caja** (requiere sesión de dueño o encargado para
    - **Efectivo contado**: Cuánto cuenta el cajero al cerrar.
    - **Diferencia**: Contado − Esperado (positiva es sobrante y negativa faltante).
 
-2. **Acciones**:
+2. **Conteo por denominaciones** (opcional): anota cuántos billetes y monedas hay de cada valor; el sistema suma los subtotales y llena **Efectivo contado**. Si prefieres, captura el total a mano. **Limpiar conteo** borra las cantidades capturadas. Una cantidad con letras o decimales muestra un error y no deja cerrar hasta corregirla.
+
+3. **Acciones**:
    - **Cerrar corte**: Registrar el corte con el resultado y el responsable. Si hay diferencia, hay que explicar el motivo. El siguiente periodo inicia con lo contado.
    - **Salir sin cerrar**: Volver al menú sin guardar el corte (los datos del periodo se mantienen, pero no se considera "oficial" hasta que se cierra).
+   - **Historial**: consulta los últimos 20 cortes cerrados con periodo, esperado, contado, diferencia, responsable, fecha y observaciones. El desglose del conteo no se guarda, solo el total contado.
 
 ## Flujo de Cierre del Día (Resumen para el Cajero)
 

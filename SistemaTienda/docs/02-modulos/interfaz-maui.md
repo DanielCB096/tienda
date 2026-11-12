@@ -12,14 +12,14 @@ Alcance de esta entrega:
 - Punto de venta: búsqueda o escaneo, carrito, cobro en efectivo, tarjeta, mixto o fiado, y ticket interno con QR que se puede compartir o copiar.
 - Ventas: detalle de la venta con líneas, pagos y estado, reimpresión del ticket y anulación completa con motivo y confirmación.
 - Inventario y catálogo: búsqueda o escaneo, alta y edición de productos, entradas, mermas, ajustes, historial de movimientos y alertas de stock bajo.
-- Caja operativa: cierre de corte con diferencia justificada, ingresos, retiros y abonos de fiado.
+- Caja operativa: cierre de corte con diferencia justificada, conteo por denominaciones, ingresos, retiros, abonos de fiado e historial de los últimos 20 cortes.
 - Respaldo automático al iniciar y cerrar sesión, y respaldo manual desde Ajustes.
 
-Esta entrega **no** incluye todavía el historial de cortes ni las pantallas de clientes, proveedores, gastos o reportes.
+Esta entrega **no** incluye todavía las pantallas de clientes, proveedores, gastos o reportes.
 
 ## Estado
 
-Base implementada y verificada manualmente en Windows: asistente, login, tablero y respaldo el 2026-10-23; punto de venta el 2026-10-25 (búsqueda, carrito, límite de stock, efectivo con cambio, tarjeta, mixto, fiado y ticket con copiar/cerrar); caja operativa el 2026-10-25 (cierre con diferencia justificada, ingreso, retiro y abono); inventario el 2026-10-25 (catálogo, escaneo, alta, edición, entrada, merma, ajuste, historial y permisos por rol); ventas y anulación el 2026-10-25 (detalle, reimpresión, QR decodificado offline, anulación con motivo y confirmación, devolución de stock, bloqueo por corte cerrado y visibilidad por rol). La compilación para Windows y Android está en verde en CI. Quedan pendientes el botón Compartir del ticket (diálogo del sistema), compartir el QR como imagen, la reimpresión con efectivo recibido y la ejecución en Android; el equipo de desarrollo no tiene Android SDK ni JDK instalados.
+Base implementada y verificada manualmente en Windows: asistente, login, tablero y respaldo el 2026-10-23; punto de venta el 2026-10-25 (búsqueda, carrito, límite de stock, efectivo con cambio, tarjeta, mixto, fiado y ticket con copiar/cerrar); caja operativa el 2026-10-25 (cierre con diferencia justificada, ingreso, retiro y abono; conteo por denominaciones e historial de cortes verificados también el 2026-10-25); inventario el 2026-10-25 (catálogo, escaneo, alta, edición, entrada, merma, ajuste, historial y permisos por rol); ventas y anulación el 2026-10-25 (detalle, reimpresión, QR decodificado offline, anulación con motivo y confirmación, devolución de stock, bloqueo por corte cerrado y visibilidad por rol). La compilación para Windows y Android está en verde en CI. Quedan pendientes el botón Compartir del ticket (diálogo del sistema), compartir el QR como imagen, la reimpresión con efectivo recibido y la ejecución en Android; el equipo de desarrollo no tiene Android SDK ni JDK instalados.
 
 ## Plataformas y proyecto
 
@@ -81,7 +81,7 @@ SistemaTienda.Maui/
 | Vender | Búsqueda por código o nombre, carrito con cantidades, total, cobro efectivo con cambio visible/tarjeta/mixto/fiado y ticket interno con QR | Venta y salida de stock |
 | Inventario | Resumen de productos, stock bajo y valorizado; búsqueda o escaneo, alta y edición, entrada, merma, ajuste, historial y filtro de stock bajo | Catálogo y movimientos de inventario |
 | Ventas | Lista de ventas del día con folio, total, método, hora y estado; detalle con líneas, pagos, comisión y datos de anulación; reimpresión del ticket y anulación | Anulación de venta completa |
-| Caja | Periodo abierto, efectivo esperado, fondo, ventas por método, abonos, ingresos/retiros, gastos, cierre con conteo y diferencia, y último corte cerrado | Cierre de corte, ingresos, retiros y abonos |
+| Caja | Periodo abierto, efectivo esperado, fondo, ventas por método, abonos, ingresos/retiros, gastos, cierre con conteo por denominaciones o total directo, diferencia e historial de los últimos 20 cortes | Cierre de corte, ingresos, retiros y abonos |
 | Ajustes | Datos de la tienda, reglas configuradas, rutas de base y respaldos, último respaldo, crear respaldo y cerrar sesión | Respaldo manual y cierre de sesión |
 
 El POS reutiliza `VentaService`: la validación de stock, precios congelados, pagos y fiado ocurre en la capa de aplicación; la página solo arma el carrito y captura los importes. En efectivo, la página muestra un recuadro **Cambio a entregar** con el monto recibido y el cambio, y el ticket imprime ambos importes. El ticket se arma con `TicketService` (capa `Application`) y se abre en una página modal que muestra el QR, el texto completo y las opciones de compartir y copiar. El QR es informativo y offline: resume folio, fecha, estado, total, método de pago y hasta diez productos, y advierte que no es un comprobante fiscal. Se dibuja con `QrTicketView` sobre `GraphicsView`, sin guardarse como imagen.
@@ -89,6 +89,10 @@ El POS reutiliza `VentaService`: la validación de stock, precios congelados, pa
 Ventas reutiliza `VentaService` y `TicketService`. Al tocar una venta se abre un detalle con fecha, cajero, estado, método de pago, cliente, líneas, total, pagos y comisión; si está anulada, muestra también el usuario, la fecha y el motivo de la anulación. **Ver ticket** reconstruye el ticket con `TicketService` (con el sello de anulación cuando corresponde) y lo abre en la misma página modal del POS. **Anular venta** solo aparece para dueño y encargado, pide el motivo y exige escribir `ANULAR`; luego llama a `VentaService.AnularVenta`, vuelve a leer la venta y la lista, y avisa que el reembolso en efectivo es manual.
 
 Caja reutiliza `CorteCajaService` y `ConfiguracionService`. Al cerrar, la página recalcula el efectivo esperado con el fondo capturado, muestra la diferencia en vivo y exige observaciones cuando no es cero; la confirmación advierte que el periodo queda inmutable. Los ingresos y retiros piden monto y motivo, y los retiros piden una confirmación adicional. Los abonos de fiado muestran el saldo del cliente y se listan solo si el fiado está activado. Después de cualquier operación se vuelve a leer el periodo desde la base, sin sumar importes en la interfaz.
+
+El conteo por denominaciones es opcional y usa `ConteoEfectivo` (capa `Core`): 11 valores en pesos mexicanos, de `$1000` a `$0.50`, agrupados en billetes y monedas. Cada fila captura una cantidad entera y muestra su subtotal; el total se escribe en **Efectivo contado** en modo solo lectura. Una cantidad inválida oculta el total, muestra un error y bloquea el cierre; **Limpiar conteo** borra las cantidades y devuelve la captura manual. Si se borran todas las cantidades después de haber usado el conteo, el contado derivado se limpia para no cerrar con un total viejo. El desglose no se guarda: el corte solo persiste esperado, contado y diferencia, así que el historial no repite los billetes y monedas.
+
+El historial se lee con `CorteCajaService.ObtenerCortes(20)` y muestra los últimos 20 cortes cerrados del más reciente al más antiguo, con folio, periodo, esperado, contado, diferencia coloreada (verde en cero, rojo en faltante o sobrante), responsable, fecha y observaciones. Es solo lectura y se recarga después de cada cierre.
 
 Inventario reutiliza `InventoryService`: la búsqueda exacta por código abre el detalle, la búsqueda por nombre filtra la lista y un código desconocido de al menos ocho dígitos ofrece darlo de alta. El formulario de producto no edita el stock (solo el stock inicial al crear); los cambios posteriores se hacen con entrada, merma o ajuste, y cada uno exige cantidad, motivo y usuario. El historial muestra los últimos 200 movimientos con cantidad firmada, tipo, usuario y fecha. La entrada captura el costo del movimiento, pero no modifica el costo del catálogo; el dueño lo cambia desde Editar. El filtro de stock bajo considera `Stock <= StockMinimo`.
 
@@ -132,7 +136,7 @@ No se usa `Shell` ni rutas jerárquicas. `NavegacionApp` cambia la página raíz
 ## Limitaciones de esta entrega
 
 - Desde la app se vende, se opera el inventario, se cierra la caja y se anulan ventas; faltan las pantallas de clientes, proveedores y gastos.
-- Caja muestra el último corte cerrado, pero el historial completo solo se consulta en la consola; el conteo se captura como un total, sin desglose por denominaciones.
+- El conteo por denominaciones no se guarda: el corte conserva solo el total contado, así que no se puede auditar el desglose de billetes y monedas de un corte pasado.
 - Inventario no permite borrar ni desactivar productos, filtrar por categoría, actualizar el costo del catálogo al registrar una entrada ni reportar un valorizado histórico.
 - No hay pantallas de clientes, proveedores, gastos ni reportes.
 - El ticket es texto interno con QR informativo (no fiscal); no se genera PDF ni imagen, el QR no se comparte como imagen y resume hasta diez productos. Copiar sí se verificó; compartir depende del diálogo de Windows y sigue pendiente de probar.
@@ -179,7 +183,7 @@ Implementados en código y verificados manualmente en Windows el 2026-10-25:
 - [x] Los ingresos y retiros piden monto y motivo; el retiro pide confirmación y el servicio valida el permiso del rol.
 - [x] Los abonos de fiado descuentan el saldo del cliente y suman al efectivo esperado.
 - [x] El último corte cerrado se muestra con contado, diferencia y responsable.
-- [ ] El conteo por denominaciones y el historial de cortes se consultan en la app.
+- [x] El conteo por denominaciones y el historial de cortes se consultan en la app (completado en T17).
 
 ## Criterios de aceptación de T15 (Inventario)
 
@@ -210,6 +214,19 @@ Implementados en código y verificados manualmente en Windows el 2026-10-25, sal
 - [ ] El QR se valida en un dispositivo Android.
 
 Detalle de la decisión y límites del QR en [ADR-qr-ticket.md](../05-decisiones/ADR-qr-ticket.md).
+
+## Criterios de aceptación de T17 (conteo e historial)
+
+Implementados en código y verificados manualmente en Windows el 2026-10-25:
+
+- [x] El conteo lista los 11 billetes y monedas en pesos, agrupados y con subtotal por fila.
+- [x] El total del conteo alimenta **Efectivo contado** en modo solo lectura y la diferencia se recalcula en vivo.
+- [x] Una cantidad no entera muestra un error, oculta el total y bloquea el cierre hasta corregirla.
+- [x] **Limpiar conteo** borra las cantidades y devuelve la captura manual del total; borrar la última cantidad también limpia el contado derivado.
+- [x] Al cerrar desde el conteo, el corte guarda el total contado y el siguiente periodo arranca con ese monto.
+- [x] El historial muestra los últimos 20 cortes del más reciente al más antiguo con folio, periodo, esperado, contado, diferencia, responsable y observaciones.
+- [x] La diferencia del historial se colorea en verde en cero y en rojo cuando hay faltante o sobrante.
+- [ ] El desglose por denominaciones se guarda y se consulta en cortes pasados.
 
 ## Compilar y ejecutar
 

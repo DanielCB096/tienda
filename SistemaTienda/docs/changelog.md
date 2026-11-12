@@ -32,6 +32,19 @@ Próximamente después de completar los módulos críticos.
 - Configuración básica de tienda (nombre, giro, impuestos, métodos de pago).
 - Documentación inicial (glosario, stack, módulos, ADR).
 
+### v0.0.16 - 2026-10-25: Conteo por denominaciones e historial de cortes en Caja
+
+- *Agregado*: sección de conteo por denominaciones en la pestaña **Caja**, con los 11 billetes y monedas en pesos mexicanos (`$1000` a `$0.50`), agrupados en billetes y monedas, subtotal por fila y total automático que alimenta **Efectivo contado** en modo solo lectura.
+- *Agregado*: validación de cantidades enteras (una cantidad inválida muestra un error, oculta el total y bloquea el cierre) y botón **Limpiar conteo** que devuelve la captura manual del total.
+- *Agregado*: `ConteoEfectivo` en la capa `Core` con el catálogo de denominaciones y la suma con verificación de desbordamiento; 6 pruebas nuevas en `ConteoEfectivoTests`.
+- *Agregado*: historial de los últimos 20 cortes cerrados en Caja, del más reciente al más antiguo, con folio, periodo, esperado, contado, diferencia coloreada (verde en cero, rojo en faltante o sobrante), responsable, fecha y observaciones.
+- *Agregado*: modelo `CorteFila` y recarga del historial después de cada cierre; la tarjeta de último corte se reemplaza por el historial.
+- *Modificado*: el conteo se captura sin cambiar el esquema; el corte sigue guardando solo esperado, contado y diferencia, y el siguiente periodo arranca con lo contado.
+- *Corregido*: al borrar la última cantidad del conteo ya no se conserva el total derivado anterior; el contado vuelve a edición manual.
+- *Limitación*: el desglose por denominaciones no se persiste y la consola sigue capturando el total directo.
+- Verificación manual en Windows (2026-10-25): cantidad inválida, conteo de $790.00, limpieza, total manual, corte #3 sin diferencia, historial #3–#1 con diferencia en rojo y nota, y limpieza del total derivado al borrar la última cantidad.
+- Total del proyecto: 183 pruebas.
+
 ### v0.0.15 - 2026-10-25: Anulación y ticket con QR en la app MAUI
 
 - *Agregado*: detalle de venta en la pestaña **Ventas** con folio, fecha, cajero, estado, líneas, pagos, comisión, cliente y datos de anulación.

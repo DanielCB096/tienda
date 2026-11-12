@@ -124,8 +124,9 @@ dotnet test SistemaTienda/SistemaTienda.sln
 | `ReportesTests` | Utilidad con costo congelado, costo modificado después de vender, comisión de tarjeta, mermas, gastos de ambos orígenes, venta fuera del rango y rango invertido |
 | `RespaldoAutomaticoTests` | Respaldo automático sin copia previa y su auditoría, respaldo vigente que no duplica, intervalo cumplido, intervalo 0 deshabilitado y auditoría del respaldo manual |
 | `TicketServiceTests` | Texto del ticket (efectivo con recibido y cambio, mixto con comisión, fiado con cliente), marcador de anulación, contenido del QR con estado, límite de diez productos y nombre de tienda por defecto |
+| `ConteoEfectivoTests` | Catálogo de 11 denominaciones de mayor a menor y sin duplicados, subtotal por cantidad, cantidades cero o negativas ignoradas, total de billetes y monedas y líneas sin cantidad |
 
-Total actual: 177 casos, todos en verde. Los puntos 1, 2, 3, 5, 6, 7, 8 y 9 del listado de áreas críticas tienen cobertura parcial; falta rendimiento y la interfaz MAUI sigue sin pruebas automatizadas. La restauración se prueba sobre una base temporal: se verifica que el contenido vuelve al del respaldo (no byte a byte).
+Total actual: 183 casos, todos en verde. Los puntos 1, 2, 3, 5, 6, 7, 8 y 9 del listado de áreas críticas tienen cobertura parcial; falta rendimiento y la interfaz MAUI sigue sin pruebas automatizadas. La restauración se prueba sobre una base temporal: se verifica que el contenido vuelve al del respaldo (no byte a byte).
 
 La verificación se ejecuta en GitHub Actions (`windows-latest`) en cada push y también puede correr localmente con `dotnet test`; ver `CLAUDE-tienda.md` para el entorno actual.
 
@@ -202,13 +203,13 @@ Ejecutada en Windows el 2026-10-25 sobre la misma base demo del POS (fondo inici
 | Cierre sin diferencia | Pasó (contado $790.00; corte #2 con diferencia $0.00 y sin observaciones) |
 | Último corte cerrado | Pasó (muestra contado $790.00, diferencia $0.00 y responsable) |
 | Retiro con rol encargado | Pendiente (la matriz de permisos solo está cubierta por pruebas automatizadas) |
-| Conteo por denominaciones e historial de cortes | Pendiente (la app captura el total contado y muestra solo el último corte) |
+| Conteo por denominaciones e historial de cortes | Pasó en T17 (ver la verificación siguiente) |
 
 Pendiente de Caja:
 
 - Probar el cierre y las operaciones con un usuario encargado y otro empleado.
 - Repetir el flujo en la tablet Android.
-- Agregar el desglose por denominaciones y el historial de cortes.
+- Persistir el desglose por denominaciones si se requiere auditoría.
 
 ## Verificación manual de Inventario (T15)
 
@@ -265,6 +266,28 @@ Pendiente de Ventas y ticket:
 - Compartir el QR como imagen y verificar el botón Compartir con el diálogo del sistema.
 - Repetir el flujo en la tablet Android.
 - Decidir si se guarda el efectivo recibido para reimprimirlo o si se mantiene solo en el ticket original.
+- Cubrir la interfaz con pruebas automatizadas.
+
+## Verificación manual de conteo e historial de Caja (T17)
+
+Ejecutada en Windows el 2026-10-25 sobre la misma base demo del POS, la Caja, el Inventario y las Ventas, con cortes #1 y #2 ya cerrados. Los datos no forman parte del repositorio.
+
+| Caso | Resultado |
+|------|-----------|
+| Cantidad no entera en el conteo | Pasó (con `abc` muestra “Revisa las cantidades: solo se aceptan números enteros.”, el total queda en “—”, el contado se vacía y el cierre se bloquea) |
+| Conteo 7×$100 + 1×$50 + 2×$20 | Pasó ($790.00; el contado se llena solo y queda en solo lectura; diferencia $0.00 en verde) |
+| Limpiar conteo | Pasó (las 11 filas quedan vacías, el total en “—”, el contado vuelve a edición manual y el cierre se bloquea) |
+| Total directo sin conteo | Pasó ($790.00 manual habilita el cierre) |
+| Cierre desde el conteo | Pasó (corte #3 con esperado $790.00, contado $790.00 y diferencia $0.00; el siguiente periodo arranca con $790.00 y el formulario se limpia) |
+| Historial de cortes | Pasó (#3, #2 y #1 del más reciente al más antiguo, con periodo, esperado, contado, “Cerrado … por Dueño” y nota en cursiva en el #1) |
+| Diferencia en el historial | Pasó (corte #1 en rojo con −$10.00 y nota “Falta de prueba en el conteo”; cortes sin diferencia en verde) |
+| Borrar la última cantidad capturada | Pasó (el contado derivado se limpia y vuelve a edición manual, sin conservar un total viejo) |
+| Conteo persistido en cortes pasados | Limitación (solo se guarda el total contado; el desglose no se conserva) |
+
+Pendiente del conteo y el historial:
+
+- Repetir el flujo en la tablet Android.
+- Decidir si el desglose se guarda para auditoría.
 - Cubrir la interfaz con pruebas automatizadas.
 
 ## Herramientas de Prueba

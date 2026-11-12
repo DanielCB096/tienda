@@ -17,13 +17,16 @@ Base implementada en consola y en la app MAUI sobre el esquema vigente (v6, impo
 | Ventas anuladas | ✅ Se excluyen de los totales; una venta incluida en un corte cerrado ya no se puede anular |
 | Permisos y aprobación de retiros | ✅ Corte e ingreso para dueño/encargado; retiro solo dueño; validado en `CorteCajaService` |
 | Operación desde la app MAUI | ✅ Cierre, ingresos, retiros y abonos de fiado en la pestaña Caja; verificado en Windows el 2026-10-25 |
-| Conteo por denominaciones e historial en la app | ⛔ Pendiente; la app captura el total contado y solo muestra el último corte cerrado |
+| Conteo por denominaciones | ✅ Catálogo de billetes y monedas en pesos; el total del conteo alimenta el efectivo contado sin cambiar el esquema |
+| Historial de cortes | ✅ Los últimos 20 cortes cerrados con periodo, esperado, contado, diferencia, responsable y observaciones |
 
 ## Operación desde la app MAUI
 
-La pestaña **Caja** reutiliza `CorteCajaService` y `ConfiguracionService`; no reimplementa la fórmula ni los permisos. Muestra el periodo abierto con el desglose por método, el efectivo esperado y el último corte cerrado.
+La pestaña **Caja** reutiliza `CorteCajaService` y `ConfiguracionService`; no reimplementa la fórmula ni los permisos. Muestra el periodo abierto con el desglose por método, el efectivo esperado y el historial de cortes cerrados.
 
 - **Cierre**: el cajero confirma el fondo inicial y captura el efectivo contado. La diferencia se calcula en vivo; si no es cero, las observaciones son obligatorias y el servicio rechaza el cierre si faltan. Antes de guardar se pide confirmación porque el periodo queda inmutable. El siguiente periodo arranca con lo contado.
+- **Conteo por denominaciones**: es opcional y se captura con el teclado numérico. El catálogo tiene 11 valores en pesos mexicanos, de `$1000` a `$0.50`; cada fila muestra el subtotal y el total del conteo se escribe en **Efectivo contado** en modo solo lectura. Si una cantidad no es un entero, el total se oculta y el cierre se bloquea hasta corregirla. **Limpiar conteo** borra las cantidades y devuelve la captura manual del total. Al cerrar el corte solo se guardan el esperado, el contado y la diferencia: el desglose no se persiste y el historial no lo repite.
+- **Historial**: muestra los últimos 20 cortes cerrados, del más reciente al más antiguo, con folio, periodo, esperado, contado, diferencia con color (verde en cero, rojo en faltante o sobrante), quién lo cerró, cuándo y la nota cuando existe. Se consulta con `CorteCajaService.ObtenerCortes(20)` y no se puede editar.
 - **Ingresos y retiros**: piden monto y motivo. El retiro confirma antes de guardar y solo lo autoriza el dueño; un rechazo del servicio se muestra en la propia pantalla.
 - **Abonos de fiado**: se muestran solo si el fiado está activado; el cliente se elige de la lista con saldo y el abono se registra como efectivo del periodo.
 
