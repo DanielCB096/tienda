@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:models="clr-namespace:SistemaTienda.Maui.Models"
+             x:Class="SistemaTienda.Maui.Pages.ProveedoresPage"
+             Title="Proveedores">
+
+    <Grid>
+        <Grid RowDefinitions="Auto,Auto,Auto,Auto,*" RowSpacing="10" Padding="16">
+
+            <Grid Grid.Row="0" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                <VerticalStackLayout Spacing="2">
+                    <Label Text="Proveedores" Style="{StaticResource TituloPagina}" />
+                    <Label x:Name="UsuarioLabel" Style="{StaticResource TextoNota}" />
+                </VerticalStackLayout>
+                <Button Grid.Column="1"
+                        Text="+ Nuevo"
+                        Style="{StaticResource BotonSecundario}"
+                        WidthRequest="104"
+                        HeightRequest="42"
+                        VerticalOptions="Center"
+                        Clicked="OnNuevoProveedorClicked" />
+            </Grid>
+
+            <Border Grid.Row="1" Style="{StaticResource Tarjeta}" Padding="14">
+                <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
+                    <VerticalStackLayout Spacing="0">
+                        <Label Text="PROVEEDORES" Style="{StaticResource EtiquetaSeccion}" />
+                        <Label x:Name="TotalProveedoresLabel" Text="0" FontSize="20" FontAttributes="Bold" />
+                    </VerticalStackLayout>
+                    <VerticalStackLayout Grid.Column="1" Spacing="0">
+                        <Label Text="CON SALDO" Style="{StaticResource EtiquetaSeccion}" />
+                        <Label x:Name="ConSaldoLabel" Text="0" FontSize="20" FontAttributes="Bold"
+                               TextColor="#B3261E" />
+                    </VerticalStackLayout>
+                    <VerticalStackLayout Grid.Column="2" Spacing="0">
+                        <Label Text="POR PAGAR" Style="{StaticResource EtiquetaSeccion}" />
+                        <Label x:Name="PorPagarLabel" Text="$0.00" FontSize="20" FontAttributes="Bold" />
+                    </VerticalStackLayout>
+                </Grid>
+            </Border>
+
+            <Grid Grid.Row="2" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                <Entry x:Name="BuscarEntry"
+                       Style="{StaticResource CampoTexto}"
+                       Placeholder="Busca por nombre, clave o teléfono"
+                       ReturnType="Search"
+                       Completed="OnBuscarCompleted" />
+                <Button Grid.Column="1"
+                        Text="Buscar"
+                        Style="{StaticResource BotonSecundario}"
+                        WidthRequest="96"
+                        HeightRequest="48"
+                        Clicked="OnBuscarClicked" />
+            </Grid>
+
+            <Grid Grid.Row="3" ColumnDefinitions="Auto,Auto,*" ColumnSpacing="8">
+                <Button x:Name="FiltroTodosButton"
+                        Text="Todos"
+                        Style="{StaticResource BotonSecundario}"
+                        HeightRequest="38"
+                        Padding="12,0"
+                        FontSize="13"
+                        Clicked="OnFiltroTodosClicked" />
+                <Button x:Name="FiltroSaldoButton"
+                        Grid.Column="1"
+                        Text="Con saldo"
+                        Style="{StaticResource BotonSecundario}"
+                        HeightRequest="38"
+                        Padding="12,0"
+                        FontSize="13"
+                        Clicked="OnFiltroSaldoClicked" />
+                <Label x:Name="ResultadosLabel"
+                       Grid.Column="2"
+                       Style="{StaticResource TextoNota}"
+                       VerticalOptions="Center"
+                       HorizontalTextAlignment="End" />
+            </Grid>
+
+            <Border Grid.Row="4" Style="{StaticResource Tarjeta}" Padding="12">
+                <Grid RowDefinitions="Auto,*" RowSpacing="6">
+                    <Label Text="DIRECTORIO" Style="{StaticResource EtiquetaSeccion}" />
+                    <RefreshView x:Name="Refresco" Grid.Row="1" Refreshing="OnRefrescando">
+                        <CollectionView x:Name="ListaProveedores" SelectionMode="None">
+                            <CollectionView.EmptyView>
+                                <Label x:Name="ListaVaciaLabel"
+                                       Text="Aún no hay proveedores registrados."
+                                       Style="{StaticResource TextoNota}"
+                                       HorizontalTextAlignment="Center"
+                                       Margin="0,40,0,0" />
+                            </CollectionView.EmptyView>
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate x:DataType="models:ProveedorFila">
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Padding="0,8">
+                                        <VerticalStackLayout Spacing="1">
+                                            <Label Text="{Binding Nombre}" FontAttributes="Bold" FontSize="16" />
+                                            <Label Text="{Binding Clave}" Style="{StaticResource TextoNota}" />
+                                            <Label Text="{Binding Telefono}" Style="{StaticResource TextoNota}" />
+                                            <Label Text="{Binding Direccion}"
+                                                   Style="{StaticResource TextoNota}"
+                                                   IsVisible="{Binding TieneDireccion}" />
+                                            <Label Text="{Binding Saldo}" FontSize="15" FontAttributes="Bold" />
+                                            <Label Text="{Binding Estado}"
+                                                   TextColor="{Binding EstadoColor}"
+                                                   FontSize="12"
+                                                   FontAttributes="Bold" />
+                                        </VerticalStackLayout>
+                                        <Button Grid.Column="1"
+                                                Text="Pagar"
+                                                CommandParameter="{Binding .}"
+                                                Clicked="OnPagarClicked"
+                                                IsVisible="{Binding PuedePagar}"
+                                                Style="{StaticResource BotonSecundario}"
+                                                WidthRequest="88"
+                                                HeightRequest="38"
+                                                VerticalOptions="Center" />
+                                    </Grid>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </RefreshView>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <Grid x:Name="NuevoOverlay"
+              IsVisible="False"
+              BackgroundColor="#99000000"
+              Padding="16"
+              ZIndex="10">
+            <Border Style="{StaticResource Tarjeta}"
+                    Padding="18"
+                    HorizontalOptions="Fill"
+                    VerticalOptions="Center"
+                    MaximumWidthRequest="560">
+                <ScrollView>
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="Nuevo proveedor" FontSize="22" FontAttributes="Bold" />
+                        <Label Text="Solo el nombre es obligatorio; los demás datos ayudan a identificarlo."
+                               Style="{StaticResource TextoNota}" />
+
+                        <Label Text="Nombre" Style="{StaticResource EtiquetaSeccion}" />
+                        <Entry x:Name="NombreEntry"
+                               Style="{StaticResource CampoTexto}"
+                               Placeholder="Nombre o razón social" />
+
+                        <Label Text="Clave o RFC (opcional)" Style="{StaticResource EtiquetaSeccion}" />
+                        <Entry x:Name="ClaveEntry"
+                               Style="{StaticResource CampoTexto}"
+                               Placeholder="RFC o clave interna" />
+
+                        <Label Text="Teléfono (opcional)" Style="{StaticResource EtiquetaSeccion}" />
+                        <Entry x:Name="TelefonoEntry"
+                               Style="{StaticResource CampoTexto}"
+                               Keyboard="Telephone"
+                               Placeholder="555-123-4567" />
+
+                        <Label Text="Dirección (opcional)" Style="{StaticResource EtiquetaSeccion}" />
+                        <Entry x:Name="DireccionEntry"
+                               Style="{StaticResource CampoTexto}"
+                               Placeholder="Calle, número y colonia" />
+
+                        <Label Text="Saldo inicial (opcional)" Style="{StaticResource EtiquetaSeccion}" />
+                        <Entry x:Name="SaldoInicialEntry"
+                               Style="{StaticResource CampoTexto}"
+                               Keyboard="Numeric"
+                               Placeholder="0.00" />
+                        <Label Text="Úsalo solo para registrar una deuda que ya existía; lo normal es empezar en $0.00."
+                               Style="{StaticResource TextoNota}" />
+
+                        <Label x:Name="NuevoErrorLabel" Style="{StaticResource Error}" IsVisible="False" />
+
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="10" Margin="0,4,0,0">
+                            <Button x:Name="GuardarProveedorButton"
+                                    Text="Guardar proveedor"
+                                    Style="{StaticResource BotonPrincipal}"
+                                    Clicked="OnGuardarProveedorClicked" />
+                            <Button Grid.Column="1"
+                                    Text="Cancelar"
+                                    Style="{StaticResource BotonSecundario}"
+                                    Clicked="OnCancelarNuevoClicked" />
+                        </Grid>
+                    </VerticalStackLayout>
+                </ScrollView>
+            </Border>
+        </Grid>
+
+        <Grid x:Name="PagoOverlay"
+              IsVisible="False"
+              BackgroundColor="#99000000"
+              Padding="16"
+              ZIndex="10">
+            <Border Style="{StaticResource Tarjeta}"
+                    Padding="18"
+                    HorizontalOptions="Fill"
+                    VerticalOptions="Center"
+                    MaximumWidthRequest="520">
+                <ScrollView>
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="Registrar pago" FontSize="22" FontAttributes="Bold" />
+                        <Label x:Name="PagoProveedorLabel" FontAttributes="Bold" FontSize="16" />
+                        <Label x:Name="PagoSaldoLabel" Style="{StaticResource TextoNota}" />
+
+                        <Label Text="Monto del pago" Style="{StaticResource EtiquetaSeccion}" />
+                        <Entry x:Name="PagoMontoEntry"
+                               Style="{StaticResource CampoTexto}"
+                               Keyboard="Numeric"
+                               Placeholder="0.00" />
+
+                        <Border Style="{StaticResource Aviso}">
+                            <Label Text="El pago reduce el saldo del proveedor, pero no se registra solo como salida de caja. Si pagas en efectivo, registra también el retiro en Caja."
+                                   FontSize="13"
+                                   TextColor="#7A4F01" />
+                        </Border>
+
+                        <Label x:Name="PagoErrorLabel" Style="{StaticResource Error}" IsVisible="False" />
+
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="10" Margin="0,4,0,0">
+                            <Button x:Name="RegistrarPagoButton"
+                                    Text="Registrar pago"
+                                    Style="{StaticResource BotonPrincipal}"
+                                    Clicked="OnRegistrarPagoClicked" />
+                            <Button Grid.Column="1"
+                                    Text="Cancelar"
+                                    Style="{StaticResource BotonSecundario}"
+                                    Clicked="OnCancelarPagoClicked" />
+                        </Grid>
+                    </VerticalStackLayout>
+                </ScrollView>
+            </Border>
+        </Grid>
+    </Grid>
+</ContentPage>

@@ -8,19 +8,20 @@ Alcance de esta entrega:
 
 - Asistente de primera configuración.
 - Inicio de sesión con PIN.
-- Tablero con siete pestañas: Inicio, Vender, Inventario, Ventas, Clientes, Caja y Ajustes.
+- Tablero con ocho pestañas: Inicio, Vender, Inventario, Ventas, Clientes, Proveedores, Caja y Ajustes.
 - Punto de venta: búsqueda o escaneo, carrito, cobro en efectivo, tarjeta, mixto o fiado, y ticket interno con QR que se puede compartir o copiar.
 - Ventas: detalle de la venta con líneas, pagos y estado, reimpresión del ticket y anulación completa con motivo y confirmación.
 - Clientes: directorio con búsqueda por nombre o teléfono, filtro de saldo, alta de cliente y abono en efectivo al fiado.
+- Proveedores: directorio con búsqueda por nombre, clave o teléfono, filtro de saldo, alta de proveedor y pago que reduce el saldo pendiente.
 - Inventario y catálogo: búsqueda o escaneo, alta y edición de productos, entradas, mermas, ajustes, historial de movimientos y alertas de stock bajo.
 - Caja operativa: cierre de corte con diferencia justificada, conteo por denominaciones, ingresos, retiros, abonos de fiado e historial de los últimos 20 cortes.
 - Respaldo automático al iniciar y cerrar sesión, y respaldo manual desde Ajustes.
 
-Esta entrega **no** incluye todavía las pantallas de proveedores, gastos o reportes.
+Esta entrega **no** incluye todavía las pantallas de gastos o reportes.
 
 ## Estado
 
-Base implementada y verificada manualmente en Windows: asistente, login, tablero y respaldo el 2026-10-23; punto de venta el 2026-10-25 (búsqueda, carrito, límite de stock, efectivo con cambio, tarjeta, mixto, fiado y ticket con copiar/cerrar); caja operativa el 2026-10-25 (cierre con diferencia justificada, ingreso, retiro y abono; conteo por denominaciones e historial de cortes verificados también el 2026-10-25); inventario el 2026-10-25 (catálogo, escaneo, alta, edición, entrada, merma, ajuste, historial y permisos por rol); ventas y anulación el 2026-10-25 (detalle, reimpresión, QR decodificado offline, anulación con motivo y confirmación, devolución de stock, bloqueo por corte cerrado y visibilidad por rol). Clientes quedó implementado en T18 con compilación y pruebas de servicio; la verificación manual de la pantalla quedó pendiente porque el entorno de desarrollo no permitió abrir la interfaz gráfica. La compilación para Windows y Android está en verde en CI. Quedan pendientes el botón Compartir del ticket (diálogo del sistema), compartir el QR como imagen, la reimpresión con efectivo recibido y la ejecución en Android; el equipo de desarrollo no tiene Android SDK ni JDK instalados.
+Base implementada y verificada manualmente en Windows: asistente, login, tablero y respaldo el 2026-10-23; punto de venta el 2026-10-25 (búsqueda, carrito, límite de stock, efectivo con cambio, tarjeta, mixto, fiado y ticket con copiar/cerrar); caja operativa el 2026-10-25 (cierre con diferencia justificada, ingreso, retiro y abono; conteo por denominaciones e historial de cortes verificados también el 2026-10-25); inventario el 2026-10-25 (catálogo, escaneo, alta, edición, entrada, merma, ajuste, historial y permisos por rol); ventas y anulación el 2026-10-25 (detalle, reimpresión, QR decodificado offline, anulación con motivo y confirmación, devolución de stock, bloqueo por corte cerrado y visibilidad por rol). Clientes quedó implementado en T18 con compilación y pruebas de servicio; la verificación manual de la pantalla quedó pendiente porque el entorno de desarrollo no permitió abrir la interfaz gráfica. Proveedores quedó implementado en T19 con la misma situación: compilación, pruebas de servicio y tablero de ocho pestañas en verde, pero sin verificación manual. La compilación para Windows y Android está en verde en CI. Quedan pendientes el botón Compartir del ticket (diálogo del sistema), compartir el QR como imagen, la reimpresión con efectivo recibido y la ejecución en Android; el equipo de desarrollo no tiene Android SDK ni JDK instalados.
 
 ## Plataformas y proyecto
 
@@ -45,17 +46,18 @@ SistemaTienda.Maui/
 ├── App.xaml(.cs)              # Aplicación y ventana raíz
 ├── MauiProgram.cs             # Inyección de dependencias y ruta de la base
 ├── Formato.cs                 # Moneda y fechas en es-MX
-├── Models/                    # Filas y opciones de las listas (ventas, carrito, productos, clientes)
+├── Models/                    # Filas y opciones de las listas (ventas, carrito, productos, clientes, proveedores)
 ├── Pages/
 │   ├── ConfiguracionInicialPage   # Asistente de primera ejecución
 │   ├── LoginPage                  # PIN con 3 intentos
-│   ├── PrincipalPage              # TabbedPage con 6 pestañas
+│   ├── PrincipalPage              # TabbedPage con 8 pestañas
 │   ├── InicioPage                 # Tablero del día
 │   ├── PosPage                    # Punto de venta: carrito, cobro y ticket
 │   ├── InventarioPage             # Catálogo, alta/edición y movimientos
 │   ├── TicketPage                 # Ticket interno con QR, compartir y copiar
 │   ├── VentasPage                 # Ventas del día: detalle, reimpresión y anulación
 │   ├── ClientesPage               # Directorio, alta y abonos de fiado
+│   ├── ProveedoresPage            # Directorio, alta y pagos a proveedores
 │   ├── CajaPage                   # Cierre de corte, movimientos y abonos
 │   ├── AjustesPage                # Configuración, respaldo y cierre de sesión
 │   └── ErrorPage                  # Arranque fallido
@@ -84,6 +86,7 @@ SistemaTienda.Maui/
 | Inventario | Resumen de productos, stock bajo y valorizado; búsqueda o escaneo, alta y edición, entrada, merma, ajuste, historial y filtro de stock bajo | Catálogo y movimientos de inventario |
 | Ventas | Lista de ventas del día con folio, total, método, hora y estado; detalle con líneas, pagos, comisión y datos de anulación; reimpresión del ticket y anulación | Anulación de venta completa |
 | Clientes | Resumen de clientes, con saldo y total por cobrar; búsqueda por nombre o teléfono, filtro con saldo, alta con saldo inicial y abono | Alta de cliente y abono en efectivo |
+| Proveedores | Resumen de proveedores, con saldo y total por pagar; búsqueda por nombre, clave o teléfono, filtro con saldo, alta con saldo inicial y pago | Alta de proveedor y pago del saldo pendiente |
 | Caja | Periodo abierto, efectivo esperado, fondo, ventas por método, abonos, ingresos/retiros, gastos, cierre con conteo por denominaciones o total directo, diferencia e historial de los últimos 20 cortes | Cierre de corte, ingresos, retiros y abonos |
 | Ajustes | Datos de la tienda, reglas configuradas, rutas de base y respaldos, último respaldo, crear respaldo y cerrar sesión | Respaldo manual y cierre de sesión |
 
@@ -92,6 +95,8 @@ El POS reutiliza `VentaService`: la validación de stock, precios congelados, pa
 Ventas reutiliza `VentaService` y `TicketService`. Al tocar una venta se abre un detalle con fecha, cajero, estado, método de pago, cliente, líneas, total, pagos y comisión; si está anulada, muestra también el usuario, la fecha y el motivo de la anulación. **Ver ticket** reconstruye el ticket con `TicketService` (con el sello de anulación cuando corresponde) y lo abre en la misma página modal del POS. **Anular venta** solo aparece para dueño y encargado, pide el motivo y exige escribir `ANULAR`; luego llama a `VentaService.AnularVenta`, vuelve a leer la venta y la lista, y avisa que el reembolso en efectivo es manual.
 
 Clientes reutiliza `ConfiguracionService`. El resumen superior cuenta todos los clientes, los que tienen saldo y el total por cobrar; el directorio se filtra con `BuscarClientes`, que busca por nombre o teléfono sin distinguir mayúsculas ni acentos, y con el filtro **Con saldo**. **+ Nuevo** abre un formulario con nombre, teléfono y saldo inicial opcional; el saldo inicial solo sirve para registrar deudas que ya existían, y el alta queda en la bitácora. **Abonar** solo aparece para dueño y encargado y para clientes con saldo; el abono se registra como efectivo, entra al corte del periodo y actualiza el saldo en la misma transacción que guarda el historial de `AbonosFiado`. No se edita el nombre ni el teléfono desde la pantalla, y no hay estado de cuenta por cliente.
+
+Proveedores reutiliza `ConfiguracionService`. El resumen cuenta todos los proveedores, los que tienen saldo y el total por pagar; el directorio se filtra con `BuscarProveedores`, que busca por nombre, clave o teléfono sin distinguir mayúsculas ni acentos, y con el filtro **Con saldo**. **+ Nuevo** abre un formulario con nombre obligatorio y clave/RFC, teléfono y dirección opcionales, más un saldo inicial para deudas que ya existían; el alta queda en la bitácora como `Proveedor`. **Pagar** solo aparece para quien tiene `PagarProveedor` y para proveedores con saldo; el pago descuenta el saldo pendiente en la misma operación que registra la bitácora, pero no entra al corte de caja ni genera un historial propio de pagos: si el pago es en efectivo, la pantalla recuerda registrarlo también como retiro en Caja. No se edita ni se borra un proveedor, y no hay estado de cuenta.
 
 Caja reutiliza `CorteCajaService` y `ConfiguracionService`. Al cerrar, la página recalcula el efectivo esperado con el fondo capturado, muestra la diferencia en vivo y exige observaciones cuando no es cero; la confirmación advierte que el periodo queda inmutable. Los ingresos y retiros piden monto y motivo, y los retiros piden una confirmación adicional. Los abonos de fiado muestran el saldo del cliente y se listan solo si el fiado está activado. Después de cualquier operación se vuelve a leer el periodo desde la base, sin sumar importes en la interfaz.
 
@@ -105,7 +110,7 @@ Las pestañas se muestran en una barra inferior en Android y en la parte superio
 
 ## Sesión y permisos
 
-`SesionActual` usa `AsyncLocal`, que no sobrevive entre eventos de interfaz. Por eso `SesionApp` guarda el usuario autenticado y lo vuelve a aplicar (`SesionApp.Aplicar()`) antes de cada llamada a un servicio desde un manejador de eventos. Los permisos siguen validándose en `Application`, no en la interfaz: el POS exige `Vender` al confirmar el cobro; Caja exige `CorteCaja` e `IngresoCaja` a dueño o encargado, `RetiroCaja` solo al dueño y `RegistrarAbono` a dueño o encargado; Ventas exige `AnularVenta` para anular. POS y Caja muestran las operaciones a todos los roles y el servicio rechaza las que no corresponden. Clientes deja el directorio y el alta disponibles para todos los roles porque el cajero puede necesitarlos al vender fiado, pero oculta **Abonar** a quien no tiene `RegistrarAbono`; aun así el servicio vuelve a validar el permiso. Inventario y Ventas además ocultan las acciones según el rol: el empleado solo consulta y ve movimientos, y no ve **Anular venta**; el encargado edita, registra entradas y mermas, pero no cambia precios ni ajusta stock, y sí puede anular; el dueño tiene todas. Aun cuando un botón quede oculto, el servicio vuelve a validar el permiso.
+`SesionActual` usa `AsyncLocal`, que no sobrevive entre eventos de interfaz. Por eso `SesionApp` guarda el usuario autenticado y lo vuelve a aplicar (`SesionApp.Aplicar()`) antes de cada llamada a un servicio desde un manejador de eventos. Los permisos siguen validándose en `Application`, no en la interfaz: el POS exige `Vender` al confirmar el cobro; Caja exige `CorteCaja` e `IngresoCaja` a dueño o encargado, `RetiroCaja` solo al dueño y `RegistrarAbono` a dueño o encargado; Ventas exige `AnularVenta` para anular. POS y Caja muestran las operaciones a todos los roles y el servicio rechaza las que no corresponden. Clientes deja el directorio y el alta disponibles para todos los roles porque el cajero puede necesitarlos al vender fiado, pero oculta **Abonar** a quien no tiene `RegistrarAbono`; aun así el servicio vuelve a validar el permiso. Proveedores deja el directorio y el alta disponibles para todos los roles y oculta **Pagar** a quien no tiene `PagarProveedor` (dueño y encargado); el servicio valida el permiso otra vez. Inventario y Ventas además ocultan las acciones según el rol: el empleado solo consulta y ve movimientos, y no ve **Anular venta**; el encargado edita, registra entradas y mermas, pero no cambia precios ni ajusta stock, y sí puede anular; el dueño tiene todas. Aun cuando un botón quede oculto, el servicio vuelve a validar el permiso.
 
 Al cerrar sesión desde Ajustes se ejecuta el respaldo automático si corresponde, se limpia la sesión y se vuelve al login. No se conserva el usuario anterior.
 
@@ -140,11 +145,12 @@ No se usa `Shell` ni rutas jerárquicas. `NavegacionApp` cambia la página raíz
 
 ## Limitaciones de esta entrega
 
-- Desde la app se vende, se opera el inventario, se gestionan clientes, se cierra la caja y se anulan ventas; faltan las pantallas de proveedores y gastos.
+- Desde la app se vende, se opera el inventario, se gestionan clientes y proveedores, se cierra la caja y se anulan ventas; falta la pantalla de gastos.
 - El conteo por denominaciones no se guarda: el corte conserva solo el total contado, así que no se puede auditar el desglose de billetes y monedas de un corte pasado.
 - Inventario no permite borrar ni desactivar productos, filtrar por categoría, actualizar el costo del catálogo al registrar una entrada ni reportar un valorizado histórico.
 - Clientes no permite editar nombre o teléfono, borrar clientes, consultar el estado de cuenta ni elegir el método del abono; el abono se registra siempre como efectivo.
-- No hay pantallas de proveedores, gastos ni reportes.
+- Proveedores no permite editar ni borrar, no tiene estado de cuenta ni historial de pagos, y el pago no entra al corte ni elige método de pago; el saldo se actualiza, pero el pago solo queda en la bitácora.
+- No hay pantallas de gastos ni reportes.
 - El ticket es texto interno con QR informativo (no fiscal); no se genera PDF ni imagen, el QR no se comparte como imagen y resume hasta diez productos. Copiar sí se verificó; compartir depende del diálogo de Windows y sigue pendiente de probar.
 - La reimpresión desde Ventas no incluye el efectivo recibido ni el cambio, porque la venta solo guarda el total.
 - El QR no se ha validado en un dispositivo Android.
@@ -232,6 +238,19 @@ Implementados en código y cubiertos por pruebas de servicio. La verificación m
 - [x] El servicio rechaza un abono mayor al saldo o sin permiso, y la pantalla muestra el error sin modificar la base.
 - [ ] La pantalla se verifica manualmente en Windows.
 - [ ] El cliente se puede editar, borrar o consultar su estado de cuenta; el abono permite elegir método de pago.
+
+## Criterios de aceptación de T19 (Proveedores)
+
+Implementados en código y cubiertos por pruebas de servicio. La verificación manual en Windows quedó pendiente porque el entorno de desarrollo no permitió abrir la GUI:
+
+- [x] El directorio lista proveedores con nombre, clave, teléfono, dirección, saldo y estado, y muestra proveedores totales, con saldo y total por pagar.
+- [x] La búsqueda filtra por nombre, clave o teléfono sin distinguir mayúsculas ni acentos, y el filtro **Con saldo** excluye a los proveedores al día.
+- [x] **+ Nuevo** valida el nombre y el saldo inicial, recorta espacios y deja el alta en la bitácora como `Proveedor`.
+- [x] **Pagar** solo aparece para dueño y encargado y para proveedores con saldo; el pago descuenta el saldo y queda en la bitácora.
+- [x] El servicio rechaza un pago mayor al saldo o sin permiso, y la pantalla muestra el error sin modificar la base.
+- [x] La app advierte que el pago no entra solo al corte y que, si es en efectivo, debe registrarse también como retiro en Caja.
+- [ ] La pantalla se verifica manualmente en Windows.
+- [ ] El proveedor se puede editar o borrar, tiene estado de cuenta y el pago tiene historial propio y entra al corte.
 
 ## Criterios de aceptación de T17 (conteo e historial)
 

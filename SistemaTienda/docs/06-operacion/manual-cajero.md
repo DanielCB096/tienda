@@ -14,10 +14,10 @@
 
 1. Al abrir la app, se solicita el PIN.
 2. El usuario ingresa su PIN.
-3. El sistema valida y muestra el tablero (Inicio, Vender, Inventario, Ventas, Clientes, Caja y Ajustes).
+3. El sistema valida y muestra el tablero (Inicio, Vender, Inventario, Ventas, Clientes, Proveedores, Caja y Ajustes).
 4. Si el PIN está mal tres veces seguidas, la app bloquea el acceso hasta cerrarla y abrirla de nuevo.
 
-> **Estado de la app (2026-10-25)**: el tablero muestra ventas del día, efectivo esperado del corte, stock bajo y último respaldo. **Vender** registra ventas con carrito, cobros y ticket interno con QR compartible como texto. **Inventario** permite consultar, escanear, dar de alta o editar productos, y registrar entradas, mermas y ajustes según el rol. **Ventas** muestra el detalle de cada venta, permite reimprimir el ticket con su QR y anular la venta completa (solo dueño o encargado). **Clientes** muestra el directorio, permite buscar, dar de alta y abonar al fiado (solo dueño o encargado). **Caja** permite cerrar el corte con conteo por billetes y monedas o con el total directo, registrar ingresos y retiros, abonar al fiado y consultar los últimos 20 cortes. El desglose del conteo no se guarda en el corte. La anulación también sigue disponible en la consola provisional. El manual describe el flujo completo planeado; revisa en cada versión qué partes ya están en la app.
+> **Estado de la app (2026-10-26)**: el tablero muestra ventas del día, efectivo esperado del corte, stock bajo y último respaldo. **Vender** registra ventas con carrito, cobros y ticket interno con QR compartible como texto. **Inventario** permite consultar, escanear, dar de alta o editar productos, y registrar entradas, mermas y ajustes según el rol. **Ventas** muestra el detalle de cada venta, permite reimprimir el ticket con su QR y anular la venta completa (solo dueño o encargado). **Clientes** muestra el directorio, permite buscar, dar de alta y abonar al fiado (solo dueño o encargado). **Proveedores** muestra el directorio, permite buscar, dar de alta y pagar el saldo (solo dueño o encargado); el pago no entra solo al corte. **Caja** permite cerrar el corte con conteo por billetes y monedas o con el total directo, registrar ingresos y retiros, abonar al fiado y consultar los últimos 20 cortes. El desglose del conteo no se guarda en el corte. La anulación también sigue disponible en la consola provisional. El manual describe el flujo completo planeado; revisa en cada versión qué partes ya están en la app.
 
 ### 2. Catálogo / Búsqueda de Producto
 
@@ -68,6 +68,15 @@ El directorio muestra nombre, teléfono, saldo y estado; la búsqueda acepta nom
 - **Nuevo**: cualquier usuario puede dar de alta un cliente con nombre, teléfono opcional y saldo inicial opcional (solo para deudas que ya existían).
 - **Abonar** (dueño o encargado): abre el cliente, captura el monto y confirma. El abono no puede superar el saldo, se registra como efectivo y entra al corte del periodo. El empleado puede consultar el directorio, pero no ve el botón.
 - **Pendiente**: editar o retirar clientes, estado de cuenta con ventas y abonos y elegir el método del abono. La verificación manual de esta pantalla está pendiente (2026-10-25).
+
+### 3.2 Proveedores y pagos (pestaña Proveedores)
+
+El directorio muestra nombre, clave o RFC, teléfono, dirección, saldo y estado; la búsqueda acepta nombre, clave o teléfono sin distinguir mayúsculas ni acentos, y los filtros **Todos** y **Con saldo** acotan la lista.
+
+- **Nuevo**: cualquier usuario puede dar de alta un proveedor con nombre; clave o RFC, teléfono, dirección y saldo inicial son opcionales (el saldo inicial solo para deudas que ya existían).
+- **Pagar** (dueño o encargado): abre el proveedor, captura el monto y confirma. El pago no puede superar el saldo y reduce el saldo pendiente; el empleado puede consultar el directorio, pero no ve el botón.
+- **Importante**: el pago no entra solo al corte de caja. Si pagas en efectivo, registra además un retiro en **Caja**; así el efectivo esperado cuadra. La app muestra este aviso al pagar.
+- **Pendiente**: editar o retirar proveedores, estado de cuenta, historial de pagos y método de pago. La verificación manual de esta pantalla está pendiente (2026-10-26).
 
 ### 4. Inventario (pestaña Inventario)
 
