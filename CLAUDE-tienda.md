@@ -94,7 +94,7 @@ dotnet format SistemaTienda/SistemaTienda.sln
 
 Después de cualquier cambio: ejecuta pruebas y lint. No des una tarea por terminada si fallan.
 
-> **Entorno de este equipo (2026-10-23)**: las pruebas y la consola ya se ejecutan localmente; `dotnet test` terminó con 171 pruebas en verde. La verificación oficial sigue siendo el flujo de GitHub Actions (`.github/workflows/ci.yml`), que compila y corre las pruebas en `windows-latest` en cada push. Si reaparece el error `0x800711C7` de Smart App Control, revisa Seguridad de Windows → Control de aplicaciones y navegador.
+> **Entorno de este equipo (2026-10-25)**: las pruebas y la consola ya se ejecutan localmente; `dotnet test` terminó con 177 pruebas en verde. La verificación oficial sigue siendo el flujo de GitHub Actions (`.github/workflows/ci.yml`), que compila y corre las pruebas en `windows-latest` en cada push. Si reaparece el error `0x800711C7` de Smart App Control, revisa Seguridad de Windows → Control de aplicaciones y navegador.
 
 ## 5. Convenciones de código
 

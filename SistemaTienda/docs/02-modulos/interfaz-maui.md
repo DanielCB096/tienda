@@ -9,16 +9,17 @@ Alcance de esta entrega:
 - Asistente de primera configuración.
 - Inicio de sesión con PIN.
 - Tablero con seis pestañas: Inicio, Vender, Inventario, Ventas, Caja y Ajustes.
-- Punto de venta: búsqueda o escaneo, carrito, cobro en efectivo, tarjeta, mixto o fiado, y ticket interno que se puede compartir o copiar.
+- Punto de venta: búsqueda o escaneo, carrito, cobro en efectivo, tarjeta, mixto o fiado, y ticket interno con QR que se puede compartir o copiar.
+- Ventas: detalle de la venta con líneas, pagos y estado, reimpresión del ticket y anulación completa con motivo y confirmación.
 - Inventario y catálogo: búsqueda o escaneo, alta y edición de productos, entradas, mermas, ajustes, historial de movimientos y alertas de stock bajo.
 - Caja operativa: cierre de corte con diferencia justificada, ingresos, retiros y abonos de fiado.
 - Respaldo automático al iniciar y cerrar sesión, y respaldo manual desde Ajustes.
 
-Esta entrega **no** incluye todavía la anulación de ventas, el historial de cortes ni las pantallas de clientes, proveedores, gastos o reportes. La pestaña Ventas es informativa de solo lectura.
+Esta entrega **no** incluye todavía el historial de cortes ni las pantallas de clientes, proveedores, gastos o reportes.
 
 ## Estado
 
-Base implementada y verificada manualmente en Windows: asistente, login, tablero y respaldo el 2026-10-23; punto de venta el 2026-10-25 (búsqueda, carrito, límite de stock, efectivo con cambio, tarjeta, mixto, fiado y ticket con copiar/cerrar); caja operativa el 2026-10-25 (cierre con diferencia justificada, ingreso, retiro y abono); inventario el 2026-10-25 (catálogo, escaneo, alta, edición, entrada, merma, ajuste, historial y permisos por rol). La compilación para Windows y Android está en verde en CI. Quedan pendientes el botón Compartir del ticket (diálogo del sistema) y la ejecución en Android; el equipo de desarrollo no tiene Android SDK ni JDK instalados.
+Base implementada y verificada manualmente en Windows: asistente, login, tablero y respaldo el 2026-10-23; punto de venta el 2026-10-25 (búsqueda, carrito, límite de stock, efectivo con cambio, tarjeta, mixto, fiado y ticket con copiar/cerrar); caja operativa el 2026-10-25 (cierre con diferencia justificada, ingreso, retiro y abono); inventario el 2026-10-25 (catálogo, escaneo, alta, edición, entrada, merma, ajuste, historial y permisos por rol); ventas y anulación el 2026-10-25 (detalle, reimpresión, QR decodificado offline, anulación con motivo y confirmación, devolución de stock, bloqueo por corte cerrado y visibilidad por rol). La compilación para Windows y Android está en verde en CI. Quedan pendientes el botón Compartir del ticket (diálogo del sistema), compartir el QR como imagen, la reimpresión con efectivo recibido y la ejecución en Android; el equipo de desarrollo no tiene Android SDK ni JDK instalados.
 
 ## Plataformas y proyecto
 
@@ -30,7 +31,7 @@ Base implementada y verificada manualmente en Windows: asistente, login, tablero
 | Identificador | `com.sistematienda.tienda` |
 | Empaquetado Windows | Sin MSIX (`WindowsPackageType=None`) |
 | Mínimos | Android 21; Windows 10.0.17763 |
-| Dependencias nuevas | `Microsoft.Maui.Controls`, `Microsoft.Extensions.Logging.Debug` |
+| Dependencias nuevas | `Microsoft.Maui.Controls`, `Microsoft.Extensions.Logging.Debug`, `Net.Codecrete.QrCodeGenerator` 3.2.1 (MIT, sin dependencias transitivas) |
 
 El proyecto MAUI **no** forma parte de `SistemaTienda.sln`: así el job de pruebas de .NET 8 no paga el costo de compilar dos frameworks móviles. Se compila desde su propio `.csproj` en un job separado de CI.
 
@@ -51,15 +52,16 @@ SistemaTienda.Maui/
 │   ├── InicioPage                 # Tablero del día
 │   ├── PosPage                    # Punto de venta: carrito, cobro y ticket
 │   ├── InventarioPage             # Catálogo, alta/edición y movimientos
-│   ├── TicketPage                 # Ticket interno con compartir y copiar
-│   ├── VentasPage                 # Ventas de hoy (lectura)
+│   ├── TicketPage                 # Ticket interno con QR, compartir y copiar
+│   ├── VentasPage                 # Ventas del día: detalle, reimpresión y anulación
 │   ├── CajaPage                   # Cierre de corte, movimientos y abonos
 │   ├── AjustesPage                # Configuración, respaldo y cierre de sesión
 │   └── ErrorPage                  # Arranque fallido
 ├── Services/
 │   ├── ArranqueApp.cs             # Decide asistente o login al iniciar
 │   ├── SesionApp.cs               # Sesión de la app sobre SesionActual
-│   └── NavegacionApp.cs           # Cambio de página raíz
+│   ├── NavegacionApp.cs           # Cambio de página raíz
+│   └── QrTicketView.cs            # Dibuja el QR del ticket sobre GraphicsView
 └── Platforms/                     # Android y Windows
 ```
 
@@ -76,13 +78,15 @@ SistemaTienda.Maui/
 | Asistente | Nombre, giro, impuesto, comisión, fondo, fiado y límite, intervalo de respaldo, PIN y confirmación | Crea tienda y usuario dueño |
 | Login | Nombre de la tienda y PIN numérico; 3 intentos y luego bloqueo hasta reabrir la app | Inicia sesión y evalúa respaldo automático |
 | Inicio | Ventas de hoy (vigentes y anuladas), efectivo esperado del periodo, stock bajo, último respaldo y aviso si venció | Solo lectura |
-| Vender | Búsqueda por código o nombre, carrito con cantidades, total, cobro efectivo con cambio visible/tarjeta/mixto/fiado y ticket interno | Venta y salida de stock |
+| Vender | Búsqueda por código o nombre, carrito con cantidades, total, cobro efectivo con cambio visible/tarjeta/mixto/fiado y ticket interno con QR | Venta y salida de stock |
 | Inventario | Resumen de productos, stock bajo y valorizado; búsqueda o escaneo, alta y edición, entrada, merma, ajuste, historial y filtro de stock bajo | Catálogo y movimientos de inventario |
-| Ventas | Lista de ventas del día con folio, total, método, hora y estado (vigente/anulada) | Solo lectura |
+| Ventas | Lista de ventas del día con folio, total, método, hora y estado; detalle con líneas, pagos, comisión y datos de anulación; reimpresión del ticket y anulación | Anulación de venta completa |
 | Caja | Periodo abierto, efectivo esperado, fondo, ventas por método, abonos, ingresos/retiros, gastos, cierre con conteo y diferencia, y último corte cerrado | Cierre de corte, ingresos, retiros y abonos |
 | Ajustes | Datos de la tienda, reglas configuradas, rutas de base y respaldos, último respaldo, crear respaldo y cerrar sesión | Respaldo manual y cierre de sesión |
 
-El POS reutiliza `VentaService`: la validación de stock, precios congelados, pagos y fiado ocurre en la capa de aplicación; la página solo arma el carrito y captura los importes. En efectivo, la página muestra un recuadro **Cambio a entregar** con el monto recibido y el cambio, y el ticket imprime ambos importes. El ticket es texto interno (sin QR) y se abre en una página modal con opciones de compartir y copiar.
+El POS reutiliza `VentaService`: la validación de stock, precios congelados, pagos y fiado ocurre en la capa de aplicación; la página solo arma el carrito y captura los importes. En efectivo, la página muestra un recuadro **Cambio a entregar** con el monto recibido y el cambio, y el ticket imprime ambos importes. El ticket se arma con `TicketService` (capa `Application`) y se abre en una página modal que muestra el QR, el texto completo y las opciones de compartir y copiar. El QR es informativo y offline: resume folio, fecha, estado, total, método de pago y hasta diez productos, y advierte que no es un comprobante fiscal. Se dibuja con `QrTicketView` sobre `GraphicsView`, sin guardarse como imagen.
+
+Ventas reutiliza `VentaService` y `TicketService`. Al tocar una venta se abre un detalle con fecha, cajero, estado, método de pago, cliente, líneas, total, pagos y comisión; si está anulada, muestra también el usuario, la fecha y el motivo de la anulación. **Ver ticket** reconstruye el ticket con `TicketService` (con el sello de anulación cuando corresponde) y lo abre en la misma página modal del POS. **Anular venta** solo aparece para dueño y encargado, pide el motivo y exige escribir `ANULAR`; luego llama a `VentaService.AnularVenta`, vuelve a leer la venta y la lista, y avisa que el reembolso en efectivo es manual.
 
 Caja reutiliza `CorteCajaService` y `ConfiguracionService`. Al cerrar, la página recalcula el efectivo esperado con el fondo capturado, muestra la diferencia en vivo y exige observaciones cuando no es cero; la confirmación advierte que el periodo queda inmutable. Los ingresos y retiros piden monto y motivo, y los retiros piden una confirmación adicional. Los abonos de fiado muestran el saldo del cliente y se listan solo si el fiado está activado. Después de cualquier operación se vuelve a leer el periodo desde la base, sin sumar importes en la interfaz.
 
@@ -92,7 +96,7 @@ Las pestañas se muestran en una barra inferior en Android y en la parte superio
 
 ## Sesión y permisos
 
-`SesionActual` usa `AsyncLocal`, que no sobrevive entre eventos de interfaz. Por eso `SesionApp` guarda el usuario autenticado y lo vuelve a aplicar (`SesionApp.Aplicar()`) antes de cada llamada a un servicio desde un manejador de eventos. Los permisos siguen validándose en `Application`, no en la interfaz: el POS exige `Vender` al confirmar el cobro; Caja exige `CorteCaja` e `IngresoCaja` a dueño o encargado, `RetiroCaja` solo al dueño y `RegistrarAbono` a dueño o encargado. POS y Caja muestran las operaciones a todos los roles y el servicio rechaza las que no corresponden. Inventario además oculta las acciones según el rol: el empleado solo consulta y ve movimientos; el encargado edita, registra entradas y mermas, pero no cambia precios ni ajusta stock; el dueño tiene todas. Aun cuando un botón quede oculto, el servicio vuelve a validar el permiso.
+`SesionActual` usa `AsyncLocal`, que no sobrevive entre eventos de interfaz. Por eso `SesionApp` guarda el usuario autenticado y lo vuelve a aplicar (`SesionApp.Aplicar()`) antes de cada llamada a un servicio desde un manejador de eventos. Los permisos siguen validándose en `Application`, no en la interfaz: el POS exige `Vender` al confirmar el cobro; Caja exige `CorteCaja` e `IngresoCaja` a dueño o encargado, `RetiroCaja` solo al dueño y `RegistrarAbono` a dueño o encargado; Ventas exige `AnularVenta` para anular. POS y Caja muestran las operaciones a todos los roles y el servicio rechaza las que no corresponden. Inventario y Ventas además ocultan las acciones según el rol: el empleado solo consulta y ve movimientos, y no ve **Anular venta**; el encargado edita, registra entradas y mermas, pero no cambia precios ni ajusta stock, y sí puede anular; el dueño tiene todas. Aun cuando un botón quede oculto, el servicio vuelve a validar el permiso.
 
 Al cerrar sesión desde Ajustes se ejecuta el respaldo automático si corresponde, se limpia la sesión y se vuelve al login. No se conserva el usuario anterior.
 
@@ -116,7 +120,7 @@ El manifiesto de Android no solicita permisos de red y desactiva el respaldo aut
 
 ## Navegación
 
-No se usa `Shell` ni rutas jerárquicas. `NavegacionApp` cambia la página raíz de la ventana (`Window.Page`) entre asistente, login y tablero. Es suficiente para las pantallas raíz sin historial de navegación y evita dejar páginas apiladas con sesiones viejas. Los detalles y formularios de Inventario se abren en una capa modal dentro de la misma pestaña.
+No se usa `Shell` ni rutas jerárquicas. `NavegacionApp` cambia la página raíz de la ventana (`Window.Page`) entre asistente, login y tablero. Es suficiente para las pantallas raíz sin historial de navegación y evita dejar páginas apiladas con sesiones viejas. Los detalles y formularios de Inventario se abren en una capa modal dentro de la misma pestaña; el detalle de una venta usa una capa superpuesta dentro de Ventas y el ticket se abre como página modal.
 
 ## Respaldo
 
@@ -127,14 +131,16 @@ No se usa `Shell` ni rutas jerárquicas. `NavegacionApp` cambia la página raíz
 
 ## Limitaciones de esta entrega
 
-- El punto de venta, el inventario y la caja ya registran operaciones desde la app; la anulación de ventas sigue en la consola.
+- Desde la app se vende, se opera el inventario, se cierra la caja y se anulan ventas; faltan las pantallas de clientes, proveedores y gastos.
 - Caja muestra el último corte cerrado, pero el historial completo solo se consulta en la consola; el conteo se captura como un total, sin desglose por denominaciones.
 - Inventario no permite borrar ni desactivar productos, filtrar por categoría, actualizar el costo del catálogo al registrar una entrada ni reportar un valorizado histórico.
 - No hay pantallas de clientes, proveedores, gastos ni reportes.
-- El ticket es texto interno (sin QR) con opciones de compartir y copiar; copiar sí se verificó, compartir depende del diálogo de Windows y quedó pendiente de probar.
+- El ticket es texto interno con QR informativo (no fiscal); no se genera PDF ni imagen, el QR no se comparte como imagen y resume hasta diez productos. Copiar sí se verificó; compartir depende del diálogo de Windows y sigue pendiente de probar.
+- La reimpresión desde Ventas no incluye el efectivo recibido ni el cambio, porque la venta solo guarda el total.
+- El QR no se ha validado en un dispositivo Android.
 - No hay cierre por inactividad; el bloqueo por PIN es manual (cerrar sesión).
 - Android solo se ha compilado en CI, no probado en un dispositivo físico.
-- La interfaz no está cubierta por pruebas automatizadas; la verificación es manual y la compilación en CI.
+- La interfaz no está cubierta por pruebas automatizadas; la verificación es manual y la compilación en CI. El contenido del ticket y del QR sí tiene pruebas unitarias en `TicketServiceTests`.
 
 ## Criterios de aceptación cumplidos
 
@@ -187,6 +193,23 @@ Implementados en código y verificados manualmente en Windows el 2026-10-25:
 - [x] Cada entrada, merma o ajuste valida cantidad, costo o motivo, actualiza el stock y deja un movimiento con usuario y fecha.
 - [x] El historial muestra los últimos 200 movimientos con cantidad firmada.
 - [ ] El catálogo se puede filtrar por categoría y los productos se pueden desactivar o borrar desde la app.
+
+## Criterios de aceptación de T16 (Ventas, QR y anulación)
+
+Implementados en código y verificados manualmente en Windows el 2026-10-25, salvo lo indicado:
+
+- [x] La lista de Ventas abre el detalle con fecha, cajero, estado, líneas, pagos y comisión.
+- [x] **Ver ticket** reimprime el ticket y su QR incluye folio, fecha, estado, total, método de pago y productos.
+- [x] El QR se decodifica offline con un lector externo y advierte que no es un comprobante fiscal.
+- [x] Una venta anulada muestra el sello, el usuario, la fecha y el motivo, y su QR indica `Anulada`.
+- [x] Solo dueño y encargado ven **Anular venta**; el empleado no, y el servicio vuelve a validar el permiso.
+- [x] La anulación exige motivo y confirmación `ANULAR`; con motivo vacío o confirmación incorrecta no se modifica la base.
+- [x] Al anular se devuelve el stock con el costo congelado y queda el registro en la bitácora.
+- [x] Una venta incluida en un corte cerrado no se puede anular.
+- [ ] El QR se comparte como imagen y la reimpresión incluye el efectivo recibido.
+- [ ] El QR se valida en un dispositivo Android.
+
+Detalle de la decisión y límites del QR en [ADR-qr-ticket.md](../05-decisiones/ADR-qr-ticket.md).
 
 ## Compilar y ejecutar
 

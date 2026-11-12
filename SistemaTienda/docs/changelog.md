@@ -32,6 +32,20 @@ Próximamente después de completar los módulos críticos.
 - Configuración básica de tienda (nombre, giro, impuestos, métodos de pago).
 - Documentación inicial (glosario, stack, módulos, ADR).
 
+### v0.0.15 - 2026-10-25: Anulación y ticket con QR en la app MAUI
+
+- *Agregado*: detalle de venta en la pestaña **Ventas** con folio, fecha, cajero, estado, líneas, pagos, comisión, cliente y datos de anulación.
+- *Agregado*: reimpresión del ticket desde el detalle, con QR y con el sello de anulación cuando corresponde.
+- *Agregado*: anulación de la venta completa desde la app con motivo obligatorio y confirmación `ANULAR`; solo dueño y encargado ven la acción y `VentaService` vuelve a validar `AnularVenta`, que la venta no esté anulada y que no pertenezca a un corte cerrado.
+- *Agregado*: `TicketService` en la capa `Application` genera el texto y el contenido del QR sin dependencias de MAUI; 6 pruebas nuevas en `TicketServiceTests`.
+- *Agregado*: QR informativo offline en el ticket con folio, fecha, estado, total, método de pago y hasta diez productos; se dibuja con `QrTicketView` sobre `GraphicsView` y `Net.Codecrete.QrCodeGenerator` 3.2.1. No es un comprobante fiscal.
+- *Modificado*: el ticket del POS y el de la reimpresión comparten el mismo formato; la venta solo guarda el total, así que la reimpresión no repite el efectivo recibido.
+- *Corregido*: los botones Compartir, Copiar y Cerrar del ticket quedaban fuera de la ventana al agregar el QR; el ticket ahora se desplaza dentro de una cuadrícula y los botones quedan fijos.
+- *Agregado*: [ADR del QR](05-decisiones/ADR-qr-ticket.md) con la decisión, los límites y la verificación.
+- *Limitación*: el QR no se comparte ni se guarda como imagen, no se ha validado en Android y la interfaz sigue sin pruebas automatizadas.
+- Verificación manual en Windows (2026-10-25): venta #10 de tres productos, QR decodificado offline, reimpresión, rechazo por motivo vacío y confirmación incorrecta, anulación con motivo y `ANULAR` (stock restaurado y bitácora), bloqueo por corte cerrado y visibilidad por rol.
+- Total del proyecto: 177 pruebas.
+
 ### v0.0.14 - 2026-10-25: Inventario y catálogo en la app MAUI
 
 - *Agregado*: pestaña **Inventario** con catálogo, resumen de productos/stock bajo/valorizado, búsqueda por nombre, conteo de resultados y filtro de stock bajo.

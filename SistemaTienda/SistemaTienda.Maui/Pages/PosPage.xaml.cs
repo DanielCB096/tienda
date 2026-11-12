@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Text;
 using SistemaTienda.Application.Services;
 using SistemaTienda.Core;
 using SistemaTienda.Maui.Models;
@@ -12,18 +11,20 @@ public partial class PosPage : ContentPage
     private readonly VentaService _ventas;
     private readonly InventoryService _inventario;
     private readonly ConfiguracionService _configuracionService;
+    private readonly TicketService _ticketService;
     private readonly SesionApp _sesion;
 
     private readonly List<CarritoFila> _carrito = new();
     private ConfiguracionTienda? _config;
 
     public PosPage(VentaService ventas, InventoryService inventario,
-        ConfiguracionService configuracion, SesionApp sesion)
+        ConfiguracionService configuracion, TicketService ticketService, SesionApp sesion)
     {
         InitializeComponent();
         _ventas = ventas;
         _inventario = inventario;
         _configuracionService = configuracion;
+        _ticketService = ticketService;
         _sesion = sesion;
     }
 
@@ -394,7 +395,7 @@ public partial class PosPage : ContentPage
         ProcessResult<Venta> resultado;
         try
         {
-            var lineas = _carrito
+            var solicitadas = _carrito
                 .Select(c => new LineaVentaSolicitada
                 {
                     ProductoId = c.Producto.Id,
@@ -402,7 +403,7 @@ public partial class PosPage : ContentPage
                 })
                 .ToList();
 
-            resultado = _ventas.RegistrarVenta(lineas, pago!, _sesion.Usuario.Nombre);
+            resultado = _ventas.RegistrarVenta(solicitadas, pago!, _sesion.Usuario.Nombre);
         }
         catch (Exception ex)
         {
@@ -422,7 +423,9 @@ public partial class PosPage : ContentPage
         var efectivoRecibido = resultado.Value.MetodoPago == MetodoPagoVenta.Efectivo
             ? LeerCentavos(EfectivoEntry.Text)
             : null;
-        var ticket = ConstruirTicket(resultado.Value, nombreCliente, efectivoRecibido);
+        var lineas = _ventas.ObtenerLineas(resultado.Value.Id);
+        var ticket = _ticketService.Generar(
+            resultado.Value, lineas, _config, nombreCliente, efectivoRecibido);
 
         _carrito.Clear();
         ActualizarCarrito();
@@ -433,7 +436,7 @@ public partial class PosPage : ContentPage
 
         try
         {
-            await Navigation.PushModalAsync(new TicketPage(ticket));
+            await Navigation.PushModalAsync(new TicketPage(ticket.Texto, ticket.ContenidoQr));
         }
         catch (Exception ex)
         {
@@ -447,48 +450,6 @@ public partial class PosPage : ContentPage
     {
         PagoErrorLabel.Text = mensaje;
         PagoErrorLabel.IsVisible = true;
-    }
-
-    private string ConstruirTicket(Venta venta, string? nombreCliente, long? efectivoRecibido = null)
-    {
-        var sb = new StringBuilder();
-        sb.AppendLine(_config?.NombreTienda ?? "Mi tienda");
-        sb.AppendLine($"Ticket interno (no fiscal) · Venta #{venta.Id}");
-        sb.AppendLine($"{Formato.FechaHora(venta.Fecha)} · Atendió: {venta.Usuario}");
-        sb.AppendLine(new string('-', 40));
-
-        foreach (var fila in _carrito)
-        {
-            sb.AppendLine($"{fila.Cantidad} x {fila.Producto.Nombre}");
-            sb.AppendLine(
-                $"   {Formato.Moneda(fila.Producto.Precio)} c/u = {Formato.Moneda(Dinero.Multiplicar(fila.Producto.Precio, fila.Cantidad))}");
-        }
-
-        sb.AppendLine(new string('-', 40));
-        sb.AppendLine($"TOTAL: {Formato.Moneda(venta.Total)}");
-        sb.AppendLine($"Pago: {venta.MetodoPago}");
-
-        if (venta.MetodoPago == MetodoPagoVenta.Efectivo && efectivoRecibido.HasValue)
-        {
-            sb.AppendLine($"Recibido: {Formato.Moneda(efectivoRecibido.Value)}");
-            sb.AppendLine($"Cambio: {Formato.Moneda(efectivoRecibido.Value - venta.Total)}");
-        }
-
-        if (venta.PagoEfectivo > 0 && venta.PagoTarjeta > 0)
-        {
-            sb.AppendLine($"   Efectivo: {Formato.Moneda(venta.PagoEfectivo)}");
-            sb.AppendLine($"   Tarjeta: {Formato.Moneda(venta.PagoTarjeta)}");
-        }
-
-        if (venta.PagoFiado > 0)
-            sb.AppendLine($"   Fiado a: {nombreCliente ?? "cliente"}");
-
-        if (venta.ComisionTarjeta > 0)
-            sb.AppendLine($"Comisión tarjeta: {Formato.Moneda(venta.ComisionTarjeta)} (afecta la utilidad)");
-
-        sb.AppendLine();
-        sb.AppendLine("Gracias por su compra.");
-        return sb.ToString();
     }
 
     private static long? LeerCentavos(string? texto)
