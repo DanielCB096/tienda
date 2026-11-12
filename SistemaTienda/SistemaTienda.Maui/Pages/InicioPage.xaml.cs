@@ -60,7 +60,7 @@ public partial class InicioPage : ContentPage
                 $"Desde {Formato.FechaHora(pendiente.Value.Desde)} · Fondo {Formato.Moneda(pendiente.Value.FondoInicial)}";
         }
 
-        var stockBajo = _inventario.ProductosStockBajo();
+        var stockBajo = _inventario.ProductosStockBajo(soloActivos: true);
         StockBajoLabel.Text = stockBajo.Count.ToString();
         StockBajoEstadoLabel.Text = stockBajo.Count == 0 ? "Todo en orden" : "Revisar hoy";
 

@@ -57,8 +57,10 @@ public class InventoryService
 
     public Producto BuscarPorId(int productoId) => _db.ObtenerProductoPorId(productoId);
 
-    public List<Producto> BuscarPorNombre(string texto) =>
-        string.IsNullOrWhiteSpace(texto) ? new List<Producto>() : _db.BuscarProductosPorNombre(texto.Trim());
+    public List<Producto> BuscarPorNombre(string texto, bool soloActivos = false) =>
+        string.IsNullOrWhiteSpace(texto)
+            ? new List<Producto>()
+            : _db.BuscarProductosPorNombre(texto.Trim(), soloActivos);
 
     public ProcessResult ActualizarProducto(Producto producto)
     {
@@ -130,6 +132,10 @@ public class InventoryService
         if (producto == null)
             return ProcessResult.Error("No se encontró el producto");
 
+        if (!producto.Activo)
+            return ProcessResult.Error(
+                "El producto está desactivado; reactívalo para registrar entradas");
+
         if (!_db.RegistrarEntrada(productoId, cantidad, costoUnitario, motivo, usuario))
             return ProcessResult.Error("No se encontró el producto");
 
@@ -158,6 +164,10 @@ public class InventoryService
         if (producto == null)
             return ProcessResult.Error("Producto no encontrado");
 
+        if (!producto.Activo)
+            return ProcessResult.Error(
+                "El producto está desactivado; reactívalo para registrar mermas");
+
         if (!_db.RegistrarSalida(productoId, cantidad, $"Merma: {motivo.Trim()}", usuario))
             return ProcessResult.Error("Stock insuficiente para registrar la merma");
 
@@ -185,6 +195,10 @@ public class InventoryService
             return ProcessResult.Error("El motivo del ajuste es obligatorio");
 
         var producto = _db.ObtenerProductoPorId(productoId);
+        if (producto is { Activo: false })
+            return ProcessResult.Error(
+                "El producto está desactivado; reactívalo para ajustar su stock");
+
         if (!_db.AjustarStock(productoId, nuevoStock, motivo.Trim(), usuario))
             return ProcessResult.Error("No se pudo ajustar el stock");
 
@@ -193,7 +207,55 @@ public class InventoryService
         return ProcessResult.Success("Stock ajustado correctamente");
     }
 
-    public List<Producto> ProductosStockBajo() => _db.ObtenerProductosStockBajo();
+    /// <summary>
+    /// Desactiva un producto: deja de venderse y de recibir movimientos, conservando su stock.
+    /// Permiso exclusivo del dueño; la acción queda en la bitácora.
+    /// </summary>
+    public ProcessResult DesactivarProducto(int productoId)
+    {
+        return CambiarEstado(productoId, activo: false,
+            mensajeYaAplicado: "El producto ya está desactivado",
+            mensajeExito: "Producto desactivado");
+    }
+
+    /// <summary>
+    /// Reactiva un producto desactivado. Permiso exclusivo del dueño.
+    /// </summary>
+    public ProcessResult ReactivarProducto(int productoId)
+    {
+        return CambiarEstado(productoId, activo: true,
+            mensajeYaAplicado: "El producto ya está activo",
+            mensajeExito: "Producto reactivado");
+    }
+
+    private ProcessResult CambiarEstado(int productoId, bool activo,
+        string mensajeYaAplicado, string mensajeExito)
+    {
+        var autorizacion = Autorizar(PermisoSistema.DesactivarProducto);
+        if (autorizacion.IsError)
+            return autorizacion;
+
+        var producto = _db.ObtenerProductoPorId(productoId);
+        if (producto == null)
+            return ProcessResult.Error("No se encontró el producto");
+
+        if (producto.Activo == activo)
+            return ProcessResult.Error(mensajeYaAplicado);
+
+        if (!_db.CambiarEstadoProducto(productoId, activo))
+            return ProcessResult.Error("No se pudo cambiar el estado del producto");
+
+        _bitacora.Registrar(AccionBitacora.CambiarEstadoProducto, "Producto", productoId.ToString(),
+            $"Nombre={producto.Nombre};Activo={(activo ? 0 : 1)};Stock={producto.Stock}",
+            $"Nombre={producto.Nombre};Activo={(activo ? 1 : 0)};Stock={producto.Stock}");
+        return ProcessResult.Success(
+            $"{mensajeExito}. Su stock ({producto.Stock}) se conserva" +
+            (activo ? " y vuelve a estar disponible para la venta."
+                     : "; no se puede vender ni recibir movimientos mientras esté inactivo."));
+    }
+
+    public List<Producto> ProductosStockBajo(bool soloActivos = false) =>
+        _db.ObtenerProductosStockBajo(soloActivos);
 
     public List<MovimientoInventario> HistorialMovimientos(int productoId) =>
         _db.ObtenerHistorialMovimientos(productoId);

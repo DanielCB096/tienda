@@ -55,7 +55,7 @@
                         Clicked="OnBuscarClicked" />
             </Grid>
 
-            <Grid Grid.Row="3" ColumnDefinitions="Auto,Auto,*" ColumnSpacing="8">
+            <Grid Grid.Row="3" ColumnDefinitions="Auto,Auto,Auto,Auto,*" ColumnSpacing="8">
                 <Button x:Name="FiltroTodosButton"
                         Text="Todos"
                         Style="{StaticResource BotonSecundario}"
@@ -63,16 +63,32 @@
                         Padding="12,0"
                         FontSize="13"
                         Clicked="OnFiltroTodosClicked" />
-                <Button x:Name="FiltroBajoButton"
+                <Button x:Name="FiltroActivosButton"
                         Grid.Column="1"
+                        Text="Activos"
+                        Style="{StaticResource BotonSecundario}"
+                        HeightRequest="38"
+                        Padding="12,0"
+                        FontSize="13"
+                        Clicked="OnFiltroActivosClicked" />
+                <Button x:Name="FiltroBajoButton"
+                        Grid.Column="2"
                         Text="Stock bajo"
                         Style="{StaticResource BotonSecundario}"
                         HeightRequest="38"
                         Padding="12,0"
                         FontSize="13"
                         Clicked="OnFiltroBajoClicked" />
+                <Button x:Name="FiltroInactivosButton"
+                        Grid.Column="3"
+                        Text="Inactivos"
+                        Style="{StaticResource BotonSecundario}"
+                        HeightRequest="38"
+                        Padding="12,0"
+                        FontSize="13"
+                        Clicked="OnFiltroInactivosClicked" />
                 <Label x:Name="ResultadosLabel"
-                       Grid.Column="2"
+                       Grid.Column="4"
                        Style="{StaticResource TextoNota}"
                        VerticalOptions="Center"
                        HorizontalTextAlignment="End" />
@@ -103,6 +119,12 @@
                                                    FontAttributes="Bold" />
                                         </VerticalStackLayout>
                                         <VerticalStackLayout Grid.Column="1" Spacing="6" VerticalOptions="Center">
+                                            <Label Text="INACTIVO"
+                                                   IsVisible="{Binding Inactivo}"
+                                                   TextColor="#8C1D18"
+                                                   FontSize="11"
+                                                   FontAttributes="Bold"
+                                                   HorizontalTextAlignment="End" />
                                             <Label Text="STOCK BAJO"
                                                    IsVisible="{Binding StockBajo}"
                                                    TextColor="#B3261E"
@@ -181,12 +203,24 @@
                                 <Label x:Name="BajoDetalleLabel" TextColor="#7A5B00" FontSize="13" />
                             </Border>
 
+                            <Border x:Name="InactivoDetalleBorder"
+                                    BackgroundColor="#FDE7E9"
+                                    StrokeThickness="0"
+                                    StrokeShape="RoundRectangle 10"
+                                    Padding="10"
+                                    IsVisible="False">
+                                <Label x:Name="InactivoDetalleLabel"
+                                       TextColor="#8C1D18"
+                                       FontSize="13"
+                                       Text="Producto inactivo: no se vende y no recibe entradas, mermas ni ajustes. Su stock se conserva; puedes editar sus datos o reactivarlo." />
+                            </Border>
+
                             <Label x:Name="SoloConsultaLabel"
                                    Text="Tu rol permite consultar el catálogo; las operaciones de inventario están restringidas."
                                    Style="{StaticResource TextoNota}"
                                    IsVisible="False" />
 
-                            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto"
+                            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto"
                                   ColumnSpacing="8" RowSpacing="8">
                                 <Button x:Name="EditarButton"
                                         Text="Editar"
@@ -224,6 +258,15 @@
                                         HeightRequest="44"
                                         FontSize="14"
                                         Clicked="OnHistorialClicked" />
+                                <Button x:Name="EstadoButton"
+                                        Grid.Row="3"
+                                        Grid.ColumnSpan="2"
+                                        Text="Desactivar producto"
+                                        Style="{StaticResource BotonSecundario}"
+                                        HeightRequest="44"
+                                        FontSize="14"
+                                        IsVisible="False"
+                                        Clicked="OnEstadoClicked" />
                             </Grid>
                         </VerticalStackLayout>
 

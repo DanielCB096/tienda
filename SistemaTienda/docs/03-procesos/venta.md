@@ -24,6 +24,8 @@ Base implementada en `feat/ventas-pos` (esquema v2; la anulación se agregó en 
 
 Decisiones aplicadas: el precio de catálogo incluye impuesto y no se recalcula; el fiado no se combina con otros métodos; no hay ventas en espera (una a la vez); el sistema no se integra con la terminal bancaria.
 
+Los productos desactivados (esquema v7) no aparecen en la búsqueda del POS y, si se escanea su código, la app avisa que no se puede vender; `VentaService` rechaza cualquier venta que los incluya, aunque el carrito ya los tuviera. Se reactivan desde Inventario (solo dueño).
+
 ## Punto de venta en la app MAUI (T13)
 
 La pestaña **Vender** replica el flujo de la consola sobre los mismos servicios:

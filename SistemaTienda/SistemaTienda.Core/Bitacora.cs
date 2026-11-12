@@ -30,6 +30,7 @@ public enum PermisoSistema
     RegistrarAbono,
     PagarProveedor,
     EditarProducto,
+    DesactivarProducto,
     CambiarPrecios,
     AjustarInventario,
     RegistrarEntrada,
@@ -45,6 +46,7 @@ public static class AccionBitacora
     public const string AjusteInventario = "AjusteInventario";
     public const string CambioPrecio = "CambioPrecio";
     public const string EditarProducto = "EditarProducto";
+    public const string CambiarEstadoProducto = "CambiarEstadoProducto";
     public const string Merma = "Merma";
     public const string EntradaInventario = "EntradaInventario";
     public const string Gasto = "Gasto";

@@ -1,6 +1,6 @@
 # Coordinación entre agentes
 
-Actualizado: 2026-10-26. Tablero único: cualquier IA o persona que trabaje en este repositorio debe reclamar su tarea aquí antes de empezar.
+Actualizado: 2026-11-06. Tablero único: cualquier IA o persona que trabaje en este repositorio debe reclamar su tarea aquí antes de empezar.
 
 Instrucciones generales: [AGENTS.md](../../AGENTS.md).
 
@@ -52,6 +52,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 | T17 | Qoder | feat/maui-caja-denominaciones | Conteo por denominaciones en Caja con total automático, validación y limpieza; historial de los últimos 20 cortes; 6 pruebas nuevas; 183 pruebas; PR #9 contra `main` | dab055f, 0496869 |
 | T18 | Qoder | feat/maui-clientes | Pantalla de clientes con directorio, búsqueda por nombre/teléfono sin acentos, filtros, alta con bitácora y abono en efectivo con permiso; 4 pruebas nuevas; 187 pruebas; PR #10 contra `main` con CI en verde | 9ee4c14, 314257b |
 | T19 | Qoder | feat/maui-proveedores | Pantalla de proveedores con directorio, búsqueda por nombre/clave/teléfono sin acentos, filtro con saldo, alta con bitácora y pago con permiso `PagarProveedor`; 4 pruebas nuevas; 191 pruebas; PR #11 contra `main` | 59f27c0, b32c006 |
+| T20 | GLM (OpenCode) | feat/desactivacion-productos | Desactivación de productos: esquema v7 (`Productos.Activo`), desactivar/reactivar solo dueño con bitácora, venta y movimientos bloqueados para inactivos, filtros Todos/Activos/Stock bajo/Inactivos y acciones en la app, POS oculta inactivos; 15 pruebas nuevas; 206 pruebas | 8a2f08c, 1d979b4 |
 
 ## Tareas
 
@@ -76,6 +77,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 | T17 | Conteo por denominaciones e historial de cortes en Caja | Hecho | T8, T14 | En `feat/maui-caja-denominaciones` sobre `feat/maui-anulacion-qr`. El conteo por billetes y monedas alimenta el efectivo contado sin cambiar el esquema; el historial muestra los últimos 20 cortes cerrados. Verificación manual en Windows el 2026-10-25; 183 pruebas. Pendientes: persistir el desglose y validar en Android. |
 | T18 | Pantalla de clientes en la app MAUI | Hecho | T7, T14 | En `feat/maui-clientes` sobre `feat/maui-caja-denominaciones` (PR #10 contra `main`, CI en verde). Directorio con búsqueda por nombre/teléfono, filtros, alta y abono en efectivo; 187 pruebas. Verificación manual en Windows/Android pendiente porque el entorno no pudo abrir la GUI. |
 | T19 | Pantalla de proveedores en la app MAUI | Hecho | T7, T18 | En `feat/maui-proveedores` sobre `feat/maui-clientes` (PR #11 contra `main`). Directorio con búsqueda por nombre, clave o teléfono, filtro de saldo, alta con bitácora y pago con permiso; 191 pruebas. Verificación manual en Windows/Android pendiente porque el entorno no pudo abrir la GUI. El pago sigue sin entrar al corte ni tener historial propio. |
+| T20 | Desactivación de productos (esquema v7) | Hecho | T4, T7, T15 | En `feat/desactivacion-productos` sobre `feat/maui-proveedores` (PR #13 contra `main`, CI en verde). Migración v7 (`Productos.Activo`, los existentes quedan activos); desactivar/reactivar solo dueño con permiso `DesactivarProducto` y bitácora; inactivos sin venta ni entradas/mermas/ajustes y ocultos del POS; filtros Todos/Activos/Stock bajo/Inactivos, distintivo y aviso en Inventario; stock conservado y stock bajo de solo activos; 206 pruebas. Verificación manual de la pantalla pendiente (la GUI no pudo abrirse en el entorno). |
 
 ## Plantilla para reclamar
 
@@ -113,3 +115,5 @@ Al terminar, mueve la fila a `Hecho` (o elimínala de En curso) y registra el co
 | 2026-10-26 | Qoder | feat/maui-clientes | CI en verde para el PR #10: compilación y pruebas (187 en verde), y app MAUI para Windows y Android | 314257b |
 | 2026-10-26 | Qoder | feat/maui-proveedores | T19 terminado: pantalla de proveedores con búsqueda por nombre/clave/teléfono, filtro de saldo, alta con bitácora y pago con permiso; 4 pruebas nuevas; 191 pruebas en local; verificación manual pendiente por bloqueo del entorno; documentación actualizada; PR #11 abierto | 59f27c0, b32c006 |
 | 2026-10-26 | Qoder | feat/maui-proveedores | CI en verde para el PR #11: compilación y pruebas (191 en verde), y app MAUI para Windows y Android | 4fca3cd |
+| 2026-11-06 | GLM (OpenCode) | feat/desactivacion-productos | Cierre del paquete externo "T1": el PR #12 se cerró sin fusionar porque la T1 ya vive en la cadena actual; solo se portó la desactivación de productos como T20 con esquema v7, permiso de dueño, bloqueo de venta y movimientos, filtros en la app y 15 pruebas nuevas; 206 pruebas en local | 8a2f08c, 1d979b4 |
+| 2026-11-06 | GLM (OpenCode) | feat/desactivacion-productos | CI en verde para el PR #13: compilación y pruebas (206 en verde), y app MAUI para Windows y Android; verificación manual de la pantalla pendiente (la GUI no abre en el entorno) | 5afe99a |

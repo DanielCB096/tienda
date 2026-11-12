@@ -125,8 +125,9 @@ dotnet test SistemaTienda/SistemaTienda.sln
 | `RespaldoAutomaticoTests` | Respaldo automático sin copia previa y su auditoría, respaldo vigente que no duplica, intervalo cumplido, intervalo 0 deshabilitado y auditoría del respaldo manual |
 | `TicketServiceTests` | Texto del ticket (efectivo con recibido y cambio, mixto con comisión, fiado con cliente), marcador de anulación, contenido del QR con estado, límite de diez productos y nombre de tienda por defecto |
 | `ConteoEfectivoTests` | Catálogo de 11 denominaciones de mayor a menor y sin duplicados, subtotal por cantidad, cantidades cero o negativas ignoradas, total de billetes y monedas y líneas sin cantidad |
+| `DesactivacionProductosTests` | Migración v6 → v7 conserva productos y los marca activos, alta activa por defecto, desactivar conserva stock y bloquea la venta, reactivar devuelve a la venta, permiso solo dueño, bitácora, estados ya aplicados e inexistente, entrada/merma/ajuste bloqueados, búsqueda y stock bajo con filtro de activos y localización por código |
 
-Total actual: 191 casos, todos en verde. Los puntos 1, 2, 3, 5, 6, 7, 8 y 9 del listado de áreas críticas tienen cobertura parcial; falta rendimiento y la interfaz MAUI sigue sin pruebas automatizadas. La restauración se prueba sobre una base temporal: se verifica que el contenido vuelve al del respaldo (no byte a byte).
+Total actual: 206 casos, todos en verde. Los puntos 1, 2, 3, 5, 6, 7, 8 y 9 del listado de áreas críticas tienen cobertura parcial; falta rendimiento y la interfaz MAUI sigue sin pruebas automatizadas. La restauración se prueba sobre una base temporal: se verifica que el contenido vuelve al del respaldo (no byte a byte).
 
 La verificación se ejecuta en GitHub Actions (`windows-latest`) en cada push y también puede correr localmente con `dotnet test`; ver `CLAUDE-tienda.md` para el entorno actual.
 
@@ -237,7 +238,8 @@ Pendiente de Inventario:
 
 - Probar con un lector de código de barras físico USB o Bluetooth.
 - Repetir el flujo en la tablet Android.
-- Agregar filtro por categoría y desactivación de productos.
+- Verificar manualmente la desactivación de productos en la app (T20): filtros, aviso del detalle, confirmación y bloqueo de movimientos con roles dueño/encargado/empleado.
+- Agregar filtro por categoría.
 - Cubrir la interfaz con pruebas automatizadas.
 
 ## Verificación manual de Ventas, ticket y anulación (T16)

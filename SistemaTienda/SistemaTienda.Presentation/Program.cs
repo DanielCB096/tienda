@@ -189,7 +189,7 @@ internal static class Program
             Console.WriteLine("  [1] Ver productos");
             Console.WriteLine("  [2] Buscar por código de barras");
             Console.WriteLine("  [3] Buscar por nombre");
-            Console.WriteLine("  [4] Productos con stock bajo");
+            Console.WriteLine("  [4] Productos con stock bajo (activos)");
             Console.WriteLine("  [5] Historial de movimientos");
             Console.WriteLine("  [6] Agregar producto");
             Console.WriteLine("  [7] Editar producto");
@@ -202,7 +202,7 @@ internal static class Program
                 case "1": ListarProductosPaginado(_inventario.ObtenerProductos()); break;
                 case "2": BuscarPorCodigo(); break;
                 case "3": BuscarPorNombre(); break;
-                case "4": ListarProductosPaginado(_inventario.ProductosStockBajo()); break;
+                case "4": ListarProductosPaginado(_inventario.ProductosStockBajo(soloActivos: true)); break;
                 case "5": VerMovimientos(); break;
                 case "6": AgregarProducto(); break;
                 case "7": EditarProducto(); break;
@@ -236,7 +236,7 @@ internal static class Program
             for (var i = inicio; i < fin; i++)
             {
                 var p = productos[i];
-                Console.WriteLine($"  {p.Id,-5} {p.CodigoBarras,-17} {p.Nombre,-31} {p.Stock,-8} ${Dinero.Formatear(p.Precio),8}");
+                Console.WriteLine($"  {p.Id,-5} {p.CodigoBarras,-17} {p.Nombre,-31} {p.Stock,-8} ${Dinero.Formatear(p.Precio),8}{(p.Activo ? string.Empty : "  [INACTIVO]")}");
             }
 
             Console.WriteLine("\n  [Enter] siguiente página   [q] salir");
@@ -284,6 +284,7 @@ internal static class Program
         Console.WriteLine($"  ID:        {producto.Id}");
         Console.WriteLine($"  Código:    {producto.CodigoBarras}");
         Console.WriteLine($"  Nombre:    {producto.Nombre}");
+        Console.WriteLine($"  Estado:    {(producto.Activo ? "Activo" : "INACTIVO (no se vende ni recibe movimientos)")}");
         Console.WriteLine($"  Categoría: {producto.Categoria}");
         Console.WriteLine($"  Costo:     ${Dinero.Formatear(producto.Costo)}");
         Console.WriteLine($"  Precio:    ${Dinero.Formatear(producto.Precio)}");
@@ -454,7 +455,7 @@ internal static class Program
             var producto = _inventario.BuscarPorCodigo(entrada);
             if (producto == null)
             {
-                var coincidencias = _inventario.BuscarPorNombre(entrada);
+                var coincidencias = _inventario.BuscarPorNombre(entrada, soloActivos: true);
                 if (coincidencias.Count == 0)
                 {
                     Aviso($"No se encontró \"{entrada}\".");
@@ -463,6 +464,12 @@ internal static class Program
 
                 producto = ElegirProducto(coincidencias);
                 if (producto == null) continue;
+            }
+
+            if (!producto.Activo)
+            {
+                Aviso($"{producto.Nombre} está desactivado y no se puede vender. Reactívalo en Inventario.");
+                continue;
             }
 
             var enCarrito = carrito.Where(c => c.Producto.Id == producto.Id).Sum(c => c.Cantidad);
@@ -1015,7 +1022,7 @@ internal static class Program
             LimpiarPantalla();
             Console.WriteLine("=== REPORTES ===");
             Console.WriteLine("  [1] Valorizado de inventario");
-            Console.WriteLine("  [2] Productos con stock bajo");
+            Console.WriteLine("  [2] Productos con stock bajo (activos)");
             Console.WriteLine("  [3] Resumen de gastos");
             Console.WriteLine("  [4] Saldo total con proveedores");
             Console.WriteLine("  [5] Ventas y utilidad");
@@ -1030,7 +1037,7 @@ internal static class Program
                     Console.WriteLine($"  Valor total al costo: ${Dinero.Formatear(_inventario.ObtenerValorizadoInventario())}");
                     Pausa();
                     break;
-                case "2": ListarProductosPaginado(_inventario.ProductosStockBajo()); break;
+                case "2": ListarProductosPaginado(_inventario.ProductosStockBajo(soloActivos: true)); break;
                 case "3": ReporteGastos(); break;
                 case "4": ReporteSaldoProveedores(); break;
                 case "5": ReporteUtilidad(); break;

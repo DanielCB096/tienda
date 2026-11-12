@@ -83,11 +83,19 @@ public partial class PosPage : ContentPage
         {
             BuscarEntry.Text = string.Empty;
             OcultarResultados();
+            if (!producto.Activo)
+            {
+                MostrarMensaje($"{producto.Nombre} está desactivado y no se puede vender. " +
+                    "Reactívalo en Inventario (solo el dueño).");
+                BuscarEntry.Focus();
+                return;
+            }
+
             AgregarAlCarrito(producto);
             return;
         }
 
-        var coincidencias = _inventario.BuscarPorNombre(texto);
+        var coincidencias = _inventario.BuscarPorNombre(texto, soloActivos: true);
         if (coincidencias.Count == 0)
         {
             OcultarResultados();
@@ -115,6 +123,12 @@ public partial class PosPage : ContentPage
 
     private void AgregarAlCarrito(Producto producto)
     {
+        if (!producto.Activo)
+        {
+            MostrarMensaje($"{producto.Nombre} está desactivado y no se puede vender.");
+            return;
+        }
+
         var enCarrito = _carrito
             .Where(c => c.Producto.Id == producto.Id)
             .Sum(c => c.Cantidad);

@@ -74,6 +74,10 @@ public class VentaService
             if (producto == null)
                 return ProcessResult<Venta>.Error($"Producto {solicitada.ProductoId} no encontrado");
 
+            if (!producto.Activo)
+                return ProcessResult<Venta>.Error(
+                    $"El producto {producto.Nombre} está desactivado y no se puede vender");
+
             lineasVenta.Add(new VentaLinea
             {
                 ProductoId = producto.Id,
