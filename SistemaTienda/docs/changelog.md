@@ -32,6 +32,13 @@ Próximamente después de completar los módulos críticos.
 - Configuración básica de tienda (nombre, giro, impuestos, métodos de pago).
 - Documentación inicial (glosario, stack, módulos, ADR).
 
+### v0.0.25 - 2026-11-12: Integración de la cadena de PRs en main
+
+- *Integrado*: PR #4, #5, #7, #8, #9, #10, #11, #13, #14, #15, #16, #17 y #18 fusionados en orden con merge commit; `main` queda en `86cbf67` con 113 commits y todo el trabajo de T1 a T25.
+- *Cerrado*: PR #1, #3 y #6 sin fusionar porque su contenido ya estaba en la cadena (apuntaban a ramas intermedias o duplicaban #5).
+- *Verificación*: `main` compila sin errores ni advertencias y pasa las 246 pruebas en local; CI de `main` en ejecución al cierre de esta entrada.
+- *Nota*: las ramas `feat/*` se conservan como respaldo; el trabajo nuevo parte de `main`.
+
 ### v0.0.24 - 2026-11-12: Método de pago y retiro automático en proveedores
 
 - *Agregado*: el pago a proveedores pide método **Efectivo**, **Tarjeta**, **Transferencia** u **Otro** en la consola y en la app MAUI.
