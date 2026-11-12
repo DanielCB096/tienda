@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:models="clr-namespace:SistemaTienda.Maui.Models"
+             x:Class="SistemaTienda.Maui.Pages.GastosPage"
+             Title="Gastos">
+
+    <Grid>
+        <Grid RowDefinitions="Auto,Auto,Auto,*" RowSpacing="10" Padding="16">
+
+            <Grid Grid.Row="0" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                <VerticalStackLayout Spacing="2">
+                    <Label Text="Gastos" Style="{StaticResource TituloPagina}" />
+                    <Label x:Name="UsuarioLabel" Style="{StaticResource TextoNota}" />
+                </VerticalStackLayout>
+                <Button Grid.Column="1"
+                        x:Name="NuevoGastoButton"
+                        Text="+ Nuevo"
+                        Style="{StaticResource BotonSecundario}"
+                        WidthRequest="104"
+                        HeightRequest="42"
+                        VerticalOptions="Center"
+                        Clicked="OnNuevoGastoClicked" />
+            </Grid>
+
+            <Border Grid.Row="1" Style="{StaticResource Tarjeta}" Padding="14">
+                <VerticalStackLayout Spacing="6">
+                    <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
+                        <VerticalStackLayout Spacing="0">
+                            <Label Text="TOTAL GASTADO" Style="{StaticResource EtiquetaSeccion}" />
+                            <Label x:Name="TotalLabel" Text="$0.00" FontSize="20" FontAttributes="Bold" />
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="1" Spacing="0">
+                            <Label Text="DE CAJA" Style="{StaticResource EtiquetaSeccion}" />
+                            <Label x:Name="CajaLabel" Text="$0.00" FontSize="20" FontAttributes="Bold"
+                                   TextColor="#B3261E" />
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="2" Spacing="0">
+                            <Label Text="EXTERNOS" Style="{StaticResource EtiquetaSeccion}" />
+                            <Label x:Name="ExternosLabel" Text="$0.00" FontSize="20" FontAttributes="Bold" />
+                        </VerticalStackLayout>
+                    </Grid>
+                    <Label x:Name="CantidadLabel" Style="{StaticResource TextoNota}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Grid.Row="2" Style="{StaticResource Aviso}">
+                <Label Text="Solo los gastos pagados del efectivo de la caja reducen el efectivo esperado del corte. Los externos afectan la utilidad, no la caja."
+                       FontSize="13"
+                       TextColor="#7A4F01" />
+            </Border>
+
+            <Border Grid.Row="3" Style="{StaticResource Tarjeta}" Padding="12">
+                <Grid RowDefinitions="Auto,*" RowSpacing="6">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Text="ÚLTIMOS GASTOS" Style="{StaticResource EtiquetaSeccion}" />
+                        <Label x:Name="ResultadosLabel"
+                               Grid.Column="1"
+                               Style="{StaticResource TextoNota}"
+                               HorizontalTextAlignment="End" />
+                    </Grid>
+                    <RefreshView x:Name="Refresco" Grid.Row="1" Refreshing="OnRefrescando">
+                        <CollectionView x:Name="ListaGastos" SelectionMode="None">
+                            <CollectionView.EmptyView>
+                                <Label x:Name="ListaVaciaLabel"
+                                       Text="Aún no hay gastos registrados. Usa + Nuevo para registrar el primero."
+                                       Style="{StaticResource TextoNota}"
+                                       HorizontalTextAlignment="Center"
+                                       Margin="0,40,0,0" />
+                            </CollectionView.EmptyView>
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate x:DataType="models:GastoFila">
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Padding="0,8">
+                                        <VerticalStackLayout Spacing="1">
+                                            <Label Text="{Binding Concepto}" FontAttributes="Bold" FontSize="16" />
+                                            <Label Text="{Binding Detalle}" Style="{StaticResource TextoNota}" />
+                                            <Label Text="{Binding Origen}"
+                                                   TextColor="{Binding OrigenColor}"
+                                                   FontSize="12"
+                                                   FontAttributes="Bold" />
+                                            <Label Text="{Binding Observaciones}"
+                                                   Style="{StaticResource TextoNota}"
+                                                   IsVisible="{Binding TieneObservaciones}" />
+                                        </VerticalStackLayout>
+                                        <Label Grid.Column="1"
+                                               Text="{Binding Monto}"
+                                               FontSize="16"
+                                               FontAttributes="Bold"
+                                               VerticalOptions="Center" />
+                                    </Grid>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </RefreshView>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <Grid x:Name="NuevoOverlay"
+              IsVisible="False"
+              BackgroundColor="#99000000"
+              Padding="16"
+              ZIndex="10">
+            <Border Style="{StaticResource Tarjeta}"
+                    Padding="18"
+                    HorizontalOptions="Fill"
+                    VerticalOptions="Center"
+                    MaximumWidthRequest="560">
+                <ScrollView>
+                    <VerticalStackLayout Spacing="10">
+                        <Label Text="Nuevo gasto" FontSize="22" FontAttributes="Bold" />
+                        <Label Text="Registra lo que salió del negocio. Si fue del efectivo de la caja, se descontará del corte."
+                               Style="{StaticResource TextoNota}" />
+
+                        <Label Text="Concepto" Style="{StaticResource EtiquetaSeccion}" />
+                        <Entry x:Name="ConceptoEntry"
+                               Style="{StaticResource CampoTexto}"
+                               Placeholder="Renta, luz, bolsas, mantenimiento..." />
+
+                        <Label Text="Monto" Style="{StaticResource EtiquetaSeccion}" />
+                        <Entry x:Name="MontoEntry"
+                               Style="{StaticResource CampoTexto}"
+                               Keyboard="Numeric"
+                               Placeholder="0.00" />
+
+                        <Label Text="Método de pago" Style="{StaticResource EtiquetaSeccion}" />
+                        <Picker x:Name="MetodoPicker" Title="Selecciona el método" />
+
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                            <VerticalStackLayout Spacing="1">
+                                <Label Text="Salió del efectivo de la caja" Style="{StaticResource EtiquetaSeccion}" />
+                                <Label x:Name="OrigenAyudaLabel" Style="{StaticResource TextoNota}" />
+                            </VerticalStackLayout>
+                            <Switch Grid.Column="1"
+                                    x:Name="OrigenSwitch"
+                                    IsToggled="True"
+                                    VerticalOptions="Center"
+                                    Toggled="OnOrigenChanged" />
+                        </Grid>
+
+                        <Label Text="Observaciones (opcional)" Style="{StaticResource EtiquetaSeccion}" />
+                        <Editor x:Name="ObservacionesEditor"
+                                HeightRequest="72"
+                                Placeholder="Detalle o referencia del gasto" />
+
+                        <Label x:Name="NuevoErrorLabel" Style="{StaticResource Error}" IsVisible="False" />
+
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="10" Margin="0,4,0,0">
+                            <Button x:Name="GuardarGastoButton"
+                                    Text="Guardar gasto"
+                                    Style="{StaticResource BotonPrincipal}"
+                                    Clicked="OnGuardarGastoClicked" />
+                            <Button Grid.Column="1"
+                                    Text="Cancelar"
+                                    Style="{StaticResource BotonSecundario}"
+                                    Clicked="OnCancelarNuevoClicked" />
+                        </Grid>
+                    </VerticalStackLayout>
+                </ScrollView>
+            </Border>
+        </Grid>
+    </Grid>
+</ContentPage>

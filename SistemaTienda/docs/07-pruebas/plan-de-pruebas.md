@@ -116,7 +116,7 @@ dotnet test SistemaTienda/SistemaTienda.sln
 | `AnulacionVentasTests` | Devolución de stock con costo congelado y bitácora, reverso del saldo fiado, bloqueo tras corte cerrado, exclusión del corte pendiente, doble anulación sin movimientos duplicados, permiso de encargado, motivo obligatorio y exclusión de la utilidad |
 | `CorteCajaTests` | Efectivo esperado con todas las fuentes, faltante/sobrante, motivo obligatorio, gasto externo excluido, mixto solo suma efectivo, periodo entre cortes, fondo sugerido, corte sin actividad, validaciones, abono con historial, orden del historial, migración v2→v3 con respaldo |
 | `BitacoraPermisosTests` | Ajuste autorizado con antes/después, empleado sin permiso, encargado sin cambio de precio pero con edición, merma, gasto, pago a proveedor, retiro denegado e ingreso permitido, inmutabilidad por disparadores, filtros de consulta, registro sin acción o sin sesión |
-| `GastosTests` | Gasto de un centavo, suma de centavos sin perder precisión, monto cero o negativo rechazado |
+| `GastosTests` | Gasto de un centavo, suma de centavos sin perder precisión, monto cero o negativo rechazado, campos persistidos, orden del historial del más reciente al más antiguo y resumen que separa caja y externos |
 | `SaldosBordeTests` | Abono igual al saldo, abono con saldo cero, centavos exactos, pago a proveedor que liquida el saldo |
 | `InventarioBordeTests` | Venta que agota el stock, costo o cantidad inválidos en entrada, merma no positiva, código duplicado tras recortar, comodines literales en la búsqueda |
 | `UsuariosPermisosTests` | Nombre recortado, PIN de cuatro dígitos, nombre en blanco, usuario inexistente, sal distinta por hash y hash mal formado |
@@ -127,7 +127,7 @@ dotnet test SistemaTienda/SistemaTienda.sln
 | `ConteoEfectivoTests` | Catálogo de 11 denominaciones de mayor a menor y sin duplicados, subtotal por cantidad, cantidades cero o negativas ignoradas, total de billetes y monedas y líneas sin cantidad |
 | `DesactivacionProductosTests` | Migración v6 → v7 conserva productos y los marca activos, alta activa por defecto, desactivar conserva stock y bloquea la venta, reactivar devuelve a la venta, permiso solo dueño, bitácora, estados ya aplicados e inexistente, entrada/merma/ajuste bloqueados, búsqueda y stock bajo con filtro de activos y localización por código |
 
-Total actual: 206 casos, todos en verde. Los puntos 1, 2, 3, 5, 6, 7, 8 y 9 del listado de áreas críticas tienen cobertura parcial; falta rendimiento y la interfaz MAUI sigue sin pruebas automatizadas. La restauración se prueba sobre una base temporal: se verifica que el contenido vuelve al del respaldo (no byte a byte).
+Total actual: 210 casos, todos en verde. Los puntos 1, 2, 3, 5, 6, 7, 8 y 9 del listado de áreas críticas tienen cobertura parcial; falta rendimiento y la interfaz MAUI sigue sin pruebas automatizadas. La restauración se prueba sobre una base temporal: se verifica que el contenido vuelve al del respaldo (no byte a byte).
 
 La verificación se ejecuta en GitHub Actions (`windows-latest`) en cada push y también puede correr localmente con `dotnet test`; ver `CLAUDE-tienda.md` para el entorno actual.
 
@@ -337,6 +337,33 @@ Pendiente de la pantalla:
 
 - Editar o borrar proveedores y consultar el estado de cuenta por proveedor.
 - Historial de pagos con método y su entrada al corte de caja.
+- Repetir el flujo en la tablet Android.
+- Cubrir la interfaz con pruebas automatizadas.
+
+## Verificación manual de Gastos (T21) — pendiente
+
+La pantalla compila para Windows y las pruebas de servicio están en verde, pero el entorno de desarrollo de esta sesión no permitió abrir la interfaz gráfica. La verificación manual queda pendiente en Windows sobre una base demo, sin datos reales:
+
+| Caso | Resultado |
+|------|-----------|
+| Abrir la pestaña Gastos y ver el resumen y el historial | Pendiente |
+| Alta de un gasto de caja en efectivo y su aparición en el historial | Pendiente |
+| El gasto de caja reduce el efectivo esperado del corte | Pendiente |
+| Alta de un gasto externo con transferencia | Pendiente |
+| El gasto externo no reduce el efectivo esperado y sí la utilidad | Pendiente |
+| Alta sin concepto | Pendiente (debe mostrar el error y no guardar) |
+| Alta con monto cero o negativo | Pendiente (debe mostrar el error y no guardar) |
+| Monto con centavos y concepto con acentos | Pendiente (debe guardarse y formatearse como `$0.00`) |
+| El interruptor de origen cambia el texto de ayuda | Pendiente |
+| Observaciones visibles en el historial | Pendiente |
+| Orden del más reciente al más antiguo | Pendiente |
+| Sesión de empleado: historial visible, **+ Nuevo** oculto | Pendiente |
+| Alta y monto se reflejan en la bitácora como `Gasto` | Pendiente |
+
+Pendiente de la pantalla:
+
+- Editar o borrar gastos y capturar una fecha retroactiva.
+- Reporte por categoría o periodo en la app (hoy sigue en la consola).
 - Repetir el flujo en la tablet Android.
 - Cubrir la interfaz con pruebas automatizadas.
 

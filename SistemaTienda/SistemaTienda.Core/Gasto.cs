@@ -16,3 +16,15 @@ public static class OrigenGasto
     public const string Caja = "Caja";
     public const string Externo = "Externo";
 }
+
+/// <summary>
+/// Totales de gastos para la pantalla de la app: el total, lo pagado del
+/// efectivo de la caja (afecta el corte) y lo pagado con otra fuente.
+/// </summary>
+public class ResumenGastos
+{
+    public int Cantidad { get; set; }
+    public long Total { get; set; }
+    public long DeCaja { get; set; }
+    public long Externos { get; set; }
+}

@@ -104,17 +104,18 @@ Acceso: pestaña **Inventario** → **Ver** → **Registrar merma** (requiere ro
 
 ### 6. Registrar Gasto
 
-Acceso: Menú → "Gastos" (rol Encargado o Dueño).
+Acceso en la app: pestaña **Gastos** (rol Encargado o Dueño); también sigue disponible en la consola.
 
-1. Tocar "Nuevo Gasto".
+1. Tocar **+ Nuevo**.
 2. Capturar:
    - **Concepto** (ej. "Renta", "Luz", "Sueldo", "Bolsas").
    - **Monto**.
-   - **Fecha** (por defecto hoy, pero se puede retroactivar).
-   - **Método de pago** (Efectivo / Tarjeta / Transferencia).
-   - **Origen**: ¿Saldó de Caja? o ¿Externo? (importante para el corte de caja).
-3. Tocar "Guardar".
-4. El gasto queda registrado y afecta la utilidad neta y, si es de caja, el corte siguiente.
+   - **Método de pago** (Efectivo / Tarjeta / Transferencia / Otro).
+   - **Salió del efectivo de la caja**: déjalo encendido si el dinero salió de la caja; apágalo si pagaste con tarjeta, transferencia u otra fuente.
+   - **Observaciones** (opcional).
+3. Tocar **Guardar gasto**.
+4. El gasto se registra con la fecha del momento. Si salió de la caja, reduce el efectivo esperado del corte; si es externo, solo afecta la utilidad.
+5. El gasto no se puede editar ni borrar desde la app y no admite fecha retroactiva; el reporte por categoría o periodo sigue en la consola.
 
 ### 7. Ver Reporte Rápido
 
