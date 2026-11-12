@@ -39,7 +39,7 @@ Próximamente después de completar los módulos críticos.
 - *Agregado*: `PeriodoReporte` en `Core` centraliza los límites de hoy, mes en curso y rango con fechas sin hora; 4 pruebas nuevas en `PeriodoReporteTests`.
 - *Modificado*: la pantalla reutiliza `ReporteUtilidadService` sin tocar el cálculo; las ventas anuladas siguen excluidas y el permiso `Consultar` se valida en el servicio.
 - *Modificado*: la utilidad bruta y neta se pintan en verde cuando son ≥ 0 y en rojo cuando son negativas.
-- *Verificación*: solución y app MAUI para Windows compiladas sin errores ni advertencias; 4 pruebas nuevas; total esperado del proyecto **234**. El host local de pruebas quedó bloqueado por Control de aplicaciones y la suite completa se confirma en el CI; la verificación manual de la pantalla queda pendiente porque el entorno no permitió abrir la GUI.
+- *Verificación*: solución y app MAUI para Windows compiladas sin errores ni advertencias; 4 pruebas nuevas; CI del PR #17 en verde el 2026-11-12 con **234 pruebas** y app MAUI para Windows y Android. La verificación manual de la pantalla queda pendiente porque el entorno no permitió abrir la GUI.
 
 ### v0.0.22 - 2026-11-11: Edición y estado de cuenta de proveedores
 

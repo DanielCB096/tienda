@@ -130,7 +130,7 @@ dotnet test SistemaTienda/SistemaTienda.sln
 | `EstadoCuentaProveedoresTests` | Edición con permiso `EditarProveedor` y bitácora, rechazo para empleado, saldo intacto, recorte y validaciones, pago atómico con historial y saldo antes/después, pago mayor al saldo sin historial, inmutabilidad de `PagosProveedor`, totales del estado de cuenta, proveedor sin pagos y proveedor inexistente; migración v8 con tabla y disparadores |
 | `PeriodoReporteTests` | Hoy ignora la hora, mes en curso empieza el día 1 y termina hoy, enero no se sale del año y el rango normaliza las horas de ambas fechas |
 
-Total actual: 234 casos (230 verificados en local el 2026-11-11 más 4 nuevos de T24); la verificación de la suite completa en CI está pendiente de confirmar al cerrar T24. Los puntos 1, 2, 3, 5, 6, 7, 8 y 9 del listado de áreas críticas tienen cobertura parcial; falta rendimiento y la interfaz MAUI sigue sin pruebas automatizadas. La restauración se prueba sobre una base temporal: se verifica que el contenido vuelve al del respaldo (no byte a byte).
+Total actual: 234 casos, todos en verde en CI el 2026-11-12 (primer PR con la suite completa desde T24); 230 corrieron en local el 2026-11-11. Los puntos 1, 2, 3, 5, 6, 7, 8 y 9 del listado de áreas críticas tienen cobertura parcial; falta rendimiento y la interfaz MAUI sigue sin pruebas automatizadas. La restauración se prueba sobre una base temporal: se verifica que el contenido vuelve al del respaldo (no byte a byte).
 
 La verificación se ejecuta en GitHub Actions (`windows-latest`) en cada push y también puede correr localmente con `dotnet test`; ver `CLAUDE-tienda.md` para el entorno actual.
 

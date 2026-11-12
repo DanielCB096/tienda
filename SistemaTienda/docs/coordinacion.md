@@ -56,7 +56,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 | T21 | GLM (OpenCode) | feat/maui-gastos | Pantalla de gastos: resumen por origen, historial de los últimos 200 y alta con permiso de dueño/encargado; `ResumenGastos` y `ObtenerResumenGastos`; 4 pruebas nuevas; 210 pruebas | a91c8bd, c6122c8 |
 | T22 | GLM (OpenCode) | feat/maui-clientes-edicion | Edición de nombre y teléfono con permiso `EditarCliente` y bitácora, y estado de cuenta con saldo vigente, total fiado, total abonado e historial de ventas fiadas y abonos (sin anuladas); 8 pruebas nuevas; 218 pruebas | 56bee3c, 8091179, 77cf83c |
 | T23 | GLM (OpenCode) | feat/maui-proveedores-edicion | Esquema v8 (`PagosProveedor` inmutable), edición de nombre/clave/teléfono/dirección con permiso `EditarProveedor` y bitácora, estado de cuenta con saldo pendiente, total pagado e historial de pagos, y pago atómico con historial; 12 pruebas nuevas; 230 pruebas | 6e74c85 |
-| T24 | GLM (OpenCode) | feat/maui-reportes | Pestaña Reportes con filtros Hoy/Este mes/Rango sobre `ReporteUtilidadService`; `PeriodoReporte` en Core con límites de fecha; utilidad bruta y neta coloreadas; 4 pruebas nuevas (234 esperadas) | 0ffd951 |
+| T24 | GLM (OpenCode) | feat/maui-reportes | Pestaña Reportes con filtros Hoy/Este mes/Rango sobre `ReporteUtilidadService`; `PeriodoReporte` en Core con límites de fecha; utilidad bruta y neta coloreadas; 4 pruebas nuevas; 234 pruebas; PR #17 contra `main` | 0ffd951 |
 
 ## Tareas
 
@@ -131,3 +131,4 @@ Al terminar, mueve la fila a `Hecho` (o elimínala de En curso) y registra el co
 | 2026-11-11 | GLM (OpenCode) | feat/maui-proveedores-edicion | T23 terminado: esquema v8 con `PagosProveedor` inmutable, pago atómico con saldo antes/después, estado de cuenta con saldo pendiente, total pagado e historial, y edición de nombre/clave/teléfono/dirección con permiso `EditarProveedor`; 12 pruebas nuevas; 230 pruebas en local; verificación manual pendiente por bloqueo del entorno; documentación actualizada; PR #16 abierto | 6e74c85, dd332fa |
 | 2026-11-12 | GLM (OpenCode) | feat/maui-proveedores-edicion | CI en verde para el PR #16: compilación y pruebas (230 en verde), y app MAUI para Windows y Android | 50f7011 |
 | 2026-11-12 | GLM (OpenCode) | feat/maui-reportes | T24 terminado: pestaña Reportes con filtros Hoy/Este mes/Rango, `PeriodoReporte` en Core, utilidad bruta y neta coloreadas y 4 pruebas nuevas; 234 pruebas esperadas en CI; builds de solución y MAUI Windows en verde; verificación manual pendiente por bloqueo del entorno; documentación actualizada | 0ffd951 |
+| 2026-11-12 | GLM (OpenCode) | feat/maui-reportes | CI en verde para el PR #17: compilación, pruebas (234 en verde) y app MAUI para Windows y Android | 9746274 |
