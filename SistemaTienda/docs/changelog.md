@@ -40,7 +40,7 @@ Próximamente después de completar los módulos críticos.
 - *Agregado*: **Editar datos** dentro del estado de cuenta para dueño y encargado, con el permiso nuevo `EditarProveedor`; corrige nombre, clave, teléfono y dirección, recorta espacios, no toca el saldo y deja bitácora `EditarProveedor` con los datos anteriores y nuevos.
 - *Agregado*: desde el estado de cuenta se puede **Pagar** con el flujo existente y la vista se refresca con el nuevo saldo y el nuevo movimiento.
 - *Reglas de negocio*: definidas con el dueño el 2026-11-11. No hay baja ni borrado de proveedores; el saldo solo cambia con pagos; el pago sigue sin método ni entrada automática al corte. Los pagos anteriores a la v8 no se pueden reconstruir y la pantalla lo advierte.
-- *Verificación*: solución y app MAUI para Windows compiladas sin errores ni advertencias; **230 pruebas en verde en local** el 2026-11-11 (12 nuevas en `EstadoCuentaProveedoresTests`). Verificación manual de la pantalla pendiente de abrir la GUI.
+- *Verificación*: solución y app MAUI para Windows compiladas sin errores ni advertencias; **230 pruebas en verde en local** el 2026-11-11 (12 nuevas en `EstadoCuentaProveedoresTests`) y CI del PR #16 en verde el 2026-11-12 (compilación, pruebas y app MAUI para Windows y Android). Verificación manual de la pantalla pendiente de abrir la GUI.
 - Total del proyecto: 230 pruebas.
 
 ### v0.0.21 - 2026-11-11: Edición y estado de cuenta de clientes
