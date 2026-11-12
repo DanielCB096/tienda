@@ -24,9 +24,16 @@ El módulo de proveedores y cuentas por pagar permite a la tienda gestionar sus 
 1. El usuario selecciona la opción "[3] Registrar pago a proveedor"
 2. Ingresa el nombre del proveedor o busca en la lista
 3. Ingresa el monto del pago
-4. El sistema resta el monto del saldo pendiente
+4. El sistema resta el monto del saldo pendiente y guarda el pago en el historial inmutable `PagosProveedor` (fecha, monto, usuario y saldo antes/después)
 5. Si el saldo llega a $0, el proveedor se considera "al día"
-6. El monto del pago se registra en el corte de caja del día
+6. En la implementación actual el pago no entra automático al corte de caja; si es en efectivo, debe registrarse además como retiro en Caja
+
+### 7.2.4. Estado de Cuenta y Edición (app MAUI)
+1. En **Proveedores**, cada renglón tiene **Estado**.
+2. El estado de cuenta muestra los datos del proveedor, el saldo pendiente, el total pagado y el historial de pagos del más reciente al más antiguo, con el saldo antes y después de cada pago.
+3. Los pagos anteriores a la migración v8 no se pueden reconstruir; la pantalla lo advierte.
+4. **Editar datos** (solo dueño y encargado) corrige nombre, clave/RFC, teléfono y dirección; la edición queda en la bitácora como `EditarProveedor` con los datos anteriores y nuevos.
+5. El saldo no se edita a mano: solo cambia con pagos. No hay baja de proveedores.
 
 ## 7.3. Estructura de Datos
 
@@ -41,6 +48,19 @@ El módulo de proveedores y cuentas por pagar permite a la tienda gestionar sus 
 | SaldoPendiente | INTEGER | Monto total pendiente de pago en centavos |
 | FechaRegistro | DATETIME | Fecha en que se registró el proveedor |
 | UltimaActualizacion | DATETIME | Última fecha de movimiento (pago/crédito) |
+
+### Tabla: PagosProveedor (esquema v8)
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| Id | INTEGER PRIMARY KEY | Identificador único |
+| ProveedorId | INTEGER | Referencia a `Proveedores.Id` |
+| Fecha | DATETIME | Fecha y hora del pago |
+| Monto | INTEGER | Monto pagado en centavos |
+| SaldoAnterior | INTEGER | Saldo pendiente antes del pago, en centavos |
+| SaldoNuevo | INTEGER | Saldo pendiente después del pago, en centavos |
+| Usuario | TEXT | Usuario que registró el pago |
+
+Los disparadores `TR_PagosProveedor_NoUpdate` y `TR_PagosProveedor_NoDelete` impiden modificar o borrar pagos: una corrección se hace con otro movimiento.
 
 ### Ejemplo de registro
 ```
@@ -62,9 +82,9 @@ UltimaActualizacion: 2024-03-25 14:30:00
 - Los proveedores con saldo alto pueden negociarse mejores términos
 
 ### 7.4.2. Corte de Caja
-- **Pago a proveedor**: Sí entra al corte de caja del día (es un egreso)
+- **Pago a proveedor**: el diseño lo considera un egreso del día, pero la implementación actual **no** lo resta del efectivo esperado: si se paga en efectivo hay que registrar además un retiro en Caja
 - **Crédito con proveedor**: El saldo pendiente NO entra al corte de caja hasta que se paga
-- El sistema lleva el control de quiénes proveedores tienen saldo y cuánto
+- El sistema lleva el control de qué proveedores tienen saldo y cuánto, y desde la migración v8 conserva el historial de pagos
 
 ### 7.4.3. Reportes Financieros
 - El reporte de "Total saldo pendiente a proveedores" muestra el total que la tienda debe
@@ -150,15 +170,15 @@ Reporte de proveedores muestra saldos actualizados
 - No hay límites de crédito personalizados por proveedor
 - No hay cálculo de intereses automáticos
 - No hay recordatorios automáticos por correo/SMS
-- No hay historial detallado de compras por proveedor (solo saldo actual)
+- No hay historial detallado de compras por proveedor (solo saldo actual); el historial de pagos llegó con T23
 - Los saldos son informativos y no tienen consecuencias legales dentro del sistema
 - No hay clasificación de proveedores (por categoría, confianza, etc.)
 
 ---
 
-**Estado actual (2026-10-26)**: base implementada en consola y app MAUI (T19).
+**Estado actual (2026-11-11)**: base implementada en consola y app MAUI (T19 y T23).
 
-- *Implementado*: alta con nombre obligatorio y saldo inicial opcional; directorio ordenado por nombre; en la app, búsqueda por nombre, clave o teléfono sin distinguir mayúsculas ni acentos y filtro **Con saldo**; pago que descuenta el saldo con el permiso `PagarProveedor` para dueño y encargado. El alta y el pago dejan registro en la bitácora (`Proveedor` y `PagoProveedor`). Cuatro pruebas nuevas en `FiadoProveedoresTests`; total del proyecto: 191.
-- *Desviaciones del diseño*: el pago **no** genera un historial propio ni entra al corte de caja (a diferencia de 7.2.3 y 7.4.2); solo actualiza el saldo y la bitácora. La app advierte que, si el pago es en efectivo, debe registrarse además un retiro en Caja. La consola conserva sus menús y no pregunta método de pago.
-- *Pendiente*: edición y borrado, estado de cuenta, detección de duplicados e historial de pagos con su movimiento de caja. Ver [deuda-tecnica.md](../deuda-tecnica.md).
-- *Verificación*: compilación y pruebas en verde; la verificación manual de la pantalla en Windows y Android quedó pendiente porque el entorno de desarrollo no permitió abrir la GUI.
+- *Implementado*: alta con nombre obligatorio y saldo inicial opcional; directorio ordenado por nombre; en la app, búsqueda por nombre, clave o teléfono sin distinguir mayúsculas ni acentos y filtro **Con saldo**; pago que descuenta el saldo con el permiso `PagarProveedor` para dueño y encargado. El alta y el pago dejan registro en la bitácora (`Proveedor` y `PagoProveedor`). **T23** agregó el esquema v8 con `PagosProveedor` inmutable (monto, fecha, usuario y saldo antes/después) y guarda el pago y el saldo en una sola transacción; el estado de cuenta muestra saldo pendiente, total pagado e historial; **Editar datos** (nombre, clave, teléfono y dirección) solo para dueño y encargado con permiso `EditarProveedor`, bitácora y sin tocar el saldo. 12 pruebas nuevas en `EstadoCuentaProveedoresTests`; total del proyecto: 230.
+- *Desviaciones del diseño*: el pago **no** entra al corte de caja (a diferencia de 7.2.3 y 7.4.2) ni pregunta método; solo actualiza el saldo, guarda el historial y la bitácora. La app advierte que, si el pago es en efectivo, debe registrarse además un retiro en Caja. La consola conserva sus menús y no pregunta método de pago. Los pagos anteriores a la migración v8 no aparecen en el historial.
+- *Pendiente*: baja y detección de duplicados, método de pago con movimiento de caja, impresión/exportación del estado de cuenta y compras por proveedor. Ver [deuda-tecnica.md](../deuda-tecnica.md).
+- *Verificación*: compilación y 230 pruebas en verde en local el 2026-11-11; la verificación manual de la pantalla en Windows y Android quedó pendiente porque el entorno de desarrollo no permitió abrir la GUI.

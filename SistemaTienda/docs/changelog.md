@@ -32,6 +32,17 @@ Próximamente después de completar los módulos críticos.
 - Configuración básica de tienda (nombre, giro, impuestos, métodos de pago).
 - Documentación inicial (glosario, stack, módulos, ADR).
 
+### v0.0.22 - 2026-11-11: Edición y estado de cuenta de proveedores
+
+- *Agregado*: migración **v8** con la tabla inmutable `PagosProveedor` (proveedor, fecha, monto, saldo antes/después y usuario), índices por proveedor y fecha y disparadores que impiden modificar o borrar pagos.
+- *Agregado*: `RegistrarPagoProveedor` guarda el historial y descuenta el saldo en una sola transacción; ya no existe la actualización de saldo aislada.
+- *Agregado*: botón **Estado** en cada proveedor con nombre, clave/RFC, teléfono, dirección, alta, saldo pendiente, total pagado e historial de pagos del más reciente al más antiguo.
+- *Agregado*: **Editar datos** dentro del estado de cuenta para dueño y encargado, con el permiso nuevo `EditarProveedor`; corrige nombre, clave, teléfono y dirección, recorta espacios, no toca el saldo y deja bitácora `EditarProveedor` con los datos anteriores y nuevos.
+- *Agregado*: desde el estado de cuenta se puede **Pagar** con el flujo existente y la vista se refresca con el nuevo saldo y el nuevo movimiento.
+- *Reglas de negocio*: definidas con el dueño el 2026-11-11. No hay baja ni borrado de proveedores; el saldo solo cambia con pagos; el pago sigue sin método ni entrada automática al corte. Los pagos anteriores a la v8 no se pueden reconstruir y la pantalla lo advierte.
+- *Verificación*: solución y app MAUI para Windows compiladas sin errores ni advertencias; **230 pruebas en verde en local** el 2026-11-11 (12 nuevas en `EstadoCuentaProveedoresTests`). Verificación manual de la pantalla pendiente de abrir la GUI.
+- Total del proyecto: 230 pruebas.
+
 ### v0.0.21 - 2026-11-11: Edición y estado de cuenta de clientes
 
 - *Agregado*: botón **Estado** en cada cliente del directorio; abre el estado de cuenta con nombre, teléfono, fecha de alta, saldo vigente, total fiado, total abonado y los movimientos (ventas a fiado vigentes y abonos) del más reciente al más antiguo, con fecha, usuario y método.

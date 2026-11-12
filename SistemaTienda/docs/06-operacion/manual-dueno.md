@@ -111,8 +111,10 @@ Acceso en la app: pestaña **Proveedores**.
 - **Directorio**: lista con nombre, clave o RFC, teléfono, dirección, saldo y estado (“Saldo pendiente” o “Al día”), más el resumen de proveedores, con saldo y total por pagar.
 - **Buscar y filtrar**: busca por nombre, clave o teléfono sin distinguir mayúsculas ni acentos; alterna entre **Todos** y **Con saldo**.
 - **Nuevo proveedor**: pide nombre; clave o RFC, teléfono, dirección y saldo inicial son opcionales. El saldo inicial solo sirve para deudas que ya existían.
-- **Registrar pago**: dueño o encargado; el monto no puede superar el saldo. El pago reduce el saldo y queda en la bitácora, pero **no** entra solo al corte ni genera un historial propio de pagos. Si pagas en efectivo, registra además el retiro en **Caja** para que el efectivo esperado cuadre.
-- **Pendiente**: editar o retirar proveedores, estado de cuenta, detección de duplicados e historial de pagos con su método. La verificación manual de esta pantalla en Windows y Android está pendiente (2026-10-26).
+- **Registrar pago**: dueño o encargado; el monto no puede superar el saldo. El pago reduce el saldo y guarda un movimiento inmutable con fecha, monto, usuario y saldo antes/después, pero **no** entra solo al corte ni pregunta método. Si pagas en efectivo, registra además el retiro en **Caja** para que el efectivo esperado cuadre.
+- **Estado de cuenta**: toca **Estado** en el renglón del proveedor. Muestra clave o RFC, teléfono, dirección, la fecha en que se registró, el saldo pendiente, el total pagado y la lista de pagos del más reciente al más antiguo con el saldo antes y después. Los pagos anteriores a esta versión (esquema v8) no se pueden reconstruir y la pantalla lo advierte.
+- **Editar datos**: dueño o encargado, desde el estado de cuenta. Corrige nombre, clave o RFC, teléfono y dirección; queda en la bitácora con los datos anteriores y nuevos. El saldo solo cambia con pagos.
+- **Pendiente**: dar de baja proveedores, detectar duplicados al dar de alta, elegir el método del pago con su entrada al corte, compras por proveedor e imprimir o exportar el estado de cuenta. La verificación manual de esta pantalla en Windows y Android está pendiente (2026-11-11).
 
 ### 9. Gastos (pestaña Gastos)
 
