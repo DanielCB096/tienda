@@ -28,7 +28,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 
 | Tarea | Agente | Rama | Archivos | Fecha | Estado |
 |-------|--------|------|-----------|-------|--------|
-| — | — | — | — | — | Sin tareas tomadas |
+| T24 — Reportes en la app MAUI | GLM (OpenCode) | feat/maui-reportes | Core/PeriodoReporte.cs, Maui/Pages/ReportesPage.xaml(.cs), Maui/Pages/PrincipalPage.cs, Maui/MauiProgram.cs, Tests/PeriodoReporteTests.cs, documentación | 2026-11-12 | Tomada |
 
 ## Hecho
 
