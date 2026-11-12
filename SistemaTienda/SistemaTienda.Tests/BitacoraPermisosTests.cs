@@ -157,13 +157,15 @@ public sealed class BitacoraPermisosTests
         });
         bd.IniciarSesion(RolUsuario.Encargado, "Marta");
 
-        var pago = bd.Config.RegistrarPagoProveedor(alta.Value.ProveedorId, 4000);
+        var pago = bd.Config.RegistrarPagoProveedor(alta.Value.ProveedorId, 4000,
+            MetodoPagoProveedor.Transferencia);
 
         Assert.True(pago.IsSuccess, pago.Message);
         Assert.Equal(6000L, bd.Db.ObtenerProveedorPorId(alta.Value.ProveedorId).SaldoPendiente);
         var registro = Assert.Single(bd.Db.ObtenerBitacora(accion: AccionBitacora.PagoProveedor));
         Assert.Equal("Marta", registro.Usuario);
         Assert.Contains("Pago=40", registro.DatosDespues);
+        Assert.Contains("Metodo=Transferencia", registro.DatosDespues);
     }
 
     [Fact]

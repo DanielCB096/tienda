@@ -315,6 +315,7 @@ public sealed class VentasTests
             original.ExecuteCommand("DROP TABLE CortesCaja");
             original.ExecuteCommand("DROP TABLE VentaLineas");
             original.ExecuteCommand("DROP TABLE Ventas");
+            original.ExecuteCommand("DROP TABLE PagosProveedor");
             original.ExecuteCommand("PRAGMA user_version = 1");
 
             var migrada = new DatabaseTools(ruta);

@@ -917,22 +917,26 @@ public class DatabaseTools
 
     public List<PagoProveedor> ObtenerPagosDeProveedor(int proveedorId) =>
         ExecuteReportObjects<PagoProveedor>(@"
-            SELECT Id, ProveedorId, Fecha, Monto, SaldoAnterior, SaldoNuevo, Usuario
+            SELECT Id, ProveedorId, Fecha, Monto, SaldoAnterior, SaldoNuevo,
+                   MetodoPago, MovimientoCajaId, Usuario
             FROM PagosProveedor
             WHERE ProveedorId = @id
             ORDER BY Fecha DESC, Id DESC",
             new SqliteParameter("@id", proveedorId));
 
     /// <summary>
-    /// Guarda el pago en el historial inmutable y actualiza el saldo en la misma
-    /// transacción. Si una parte falla, no se guarda nada.
+    /// Guarda el pago en el historial inmutable, actualiza el saldo y, cuando es
+    /// en efectivo, genera el retiro de caja en la misma transacción. Si una
+    /// parte falla, no se guarda nada.
     /// </summary>
-    public bool RegistrarPagoProveedor(int proveedorId, long monto, long saldoAnterior,
-        long nuevoSaldo, string usuario)
+    public ResultadoPagoProveedor RegistrarPagoProveedor(int proveedorId, string nombreProveedor,
+        long monto, long saldoAnterior, long nuevoSaldo, string usuario, string metodoPago,
+        bool generarRetiroCaja)
     {
         using var conn = CreateConnection();
         conn.Open();
         using var tx = conn.BeginTransaction();
+        var fecha = DateTime.Now;
 
         using (var update = conn.CreateCommand())
         {
@@ -947,8 +951,25 @@ public class DatabaseTools
             if (update.ExecuteNonQuery() == 0)
             {
                 tx.Rollback();
-                return false;
+                return new ResultadoPagoProveedor(false, null);
             }
+        }
+
+        int? movimientoCajaId = null;
+        if (generarRetiroCaja)
+        {
+            using var movimiento = conn.CreateCommand();
+            movimiento.Transaction = tx;
+            movimiento.CommandText = @"
+                INSERT INTO MovimientosCaja (Fecha, Tipo, Monto, Motivo, Usuario)
+                VALUES (@fecha, @tipo, @monto, @motivo, @usuario);
+                SELECT last_insert_rowid();";
+            movimiento.Parameters.AddWithValue("@fecha", fecha);
+            movimiento.Parameters.AddWithValue("@tipo", TipoMovimientoCaja.Retiro);
+            movimiento.Parameters.AddWithValue("@monto", monto);
+            movimiento.Parameters.AddWithValue("@motivo", $"Pago a proveedor: {nombreProveedor}");
+            movimiento.Parameters.AddWithValue("@usuario", usuario ?? string.Empty);
+            movimientoCajaId = Convert.ToInt32(movimiento.ExecuteScalar(), CultureInfo.InvariantCulture);
         }
 
         using (var insert = conn.CreateCommand())
@@ -956,19 +977,24 @@ public class DatabaseTools
             insert.Transaction = tx;
             insert.CommandText = @"
                 INSERT INTO PagosProveedor
-                    (ProveedorId, Fecha, Monto, SaldoAnterior, SaldoNuevo, Usuario)
-                VALUES (@proveedor, @fecha, @monto, @anterior, @nuevo, @usuario)";
+                    (ProveedorId, Fecha, Monto, SaldoAnterior, SaldoNuevo,
+                     MetodoPago, MovimientoCajaId, Usuario)
+                VALUES (@proveedor, @fecha, @monto, @anterior, @nuevo,
+                        @metodo, @movimiento, @usuario)";
             insert.Parameters.AddWithValue("@proveedor", proveedorId);
-            insert.Parameters.AddWithValue("@fecha", DateTime.Now);
+            insert.Parameters.AddWithValue("@fecha", fecha);
             insert.Parameters.AddWithValue("@monto", monto);
             insert.Parameters.AddWithValue("@anterior", saldoAnterior);
             insert.Parameters.AddWithValue("@nuevo", nuevoSaldo);
+            insert.Parameters.AddWithValue("@metodo", metodoPago);
+            insert.Parameters.AddWithValue("@movimiento",
+                movimientoCajaId.HasValue ? movimientoCajaId.Value : DBNull.Value);
             insert.Parameters.AddWithValue("@usuario", usuario ?? string.Empty);
             insert.ExecuteNonQuery();
         }
 
         tx.Commit();
-        return true;
+        return new ResultadoPagoProveedor(true, movimientoCajaId);
     }
 
     // ---------- Ventas ----------

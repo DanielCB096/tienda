@@ -53,7 +53,8 @@ public sealed class SaldosBordeTests
         bd.ConfigurarTienda();
         var alta = bd.Config.AgregarProveedor(new Proveedor { Nombre = "Proveedor", SaldoPendiente = 8000 });
 
-        var pago = bd.Config.RegistrarPagoProveedor(alta.Value.ProveedorId, 8000);
+        var pago = bd.Config.RegistrarPagoProveedor(alta.Value.ProveedorId, 8000,
+            MetodoPagoProveedor.Transferencia);
 
         Assert.True(pago.IsSuccess, pago.Message);
         Assert.Equal(0L, pago.Value.SaldoRestante);

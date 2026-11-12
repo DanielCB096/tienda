@@ -47,6 +47,7 @@ public sealed class DesactivacionProductosTests
         // Simula un esquema v6: la base física pierde la columna y su versión baja a 6.
         entorno.Db.ExecuteCommand(@"
             ALTER TABLE Productos DROP COLUMN Activo;
+            DROP TABLE PagosProveedor;
             PRAGMA user_version = 6;
             INSERT INTO Productos (CodigoBarras, Nombre, Costo, Precio, Stock, StockMinimo, Categoria, Impuesto)
                 VALUES ('A1', 'Producto heredado', 1000, 2000, 5, 5, '', 16.00);

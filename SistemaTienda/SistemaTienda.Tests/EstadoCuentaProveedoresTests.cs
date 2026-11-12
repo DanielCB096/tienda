@@ -108,7 +108,8 @@ public sealed class EstadoCuentaProveedoresTests
         var proveedorId = CrearProveedor(bd, saldoInicial: 30_000);
         bd.IniciarSesion(RolUsuario.Dueño, "Dueña");
 
-        var resultado = bd.Config.RegistrarPagoProveedor(proveedorId, 12_000);
+        var resultado = bd.Config.RegistrarPagoProveedor(proveedorId, 12_000,
+            MetodoPagoProveedor.Transferencia);
 
         Assert.True(resultado.IsSuccess, resultado.Message);
         Assert.Equal(18_000, resultado.Value.SaldoRestante);
@@ -128,7 +129,8 @@ public sealed class EstadoCuentaProveedoresTests
         bd.ConfigurarTienda();
         var proveedorId = CrearProveedor(bd, saldoInicial: 10_000);
 
-        var resultado = bd.Config.RegistrarPagoProveedor(proveedorId, 15_000);
+        var resultado = bd.Config.RegistrarPagoProveedor(proveedorId, 15_000,
+            MetodoPagoProveedor.Transferencia);
 
         Assert.True(resultado.IsError);
         Assert.Empty(bd.Db.ObtenerPagosDeProveedor(proveedorId));
@@ -142,8 +144,10 @@ public sealed class EstadoCuentaProveedoresTests
         bd.ConfigurarTienda();
         var proveedorId = CrearProveedor(bd, saldoInicial: 50_000);
 
-        Assert.True(bd.Config.RegistrarPagoProveedor(proveedorId, 20_000).IsSuccess);
-        Assert.True(bd.Config.RegistrarPagoProveedor(proveedorId, 5_000).IsSuccess);
+        Assert.True(bd.Config.RegistrarPagoProveedor(proveedorId, 20_000,
+            MetodoPagoProveedor.Transferencia).IsSuccess);
+        Assert.True(bd.Config.RegistrarPagoProveedor(proveedorId, 5_000,
+            MetodoPagoProveedor.Transferencia).IsSuccess);
 
         var estado = bd.Config.ObtenerEstadoCuentaProveedor(proveedorId);
 
@@ -186,7 +190,8 @@ public sealed class EstadoCuentaProveedoresTests
         using var bd = new BaseDatosPrueba();
         bd.ConfigurarTienda();
         var proveedorId = CrearProveedor(bd, saldoInicial: 10_000);
-        Assert.True(bd.Config.RegistrarPagoProveedor(proveedorId, 4_000).IsSuccess);
+        Assert.True(bd.Config.RegistrarPagoProveedor(proveedorId, 4_000,
+            MetodoPagoProveedor.Transferencia).IsSuccess);
 
         Assert.Throws<SqliteException>(() =>
             bd.Db.ExecuteCommand("UPDATE PagosProveedor SET Monto = 1"));

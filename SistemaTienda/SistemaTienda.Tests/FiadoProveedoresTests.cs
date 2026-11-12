@@ -124,7 +124,8 @@ public sealed class FiadoProveedoresTests
 
         Assert.True(alta.IsSuccess, alta.Message);
 
-        var pago = bd.Config.RegistrarPagoProveedor(alta.Value.ProveedorId, 20_000);
+        var pago = bd.Config.RegistrarPagoProveedor(alta.Value.ProveedorId, 20_000,
+            MetodoPagoProveedor.Transferencia);
 
         Assert.True(pago.IsSuccess, pago.Message);
         Assert.Equal(30_000, pago.Value.SaldoRestante);
@@ -138,7 +139,8 @@ public sealed class FiadoProveedoresTests
         bd.ConfigurarTienda();
         var alta = bd.Config.AgregarProveedor(new Proveedor { Nombre = "Proveedor", SaldoPendiente = 10_000 });
 
-        var pago = bd.Config.RegistrarPagoProveedor(alta.Value.ProveedorId, 10_100);
+        var pago = bd.Config.RegistrarPagoProveedor(alta.Value.ProveedorId, 10_100,
+            MetodoPagoProveedor.Transferencia);
 
         Assert.True(pago.IsError);
         Assert.Equal(10_000, bd.Db.ObtenerProveedorPorId(alta.Value.ProveedorId).SaldoPendiente);
@@ -153,7 +155,8 @@ public sealed class FiadoProveedoresTests
         bd.ConfigurarTienda();
         var alta = bd.Config.AgregarProveedor(new Proveedor { Nombre = "Proveedor", SaldoPendiente = 10_000 });
 
-        Assert.True(bd.Config.RegistrarPagoProveedor(alta.Value.ProveedorId, monto).IsError);
+        Assert.True(bd.Config.RegistrarPagoProveedor(alta.Value.ProveedorId, monto,
+            MetodoPagoProveedor.Transferencia).IsError);
     }
 
     [Fact]

@@ -37,7 +37,8 @@ public static class Migraciones
         new Migracion(5, "crea la bitácora inmutable", AplicarVersion5),
         new Migracion(6, "crea las anulaciones de venta", AplicarVersion6),
         new Migracion(7, "agrega el estado activo de los productos", AplicarVersion7),
-        new Migracion(8, "crea el historial inmutable de pagos a proveedores", AplicarVersion8)
+        new Migracion(8, "crea el historial inmutable de pagos a proveedores", AplicarVersion8),
+        new Migracion(9, "agrega el método de pago y el retiro de caja a los pagos a proveedores", AplicarVersion9)
     };
 
     private static void AplicarVersion2(SqliteConnection conn, SqliteTransaction tx)
@@ -545,6 +546,22 @@ public static class Migraciones
             BEGIN
                 SELECT RAISE(ABORT, 'Los pagos a proveedores son inmutables: no se pueden borrar');
             END;
+        ";
+        cmd.ExecuteNonQuery();
+    }
+
+    /// <summary>
+    /// Agrega el método de pago y el vínculo con el retiro de caja a los pagos a
+    /// proveedores. Los pagos anteriores quedan con método vacío y sin movimiento:
+    /// no se pueden reconstruir.
+    /// </summary>
+    private static void AplicarVersion9(SqliteConnection conn, SqliteTransaction tx)
+    {
+        using var cmd = conn.CreateCommand();
+        cmd.Transaction = tx;
+        cmd.CommandText = @"
+            ALTER TABLE PagosProveedor ADD COLUMN MetodoPago TEXT NOT NULL DEFAULT '';
+            ALTER TABLE PagosProveedor ADD COLUMN MovimientoCajaId INTEGER;
         ";
         cmd.ExecuteNonQuery();
     }
