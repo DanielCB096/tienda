@@ -1,6 +1,6 @@
 # Roadmap
 
-Estado al 2026-11-12. Orden sugerido en [CLAUDE-tienda.md §13](../CLAUDE-tienda.md).
+Estado al 2026-11-12. Todo el trabajo de T1 a T25 está integrado en `main` (`86cbf67`). Orden sugerido en [CLAUDE-tienda.md §13](../CLAUDE-tienda.md).
 
 ## Avance por módulo
 
