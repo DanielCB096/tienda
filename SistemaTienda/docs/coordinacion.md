@@ -1,6 +1,6 @@
 # Coordinación entre agentes
 
-Actualizado: 2026-11-11. Tablero único: cualquier IA o persona que trabaje en este repositorio debe reclamar su tarea aquí antes de empezar.
+Actualizado: 2026-11-12. Tablero único: cualquier IA o persona que trabaje en este repositorio debe reclamar su tarea aquí antes de empezar.
 
 Instrucciones generales: [AGENTS.md](../../AGENTS.md).
 
@@ -28,7 +28,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 
 | Tarea | Agente | Rama | Archivos | Fecha | Estado |
 |-------|--------|------|-----------|-------|--------|
-| T24 — Reportes en la app MAUI | GLM (OpenCode) | feat/maui-reportes | Core/PeriodoReporte.cs, Maui/Pages/ReportesPage.xaml(.cs), Maui/Pages/PrincipalPage.cs, Maui/MauiProgram.cs, Tests/PeriodoReporteTests.cs, documentación | 2026-11-12 | Tomada |
+| — | — | — | — | — | Sin tareas tomadas |
 
 ## Hecho
 
@@ -56,6 +56,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 | T21 | GLM (OpenCode) | feat/maui-gastos | Pantalla de gastos: resumen por origen, historial de los últimos 200 y alta con permiso de dueño/encargado; `ResumenGastos` y `ObtenerResumenGastos`; 4 pruebas nuevas; 210 pruebas | a91c8bd, c6122c8 |
 | T22 | GLM (OpenCode) | feat/maui-clientes-edicion | Edición de nombre y teléfono con permiso `EditarCliente` y bitácora, y estado de cuenta con saldo vigente, total fiado, total abonado e historial de ventas fiadas y abonos (sin anuladas); 8 pruebas nuevas; 218 pruebas | 56bee3c, 8091179, 77cf83c |
 | T23 | GLM (OpenCode) | feat/maui-proveedores-edicion | Esquema v8 (`PagosProveedor` inmutable), edición de nombre/clave/teléfono/dirección con permiso `EditarProveedor` y bitácora, estado de cuenta con saldo pendiente, total pagado e historial de pagos, y pago atómico con historial; 12 pruebas nuevas; 230 pruebas | 6e74c85 |
+| T24 | GLM (OpenCode) | feat/maui-reportes | Pestaña Reportes con filtros Hoy/Este mes/Rango sobre `ReporteUtilidadService`; `PeriodoReporte` en Core con límites de fecha; utilidad bruta y neta coloreadas; 4 pruebas nuevas (234 esperadas) | 0ffd951 |
 
 ## Tareas
 
@@ -67,7 +68,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 | T4 | Bitácora y permisos en servicios | Hecho | — | En `feat/integracion-t4-t9`. Esquema v5: bitácora inmutable, matriz de permisos y validación en servicios. |
 | T5 | Reportes de utilidad | Hecho | T2 | En `feat/reportes-utilidad` (sobre `feat/integracion-t4-t9`). Utilidad bruta y neta por periodo con filtros por fecha; permiso `Consultar`. |
 | T6 | Importación Excel/CSV | Libre | T2 recomendado | Dependencia nueva requiere ADR. |
-| T7 | Interfaz definitiva | Tomada | ADR, T12 | Decisión MAUI validada y base implementada en T12. POS entregado en T13, caja operativa en T14, inventario en T15, detalle/anulación con QR en T16, conteo e historial de cortes en T17, clientes en T18, proveedores en T19, gastos en T21, edición/estado de cuenta de clientes en T22 y edición/estado de cuenta de proveedores en T23; faltan reportes. |
+| T7 | Interfaz definitiva | Hecho | ADR, T12 | Decisión MAUI validada y base implementada en T12. POS entregado en T13, caja operativa en T14, inventario en T15, detalle/anulación con QR en T16, conteo e historial de cortes en T17, clientes en T18, proveedores en T19, gastos en T21, edición/estado de cuenta de clientes en T22, edición/estado de cuenta de proveedores en T23 y reportes de utilidad en T24. Las pantallas de operación del MVP quedan cubiertas. |
 | T8 | Corte de caja | Hecho | T2 | En `feat/corte-caja` (parte de `feat/ventas-pos`). Esquema v3: cortes, movimientos de caja y abonos con historial. |
 | T9 | Cobertura adicional de pruebas | Hecho | T1–T3 | En `feat/integracion-t4-t9`. 25 pruebas de borde en gastos, saldos, inventario, usuarios y mapeo de tipos. Hallazgos sin corregir: `AjustarStock` no valida que el producto exista; se permiten PIN duplicados y `VerificarAcceso` devuelve el primer usuario por nombre; `AgregarGasto` no recorta el concepto; la búsqueda por nombre no ignora acentos. Ver [deuda-tecnica.md](deuda-tecnica.md). |
 | T10 | Respaldo automático por intervalo | Hecho | T1 | En `feat/respaldo-automatico` (sobre `feat/reportes-utilidad`). Se evalúa al iniciar sesión y al cerrar; `0` deshabilita; cualquier respaldo previo cuenta y la copia queda en `Bitacora`. Pendiente: copia a USB/nube y respaldo durante sesiones largas. |
@@ -128,4 +129,5 @@ Al terminar, mueve la fila a `Hecho` (o elimínala de En curso) y registra el co
 | 2026-11-11 | GLM (OpenCode) | feat/maui-clientes-edicion | T22 terminado: edición de nombre/teléfono con permiso `EditarCliente` y bitácora, estado de cuenta con saldo, totales e historial sin anuladas, y abono desde el estado de cuenta; 8 pruebas nuevas; 218 pruebas en CI; verificación manual pendiente por bloqueo del entorno; documentación actualizada | 56bee3c, 8091179 |
 | 2026-11-11 | GLM (OpenCode) | feat/maui-clientes-edicion | CI en verde para el PR #15: compilación y pruebas (218 en verde), y app MAUI para Windows y Android | 77cf83c |
 | 2026-11-11 | GLM (OpenCode) | feat/maui-proveedores-edicion | T23 terminado: esquema v8 con `PagosProveedor` inmutable, pago atómico con saldo antes/después, estado de cuenta con saldo pendiente, total pagado e historial, y edición de nombre/clave/teléfono/dirección con permiso `EditarProveedor`; 12 pruebas nuevas; 230 pruebas en local; verificación manual pendiente por bloqueo del entorno; documentación actualizada; PR #16 abierto | 6e74c85, dd332fa |
-| 2026-11-12 | GLM (OpenCode) | feat/maui-proveedores-edicion | CI en verde para el PR #16: compilación y pruebas (230 en verde), y app MAUI para Windows y Android | pendiente |
+| 2026-11-12 | GLM (OpenCode) | feat/maui-proveedores-edicion | CI en verde para el PR #16: compilación y pruebas (230 en verde), y app MAUI para Windows y Android | 50f7011 |
+| 2026-11-12 | GLM (OpenCode) | feat/maui-reportes | T24 terminado: pestaña Reportes con filtros Hoy/Este mes/Rango, `PeriodoReporte` en Core, utilidad bruta y neta coloreadas y 4 pruebas nuevas; 234 pruebas esperadas en CI; builds de solución y MAUI Windows en verde; verificación manual pendiente por bloqueo del entorno; documentación actualizada | 0ffd951 |

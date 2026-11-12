@@ -128,8 +128,9 @@ dotnet test SistemaTienda/SistemaTienda.sln
 | `DesactivacionProductosTests` | Migración v6 → v7 conserva productos y los marca activos, alta activa por defecto, desactivar conserva stock y bloquea la venta, reactivar devuelve a la venta, permiso solo dueño, bitácora, estados ya aplicados e inexistente, entrada/merma/ajuste bloqueados, búsqueda y stock bajo con filtro de activos y localización por código |
 | `EstadoCuentaClientesTests` | Edición de nombre y teléfono con permiso `EditarCliente` y bitácora, rechazo para empleado, saldo intacto, recorte y validaciones, totales fiado/abonado, exclusión de ventas anuladas del historial y del total, cliente sin movimientos y cliente inexistente |
 | `EstadoCuentaProveedoresTests` | Edición con permiso `EditarProveedor` y bitácora, rechazo para empleado, saldo intacto, recorte y validaciones, pago atómico con historial y saldo antes/después, pago mayor al saldo sin historial, inmutabilidad de `PagosProveedor`, totales del estado de cuenta, proveedor sin pagos y proveedor inexistente; migración v8 con tabla y disparadores |
+| `PeriodoReporteTests` | Hoy ignora la hora, mes en curso empieza el día 1 y termina hoy, enero no se sale del año y el rango normaliza las horas de ambas fechas |
 
-Total actual: 230 casos, todos en verde en local y en CI (2026-11-11). Los puntos 1, 2, 3, 5, 6, 7, 8 y 9 del listado de áreas críticas tienen cobertura parcial; falta rendimiento y la interfaz MAUI sigue sin pruebas automatizadas. La restauración se prueba sobre una base temporal: se verifica que el contenido vuelve al del respaldo (no byte a byte).
+Total actual: 234 casos (230 verificados en local el 2026-11-11 más 4 nuevos de T24); la verificación de la suite completa en CI está pendiente de confirmar al cerrar T24. Los puntos 1, 2, 3, 5, 6, 7, 8 y 9 del listado de áreas críticas tienen cobertura parcial; falta rendimiento y la interfaz MAUI sigue sin pruebas automatizadas. La restauración se prueba sobre una base temporal: se verifica que el contenido vuelve al del respaldo (no byte a byte).
 
 La verificación se ejecuta en GitHub Actions (`windows-latest`) en cada push y también puede correr localmente con `dotnet test`; ver `CLAUDE-tienda.md` para el entorno actual.
 
@@ -416,6 +417,28 @@ Pendiente de la pantalla:
 - Dar de baja proveedores y detectar duplicados al dar de alta.
 - Elegir el método del pago y llevarlo al corte de caja.
 - Imprimir o exportar el estado de cuenta y cubrir la interfaz con pruebas automatizadas.
+
+## Verificación manual de Reportes de utilidad (T24) — pendiente
+
+La pantalla compila para Windows y las 4 pruebas de `PeriodoReporte` están en verde, pero el entorno de desarrollo de esta sesión no permitió abrir la interfaz gráfica ni ejecutar el host de pruebas local. La verificación manual queda pendiente en Windows sobre una base demo, sin datos reales:
+
+| Caso | Resultado |
+|------|-----------|
+| **Hoy** muestra solo las ventas del día y el periodo correcto | Pendiente |
+| **Este mes** arranca el día 1 y termina hoy | Pendiente |
+| **Rango** muestra los `DatePicker`, **Ver** consulta el rango y un rango invertido se rechaza con mensaje | Pendiente |
+| El resumen muestra utilidad neta, número de ventas y periodo | Pendiente |
+| El desglose coincide con `ReporteUtilidadService` (ventas, costo, comisión, utilidad bruta, mermas, gastos y utilidad neta) | Pendiente |
+| La utilidad positiva o cero se pinta en verde y la negativa en rojo | Pendiente |
+| Una venta anulada no suma al reporte | Pendiente |
+| Sesión de empleado: puede ver el reporte porque tiene `Consultar` | Pendiente |
+| Repetir el flujo en la tablet Android | Pendiente |
+
+Pendiente de la pantalla:
+
+- Exportar o imprimir el reporte y comparar periodos entre sí.
+- Desglosar por método de pago, producto o categoría.
+- Cubrir la interfaz con pruebas automatizadas.
 
 ## Herramientas de Prueba
 

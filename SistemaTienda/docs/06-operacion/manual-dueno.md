@@ -72,11 +72,14 @@ Acceso en la app: pestaña **Caja** (requiere PIN de dueño o encargado; el reti
 
 ### 5. Reportes y Utilidad
 
-- **Utilidad del día**: Bruta y neta.
-- **Ventas por método de pago**: Cuánto se vendió en efectivo vs. tarjeta.
-- **Productos más vendidos**: Top 5 o top 10.
-- **Mermas del período**: Total en dinero y por motivo.
-- **Gastos del período**: Por categoría.
+Acceso en la app: pestaña **Reportes** (visible para dueño, encargado y empleado porque todos tienen el permiso `Consultar`).
+
+- **Periodo**: elige **Hoy**, **Este mes** o **Rango** con fecha desde y hasta; **Ver** consulta el rango y **Actualizar** vuelve a leer el periodo seleccionado.
+- **Resumen**: utilidad neta del periodo en grande, número de ventas y periodo consultado.
+- **Desglose**: ventas cobradas, costo de ventas, comisión de tarjeta, utilidad bruta, mermas, gastos y utilidad neta.
+- **Cálculo**: utilidad bruta = ventas − costo de ventas − comisión de tarjeta; utilidad neta = bruta − mermas − gastos. Las ventas anuladas no se incluyen.
+- **Color**: la utilidad bruta y neta se ven en verde cuando son positivas o cero y en rojo cuando son negativas.
+- **Pendiente**: exportar o imprimir el reporte, comparar periodos y desglosar por método de pago, producto o categoría. La verificación manual de esta pantalla en Windows y Android está pendiente (2026-11-12).
 
 ### 6. Configuración
 

@@ -8,7 +8,7 @@ Alcance de esta entrega:
 
 - Asistente de primera configuración.
 - Inicio de sesión con PIN.
-- Tablero con nueve pestañas: Inicio, Vender, Inventario, Ventas, Clientes, Proveedores, Gastos, Caja y Ajustes.
+- Tablero con diez pestañas: Inicio, Vender, Inventario, Ventas, Clientes, Proveedores, Gastos, Caja, Reportes y Ajustes.
 - Punto de venta: búsqueda o escaneo, carrito, cobro en efectivo, tarjeta, mixto o fiado, y ticket interno con QR que se puede compartir o copiar.
 - Ventas: detalle de la venta con líneas, pagos y estado, reimpresión del ticket y anulación completa con motivo y confirmación.
 - Clientes: directorio con búsqueda por nombre o teléfono, filtro de saldo, alta de cliente, abono en efectivo al fiado y estado de cuenta con edición de nombre y teléfono (dueño y encargado).
@@ -22,7 +22,7 @@ Esta entrega **no** incluye todavía las pantallas de reportes.
 
 ## Estado
 
-Base implementada y verificada manualmente en Windows: asistente, login, tablero y respaldo el 2026-10-23; punto de venta el 2026-10-25 (búsqueda, carrito, límite de stock, efectivo con cambio, tarjeta, mixto, fiado y ticket con copiar/cerrar); caja operativa el 2026-10-25 (cierre con diferencia justificada, ingreso, retiro y abono; conteo por denominaciones e historial de cortes verificados también el 2026-10-25); inventario el 2026-10-25 (catálogo, escaneo, alta, edición, entrada, merma, ajuste, historial y permisos por rol); ventas y anulación el 2026-10-25 (detalle, reimpresión, QR decodificado offline, anulación con motivo y confirmación, devolución de stock, bloqueo por corte cerrado y visibilidad por rol). Clientes quedó implementado en T18 con compilación y pruebas de servicio, y en T22 se agregaron el estado de cuenta y la edición de nombre y teléfono; la verificación manual de la pantalla quedó pendiente porque el entorno de desarrollo no permitió abrir la interfaz gráfica. Proveedores quedó implementado en T19 con la misma situación: compilación y pruebas de servicio en verde, pero sin verificación manual. La desactivación de productos llegó en T20 también con pruebas de servicio y sin verificación manual. La pantalla de gastos llegó en T21 con pruebas de servicio del resumen y del historial, también pendiente de verificación manual. T22 agregó el estado de cuenta y la edición de clientes, con 8 pruebas de servicio y la misma verificación manual pendiente. T23 sumó el historial inmutable de pagos a proveedores (esquema v8), su estado de cuenta y la edición de datos, con 12 pruebas de servicio. La compilación para Windows y Android está en verde en CI (230 pruebas con T23). Quedan pendientes el botón Compartir del ticket (diálogo del sistema), compartir el QR como imagen, la reimpresión con efectivo recibido y la ejecución en Android; el equipo de desarrollo no tiene Android SDK ni JDK instalados.
+Base implementada y verificada manualmente en Windows: asistente, login, tablero y respaldo el 2026-10-23; punto de venta el 2026-10-25 (búsqueda, carrito, límite de stock, efectivo con cambio, tarjeta, mixto, fiado y ticket con copiar/cerrar); caja operativa el 2026-10-25 (cierre con diferencia justificada, ingreso, retiro y abono; conteo por denominaciones e historial de cortes verificados también el 2026-10-25); inventario el 2026-10-25 (catálogo, escaneo, alta, edición, entrada, merma, ajuste, historial y permisos por rol); ventas y anulación el 2026-10-25 (detalle, reimpresión, QR decodificado offline, anulación con motivo y confirmación, devolución de stock, bloqueo por corte cerrado y visibilidad por rol). Clientes quedó implementado en T18 con compilación y pruebas de servicio, y en T22 se agregaron el estado de cuenta y la edición de nombre y teléfono; la verificación manual de la pantalla quedó pendiente porque el entorno de desarrollo no permitió abrir la interfaz gráfica. Proveedores quedó implementado en T19 con la misma situación: compilación y pruebas de servicio en verde, pero sin verificación manual. La desactivación de productos llegó en T20 también con pruebas de servicio y sin verificación manual. La pantalla de gastos llegó en T21 con pruebas de servicio del resumen y del historial, también pendiente de verificación manual. T22 agregó el estado de cuenta y la edición de clientes, con 8 pruebas de servicio y la misma verificación manual pendiente. T23 sumó el historial inmutable de pagos a proveedores (esquema v8), su estado de cuenta y la edición de datos, con 12 pruebas de servicio. T24 agregó la pestaña de reportes con los periodos hoy, mes y rango, con 4 pruebas de servicio de `PeriodoReporte` y la misma verificación manual pendiente. La compilación para Windows y Android está en verde en CI (230 pruebas con T23); T24 suma 4 pruebas y su CI queda pendiente de confirmar. Quedan pendientes el botón Compartir del ticket (diálogo del sistema), compartir el QR como imagen, la reimpresión con efectivo recibido y la ejecución en Android; el equipo de desarrollo no tiene Android SDK ni JDK instalados.
 
 ## Plataformas y proyecto
 
@@ -51,7 +51,7 @@ SistemaTienda.Maui/
 ├── Pages/
 │   ├── ConfiguracionInicialPage   # Asistente de primera ejecución
 │   ├── LoginPage                  # PIN con 3 intentos
-│   ├── PrincipalPage              # TabbedPage con 9 pestañas
+│   ├── PrincipalPage              # TabbedPage con 10 pestañas
 │   ├── InicioPage                 # Tablero del día
 │   ├── PosPage                    # Punto de venta: carrito, cobro y ticket
 │   ├── InventarioPage             # Catálogo, alta/edición y movimientos
@@ -61,6 +61,7 @@ SistemaTienda.Maui/
 │   ├── ProveedoresPage            # Directorio, alta, pagos, estado de cuenta y edición
 │   ├── GastosPage                 # Resumen, historial y alta de gastos
 │   ├── CajaPage                   # Cierre de corte, movimientos y abonos
+│   ├── ReportesPage               # Utilidad del periodo: hoy, mes o rango
 │   ├── AjustesPage                # Configuración, respaldo y cierre de sesión
 │   └── ErrorPage                  # Arranque fallido
 ├── Services/
@@ -91,6 +92,7 @@ SistemaTienda.Maui/
 | Proveedores | Resumen de proveedores, con saldo y total por pagar; búsqueda por nombre, clave o teléfono, filtro con saldo, alta con saldo inicial, pago y estado de cuenta con historial de pagos | Alta y edición de proveedor, pago del saldo pendiente |
 | Gastos | Resumen del total, lo pagado del efectivo de la caja y lo pagado con otra fuente; historial de los últimos 200 gastos y alta con concepto, monto, método, origen y observaciones | Alta de gasto (dueño y encargado) |
 | Caja | Periodo abierto, efectivo esperado, fondo, ventas por método, abonos, ingresos/retiros, gastos, cierre con conteo por denominaciones o total directo, diferencia e historial de los últimos 20 cortes | Cierre de corte, ingresos, retiros y abonos |
+| Reportes | Utilidad del periodo con filtros Hoy, Este mes y Rango: ventas cobradas, costo de ventas, comisión de tarjeta, utilidad bruta, mermas, gastos y utilidad neta, con número de ventas y periodo | Solo lectura (permiso `Consultar`) |
 | Ajustes | Datos de la tienda, reglas configuradas, rutas de base y respaldos, último respaldo, crear respaldo y cerrar sesión | Respaldo manual y cierre de sesión |
 
 El POS reutiliza `VentaService`: la validación de stock, precios congelados, pagos y fiado ocurre en la capa de aplicación; la página solo arma el carrito y captura los importes. La búsqueda del POS devuelve solo productos activos y, si se escanea un producto desactivado, avisa que no se puede vender en lugar de agregarlo. En efectivo, la página muestra un recuadro **Cambio a entregar** con el monto recibido y el cambio, y el ticket imprime ambos importes. El ticket se arma con `TicketService` (capa `Application`) y se abre en una página modal que muestra el QR, el texto completo y las opciones de compartir y copiar. El QR es informativo y offline: resume folio, fecha, estado, total, método de pago y hasta diez productos, y advierte que no es un comprobante fiscal. Se dibuja con `QrTicketView` sobre `GraphicsView`, sin guardarse como imagen.
@@ -111,13 +113,15 @@ El conteo por denominaciones es opcional y usa `ConteoEfectivo` (capa `Core`): 1
 
 El historial se lee con `CorteCajaService.ObtenerCortes(20)` y muestra los últimos 20 cortes cerrados del más reciente al más antiguo, con folio, periodo, esperado, contado, diferencia coloreada (verde en cero, rojo en faltante o sobrante), responsable, fecha y observaciones. Es solo lectura y se recarga después de cada cierre.
 
+Reportes reutiliza `ReporteUtilidadService` (T5) sin tocar el cálculo y con el permiso `Consultar` validado en el servicio. Los botones **Hoy**, **Este mes** y **Rango** fijan el periodo; **Rango** muestra dos `DatePicker` (desde y hasta) con el botón **Ver**. `PeriodoReporte` (capa `Core`) calcula los límites con fechas sin hora y la pantalla llama a `Obtener(desde, hasta)`. El resumen muestra la utilidad neta en grande, el número de ventas y el periodo; el desglose lista ventas cobradas, costo de ventas, comisión de tarjeta, utilidad bruta, mermas, gastos y utilidad neta. La utilidad bruta y neta se pintan en verde cuando son mayores o iguales a cero y en rojo cuando son negativas. Las ventas anuladas quedan excluidas porque el cálculo ya las filtra. **Actualizar** vuelve a leer el periodo seleccionado y la página recarga al aparecer.
+
 Inventario reutiliza `InventoryService`: la búsqueda exacta por código abre el detalle, la búsqueda por nombre filtra la lista y un código desconocido de al menos ocho dígitos ofrece darlo de alta. El formulario de producto no edita el stock (solo el stock inicial al crear); los cambios posteriores se hacen con entrada, merma o ajuste, y cada uno exige cantidad, motivo y usuario. El historial muestra los últimos 200 movimientos con cantidad firmada, tipo, usuario y fecha. La entrada captura el costo del movimiento, pero no modifica el costo del catálogo; el dueño lo cambia desde Editar. El filtro de stock bajo considera `Stock <= StockMinimo`.
 
 Las pestañas se muestran en una barra inferior en Android y en la parte superior en Windows. Los textos usan español de México y los importes se formatean con `Formato.Moneda` (centavos → `$0.00`).
 
 ## Sesión y permisos
 
-`SesionActual` usa `AsyncLocal`, que no sobrevive entre eventos de interfaz. Por eso `SesionApp` guarda el usuario autenticado y lo vuelve a aplicar (`SesionApp.Aplicar()`) antes de cada llamada a un servicio desde un manejador de eventos. Los permisos siguen validándose en `Application`, no en la interfaz: el POS exige `Vender` al confirmar el cobro; Caja exige `CorteCaja` e `IngresoCaja` a dueño o encargado, `RetiroCaja` solo al dueño y `RegistrarAbono` a dueño o encargado; Ventas exige `AnularVenta` para anular. POS y Caja muestran las operaciones a todos los roles y el servicio rechaza las que no corresponden. Clientes deja el directorio, el alta y el estado de cuenta disponibles para todos los roles porque el cajero puede necesitarlos al vender fiado, pero oculta **Abonar** a quien no tiene `RegistrarAbono` y **Editar datos** a quien no tiene `EditarCliente` (dueño y encargado); aun así el servicio vuelve a validar el permiso. Proveedores deja el directorio, el alta y el estado de cuenta disponibles para todos los roles, oculta **Pagar** a quien no tiene `PagarProveedor` (dueño y encargado) y **Editar datos** a quien no tiene `EditarProveedor` (dueño y encargado); el servicio valida los permisos otra vez. Gastos deja el resumen y el historial visibles para todos los roles y oculta **+ Nuevo** a quien no tiene `RegistrarGasto` (dueño y encargado); `ConfiguracionService` vuelve a validar el permiso. Inventario y Ventas además ocultan las acciones según el rol: el empleado solo consulta y ve movimientos, y no ve **Anular venta**; el encargado edita, registra entradas y mermas, pero no cambia precios ni ajusta stock, y sí puede anular; el dueño tiene todas. Aun cuando un botón quede oculto, el servicio vuelve a validar el permiso.
+`SesionActual` usa `AsyncLocal`, que no sobrevive entre eventos de interfaz. Por eso `SesionApp` guarda el usuario autenticado y lo vuelve a aplicar (`SesionApp.Aplicar()`) antes de cada llamada a un servicio desde un manejador de eventos. Los permisos siguen validándose en `Application`, no en la interfaz: el POS exige `Vender` al confirmar el cobro; Caja exige `CorteCaja` e `IngresoCaja` a dueño o encargado, `RetiroCaja` solo al dueño y `RegistrarAbono` a dueño o encargado; Ventas exige `AnularVenta` para anular. POS y Caja muestran las operaciones a todos los roles y el servicio rechaza las que no corresponden. Clientes deja el directorio, el alta y el estado de cuenta disponibles para todos los roles porque el cajero puede necesitarlos al vender fiado, pero oculta **Abonar** a quien no tiene `RegistrarAbono` y **Editar datos** a quien no tiene `EditarCliente` (dueño y encargado); aun así el servicio vuelve a validar el permiso. Proveedores deja el directorio, el alta y el estado de cuenta disponibles para todos los roles, oculta **Pagar** a quien no tiene `PagarProveedor` (dueño y encargado) y **Editar datos** a quien no tiene `EditarProveedor` (dueño y encargado); el servicio valida los permisos otra vez. Gastos deja el resumen y el historial visibles para todos los roles y oculta **+ Nuevo** a quien no tiene `RegistrarGasto` (dueño y encargado); `ConfiguracionService` vuelve a validar el permiso. Inventario y Ventas además ocultan las acciones según el rol: el empleado solo consulta y ve movimientos, y no ve **Anular venta**; el encargado edita, registra entradas y mermas, pero no cambia precios ni ajusta stock, y sí puede anular; el dueño tiene todas. Reportes queda visible para todos los roles con `Consultar` (dueño, encargado y empleado) y el servicio vuelve a validar el permiso; la pantalla solo lee. Aun cuando un botón quede oculto, el servicio vuelve a validar el permiso.
 
 Al cerrar sesión desde Ajustes se ejecuta el respaldo automático si corresponde, se limpia la sesión y se vuelve al login. No se conserva el usuario anterior.
 
@@ -157,7 +161,7 @@ No se usa `Shell` ni rutas jerárquicas. `NavegacionApp` cambia la página raíz
 - Inventario no permite borrar productos (la desactivación cumple ese papel), filtrar por categoría, actualizar el costo del catálogo al registrar una entrada ni reportar un valorizado histórico.
 - Clientes permite editar nombre y teléfono y consultar el estado de cuenta, pero no borrar ni dar de baja clientes, detectar duplicados al dar de alta ni elegir el método del abono; el abono se registra siempre como efectivo. El estado de cuenta no imprime ni exporta.
 - Proveedores permite editar los datos y consultar el estado de cuenta con el historial de pagos, pero no borrar ni dar de baja proveedores, detectar duplicados, elegir el método del pago ni llevar el pago al corte de caja; el pago sigue siendo manual en Caja si fue en efectivo. El historial solo cubre los pagos registrados desde la migración v8 y el estado de cuenta no se imprime ni exporta.
-- No hay pantallas de reportes; los gastos no se editan ni se borran, no admiten fecha retroactiva y su resumen por categoría o periodo sigue en la consola.
+- Reportes muestra la utilidad del periodo, pero no exporta ni imprime el reporte, no compara periodos entre sí y no desglosa por método de pago o categoría. Los gastos no se editan ni se borran, no admiten fecha retroactiva y su resumen por categoría o periodo sigue en la consola.
 - El ticket es texto interno con QR informativo (no fiscal); no se genera PDF ni imagen, el QR no se comparte como imagen y resume hasta diez productos. Copiar sí se verificó; compartir depende del diálogo de Windows y sigue pendiente de probar.
 - La reimpresión desde Ventas no incluye el efectivo recibido ni el cambio, porque la venta solo guarda el total.
 - El QR no se ha validado en un dispositivo Android.
@@ -289,6 +293,21 @@ Implementados en código y cubiertos por pruebas de servicio (`EstadoCuentaProve
 - [ ] La pantalla se verifica manualmente en Windows con roles dueño/encargado/empleado.
 - [ ] El flujo se repite en la tablet Android.
 - [ ] El estado de cuenta se imprime o exporta, se detectan proveedores duplicados y el pago elige método y entra al corte.
+
+## Criterios de aceptación de T24 (Reportes de utilidad)
+
+Implementados en código y cubiertos por pruebas de servicio (`PeriodoReporteTests`). La verificación manual en Windows quedó pendiente porque el entorno de desarrollo no permitió abrir la GUI:
+
+- [x] La pestaña **Reportes** aparece entre Caja y Ajustes y se abre con la sesión activa.
+- [x] **Hoy** y **Este mes** calculan sus límites con `PeriodoReporte` y consultan el periodo correcto.
+- [x] **Rango** permite elegir desde y hasta con `DatePicker`; un rango invertido lo rechaza `ReporteUtilidadService` sin modificar datos.
+- [x] El resumen muestra utilidad neta, número de ventas y periodo; el desglose lista ventas, costo, comisión, utilidad bruta, mermas, gastos y utilidad neta.
+- [x] La utilidad bruta y neta se colorean en verde cuando son ≥ 0 y en rojo cuando son negativas.
+- [x] Las ventas anuladas quedan excluidas del reporte porque el cálculo ya las filtra.
+- [x] Todos los roles con `Consultar` ven el reporte y el servicio vuelve a validar el permiso; la pantalla solo lee.
+- [ ] La pantalla se verifica manualmente en Windows con datos de varios periodos.
+- [ ] El flujo se repite en la tablet Android.
+- [ ] El reporte se exporta o imprime, se comparan periodos y se desglosa por método o categoría.
 
 ## Criterios de aceptación de T20 (Desactivación de productos)
 
