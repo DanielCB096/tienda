@@ -1,6 +1,6 @@
-# Modelo de Datos (esquema v7)
+# Modelo de Datos (esquema v8)
 
-Base local SQLite, un solo archivo. `PRAGMA user_version = 7`.
+Base local SQLite, un solo archivo. `PRAGMA user_version = 8`.
 
 El acceso vive en `SistemaTienda.Infrastructure/Database.cs` (`DatabaseTools`). Todas las consultas son parametrizadas.
 
@@ -14,6 +14,7 @@ El acceso vive en `SistemaTienda.Infrastructure/Database.cs` (`DatabaseTools`). 
   - **v5** — crea `Bitacora` con sus índices y disparadores que impiden `UPDATE` y `DELETE` (auditoría inmutable).
   - **v6** — crea `AnulacionesVenta` con índice por fecha y disparadores que impiden `UPDATE` y `DELETE` (anulación inmutable de ventas).
   - **v7** — agrega `Productos.Activo` (`INTEGER NOT NULL DEFAULT 1`): los productos existentes quedan activos. La desactivación es un estado operativo, no una baja del historial.
+  - **v8** — crea `PagosProveedor` con índices por proveedor y fecha y disparadores que impiden `UPDATE` y `DELETE` (historial inmutable de pagos a proveedores). Los pagos anteriores a esta migración no se pueden reconstruir.
 - Una base nueva se crea directamente en la versión máxima (`Migraciones.VersionMaxima`): no se crea respaldo previo porque aún no hay datos.
 - `MigradorEsquema.Migrar()` se ejecuta dentro de `InicializarBaseDeDatos()` al arrancar:
   1. Lee `user_version`; si la base es más nueva que la app, aborta sin tocar nada.
@@ -187,6 +188,22 @@ Registro inmutable de la anulación de una venta completa (migración v6). Una v
 | FechaRegistro | DATETIME | |
 | UltimaActualizacion | DATETIME | |
 
+### PagosProveedor
+
+Historial inmutable de pagos a proveedores (migración v8). Se inserta en la misma transacción que descuenta `Proveedores.SaldoPendiente`; los disparadores `TR_PagosProveedor_NoUpdate` y `TR_PagosProveedor_NoDelete` impiden modificar o borrar filas.
+
+| Columna | Tipo | Notas |
+|---------|------|-------|
+| Id | INTEGER PK | |
+| ProveedorId | INTEGER FK → Proveedores | |
+| Fecha | DATETIME | Hora local del pago |
+| Monto | INTEGER | Centavos; > 0 y ≤ saldo pendiente |
+| SaldoAnterior | INTEGER | Saldo pendiente antes del pago |
+| SaldoNuevo | INTEGER | Saldo pendiente después del pago |
+| Usuario | TEXT | Quien registró el pago |
+
+El pago no guarda método ni genera un movimiento de caja: si fue en efectivo, se registra además un retiro en Caja. El estado de cuenta usa `Proveedores.SaldoPendiente` como fuente de verdad para el saldo y el historial solo para los pagos.
+
 ### AbonosFiado
 
 Historial inmutable de pagos de clientes con fiado (migración v3). Se inserta en la misma transacción que descuenta `ClientesFiado.SaldoActual`.
@@ -295,7 +312,7 @@ Si `Diferencia ≠ 0` y `Observaciones` está vacía, la operación se rechaza y
 
 ## Índices
 
-`Productos(CodigoBarras)`, `Productos(Nombre)`, `Productos(Stock)`, `MovimientoInventario(ProductoId)`, `MovimientoInventario(Fecha)`, `Gastos(Fecha)`, `ClientesFiado(Nombre)`, `Proveedores(Nombre)`, `Ventas(Fecha)`, `VentaLineas(VentaId)`, `VentaLineas(ProductoId)`, `CortesCaja(Hasta)`, `MovimientosCaja(Fecha)`, `AbonosFiado(Fecha)`, `AbonosFiado(ClienteId)`, `AnulacionesVenta(Fecha)` (además del índice único implícito en `VentaId`).
+`Productos(CodigoBarras)`, `Productos(Nombre)`, `Productos(Stock)`, `MovimientoInventario(ProductoId)`, `MovimientoInventario(Fecha)`, `Gastos(Fecha)`, `ClientesFiado(Nombre)`, `Proveedores(Nombre)`, `PagosProveedor(ProveedorId)`, `PagosProveedor(Fecha)`, `Ventas(Fecha)`, `VentaLineas(VentaId)`, `VentaLineas(ProductoId)`, `CortesCaja(Hasta)`, `MovimientosCaja(Fecha)`, `AbonosFiado(Fecha)`, `AbonosFiado(ClienteId)`, `AnulacionesVenta(Fecha)` (además del índice único implícito en `VentaId`).
 
 ## Notas de tipado
 

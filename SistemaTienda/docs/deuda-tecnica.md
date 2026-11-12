@@ -11,11 +11,12 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 - **Impacto**: si falla la escritura de la bitácora (por ejemplo, disco lleno), la operación ya quedó aplicada y falta su registro. La tabla sigue siendo inmutable y la operación normal sí queda auditada.
 - **Cierre**: pasar la transacción o un `UnitOfWork` a los servicios para insertar acción y bitácora en la misma transacción.
 
-### Pagos a proveedores sin historial inmutable
+### Pago a proveedores sin método ni entrada al corte
 
-- **Dónde**: `ActualizarSaldoProveedor`.
-- **Impacto**: se actualiza el saldo, pero no se guarda el movimiento de pago. No se puede auditar ni reconstruir el saldo. Contradice "el historial no se edita". Los abonos de fiado ya tienen historial (`AbonosFiado`), los pagos a proveedores no. Desde T19 la pestaña Proveedores de la app permite pagar, así que la limitación es más visible: el pago solo reduce el saldo y deja un registro en la bitácora, pero no genera un movimiento de pago ni entra al corte de caja; si se paga en efectivo, el cajero debe registrar además un retiro en Caja.
-- **Cierre**: tabla `PagosProveedor` inmutable; el saldo se actualiza dentro de la misma transacción y el pago se refleja en el corte con su método.
+- **Dónde**: `ConfiguracionService.RegistrarPagoProveedor` y `DatabaseTools.RegistrarPagoProveedor`.
+- **Por qué**: T23 agregó el historial inmutable `PagosProveedor` y la actualización atómica del saldo; el método de pago y su reflejo automático en el corte quedaron fuera del alcance.
+- **Impacto**: el pago ya se puede auditar y reconstruir con fecha, monto, usuario y saldo antes/después, pero no dice si fue en efectivo, tarjeta o transferencia ni reduce el efectivo esperado del corte. Si se paga en efectivo, el cajero debe registrar además un retiro en Caja para que el corte cuadre. Los pagos anteriores a la migración v8 no tienen historial y solo queda el saldo vigente, así que el total pagado puede no coincidir con el saldo inicial más los pagos.
+- **Cierre**: columna de método en `PagosProveedor` y movimiento de caja ligado al pago cuando sea en efectivo.
 
 ### Ventas sin descuentos
 
@@ -72,19 +73,19 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 - **Impacto**: no se puede retirar a un cliente del directorio y el alta no detecta duplicados. El abono se registra siempre como efectivo (no se pregunta el método). El estado de cuenta es de solo lectura y no se imprime ni exporta. La pantalla aún no se ha verificado a mano en Windows ni en Android.
 - **Cierre**: baja lógica con permiso y bitácora, detección de duplicados por nombre o teléfono, método de pago en el abono e impresión/exportación del estado de cuenta.
 
-### Proveedores sin edición, estado de cuenta ni pago en caja
+### Proveedores sin baja, detección de duplicados ni método de pago
 
 - **Dónde**: `ConfiguracionService` y la pestaña Proveedores de la app MAUI.
-- **Por qué**: T19 cubrió el directorio, la búsqueda, el alta y el pago del saldo; la edición, el borrado y el historial de pagos quedaron fuera del alcance.
-- **Impacto**: no se puede corregir la clave, el teléfono o la dirección de un proveedor ni retirarlo del directorio, y el alta no detecta duplicados. El pago no pide método ni entra al corte; si es en efectivo, el usuario debe registrar por separado un retiro en Caja para que el efectivo esperado cuadre. La pantalla aún no se ha verificado a mano en Windows ni en Android.
-- **Cierre**: edición con permiso y bitácora, detección de duplicados, tabla `PagosProveedor` con método y movimiento de caja ligado al pago.
+- **Por qué**: T19 cubrió el directorio, la búsqueda, el alta y el pago del saldo, y T23 la edición de datos, el historial inmutable de pagos y el estado de cuenta; la baja, la detección de duplicados y el método del pago quedaron fuera del alcance.
+- **Impacto**: no se puede retirar a un proveedor del directorio y el alta no detecta duplicados. El pago no pide método ni entra al corte; si es en efectivo, el usuario debe registrar por separado un retiro en Caja para que el efectivo esperado cuadre. El estado de cuenta es de solo lectura, no se imprime ni exporta, y el historial solo cubre los pagos hechos desde el esquema v8. La pantalla aún no se ha verificado a mano en Windows ni en Android.
+- **Cierre**: baja lógica con permiso y bitácora, detección de duplicados, método de pago con movimiento de caja ligado al pago e impresión/exportación del estado de cuenta.
 
 ### La app MAUI no cubre todas las operaciones
 
 - **Dónde**: `SistemaTienda.Maui/Pages`.
-- **Por qué**: el punto de venta se entregó en T13, la caja operativa en T14, el inventario en T15, el detalle/anulación de ventas en T16, el conteo con historial de cortes en T17, la pantalla de clientes en T18, la de proveedores en T19, la de gastos en T21 y la edición/estado de cuenta de clientes en T22; el resto de las operaciones de escritura se hará en tareas posteriores.
-- **Impacto**: desde la app se vende, se opera el inventario, se cierra el corte con conteo, se registran ingresos, retiros y abonos de fiado, se anulan ventas, se reimprime el ticket, se consulta el historial de cortes, se gestiona el directorio de clientes con sus abonos, edición y estado de cuenta, se gestiona el directorio de proveedores con sus pagos, se registran gastos y se crea respaldo. La edición/estado de cuenta de proveedores, los reportes y la consulta de ventas de fechas anteriores tampoco están en la app.
-- **Cierre**: edición/estado de cuenta de proveedores, reportes en la app y consulta histórica de ventas.
+- **Por qué**: el punto de venta se entregó en T13, la caja operativa en T14, el inventario en T15, el detalle/anulación de ventas en T16, el conteo con historial de cortes en T17, la pantalla de clientes en T18, la de proveedores en T19, la de gastos en T21, la edición/estado de cuenta de clientes en T22 y la edición/estado de cuenta de proveedores en T23; los reportes se harán en una tarea posterior.
+- **Impacto**: desde la app se vende, se opera el inventario, se cierra el corte con conteo, se registran ingresos, retiros y abonos de fiado, se anulan ventas, se reimprime el ticket, se consulta el historial de cortes, se gestiona el directorio de clientes con sus abonos, edición y estado de cuenta, se gestiona el directorio de proveedores con sus pagos, edición y estado de cuenta, se registran gastos y se crea respaldo. Los reportes de utilidad y la consulta de ventas de fechas anteriores siguen solo en la consola.
+- **Cierre**: reportes en la app y consulta histórica de ventas.
 
 ### Gastos sin edición, fecha retroactiva ni reporte en la app
 

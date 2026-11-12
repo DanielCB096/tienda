@@ -36,7 +36,8 @@ public static class Migraciones
         new Migracion(4, "convierte los importes a centavos enteros", AplicarVersion4),
         new Migracion(5, "crea la bitácora inmutable", AplicarVersion5),
         new Migracion(6, "crea las anulaciones de venta", AplicarVersion6),
-        new Migracion(7, "agrega el estado activo de los productos", AplicarVersion7)
+        new Migracion(7, "agrega el estado activo de los productos", AplicarVersion7),
+        new Migracion(8, "crea el historial inmutable de pagos a proveedores", AplicarVersion8)
     };
 
     private static void AplicarVersion2(SqliteConnection conn, SqliteTransaction tx)
@@ -506,6 +507,44 @@ public static class Migraciones
         cmd.Transaction = tx;
         cmd.CommandText = @"
             ALTER TABLE Productos ADD COLUMN Activo INTEGER NOT NULL DEFAULT 1;
+        ";
+        cmd.ExecuteNonQuery();
+    }
+
+    /// <summary>
+    /// Registra el historial de pagos a proveedores. Los pagos anteriores a esta
+    /// migración no se pueden reconstruir: solo queda el saldo vigente.
+    /// </summary>
+    private static void AplicarVersion8(SqliteConnection conn, SqliteTransaction tx)
+    {
+        using var cmd = conn.CreateCommand();
+        cmd.Transaction = tx;
+        cmd.CommandText = @"
+            CREATE TABLE IF NOT EXISTS PagosProveedor (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ProveedorId INTEGER NOT NULL,
+                Fecha DATETIME NOT NULL,
+                Monto INTEGER NOT NULL,
+                SaldoAnterior INTEGER NOT NULL,
+                SaldoNuevo INTEGER NOT NULL,
+                Usuario TEXT NOT NULL DEFAULT '',
+                FOREIGN KEY (ProveedorId) REFERENCES Proveedores(Id)
+            );
+
+            CREATE INDEX IF NOT EXISTS IX_PagosProveedor_ProveedorId ON PagosProveedor(ProveedorId);
+            CREATE INDEX IF NOT EXISTS IX_PagosProveedor_Fecha ON PagosProveedor(Fecha);
+
+            CREATE TRIGGER IF NOT EXISTS TR_PagosProveedor_NoUpdate
+            BEFORE UPDATE ON PagosProveedor
+            BEGIN
+                SELECT RAISE(ABORT, 'Los pagos a proveedores son inmutables: no se pueden modificar');
+            END;
+
+            CREATE TRIGGER IF NOT EXISTS TR_PagosProveedor_NoDelete
+            BEFORE DELETE ON PagosProveedor
+            BEGIN
+                SELECT RAISE(ABORT, 'Los pagos a proveedores son inmutables: no se pueden borrar');
+            END;
         ";
         cmd.ExecuteNonQuery();
     }

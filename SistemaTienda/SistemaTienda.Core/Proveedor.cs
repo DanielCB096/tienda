@@ -11,3 +11,31 @@ public class Proveedor
     public DateTime FechaRegistro { get; set; } = DateTime.Now;
     public DateTime? UltimaActualizacion { get; set; }
 }
+
+/// <summary>
+/// Pago registrado en el historial inmutable <c>PagosProveedor</c>. Guarda el
+/// saldo antes y después para poder reconstruir la cuenta.
+/// </summary>
+public class PagoProveedor
+{
+    public int Id { get; set; }
+    public int ProveedorId { get; set; }
+    public DateTime Fecha { get; set; }
+    public long Monto { get; set; }
+    public long SaldoAnterior { get; set; }
+    public long SaldoNuevo { get; set; }
+    public string Usuario { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Estado de cuenta de un proveedor: sus datos, el saldo pendiente y el
+/// historial de pagos. El saldo inicial del alta no aparece como movimiento,
+/// así que el saldo pendiente es la fuente de verdad.
+/// </summary>
+public class EstadoCuentaProveedor
+{
+    public Proveedor Proveedor { get; set; } = new();
+    public List<PagoProveedor> Pagos { get; set; } = new();
+    public long TotalPagado { get; set; }
+    public long SaldoPendiente { get; set; }
+}

@@ -127,8 +127,9 @@ dotnet test SistemaTienda/SistemaTienda.sln
 | `ConteoEfectivoTests` | Catálogo de 11 denominaciones de mayor a menor y sin duplicados, subtotal por cantidad, cantidades cero o negativas ignoradas, total de billetes y monedas y líneas sin cantidad |
 | `DesactivacionProductosTests` | Migración v6 → v7 conserva productos y los marca activos, alta activa por defecto, desactivar conserva stock y bloquea la venta, reactivar devuelve a la venta, permiso solo dueño, bitácora, estados ya aplicados e inexistente, entrada/merma/ajuste bloqueados, búsqueda y stock bajo con filtro de activos y localización por código |
 | `EstadoCuentaClientesTests` | Edición de nombre y teléfono con permiso `EditarCliente` y bitácora, rechazo para empleado, saldo intacto, recorte y validaciones, totales fiado/abonado, exclusión de ventas anuladas del historial y del total, cliente sin movimientos y cliente inexistente |
+| `EstadoCuentaProveedoresTests` | Edición con permiso `EditarProveedor` y bitácora, rechazo para empleado, saldo intacto, recorte y validaciones, pago atómico con historial y saldo antes/después, pago mayor al saldo sin historial, inmutabilidad de `PagosProveedor`, totales del estado de cuenta, proveedor sin pagos y proveedor inexistente; migración v8 con tabla y disparadores |
 
-Total actual: 218 casos, todos en verde en CI (2026-11-11). Los puntos 1, 2, 3, 5, 6, 7, 8 y 9 del listado de áreas críticas tienen cobertura parcial; falta rendimiento y la interfaz MAUI sigue sin pruebas automatizadas. La restauración se prueba sobre una base temporal: se verifica que el contenido vuelve al del respaldo (no byte a byte).
+Total actual: 230 casos, todos en verde en local y en CI (2026-11-11). Los puntos 1, 2, 3, 5, 6, 7, 8 y 9 del listado de áreas críticas tienen cobertura parcial; falta rendimiento y la interfaz MAUI sigue sin pruebas automatizadas. La restauración se prueba sobre una base temporal: se verifica que el contenido vuelve al del respaldo (no byte a byte).
 
 La verificación se ejecuta en GitHub Actions (`windows-latest`) en cada push y también puede correr localmente con `dotnet test`; ver `CLAUDE-tienda.md` para el entorno actual.
 
@@ -336,7 +337,7 @@ La pantalla compila para Windows y las pruebas de servicio están en verde, pero
 
 Pendiente de la pantalla:
 
-- Editar o borrar proveedores y consultar el estado de cuenta por proveedor.
+- Dar de baja proveedores y detectar duplicados al dar de alta.
 - Historial de pagos con método y su entrada al corte de caja.
 - Repetir el flujo en la tablet Android.
 - Cubrir la interfaz con pruebas automatizadas.
@@ -390,6 +391,30 @@ Pendiente de la pantalla:
 
 - Dar de baja clientes y detectar duplicados al dar de alta.
 - Elegir el método del abono (hoy siempre es efectivo y entra al corte).
+- Imprimir o exportar el estado de cuenta y cubrir la interfaz con pruebas automatizadas.
+
+## Verificación manual de Proveedores, edición y estado de cuenta (T23) — pendiente
+
+La pantalla compila para Windows y las 12 pruebas de servicio están en verde, pero el entorno de desarrollo de esta sesión no permitió abrir la interfaz gráfica. La verificación manual queda pendiente en Windows sobre una base demo, sin datos reales:
+
+| Caso | Resultado |
+|------|-----------|
+| **Estado** abre el estado de cuenta con nombre, clave, teléfono, dirección, alta, saldo y totales | Pendiente |
+| Proveedor sin pagos: total pagado en $0.00 y aviso sobre pagos anteriores a la v8 | Pendiente |
+| **Pagar** desde el estado de cuenta descuenta el saldo y refresca el historial | Pendiente |
+| El historial muestra monto, fecha, usuario y saldo antes/después del más reciente al más antiguo | Pendiente |
+| Pago mayor al saldo rechazado con mensaje y sin movimiento nuevo | Pendiente |
+| **Editar datos** con dueño: recorta espacios, guarda y refresca el directorio y el estado de cuenta | Pendiente |
+| Clave, teléfono y dirección vacíos permitidos y nombre vacío rechazado con mensaje | Pendiente |
+| La edición no cambia el saldo y deja `EditarProveedor` en la bitácora con antes/después | Pendiente |
+| Sesión de encargado: puede editar y pagar | Pendiente |
+| Sesión de empleado: ve **Estado**, pero no **Editar datos** ni **Pagar** | Pendiente |
+| Repetir el flujo en la tablet Android | Pendiente |
+
+Pendiente de la pantalla:
+
+- Dar de baja proveedores y detectar duplicados al dar de alta.
+- Elegir el método del pago y llevarlo al corte de caja.
 - Imprimir o exportar el estado de cuenta y cubrir la interfaz con pruebas automatizadas.
 
 ## Herramientas de Prueba
