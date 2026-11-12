@@ -47,6 +47,7 @@ public static class MauiProgram
 		builder.Services.AddTransient<ProveedoresPage>();
 		builder.Services.AddTransient<GastosPage>();
 		builder.Services.AddTransient<CajaPage>();
+		builder.Services.AddTransient<ReportesPage>();
 		builder.Services.AddTransient<AjustesPage>();
 
 #if DEBUG

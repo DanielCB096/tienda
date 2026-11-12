@@ -83,9 +83,9 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 ### La app MAUI no cubre todas las operaciones
 
 - **Dónde**: `SistemaTienda.Maui/Pages`.
-- **Por qué**: el punto de venta se entregó en T13, la caja operativa en T14, el inventario en T15, el detalle/anulación de ventas en T16, el conteo con historial de cortes en T17, la pantalla de clientes en T18, la de proveedores en T19, la de gastos en T21, la edición/estado de cuenta de clientes en T22 y la edición/estado de cuenta de proveedores en T23; los reportes se harán en una tarea posterior.
-- **Impacto**: desde la app se vende, se opera el inventario, se cierra el corte con conteo, se registran ingresos, retiros y abonos de fiado, se anulan ventas, se reimprime el ticket, se consulta el historial de cortes, se gestiona el directorio de clientes con sus abonos, edición y estado de cuenta, se gestiona el directorio de proveedores con sus pagos, edición y estado de cuenta, se registran gastos y se crea respaldo. Los reportes de utilidad y la consulta de ventas de fechas anteriores siguen solo en la consola.
-- **Cierre**: reportes en la app y consulta histórica de ventas.
+- **Por qué**: el punto de venta se entregó en T13, la caja operativa en T14, el inventario en T15, el detalle/anulación de ventas en T16, el conteo con historial de cortes en T17, la pantalla de clientes en T18, la de proveedores en T19, la de gastos en T21, la edición/estado de cuenta de clientes en T22, la edición/estado de cuenta de proveedores en T23 y los reportes de utilidad en T24.
+- **Impacto**: desde la app se vende, se opera el inventario, se cierra el corte con conteo, se registran ingresos, retiros y abonos de fiado, se anulan ventas, se reimprime el ticket, se consulta el historial de cortes, se gestiona el directorio de clientes con sus abonos, edición y estado de cuenta, se gestiona el directorio de proveedores con sus pagos, edición y estado de cuenta, se registran gastos, se consultan los reportes de utilidad del periodo y se crea respaldo. La consulta de ventas de fechas anteriores sigue solo en la consola.
+- **Cierre**: consulta histórica de ventas en la app.
 
 ### Gastos sin edición, fecha retroactiva ni reporte en la app
 
@@ -97,7 +97,7 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 ### App MAUI sin pruebas automatizadas
 
 - **Dónde**: `SistemaTienda.Maui`.
-- **Impacto**: CI solo compila para Windows y Android. Una regresión de navegación, sesión, POS, Ventas, anulación, inventario, clientes, proveedores, gastos, caja, historial o formato no se detecta hasta la verificación manual. El cierre de corte, el conteo, los movimientos de inventario, la anulación, los abonos, los pagos y los gastos desde la app dependen de esa verificación. `TicketServiceTests`, `ConteoEfectivoTests` y las pruebas de búsqueda, alta, permisos y resumen de clientes, proveedores y gastos cubren cálculos, textos y servicios, no la interfaz.
+- **Impacto**: CI solo compila para Windows y Android. Una regresión de navegación, sesión, POS, Ventas, anulación, inventario, clientes, proveedores, gastos, caja, reportes, historial o formato no se detecta hasta la verificación manual. El cierre de corte, el conteo, los movimientos de inventario, la anulación, los abonos, los pagos, los gastos y los periodos de reporte desde la app dependen de esa verificación. `TicketServiceTests`, `ConteoEfectivoTests`, `PeriodoReporteTests` y las pruebas de búsqueda, alta, permisos y resumen de clientes, proveedores y gastos cubren cálculos, textos y servicios, no la interfaz.
 - **Cierre**: extraer la lógica de cada página a modelos de vista probables y agregar pruebas; valorar pruebas de interfaz más adelante.
 
 ### Android sin validación en dispositivo
@@ -125,11 +125,11 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 - **Impacto**: `AjustarStock` no valida que el producto exista (con stock mayor a cero falla por llave foránea; con stock cero reporta éxito sin haber ajustado). Se permiten PIN duplicados y `VerificarAcceso` devuelve el primer usuario por nombre, lo que puede asignar el rol equivocado. `AgregarGasto` no recorta el concepto, así que agrupa distinguiendo mayúsculas y espacios. La búsqueda por nombre no ignora acentos.
 - **Cierre**: validar existencia antes de ajustar, exigir PIN único (o verificar por usuario y PIN), recortar el concepto al guardar y normalizar la búsqueda (mayúsculas/acentos).
 
-### Reportes incompletos
+### Reportes sin exportación, comparación ni desglose
 
-- **Dónde**: `MenuReportes` y `ReporteUtilidadService`.
-- **Impacto**: ya existe la utilidad por periodo (ventas, costo congelado, comisión, mermas y gastos), pero faltan ventas por día, comparativos entre periodos, utilidad por producto y exportación.
-- **Cierre**: consultas agregadas por producto y periodo con índices por fecha (ya existen en `Ventas(Fecha)`).
+- **Dónde**: `ReporteUtilidadService`, `PeriodoReporte` y la pestaña Reportes de la app MAUI.
+- **Impacto**: ya existe la utilidad por periodo (ventas, costo congelado, comisión, mermas y gastos) y desde T24 se consulta en la app con filtros hoy/mes/rango, pero faltan ventas por día, comparativos entre periodos, utilidad por producto o método, exportación e impresión. La consulta de ventas de fechas anteriores sigue solo en la consola.
+- **Cierre**: consultas agregadas por producto, método y periodo con índices por fecha (ya existen en `Ventas(Fecha)`), exportación a CSV/PDF y comparación entre periodos.
 
 ## Baja prioridad
 

@@ -32,6 +32,15 @@ Próximamente después de completar los módulos críticos.
 - Configuración básica de tienda (nombre, giro, impuestos, métodos de pago).
 - Documentación inicial (glosario, stack, módulos, ADR).
 
+### v0.0.23 - 2026-11-12: Reportes de utilidad en la app
+
+- *Agregado*: pestaña **Reportes** entre Caja y Ajustes con filtros **Hoy**, **Este mes** y **Rango** de fechas mediante dos `DatePicker`.
+- *Agregado*: el resumen muestra utilidad neta, número de ventas y periodo; el desglose lista ventas cobradas, costo de ventas, comisión de tarjeta, utilidad bruta, mermas, gastos y utilidad neta.
+- *Agregado*: `PeriodoReporte` en `Core` centraliza los límites de hoy, mes en curso y rango con fechas sin hora; 4 pruebas nuevas en `PeriodoReporteTests`.
+- *Modificado*: la pantalla reutiliza `ReporteUtilidadService` sin tocar el cálculo; las ventas anuladas siguen excluidas y el permiso `Consultar` se valida en el servicio.
+- *Modificado*: la utilidad bruta y neta se pintan en verde cuando son ≥ 0 y en rojo cuando son negativas.
+- *Verificación*: solución y app MAUI para Windows compiladas sin errores ni advertencias; 4 pruebas nuevas; CI del PR #17 en verde el 2026-11-12 con **234 pruebas** y app MAUI para Windows y Android. La verificación manual de la pantalla queda pendiente porque el entorno no permitió abrir la GUI.
+
 ### v0.0.22 - 2026-11-11: Edición y estado de cuenta de proveedores
 
 - *Agregado*: migración **v8** con la tabla inmutable `PagosProveedor` (proveedor, fecha, monto, saldo antes/después y usuario), índices por proveedor y fecha y disparadores que impiden modificar o borrar pagos.

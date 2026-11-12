@@ -14,10 +14,10 @@
 
 1. Al abrir la app, se solicita el PIN.
 2. El usuario ingresa su PIN.
-3. El sistema valida y muestra el tablero (Inicio, Vender, Inventario, Ventas, Clientes, Proveedores, Caja y Ajustes).
+3. El sistema valida y muestra el tablero (Inicio, Vender, Inventario, Ventas, Clientes, Proveedores, Gastos, Caja, Reportes y Ajustes).
 4. Si el PIN está mal tres veces seguidas, la app bloquea el acceso hasta cerrarla y abrirla de nuevo.
 
-> **Estado de la app (2026-11-11)**: el tablero muestra ventas del día, efectivo esperado del corte, stock bajo y último respaldo. **Vender** registra ventas con carrito, cobros y ticket interno con QR compartible como texto. **Inventario** permite consultar, escanear, dar de alta o editar productos, y registrar entradas, mermas y ajustes según el rol. **Ventas** muestra el detalle de cada venta, permite reimprimir el ticket con su QR y anular la venta completa (solo dueño o encargado). **Clientes** muestra el directorio, permite buscar, dar de alta, abonar al fiado, editar los datos y consultar el estado de cuenta. **Proveedores** muestra el directorio, permite buscar, dar de alta, pagar el saldo con historial, editar los datos y consultar el estado de cuenta; el pago no entra solo al corte. **Gastos** registra el gasto con su origen y resume lo pagado de la caja y lo externo. **Caja** permite cerrar el corte con conteo por billetes y monedas o con el total directo, registrar ingresos y retiros, abonar al fiado y consultar los últimos 20 cortes. El desglose del conteo no se guarda en el corte. La anulación también sigue disponible en la consola provisional. El manual describe el flujo completo planeado; revisa en cada versión qué partes ya están en la app.
+> **Estado de la app (2026-11-11)**: el tablero muestra ventas del día, efectivo esperado del corte, stock bajo y último respaldo. **Vender** registra ventas con carrito, cobros y ticket interno con QR compartible como texto. **Inventario** permite consultar, escanear, dar de alta o editar productos, y registrar entradas, mermas y ajustes según el rol. **Ventas** muestra el detalle de cada venta, permite reimprimir el ticket con su QR y anular la venta completa (solo dueño o encargado). **Clientes** muestra el directorio, permite buscar, dar de alta, abonar al fiado, editar los datos y consultar el estado de cuenta. **Proveedores** muestra el directorio, permite buscar, dar de alta, pagar el saldo con historial, editar los datos y consultar el estado de cuenta; el pago no entra solo al corte. **Gastos** registra el gasto con su origen y resume lo pagado de la caja y lo externo. **Caja** permite cerrar el corte con conteo por billetes y monedas o con el total directo, registrar ingresos y retiros, abonar al fiado y consultar los últimos 20 cortes. **Reportes** muestra la utilidad del periodo con filtros hoy, mes o rango, con ventas, costo, comisión, mermas, gastos y utilidad neta. El desglose del conteo no se guarda en el corte. La anulación también sigue disponible en la consola provisional. El manual describe el flujo completo planeado; revisa en cada versión qué partes ya están en la app.
 
 ### 2. Catálogo / Búsqueda de Producto
 
@@ -123,12 +123,15 @@ Acceso en la app: pestaña **Gastos** (rol Encargado o Dueño); también sigue d
 
 ### 7. Ver Reporte Rápido
 
-Acceso: Menú → "Reportes" (ver resumen).
+Acceso en la app: pestaña **Reportes** (disponible para todos los roles con permiso `Consultar`).
 
-- **Ventas del día**: Total, cantidad, efectivo/tarjeta.
-- **Utilidad neta** del día (ventas - comisión tarjeta - gastos de caja).
-- **Stock bajo**: Quiénes productos tienen poco stock (configurable umbral).
-- **Mermas recientes**.
+- **Periodo**: **Hoy**, **Este mes** o **Rango** con fecha desde y hasta; **Ver** consulta el rango y **Actualizar** recarga.
+- **Resumen**: utilidad neta, número de ventas y periodo.
+- **Desglose**: ventas cobradas, costo de ventas, comisión de tarjeta, utilidad bruta, mermas, gastos y utilidad neta.
+- **Cálculo**: utilidad bruta = ventas − costo − comisión; utilidad neta = bruta − mermas − gastos. Las ventas anuladas no se incluyen.
+- **Color**: verde cuando la utilidad es positiva o cero y rojo cuando es negativa.
+- **Stock bajo y mermas recientes**: se consultan en **Inicio** e **Inventario**.
+- **Pendiente**: exportar o imprimir el reporte y comparar periodos.
 
 ### 8. Corte de Caja (Parcial o Diario)
 
