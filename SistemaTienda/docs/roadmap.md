@@ -1,6 +1,6 @@
 # Roadmap
 
-Estado al 2026-11-12. Todo el trabajo de T1 a T25 está integrado en `main` (`86cbf67`); T26 está en curso en `feat/duplicados-clientes-proveedores`. Orden sugerido en [CLAUDE-tienda.md §13](../CLAUDE-tienda.md).
+Estado al 2026-11-12. Todo el trabajo de T1 a T25 está integrado en `main` (`86cbf67`); T26 quedó publicado en `feat/duplicados-clientes-proveedores` (`e87ea40`). El siguiente trabajo recomendado es la baja lógica de clientes y proveedores. Orden sugerido en [CLAUDE-tienda.md §13](../CLAUDE-tienda.md).
 
 ## Avance por módulo
 

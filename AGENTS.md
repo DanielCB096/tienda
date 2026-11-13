@@ -77,9 +77,9 @@ Cada agente: su carpeta, su rama y su PR.
 - **`main` ya contiene todo el trabajo** (`86cbf67`, 113 commits, 246 pruebas): el 2026-11-12 se fusionaron en orden los PR #4, #5, #7, #8, #9, #10, #11, #13, #14, #15, #16, #17 y #18 con merge commit. Los PR #1, #3 y #6 se cerraron sin fusionar porque su contenido ya estaba en la cadena (eran contra ramas intermedias o duplicaban #5). No queda ningún PR abierto.
 - Las ramas `feat/*` se conservan como respaldo, sin borrar: `feat/base-compilable`, `feat/migraciones-respaldo`, `feat/ventas-pos`, `feat/corte-caja`, `feat/centavos-enteros`, `feat/integracion-t4-t9`, `feat/reportes-utilidad`, `feat/respaldo-automatico`, `feat/anulacion-ventas`, `feat/ui-maui` y las de la app MAUI hasta `feat/pago-proveedores-metodo`.
 - Trabajo nuevo: rama desde `main` actualizado; ya no hay que partir de `feat/base-compilable`.
-- T26 está en curso en `feat/duplicados-clientes-proveedores`: avisos no bloqueantes al detectar posibles clientes o proveedores duplicados en altas y ediciones de la app, y en altas desde la consola.
+- T26 quedó implementada y publicada en `feat/duplicados-clientes-proveedores` (`e87ea40`): avisos no bloqueantes de posibles duplicados en altas y ediciones MAUI, y en altas desde la consola. La siguiente tarea recomendada es la baja lógica de clientes y proveedores.
 - Build: 0 errores, 0 advertencias. Pruebas: **246 en verde en local** el 2026-11-12 (el host de pruebas volvió a funcionar) y verificación por CI en cada PR. La app MAUI compila para Windows en local y para Windows y Android en CI. El CI del PR #8 quedó en verde el 2026-10-25: compilación y pruebas, y app MAUI para Windows y Android. El CI del PR #9 también quedó en verde el 2026-10-25 con 183 pruebas. El CI del PR #10 quedó en verde el 2026-10-26 con 187 pruebas. El CI del PR #11 quedó en verde el 2026-10-26 con 191 pruebas. El CI del PR #13 quedó en verde el 2026-11-06 con 206 pruebas. El CI del PR #14 quedó en verde el 2026-11-10 con 210 pruebas y el CI del PR #15 quedó en verde el 2026-11-11 con 218 pruebas (compilación, pruebas y app MAUI para Windows y Android). El CI del PR #16 quedó en verde el 2026-11-12 con 230 pruebas (compilación, pruebas y app MAUI para Windows y Android). El CI del PR #17 quedó en verde el 2026-11-12 con 234 pruebas (compilación, pruebas y app MAUI para Windows y Android). El CI del PR #18 quedó en verde el 2026-11-12 con 246 pruebas (compilación, pruebas y app MAUI para Windows y Android).
-- En la rama T26, la suite completa pasó con **248 pruebas** y la app MAUI de Windows compiló sin errores ni advertencias; la verificación visual queda pendiente.
+- En T26, la solución compiló sin errores ni advertencias, pasaron **248 pruebas** y la app MAUI de Windows compiló sin errores ni advertencias; la verificación visual queda pendiente.
 - POS verificado manualmente en Windows el 2026-10-25 con datos ficticios: los cuatro métodos de pago, cambio, límite y stock 0, ticket con copiar/cerrar y totales coherentes en Ventas/Caja. Pendientes: botón Compartir y ejecución en Android.
 - Caja verificada manualmente en Windows el 2026-10-25: cierre con faltante y observación (corte #1), ingreso, retiro con confirmación, abono de fiado y cierre sin diferencia (corte #2), y en T17 conteo por denominaciones e historial de cortes (corte #3), con el efectivo esperado coincidiendo con la base. Pendientes: desglose persistido, roles distintos al dueño y Android.
 - Ventas (T16) verificado manualmente en Windows el 2026-10-25: venta #10 de tres productos, ticket con QR decodificado offline, reimpresión, anulación con motivo y confirmación `ANULAR`, restauración de stock y bitácora; rechazo con motivo vacío, confirmación incorrecta y corte cerrado; encargado ve la acción y empleado no.
@@ -322,11 +322,11 @@ El detalle vive en el tablero. Resumen y criterios de terminado:
 - Pendiente: verificación manual en Windows y Android; baja, impresión/exportación del estado de cuenta y compras por proveedor siguen fuera de alcance.
 - Detalle en [proveedores.md](SistemaTienda/docs/03-procesos/proveedores.md), [interfaz-maui.md](SistemaTienda/docs/02-modulos/interfaz-maui.md), [modelo-de-datos.md](SistemaTienda/docs/01-arquitectura/modelo-de-datos.md) y [plan-de-pruebas.md](SistemaTienda/docs/07-pruebas/plan-de-pruebas.md).
 
-### T26 — Detección de posibles duplicados (EN CURSO)
+### T26 — Detección de posibles duplicados (HECHO)
 
 - `DetectarDuplicadosCliente`: nombre normalizado (mayúsculas, acentos y espacios) o teléfono normalizado sin formato; `DetectarDuplicadosProveedor`: nombre o clave normalizados.
 - En las altas desde consola y MAUI y en las ediciones desde MAUI, la coincidencia se muestra como advertencia y el usuario puede cancelar o confirmar que desea continuar.
-- 2 pruebas nuevas en `FiadoProveedoresTests`; la rama pasa 248 pruebas y compila MAUI para Windows sin advertencias. Falta verificación visual manual.
+- 2 pruebas nuevas en `FiadoProveedoresTests`; 248 pruebas aprobadas, build de solución y MAUI Windows sin advertencias. Falta verificación visual manual. Commit publicado: `e87ea40`.
 
 ### T7 — Pantallas de operación en MAUI
 
