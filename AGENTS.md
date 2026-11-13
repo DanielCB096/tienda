@@ -77,10 +77,10 @@ Cada agente: su carpeta, su rama y su PR.
 - **`main` ya contiene todo el trabajo** (`86cbf67`, 113 commits, 246 pruebas): el 2026-11-12 se fusionaron en orden los PR #4, #5, #7, #8, #9, #10, #11, #13, #14, #15, #16, #17 y #18 con merge commit. Los PR #1, #3 y #6 se cerraron sin fusionar porque su contenido ya estaba en la cadena (eran contra ramas intermedias o duplicaban #5). No queda ningún PR abierto.
 - Las ramas `feat/*` se conservan como respaldo, sin borrar: `feat/base-compilable`, `feat/migraciones-respaldo`, `feat/ventas-pos`, `feat/corte-caja`, `feat/centavos-enteros`, `feat/integracion-t4-t9`, `feat/reportes-utilidad`, `feat/respaldo-automatico`, `feat/anulacion-ventas`, `feat/ui-maui` y las de la app MAUI hasta `feat/pago-proveedores-metodo`.
 - Trabajo nuevo: rama desde `main` actualizado; ya no hay que partir de `feat/base-compilable`.
-- T26 quedó implementada y publicada en `feat/duplicados-clientes-proveedores` (`e87ea40`): avisos no bloqueantes de posibles duplicados en altas y ediciones MAUI, y en altas desde la consola. T27 está en curso en `feat/baja-clientes-proveedores`.
+- T26 quedó implementada y publicada en `feat/duplicados-clientes-proveedores` (`e87ea40`): avisos no bloqueantes de posibles duplicados en altas y ediciones MAUI, y en altas desde la consola. T27 quedó implementada y publicada en `feat/baja-clientes-proveedores` (`a8f6876`).
 - Build: 0 errores, 0 advertencias. La suite pasa **252 pruebas** en local el 2026-11-12; la app MAUI compila para Windows en local y para Windows y Android en CI. Los CI anteriores de PR #8 a #18 se registran en sus entradas históricas.
 - En T26, la solución compiló sin errores ni advertencias, pasaron **248 pruebas** y la app MAUI de Windows compiló sin errores ni advertencias; la verificación visual queda pendiente.
-- En T27, la solución compiló sin errores ni advertencias y pasaron **252 pruebas**; MAUI Windows también compiló sin errores ni advertencias. La verificación visual y la publicación de la rama siguen pendientes.
+- En T27, la solución compiló sin errores ni advertencias y pasaron **252 pruebas**; MAUI Windows también compiló sin errores ni advertencias. La verificación visual queda pendiente.
 - POS verificado manualmente en Windows el 2026-10-25 con datos ficticios: los cuatro métodos de pago, cambio, límite y stock 0, ticket con copiar/cerrar y totales coherentes en Ventas/Caja. Pendientes: botón Compartir y ejecución en Android.
 - Caja verificada manualmente en Windows el 2026-10-25: cierre con faltante y observación (corte #1), ingreso, retiro con confirmación, abono de fiado y cierre sin diferencia (corte #2), y en T17 conteo por denominaciones e historial de cortes (corte #3), con el efectivo esperado coincidiendo con la base. Pendientes: desglose persistido, roles distintos al dueño y Android.
 - Ventas (T16) verificado manualmente en Windows el 2026-10-25: venta #10 de tres productos, ticket con QR decodificado offline, reimpresión, anulación con motivo y confirmación `ANULAR`, restauración de stock y bitácora; rechazo con motivo vacío, confirmación incorrecta y corte cerrado; encargado ve la acción y empleado no.
@@ -329,14 +329,14 @@ El detalle vive en el tablero. Resumen y criterios de terminado:
 - En las altas desde consola y MAUI y en las ediciones desde MAUI, la coincidencia se muestra como advertencia y el usuario puede cancelar o confirmar que desea continuar.
 - 2 pruebas nuevas en `FiadoProveedoresTests`; 248 pruebas aprobadas, build de solución y MAUI Windows sin advertencias. Falta verificación visual manual. Commit publicado: `e87ea40`.
 
-### T27 — Baja lógica de clientes y proveedores (EN CURSO)
+### T27 — Baja lógica de clientes y proveedores (HECHO)
 
 - Reglas definidas con el dueño: permitir la baja con saldo pendiente; conservar historial y permitir abonos/pagos para liquidar; bloquear nuevas ventas a fiado a clientes inactivos; solo el dueño puede dar de baja o reactivar.
 - Esquema v10 agrega `Activo INTEGER NOT NULL DEFAULT 1` a `ClientesFiado` y `Proveedores`; los registros existentes quedan activos.
 - `ConfiguracionService` valida permisos, estado y existencia, y registra cambios en la bitácora. La baja no borra el registro ni impide liquidar saldos; `VentaService` y `DatabaseTools.RegistrarVenta` bloquean el fiado a clientes inactivos.
 - Clientes y Proveedores en MAUI tienen filtros de inactivos, distintivo de estado y acciones de baja/reactivación solo para el dueño. POS MAUI y selector de consola omiten clientes inactivos.
 - 4 pruebas nuevas en `BajaClientesProveedoresTests`; la suite completa pasa 252 pruebas. Se ajustaron pruebas de migración que bajaban `user_version` para eliminar físicamente las columnas de v10.
-- Build de solución y MAUI Windows sin errores ni advertencias; falta verificación manual de la interfaz y publicar la rama.
+- Build de solución y MAUI Windows sin errores ni advertencias; la verificación manual de la interfaz queda pendiente. Commit publicado: `a8f6876`.
 
 ### T7 — Pantallas de operación en MAUI
 

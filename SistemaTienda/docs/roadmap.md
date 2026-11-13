@@ -1,6 +1,6 @@
 # Roadmap
 
-Estado al 2026-11-12. Todo el trabajo de T1 a T25 está integrado en `main` (`86cbf67`); T26 quedó publicado en `feat/duplicados-clientes-proveedores` (`e87ea40`). T27 está en curso en `feat/baja-clientes-proveedores`. Después, el siguiente trabajo recomendado es la importación Excel/CSV. Orden sugerido en [CLAUDE-tienda.md §13](../CLAUDE-tienda.md).
+Estado al 2026-11-12. Todo el trabajo de T1 a T25 está integrado en `main` (`86cbf67`); T26 y T27 quedaron publicadas en sus ramas (`e87ea40` y `a8f6876`). El siguiente trabajo recomendado es la importación Excel/CSV. Orden sugerido en [CLAUDE-tienda.md §13](../CLAUDE-tienda.md).
 
 ## Avance por módulo
 
