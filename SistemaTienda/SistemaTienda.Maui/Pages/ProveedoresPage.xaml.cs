@@ -168,6 +168,13 @@ public partial class ProveedoresPage : ContentPage
         try
         {
             _sesion.Aplicar();
+            if (!await ConfirmarPosiblesDuplicadosProveedorAsync(
+                    NombreEntry.Text ?? string.Empty,
+                    ClaveEntry.Text ?? string.Empty,
+                    null,
+                    NuevoErrorLabel))
+                return;
+
             var resultado = _config.AgregarProveedor(new Proveedor
             {
                 Nombre = NombreEntry.Text ?? string.Empty,
@@ -321,6 +328,13 @@ public partial class ProveedoresPage : ContentPage
         try
         {
             _sesion.Aplicar();
+            if (!await ConfirmarPosiblesDuplicadosProveedorAsync(
+                    EditarNombreEntry.Text ?? string.Empty,
+                    EditarClaveEntry.Text ?? string.Empty,
+                    _proveedorEstado.Id,
+                    EditarErrorLabel))
+                return;
+
             var resultado = _config.EditarProveedor(
                 _proveedorEstado.Id,
                 EditarNombreEntry.Text ?? string.Empty,
@@ -357,6 +371,30 @@ public partial class ProveedoresPage : ContentPage
         {
             GuardarEdicionButton.IsEnabled = true;
         }
+    }
+
+    private async Task<bool> ConfirmarPosiblesDuplicadosProveedorAsync(
+        string nombre, string clave, int? excluirProveedorId, Label errorLabel)
+    {
+        var resultado = _config.DetectarDuplicadosProveedor(nombre, clave, excluirProveedorId);
+        if (resultado.IsError)
+        {
+            MostrarError(errorLabel, resultado.Message);
+            return false;
+        }
+
+        var coincidencias = resultado.Value;
+        if (coincidencias.Count == 0)
+            return true;
+
+        var detalle = string.Join("\n", coincidencias.Select(proveedor =>
+            $"- {proveedor.Nombre} · " +
+            (string.IsNullOrWhiteSpace(proveedor.Clave) ? "sin clave" : proveedor.Clave)));
+        return await DisplayAlertAsync(
+            "Posible proveedor duplicado",
+            $"Coincide el nombre o clave con:\n{detalle}\n\n¿Deseas guardar de todos modos?",
+            "Guardar",
+            "Revisar");
     }
 
     private void OnPagarClicked(object sender, EventArgs e)

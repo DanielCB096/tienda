@@ -32,6 +32,14 @@ Próximamente después de completar los módulos críticos.
 - Configuración básica de tienda (nombre, giro, impuestos, métodos de pago).
 - Documentación inicial (glosario, stack, módulos, ADR).
 
+### v0.0.26 - 2026-11-12: Aviso de posibles duplicados
+
+- *Agregado*: `DetectarDuplicadosCliente` compara nombres sin distinguir mayúsculas, acentos ni espacios repetidos, y teléfonos ignorando formato.
+- *Agregado*: `DetectarDuplicadosProveedor` compara nombre y clave sin distinguir mayúsculas, acentos ni espacios repetidos; los teléfonos o claves vacíos no generan coincidencias.
+- *Modificado*: las altas en consola y app MAUI y las ediciones en la app muestran posibles coincidencias; el usuario puede cancelar o confirmar que desea continuar.
+- *Pruebas*: 2 casos nuevos en `FiadoProveedoresTests`; **248 pruebas** pasan en la solución.
+- *Verificación*: `dotnet test SistemaTienda/SistemaTienda.sln` y compilación MAUI para Windows en verde, sin advertencias. Verificación manual de la interfaz pendiente.
+
 ### v0.0.25 - 2026-11-12: Integración de la cadena de PRs en main
 
 - *Integrado*: PR #4, #5, #7, #8, #9, #10, #11, #13, #14, #15, #16, #17 y #18 fusionados en orden con merge commit; `main` queda en `86cbf67` con 113 commits y todo el trabajo de T1 a T25.

@@ -28,7 +28,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 
 | Tarea | Agente | Rama | Archivos | Fecha | Estado |
 |-------|--------|------|-----------|-------|--------|
-| — | — | — | — | — | Sin tareas tomadas |
+| T26 | Copilot SDK | feat/duplicados-clientes-proveedores | ConfiguracionService.cs, ClientesPage.xaml.cs, ProveedoresPage.xaml.cs, Program.cs, FiadoProveedoresTests.cs, cliente-fiado.md, proveedores.md, deuda-tecnica.md, roadmap.md, changelog.md | 2026-11-12 | Tomada |
 
 ## Hecho
 
@@ -87,6 +87,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 | T22 | Edición y estado de cuenta de clientes | Hecho | T7, T18 | En `feat/maui-clientes-edicion` sobre `feat/maui-gastos` (PR #15 contra `main`, CI en verde). **Estado** por cliente con saldo vigente, total fiado, total abonado e historial de ventas fiadas y abonos sin anuladas; **Editar datos** solo dueño y encargado con permiso `EditarCliente`, bitácora y sin tocar el saldo; no hay baja de clientes; 8 pruebas nuevas; 218 pruebas. Verificación manual pendiente (la GUI no pudo abrirse en el entorno). |
 | T23 | Edición y estado de cuenta de proveedores | Hecho | T7, T19 | En `feat/maui-proveedores-edicion` sobre `feat/maui-clientes-edicion` (PR #16 contra `main`, CI en verde). Esquema v8 con `PagosProveedor` inmutable; **Estado** con saldo pendiente, total pagado e historial de pagos; **Editar datos** (nombre, clave, teléfono y dirección) solo dueño y encargado con permiso `EditarProveedor` y bitácora; sin baja ni método de pago; 12 pruebas nuevas; 230 pruebas. Verificación manual pendiente (la GUI no pudo abrirse en el entorno). |
 | T25 | Método de pago y retiro automático en proveedores | Hecho | T23 | En `feat/pago-proveedores-metodo` sobre `feat/maui-reportes` (PR #18 contra `main`). Esquema v9 con `MetodoPago` y `MovimientoCajaId`; métodos Efectivo/Tarjeta/Transferencia/Otro; el efectivo genera un retiro de caja atómico con motivo `Pago a proveedor: <nombre>` y reduce el efectivo esperado; los demás métodos no tocan la caja; basta `PagarProveedor`; estado de cuenta con método y retiro; 12 pruebas nuevas; 246 pruebas. Verificación manual pendiente (la GUI no pudo abrirse en el entorno). |
+| T26 | Detección de posibles duplicados de clientes y proveedores | Tomada | T18, T19, T22, T23 | En `feat/duplicados-clientes-proveedores`. Advertir en altas de consola/MAUI y ediciones de MAUI por coincidencias exactas normalizadas; permitir continuar con confirmación. |
 
 ## Plantilla para reclamar
 

@@ -335,6 +335,24 @@ public class ConfiguracionService
         return ProcessResult<List<ClienteFiado>>.OK(lista);
     }
 
+    public ProcessResult<List<ClienteFiado>> DetectarDuplicadosCliente(
+        string nombre, string telefono, int? excluirClienteId = null)
+    {
+        var nombreNormalizado = NormalizarTextoDuplicado(nombre);
+        var telefonoNormalizado = NormalizarTelefono(telefono);
+        var coincidencias = _db.ObtenerTodosLosClientes()
+            .Where(cliente =>
+                (!excluirClienteId.HasValue || cliente.Id != excluirClienteId.Value) &&
+                ((nombreNormalizado.Length > 0 &&
+                  StringComparer.OrdinalIgnoreCase.Equals(
+                      NormalizarTextoDuplicado(cliente.Nombre), nombreNormalizado)) ||
+                 (telefonoNormalizado.Length > 0 &&
+                  NormalizarTelefono(cliente.Telefono) == telefonoNormalizado)))
+            .ToList();
+
+        return ProcessResult<List<ClienteFiado>>.OK(coincidencias);
+    }
+
     private static string SinAcentos(string texto)
     {
         var normalizado = texto.Normalize(NormalizationForm.FormD);
@@ -347,6 +365,16 @@ public class ConfiguracionService
 
         return constructor.ToString().Normalize(NormalizationForm.FormC);
     }
+
+    private static string NormalizarTextoDuplicado(string texto)
+    {
+        var partes = SinAcentos((texto ?? string.Empty).Trim())
+            .Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
+        return string.Join(" ", partes);
+    }
+
+    private static string NormalizarTelefono(string telefono) =>
+        new((telefono ?? string.Empty).Where(char.IsDigit).ToArray());
 
     /// <summary>
     /// Corrige nombre y teléfono de un cliente existente. No toca el saldo:
@@ -497,6 +525,25 @@ public class ConfiguracionService
             .ToList();
 
         return ProcessResult<List<Proveedor>>.OK(lista);
+    }
+
+    public ProcessResult<List<Proveedor>> DetectarDuplicadosProveedor(
+        string nombre, string clave, int? excluirProveedorId = null)
+    {
+        var nombreNormalizado = NormalizarTextoDuplicado(nombre);
+        var claveNormalizada = NormalizarTextoDuplicado(clave);
+        var coincidencias = _db.ObtenerTodosLosProveedores()
+            .Where(proveedor =>
+                (!excluirProveedorId.HasValue || proveedor.Id != excluirProveedorId.Value) &&
+                ((nombreNormalizado.Length > 0 &&
+                  StringComparer.OrdinalIgnoreCase.Equals(
+                      NormalizarTextoDuplicado(proveedor.Nombre), nombreNormalizado)) ||
+                 (claveNormalizada.Length > 0 &&
+                  StringComparer.OrdinalIgnoreCase.Equals(
+                      NormalizarTextoDuplicado(proveedor.Clave), claveNormalizada))))
+            .ToList();
+
+        return ProcessResult<List<Proveedor>>.OK(coincidencias);
     }
 
     /// <summary>

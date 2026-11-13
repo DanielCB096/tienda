@@ -866,6 +866,23 @@ internal static class Program
             SaldoActual = LeerDinero("Saldo inicial ($)", 0, 0)
         };
 
+        var posiblesDuplicados = _config.DetectarDuplicadosCliente(cliente.Nombre, cliente.Telefono);
+        if (posiblesDuplicados.IsError)
+        {
+            Aviso(posiblesDuplicados.Message);
+            return;
+        }
+
+        if (!ConfirmarContinuarConPosiblesDuplicados(
+                "cliente",
+                posiblesDuplicados.Value.Select(c =>
+                    $"{c.Nombre} · " +
+                    (string.IsNullOrWhiteSpace(c.Telefono) ? "sin teléfono" : c.Telefono))))
+        {
+            Aviso("Alta cancelada; no se guardaron cambios.");
+            return;
+        }
+
         var resultado = _config.AgregarClienteFiado(cliente);
         Aviso(resultado.Message, resultado.IsSuccess);
     }
@@ -959,6 +976,22 @@ internal static class Program
             Direccion = LeerTextoConDefecto("Dirección", string.Empty),
             SaldoPendiente = LeerDinero("Saldo inicial pendiente ($)", 0, 0)
         };
+
+        var posiblesDuplicados = _config.DetectarDuplicadosProveedor(proveedor.Nombre, proveedor.Clave);
+        if (posiblesDuplicados.IsError)
+        {
+            Aviso(posiblesDuplicados.Message);
+            return;
+        }
+
+        if (!ConfirmarContinuarConPosiblesDuplicados(
+                "proveedor",
+                posiblesDuplicados.Value.Select(p =>
+                    $"{p.Nombre} · " + (string.IsNullOrWhiteSpace(p.Clave) ? "sin clave" : p.Clave))))
+        {
+            Aviso("Alta cancelada; no se guardaron cambios.");
+            return;
+        }
 
         var resultado = _config.AgregarProveedor(proveedor);
         Aviso(resultado.Message, resultado.IsSuccess);
@@ -1543,6 +1576,21 @@ internal static class Program
     {
         Console.WriteLine($"\n  {(exito ? "✓" : "⚠")} {mensaje}");
         Pausa();
+    }
+
+    private static bool ConfirmarContinuarConPosiblesDuplicados(
+        string entidad, IEnumerable<string> coincidencias)
+    {
+        var posibles = coincidencias.ToList();
+        if (posibles.Count == 0)
+            return true;
+
+        Console.WriteLine($"\n  Posibles duplicados de {entidad}:");
+        foreach (var coincidencia in posibles)
+            Console.WriteLine($"  - {coincidencia}");
+
+        Console.Write("  ¿Continuar con el alta? [s/N]: ");
+        return string.Equals(Console.ReadLine()?.Trim(), "s", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string LeerTexto(string etiqueta)

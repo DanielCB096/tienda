@@ -1,6 +1,6 @@
 # Roadmap
 
-Estado al 2026-11-12. Todo el trabajo de T1 a T25 está integrado en `main` (`86cbf67`). Orden sugerido en [CLAUDE-tienda.md §13](../CLAUDE-tienda.md).
+Estado al 2026-11-12. Todo el trabajo de T1 a T25 está integrado en `main` (`86cbf67`); T26 está en curso en `feat/duplicados-clientes-proveedores`. Orden sugerido en [CLAUDE-tienda.md §13](../CLAUDE-tienda.md).
 
 ## Avance por módulo
 
@@ -23,7 +23,7 @@ Estado al 2026-11-12. Todo el trabajo de T1 a T25 está integrado en `main` (`86
 
 ## Siguiente trabajo recomendado
 
-1. **Baja y detección de duplicados de clientes y proveedores**.
+1. **Baja lógica de clientes y proveedores**. La detección de posibles duplicados por nombre/teléfono o nombre/clave se agregó en T26; advierte y permite continuar.
 2. **Importación Excel/CSV** y plantillas por giro.
 3. **Copia de respaldos a USB o nube personal** (Fase 2).
 4. **Descuentos** por línea o venta (Fase 2).

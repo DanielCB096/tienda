@@ -158,6 +158,13 @@ public partial class ClientesPage : ContentPage
         try
         {
             _sesion.Aplicar();
+            if (!await ConfirmarPosiblesDuplicadosClienteAsync(
+                    NombreEntry.Text ?? string.Empty,
+                    TelefonoEntry.Text ?? string.Empty,
+                    null,
+                    NuevoErrorLabel))
+                return;
+
             var resultado = _config.AgregarClienteFiado(new ClienteFiado
             {
                 Nombre = NombreEntry.Text ?? string.Empty,
@@ -339,6 +346,13 @@ public partial class ClientesPage : ContentPage
         try
         {
             _sesion.Aplicar();
+            if (!await ConfirmarPosiblesDuplicadosClienteAsync(
+                    EditarNombreEntry.Text ?? string.Empty,
+                    EditarTelefonoEntry.Text ?? string.Empty,
+                    _clienteEstado.Id,
+                    EditarErrorLabel))
+                return;
+
             var resultado = _config.EditarClienteFiado(
                 _clienteEstado.Id,
                 EditarNombreEntry.Text ?? string.Empty,
@@ -424,6 +438,30 @@ public partial class ClientesPage : ContentPage
         {
             RegistrarAbonoButton.IsEnabled = true;
         }
+    }
+
+    private async Task<bool> ConfirmarPosiblesDuplicadosClienteAsync(
+        string nombre, string telefono, int? excluirClienteId, Label errorLabel)
+    {
+        var resultado = _config.DetectarDuplicadosCliente(nombre, telefono, excluirClienteId);
+        if (resultado.IsError)
+        {
+            MostrarError(errorLabel, resultado.Message);
+            return false;
+        }
+
+        var coincidencias = resultado.Value;
+        if (coincidencias.Count == 0)
+            return true;
+
+        var detalle = string.Join("\n", coincidencias.Select(cliente =>
+            $"- {cliente.Nombre} · " +
+            (string.IsNullOrWhiteSpace(cliente.Telefono) ? "sin teléfono" : cliente.Telefono)));
+        return await DisplayAlertAsync(
+            "Posible cliente duplicado",
+            $"Coincide el nombre o teléfono con:\n{detalle}\n\n¿Deseas guardar de todos modos?",
+            "Guardar",
+            "Revisar");
     }
 
     private static void MostrarError(Label label, string mensaje)

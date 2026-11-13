@@ -59,19 +59,19 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 - **Impacto**: la restauración reemplaza toda la base y no deja registro de quién la ejecutó ni de qué archivo se usó. El respaldo `antes-restaurar` evita la pérdida de datos, pero la acción no queda auditada.
 - **Cierre**: registrar `AccionBitacora.Respaldo` con motivo `Restauracion` y la ruta usada inmediatamente después de restaurar.
 
-### Clientes sin baja, detección de duplicados ni método de abono
+### Clientes sin baja ni método de abono
 
 - **Dónde**: `ConfiguracionService` y la pestaña Clientes de la app MAUI.
-- **Por qué**: T18 cubrió el directorio, la búsqueda, el alta y el abono, y T22 la edición de nombre/teléfono y el estado de cuenta; la baja, la detección de duplicados y el método del abono quedaron fuera del alcance.
-- **Impacto**: no se puede retirar a un cliente del directorio y el alta no detecta duplicados. El abono se registra siempre como efectivo (no se pregunta el método). El estado de cuenta es de solo lectura y no se imprime ni exporta. La pantalla aún no se ha verificado a mano en Windows ni en Android.
-- **Cierre**: baja lógica con permiso y bitácora, detección de duplicados por nombre o teléfono, método de pago en el abono e impresión/exportación del estado de cuenta.
+- **Por qué**: T18 cubrió el directorio, la búsqueda, el alta y el abono, y T22 la edición de nombre/teléfono y el estado de cuenta; la baja y el método del abono quedaron fuera del alcance. La detección de posibles duplicados se agregó en T26.
+- **Impacto**: no se puede retirar a un cliente del directorio. El abono se registra siempre como efectivo (no se pregunta el método). El estado de cuenta es de solo lectura y no se imprime ni exporta. La pantalla aún no se ha verificado a mano en Windows ni en Android.
+- **Cierre**: baja lógica con permiso y bitácora, método de pago en el abono e impresión/exportación del estado de cuenta.
 
-### Proveedores sin baja ni detección de duplicados
+### Proveedores sin baja
 
 - **Dónde**: `ConfiguracionService` y la pestaña Proveedores de la app MAUI.
-- **Por qué**: T19 cubrió el directorio, la búsqueda, el alta y el pago del saldo, T23 la edición de datos, el historial inmutable de pagos y el estado de cuenta, y T25 el método de pago con retiro automático de caja; la baja y la detección de duplicados quedaron fuera del alcance.
-- **Impacto**: no se puede retirar a un proveedor del directorio y el alta no detecta duplicados. El estado de cuenta es de solo lectura, no se imprime ni exporta, y el historial solo cubre los pagos hechos desde el esquema v8 (los anteriores no tienen método ni movimiento de caja). La pantalla aún no se ha verificado a mano en Windows ni en Android.
-- **Cierre**: baja lógica con permiso y bitácora, detección de duplicados por nombre o clave e impresión/exportación del estado de cuenta.
+- **Por qué**: T19 cubrió el directorio, la búsqueda, el alta y el pago del saldo, T23 la edición de datos, el historial inmutable de pagos y el estado de cuenta, y T25 el método de pago con retiro automático de caja. La detección de posibles duplicados se agregó en T26; la baja quedó fuera del alcance.
+- **Impacto**: no se puede retirar a un proveedor del directorio. El estado de cuenta es de solo lectura, no se imprime ni exporta, y el historial solo cubre los pagos hechos desde el esquema v8 (los anteriores no tienen método ni movimiento de caja). La pantalla aún no se ha verificado a mano en Windows ni en Android.
+- **Cierre**: baja lógica con permiso y bitácora e impresión/exportación del estado de cuenta.
 
 ### La app MAUI no cubre todas las operaciones
 
