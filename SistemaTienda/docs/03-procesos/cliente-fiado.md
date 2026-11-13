@@ -32,7 +32,7 @@ El módulo de clientes y fiado permite a la tienda ofrecer ventas a crédito a s
 2. El estado de cuenta muestra los datos del cliente, el saldo vigente, el total fiado, el total abonado y la lista de movimientos (ventas a fiado vigentes y abonos) del más reciente al más antiguo.
 3. Las ventas anuladas no aparecen ni suman al total fiado.
 4. **Editar datos** (solo dueño y encargado) corrige nombre y teléfono; la edición queda en la bitácora como `EditarCliente` con los datos anteriores y nuevos.
-5. El saldo no se edita a mano: solo cambia con ventas a fiado y abonos. No hay baja de clientes.
+5. El saldo no se edita a mano: solo cambia con ventas a fiado y abonos. El dueño puede dar de baja o reactivar al cliente; la cuenta inactiva conserva su historial, admite abonos y no puede recibir nuevas ventas a fiado.
 
 ## 6.3. Estructura de Datos
 
@@ -43,6 +43,7 @@ El módulo de clientes y fiado permite a la tienda ofrecer ventas a crédito a s
 | Nombre | TEXT | Nombre del cliente |
 | Telefono | TEXT | Teléfono de contacto (opcional) |
 | SaldoActual | INTEGER | Saldo pendiente actual en centavos |
+| Activo | INTEGER | 1 activo; 0 inactivo (migración v10) |
 | FechaRegistro | DATETIME | Fecha en que se registró el cliente |
 | UltimaActualizacion | DATETIME | Última fecha de movimiento |
 
@@ -133,12 +134,13 @@ Nueva Venta a Fiado
 - No hay historial de abonos en la consola por cliente (la tabla `AbonosFiado` guarda fecha, monto, método y usuario; la app lo muestra en el estado de cuenta desde T22)
 - Los saldos son informativos y no tienen consecuencias legales dentro del sistema
 
-## 6.9. Estado de implementación (2026-11-11)
+## 6.9. Estado de implementación (2026-11-12)
 
 - *Implementado*: alta de cliente con nombre, teléfono y saldo inicial; consulta de clientes con saldo; venta a fiado desde el POS (cliente obligatorio, saldo y límite de crédito); abono con validación de monto positivo y de no exceder el saldo; historial inmutable en `AbonosFiado` (fecha, monto, método, usuario) escrito en la misma transacción que descuenta el saldo; el menú de fiado solo aparece si `FiadoActivado` es verdadero.
 - *Implementado en la app (T18)*: pestaña **Clientes** con resumen de cartera, búsqueda por nombre o teléfono sin distinguir mayúsculas ni acentos, filtro **Con saldo**, alta con nombre, teléfono y saldo inicial opcional, y abono en efectivo con actualización inmediata del saldo. El alta recorta espacios y queda en la bitácora. La compilación y las pruebas de servicio están en verde; la verificación manual de la pantalla quedó pendiente porque el entorno de desarrollo no permitió abrir la GUI.
 - *Implementado en la app (T22)*: **Estado** por cliente con saldo vigente, total fiado, total abonado y el historial de ventas a fiado (sin anuladas) y abonos del más reciente al más antiguo, con usuario y método; **Editar datos** para dueño y encargado con permiso `EditarCliente`, bitácora `EditarCliente` y sin tocar el saldo; el estado de cuenta permite abonar y se refresca al terminar. 8 pruebas en `EstadoCuentaClientesTests`.
 - *Implementado*: `DetectarDuplicadosCliente` compara nombre sin distinguir mayúsculas, acentos ni espacios repetidos, y teléfono ignorando formato. En altas y ediciones, la app y la consola advierten coincidencias y permiten continuar explícitamente; el teléfono vacío no se considera coincidencia.
-- *Pendiente*: baja de cliente, cancelación de venta a fiado, límite de crédito por cliente, impresión o exportación del estado de cuenta y recordatorios.
+- *Implementado (T27)*: migración v10 con `ClientesFiado.Activo`; el dueño puede dar de baja o reactivar desde MAUI, con confirmación, permiso y bitácora. Los clientes inactivos conservan saldos e historial, permiten abonos y se bloquean al intentar una nueva venta a fiado (en el servicio y dentro de la transacción de datos).
+- *Pendiente*: cancelación de venta a fiado, límite de crédito por cliente, impresión o exportación del estado de cuenta, método de abono y recordatorios.
 - *Deuda*: el abono se registra siempre como efectivo porque ni la consola ni la app preguntan el método (ver [deuda-técnica](../deuda-tecnica.md)).
 - *Pruebas*: `FiadoProveedoresTests` (incluye búsqueda y bitácora de alta), `EstadoCuentaClientesTests`, `VentasTests` y `CorteCajaTests`.

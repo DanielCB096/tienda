@@ -599,7 +599,9 @@ internal static class Program
 
     private static ClienteFiado ElegirClienteFiado()
     {
-        var clientes = _config.ObtenerTodosLosClientes().Value ?? new List<ClienteFiado>();
+        var clientes = (_config.ObtenerTodosLosClientes().Value ?? new List<ClienteFiado>())
+            .Where(c => c.Activo)
+            .ToList();
         if (clientes.Count == 0)
         {
             Aviso("No hay clientes registrados. Agregue uno en Clientes y fiado.");

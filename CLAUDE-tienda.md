@@ -32,7 +32,7 @@ Sistema para tiendas pequeñas de **cualquier giro** en México. Registra ventas
 
 ## 3. Stack y estructura
 
-- **Tipo de aplicación:** escritorio/terminal local-first. La interfaz objetivo es **MAUI** (Windows y Android); ya existe una base con asistente, login, tablero, POS, inventario, ventas con anulación, clientes con abonos, proveedores con pagos y caja con conteo e historial. La **consola** sigue siendo provisional para gastos, y como respaldo de las operaciones ya migradas.
+- **Tipo de aplicación:** escritorio/terminal local-first. La interfaz objetivo es **MAUI** (Windows y Android); ya existe una base con asistente, login, tablero, POS, inventario, ventas con anulación, clientes y proveedores con estados de cuenta y baja lógica, y caja con conteo e historial. La **consola** sigue siendo provisional para gastos y como respaldo de las operaciones ya migradas.
 - **Lenguaje/framework:** C# / .NET 8 (`net8.0`) para Core, Infrastructure, Application, consola y pruebas; la app MAUI (`SistemaTienda.Maui`) usa .NET 10 (`net10.0-windows10.0.19041.0` y `net10.0-android`).
 - **Base de datos local:** SQLite mediante `Microsoft.Data.Sqlite` 8.0.10 (`SistemaTienda.Infrastructure/Database.cs`).
 - **Interfaz:** app MAUI (`SistemaTienda.Maui`) y consola (`SistemaTienda.Presentation`), ambas con sesión por PIN.

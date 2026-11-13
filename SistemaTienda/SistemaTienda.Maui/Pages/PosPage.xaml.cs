@@ -317,6 +317,7 @@ public partial class PosPage : ContentPage
     {
         var clientes = _configuracionService.ObtenerTodosLosClientes().Value ?? new List<ClienteFiado>();
         ClientePicker.ItemsSource = clientes
+            .Where(c => c.Activo)
             .OrderBy(c => c.Nombre, StringComparer.CurrentCultureIgnoreCase)
             .Select(c => new ClienteOpcion { Cliente = c })
             .ToList();

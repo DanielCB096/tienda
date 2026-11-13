@@ -28,6 +28,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 
 | Tarea | Agente | Rama | Archivos | Fecha | Estado |
 |-------|--------|------|-----------|-------|--------|
+| T27 | Copilot SDK | feat/baja-clientes-proveedores | Core/ClienteFiado.cs, Core/Proveedor.cs, Core/Bitacora.cs, Application/AutorizacionService.cs, Application/ConfiguracionService.cs, Application/VentaService.cs, Infrastructure/Migraciones.cs, Infrastructure/Database.cs, Maui/Pages/ClientesPage.*, Maui/Pages/ProveedoresPage.*, Maui/Pages/PosPage.xaml.cs, Presentation/Program.cs, Tests/*, docs/*, AGENTS.md | 2026-11-12 | Tomada |
 
 ## Hecho
 
@@ -87,6 +88,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 | T23 | Edición y estado de cuenta de proveedores | Hecho | T7, T19 | En `feat/maui-proveedores-edicion` sobre `feat/maui-clientes-edicion` (PR #16 contra `main`, CI en verde). Esquema v8 con `PagosProveedor` inmutable; **Estado** con saldo pendiente, total pagado e historial de pagos; **Editar datos** (nombre, clave, teléfono y dirección) solo dueño y encargado con permiso `EditarProveedor` y bitácora; sin baja ni método de pago; 12 pruebas nuevas; 230 pruebas. Verificación manual pendiente (la GUI no pudo abrirse en el entorno). |
 | T25 | Método de pago y retiro automático en proveedores | Hecho | T23 | En `feat/pago-proveedores-metodo` sobre `feat/maui-reportes` (PR #18 contra `main`). Esquema v9 con `MetodoPago` y `MovimientoCajaId`; métodos Efectivo/Tarjeta/Transferencia/Otro; el efectivo genera un retiro de caja atómico con motivo `Pago a proveedor: <nombre>` y reduce el efectivo esperado; los demás métodos no tocan la caja; basta `PagarProveedor`; estado de cuenta con método y retiro; 12 pruebas nuevas; 246 pruebas. Verificación manual pendiente (la GUI no pudo abrirse en el entorno). |
 | T26 | Detección de posibles duplicados de clientes y proveedores | Hecho | T18, T19, T22, T23 | En `feat/duplicados-clientes-proveedores`. Advertencias normalizadas en altas de consola/MAUI y ediciones MAUI, con opción de continuar; 2 pruebas nuevas, 248 totales. Commit `e87ea40`; verificación visual pendiente. |
+| T27 | Baja lógica de clientes y proveedores | Tomada | T18, T19, T22, T23 | En `feat/baja-clientes-proveedores`. Esquema v10; baja/reactivación solo dueño, bitácora, historial y liquidación de saldos conservados; bloquea nuevo fiado para clientes inactivos. Falta cerrar documentación, validación final y publicación. |
 
 ## Plantilla para reclamar
 

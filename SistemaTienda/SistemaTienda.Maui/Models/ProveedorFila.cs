@@ -14,6 +14,9 @@ public sealed class ProveedorFila
     public string Saldo { get; init; } = string.Empty;
     public string Estado { get; init; } = string.Empty;
     public Color EstadoColor { get; init; } = Colors.Gray;
+    public bool Activo { get; init; }
     public bool PuedePagar { get; init; }
     public bool PuedeEditar { get; init; }
+    public bool PuedeCambiarEstado { get; init; }
+    public string AccionEstado => Activo ? "Dar de baja" : "Reactivar";
 }

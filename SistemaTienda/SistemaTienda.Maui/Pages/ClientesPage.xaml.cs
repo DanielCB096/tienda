@@ -8,13 +8,20 @@ namespace SistemaTienda.Maui.Pages;
 
 public partial class ClientesPage : ContentPage
 {
+    private enum FiltroClientes
+    {
+        Todos,
+        ConSaldo,
+        Inactivos
+    }
+
     private static readonly Color ColorSaldo = Color.FromArgb("#B3261E");
     private static readonly Color ColorAlDia = Color.FromArgb("#2E6B4F");
     private static readonly Color ColorPrimario = Color.FromArgb("#2E6B4F");
 
     private readonly ConfiguracionService _config;
     private readonly SesionApp _sesion;
-    private bool _soloConSaldo;
+    private FiltroClientes _filtro;
     private ClienteFila? _clienteAbono;
     private ClienteFila? _clienteEstado;
 
@@ -37,7 +44,10 @@ public partial class ClientesPage : ContentPage
 
         var todos = _config.ObtenerTodosLosClientes().Value ?? new List<ClienteFiado>();
         var filtro = BuscarEntry.Text?.Trim() ?? string.Empty;
-        var mostrados = _config.BuscarClientes(filtro, _soloConSaldo).Value ?? new List<ClienteFiado>();
+        var mostrados = _config.BuscarClientes(filtro, _filtro == FiltroClientes.ConSaldo).Value
+            ?? new List<ClienteFiado>();
+        if (_filtro == FiltroClientes.Inactivos)
+            mostrados = mostrados.Where(c => !c.Activo).ToList();
 
         UsuarioLabel.Text = _sesion.Usuario == null
             ? string.Empty
@@ -51,6 +61,8 @@ public partial class ClientesPage : ContentPage
             AutorizacionService.Puede(_sesion.Usuario, PermisoSistema.RegistrarAbono);
         var puedeEditar = _sesion.Usuario != null &&
             AutorizacionService.Puede(_sesion.Usuario, PermisoSistema.EditarCliente);
+        var puedeCambiarEstado = _sesion.Usuario != null &&
+            AutorizacionService.Puede(_sesion.Usuario, PermisoSistema.CambiarEstadoCliente);
 
         ListaClientes.ItemsSource = mostrados.Select(c => new ClienteFila
         {
@@ -59,13 +71,17 @@ public partial class ClientesPage : ContentPage
             Telefono = string.IsNullOrWhiteSpace(c.Telefono) ? "Sin teléfono" : c.Telefono,
             TelefonoReal = c.Telefono ?? string.Empty,
             Saldo = Formato.Moneda(c.SaldoActual),
-            Estado = c.SaldoActual > 0 ? "Con saldo pendiente" : "Al día",
-            EstadoColor = c.SaldoActual > 0 ? ColorSaldo : ColorAlDia,
+            Estado = !c.Activo
+                ? c.SaldoActual > 0 ? "Inactivo · Con saldo pendiente" : "Inactivo · Al día"
+                : c.SaldoActual > 0 ? "Con saldo pendiente" : "Al día",
+            EstadoColor = !c.Activo ? Colors.Gray : c.SaldoActual > 0 ? ColorSaldo : ColorAlDia,
+            Activo = c.Activo,
             PuedeAbonar = puedeAbonar && c.SaldoActual > 0,
-            PuedeEditar = puedeEditar
+            PuedeEditar = puedeEditar,
+            PuedeCambiarEstado = puedeCambiarEstado
         }).ToList();
 
-        ListaVaciaLabel.Text = filtro.Length > 0 || _soloConSaldo
+        ListaVaciaLabel.Text = filtro.Length > 0 || _filtro != FiltroClientes.Todos
             ? "No hay clientes que coincidan con el filtro."
             : "Aún no hay clientes registrados. Usa + Nuevo para dar de alta al primero.";
 
@@ -75,13 +91,14 @@ public partial class ClientesPage : ContentPage
     private void ActualizarFiltros(List<ClienteFiado> todos, int mostrados)
     {
         var conSaldo = todos.Count(c => c.SaldoActual > 0);
+        var inactivos = todos.Count(c => !c.Activo);
         FiltroTodosButton.Text = $"Todos ({todos.Count})";
         FiltroSaldoButton.Text = $"Con saldo ({conSaldo})";
+        FiltroInactivosButton.Text = $"Inactivos ({inactivos})";
 
-        FiltroTodosButton.BackgroundColor = _soloConSaldo ? Colors.Transparent : ColorPrimario;
-        FiltroTodosButton.TextColor = _soloConSaldo ? ColorPrimario : Colors.White;
-        FiltroSaldoButton.BackgroundColor = _soloConSaldo ? ColorPrimario : Colors.Transparent;
-        FiltroSaldoButton.TextColor = _soloConSaldo ? Colors.White : ColorPrimario;
+        MarcarFiltro(FiltroTodosButton, _filtro == FiltroClientes.Todos);
+        MarcarFiltro(FiltroSaldoButton, _filtro == FiltroClientes.ConSaldo);
+        MarcarFiltro(FiltroInactivosButton, _filtro == FiltroClientes.Inactivos);
 
         ResultadosLabel.Text = mostrados == 1
             ? "1 cliente"
@@ -98,16 +115,69 @@ public partial class ClientesPage : ContentPage
 
     private void OnFiltroTodosClicked(object sender, EventArgs e)
     {
-        _soloConSaldo = false;
+        _filtro = FiltroClientes.Todos;
         BuscarEntry.Text = string.Empty;
         Cargar();
     }
 
     private void OnFiltroSaldoClicked(object sender, EventArgs e)
     {
-        _soloConSaldo = true;
+        _filtro = FiltroClientes.ConSaldo;
         BuscarEntry.Text = string.Empty;
         Cargar();
+    }
+
+    private void OnFiltroInactivosClicked(object sender, EventArgs e)
+    {
+        _filtro = FiltroClientes.Inactivos;
+        BuscarEntry.Text = string.Empty;
+        Cargar();
+    }
+
+    private void MarcarFiltro(Button boton, bool seleccionado)
+    {
+        boton.BackgroundColor = seleccionado ? ColorPrimario : Colors.Transparent;
+        boton.TextColor = seleccionado ? Colors.White : ColorPrimario;
+    }
+
+    private async void OnCambiarEstadoClicked(object sender, EventArgs e)
+    {
+        if (sender is not Button { CommandParameter: ClienteFila fila })
+            return;
+
+        if (_sesion.Usuario == null ||
+            !AutorizacionService.Puede(_sesion.Usuario, PermisoSistema.CambiarEstadoCliente))
+        {
+            await DisplayAlertAsync("Sin permiso", "Solo el dueño puede dar de baja o reactivar clientes.", "Continuar");
+            return;
+        }
+
+        var reactivar = !fila.Activo;
+        var confirmar = await DisplayAlertAsync(
+            reactivar ? "Reactivar cliente" : "Dar de baja al cliente",
+            reactivar
+                ? "El cliente volverá a estar disponible para nuevas ventas a fiado."
+                : fila.PuedeAbonar
+                    ? "Se conservará su historial y se podrán registrar abonos para liquidar el saldo. No podrá recibir nuevas ventas a fiado."
+                    : "Se conservará su historial. No podrá recibir nuevas ventas a fiado.",
+            reactivar ? "Reactivar" : "Dar de baja",
+            "Cancelar");
+        if (!confirmar)
+            return;
+
+        _sesion.Aplicar();
+        var resultado = reactivar
+            ? _config.ReactivarCliente(fila.Id)
+            : _config.DesactivarCliente(fila.Id);
+        if (resultado.IsError)
+        {
+            await DisplayAlertAsync("No se pudo cambiar el estado", resultado.Message, "Continuar");
+            return;
+        }
+
+        Cargar();
+        await DisplayAlertAsync(reactivar ? "Cliente reactivado" : "Cliente dado de baja",
+            resultado.Message, "Continuar");
     }
 
     private void OnRefrescando(object sender, EventArgs e)
@@ -180,7 +250,7 @@ public partial class ClientesPage : ContentPage
 
             NuevoOverlay.IsVisible = false;
             BuscarEntry.Text = string.Empty;
-            _soloConSaldo = false;
+            _filtro = FiltroClientes.Todos;
             Cargar();
             await DisplayAlertAsync("Cliente agregado", resultado.Message, "Continuar");
         }

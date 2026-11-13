@@ -35,7 +35,7 @@ El módulo de proveedores y cuentas por pagar permite a la tienda gestionar sus 
 3. Los pagos anteriores a la migración v8 no se pueden reconstruir y los anteriores a la v9 no tienen método ni movimiento de caja; la pantalla lo advierte.
 4. Cada pago muestra el método, el usuario, el saldo antes/después y, si fue en efectivo, el retiro de caja ligado.
 5. **Editar datos** (solo dueño y encargado) corrige nombre, clave/RFC, teléfono y dirección; la edición queda en la bitácora como `EditarProveedor` con los datos anteriores y nuevos.
-6. El saldo no se edita a mano: solo cambia con pagos. No hay baja de proveedores.
+6. El saldo no se edita a mano: solo cambia con pagos. El dueño puede dar de baja o reactivar al proveedor; la cuenta inactiva conserva su historial y permite pagos para liquidar el saldo.
 
 ## 7.3. Estructura de Datos
 
@@ -48,6 +48,7 @@ El módulo de proveedores y cuentas por pagar permite a la tienda gestionar sus 
 | Telefono | TEXT | Teléfono de contacto |
 | Direccion | TEXT | Dirección del proveedor |
 | SaldoPendiente | INTEGER | Monto total pendiente de pago en centavos |
+| Activo | INTEGER | 1 activo; 0 inactivo (migración v10) |
 | FechaRegistro | DATETIME | Fecha en que se registró el proveedor |
 | UltimaActualizacion | DATETIME | Última fecha de movimiento (pago/crédito) |
 
@@ -180,10 +181,11 @@ Reporte de proveedores muestra saldos actualizados
 
 ---
 
-**Estado actual (2026-11-11)**: base implementada en consola y app MAUI (T19 y T23).
+**Estado actual (2026-11-12)**: base implementada en consola y app MAUI (T19 y T23).
 
 - *Implementado*: alta con nombre obligatorio y saldo inicial opcional; directorio ordenado por nombre; en la app, búsqueda por nombre, clave o teléfono sin distinguir mayúsculas ni acentos y filtro **Con saldo**; pago que descuenta el saldo con el permiso `PagarProveedor` para dueño y encargado. El alta y el pago dejan registro en la bitácora (`Proveedor` y `PagoProveedor`). **T23** agregó el esquema v8 con `PagosProveedor` inmutable (monto, fecha, usuario y saldo antes/después) y guarda el pago y el saldo en una sola transacción; el estado de cuenta muestra saldo pendiente, total pagado e historial; **Editar datos** (nombre, clave, teléfono y dirección) solo para dueño y encargado con permiso `EditarProveedor`, bitácora y sin tocar el saldo. **T25** agregó el esquema v9 con `MetodoPago` y `MovimientoCajaId`: el pago pide método (Efectivo, Tarjeta, Transferencia u Otro), el efectivo genera un retiro de caja atómico con el motivo `Pago a proveedor: <nombre>` y el método aparece en el estado de cuenta. 12 pruebas nuevas en `PagoProveedorMetodoTests`; total del proyecto: 246.
 - *Desviaciones del diseño*: los métodos que no son efectivo no entran al corte porque no mueven efectivo. La consola pregunta el método, pero no muestra el estado de cuenta. Los pagos anteriores a la migración v8 no aparecen en el historial y los anteriores a v9 se muestran sin método ni movimiento de caja.
 - *Implementado*: `DetectarDuplicadosProveedor` compara nombre y clave sin distinguir mayúsculas, acentos ni espacios repetidos. En altas y ediciones, la app y la consola advierten coincidencias y permiten continuar explícitamente; la clave vacía no se considera coincidencia.
-- *Pendiente*: baja, impresión/exportación del estado de cuenta y compras por proveedor. Ver [deuda-tecnica.md](../deuda-tecnica.md).
-- *Verificación*: compilación y 230 pruebas en verde en local el 2026-11-11; la verificación manual de la pantalla en Windows y Android quedó pendiente porque el entorno de desarrollo no permitió abrir la GUI.
+- *Implementado (T27)*: migración v10 con `Proveedores.Activo`; el dueño puede dar de baja o reactivar desde MAUI, con confirmación, permiso y bitácora. Las cuentas inactivas conservan saldo e historial y permiten registrar pagos para liquidarlas.
+- *Pendiente*: impresión/exportación del estado de cuenta y compras por proveedor. Ver [deuda-tecnica.md](../deuda-tecnica.md).
+- *Verificación*: compilación y 252 pruebas en verde en local el 2026-11-12; la verificación manual de la pantalla en Windows y Android quedó pendiente porque el entorno de desarrollo no permitió abrir la GUI.

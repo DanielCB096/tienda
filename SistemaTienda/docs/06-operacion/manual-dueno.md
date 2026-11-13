@@ -14,12 +14,12 @@
    - **Vender**: punto de venta con búsqueda o escaneo, carrito, cobro en efectivo, tarjeta, mixto o fiado, y ticket interno con QR que se puede compartir como texto o copiar.
    - **Inventario**: catálogo con stock bajo y valorizado, búsqueda o escaneo, alta/edición, entradas, mermas, ajustes e historial; el dueño controla costos, precios y ajustes.
    - **Ventas**: lista de ventas del día con folio, total, método, hora y estado; al tocar una venta se abre su detalle con líneas, pagos, comisión y datos de anulación, y se puede reimprimir el ticket o anular la venta con permiso.
-   - **Clientes**: directorio con búsqueda por nombre o teléfono, filtro de saldo, alta de clientes y registro de abonos (dueño o encargado). El abono se registra como efectivo y entra al corte; no hay edición, estado de cuenta ni recordatorio por WhatsApp.
-   - **Proveedores**: directorio con búsqueda por nombre, clave o teléfono, filtro de saldo, alta de proveedores y pago del saldo pendiente (dueño o encargado). El pago pide método; si es en efectivo, genera automáticamente un retiro en Caja y reduce el efectivo esperado del corte.
+   - **Clientes**: directorio con búsqueda, filtros de saldo e inactivos, alta, abonos, edición, estado de cuenta y baja/reactivación lógica (solo dueño). Los abonos siguen permitidos para liquidar una cuenta inactiva.
+   - **Proveedores**: directorio con búsqueda, filtros de saldo e inactivos, alta, pagos, edición, estado de cuenta y baja/reactivación lógica (solo dueño). Los pagos siguen permitidos para liquidar una cuenta inactiva.
    - **Gastos**: resumen de lo gastado en total, lo pagado del efectivo de la caja y lo pagado con otra fuente; historial de los últimos 200 gastos y alta de gastos con concepto, monto, método, origen y observaciones (dueño o encargado).
    - **Caja**: periodo abierto (efectivo esperado, fondo, ventas por método, abonos, ingresos/retiros y gastos), cierre de corte con diferencia justificada, conteo por billetes y monedas, registro de ingresos y retiros, abonos de fiado e historial de los últimos 20 cortes.
    - **Ajustes**: datos de la tienda, reglas configuradas, rutas de la base y de los respaldos, último respaldo, botón para crear un respaldo y cierre de sesión.
-4. **Importante**: desde la app ya se vende, se opera el inventario (alta, edición, entradas, mermas, ajustes, desactivación y reactivación de productos), se gestionan los clientes (alta, búsqueda y abonos) y los proveedores (alta, búsqueda y pagos con método), se registran gastos, se opera la caja (cierre con conteo por denominaciones, ingresos, retiros, abonos e historial) y se anulan ventas desde Ventas (dueño o encargado). El desglose del conteo no se guarda en el corte: solo el total contado; el catálogo aún no filtra por categoría.
+4. **Importante**: desde la app ya se vende, se opera el inventario, se gestionan clientes y proveedores (incluida la baja lógica), se registran gastos, se opera la caja y se anulan ventas desde Ventas. La baja/reactivación de cuentas es exclusiva del dueño; las cuentas inactivas conservan saldo e historial y permiten liquidar lo pendiente. Un cliente inactivo no admite nuevas ventas a fiado. El desglose del conteo no se guarda en el corte: solo el total contado; el catálogo aún no filtra por categoría.
 5. **Dónde están los datos**: en Windows, `%LOCALAPPDATA%\SistemaTienda\com.sistematienda.tienda\Data\tienda.db` y los respaldos en la carpeta `respaldos` junto a ese archivo. En Android están en el almacenamiento privado de la app. Las rutas exactas se muestran en Ajustes.
 
 ## Pantallas Principales
@@ -100,24 +100,26 @@ Acceso restringido (PIN de admin). Opciones:
 Acceso en la app: pestaña **Clientes**.
 
 - **Directorio**: lista con nombre, teléfono, saldo y estado (“Con saldo pendiente” o “Al día”), más el resumen de clientes, con saldo y total por cobrar.
-- **Buscar y filtrar**: busca por nombre o teléfono sin distinguir mayúsculas ni acentos; alterna entre **Todos** y **Con saldo**.
+- **Buscar y filtrar**: busca por nombre o teléfono sin distinguir mayúsculas ni acentos; alterna entre **Todos**, **Con saldo** e **Inactivos**.
 - **Nuevo cliente**: pide nombre, teléfono opcional y saldo inicial opcional (solo para deudas que ya existían).
 - **Registrar abono**: dueño o encargado; el monto no puede superar el saldo. El abono se registra como efectivo, entra al corte del periodo y queda en la bitácora.
 - **Estado de cuenta**: toca **Estado** en el renglón del cliente. Muestra su teléfono, la fecha en que se registró, el saldo vigente, el total fiado, el total abonado y la lista de ventas a fiado y abonos del más reciente al más antiguo. Las ventas anuladas no aparecen. Desde ahí también puedes abonar.
 - **Editar datos**: dueño o encargado, desde el estado de cuenta. Corrige nombre y teléfono; queda en la bitácora con los datos anteriores y nuevos. El saldo no se edita: solo cambia con ventas y abonos.
-- **Pendiente**: dar de baja clientes, detectar duplicados al dar de alta, imprimir o exportar el estado de cuenta, recordatorio por WhatsApp y elegir el método del abono. La verificación manual de esta pantalla en Windows y Android está pendiente (2026-11-11).
+- **Dar de baja o reactivar**: solo el dueño, desde el renglón del cliente y con confirmación. La cuenta y su saldo se conservan; puedes seguir registrando abonos para liquidarla. Una cuenta inactiva no se puede seleccionar para nuevas ventas a fiado.
+- **Pendiente**: imprimir o exportar el estado de cuenta, recordatorio por WhatsApp y elegir el método del abono. La verificación manual de esta pantalla en Windows y Android está pendiente (2026-11-12).
 
 ### 8. Proveedores (pestaña Proveedores)
 
 Acceso en la app: pestaña **Proveedores**.
 
 - **Directorio**: lista con nombre, clave o RFC, teléfono, dirección, saldo y estado (“Saldo pendiente” o “Al día”), más el resumen de proveedores, con saldo y total por pagar.
-- **Buscar y filtrar**: busca por nombre, clave o teléfono sin distinguir mayúsculas ni acentos; alterna entre **Todos** y **Con saldo**.
+- **Buscar y filtrar**: busca por nombre, clave o teléfono sin distinguir mayúsculas ni acentos; alterna entre **Todos**, **Con saldo** e **Inactivos**.
 - **Nuevo proveedor**: pide nombre; clave o RFC, teléfono, dirección y saldo inicial son opcionales. El saldo inicial solo sirve para deudas que ya existían.
 - **Registrar pago**: dueño o encargado; el monto no puede superar el saldo. Elige el método (**Efectivo**, **Tarjeta**, **Transferencia** u **Otro**). El pago reduce el saldo y guarda un movimiento inmutable con fecha, monto, método, usuario y saldo antes/después; si es en efectivo, genera además un retiro de caja por el mismo monto en la misma operación, así que el efectivo esperado del corte baja automáticamente. Los métodos que no son efectivo no tocan la caja.
 - **Estado de cuenta**: toca **Estado** en el renglón del proveedor. Muestra clave o RFC, teléfono, dirección, la fecha en que se registró, el saldo pendiente, el total pagado y la lista de pagos del más reciente al más antiguo con el método, el usuario, el saldo antes y después y, si fue en efectivo, el retiro de caja ligado. Los pagos anteriores a esta versión (esquema v8) no se pueden reconstruir y los previos a la v9 no tienen método; la pantalla lo advierte.
 - **Editar datos**: dueño o encargado, desde el estado de cuenta. Corrige nombre, clave o RFC, teléfono y dirección; queda en la bitácora con los datos anteriores y nuevos. El saldo solo cambia con pagos.
-- **Pendiente**: dar de baja proveedores, detectar duplicados al dar de alta, compras por proveedor e imprimir o exportar el estado de cuenta. La verificación manual de esta pantalla en Windows y Android está pendiente (2026-11-12).
+- **Dar de baja o reactivar**: solo el dueño, desde el renglón del proveedor y con confirmación. La cuenta y su historial se conservan; puedes seguir registrando pagos para liquidar el saldo.
+- **Pendiente**: compras por proveedor e imprimir o exportar el estado de cuenta. La verificación manual de esta pantalla en Windows y Android está pendiente (2026-11-12).
 
 ### 9. Gastos (pestaña Gastos)
 
