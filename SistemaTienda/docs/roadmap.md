@@ -1,6 +1,6 @@
 # Roadmap
 
-Estado al 2026-11-12. T1–T25 están integradas en `main` (`86cbf67`); T28 se desarrolla en `feat/importacion-xlsx-productos`, todavía pendiente de integración. Orden sugerido en [CLAUDE-tienda.md §13](../CLAUDE-tienda.md).
+Estado al 2026-11-12. T1–T25 están integradas en `main` (`86cbf67`); T28 está implementada en `feat/importacion-xlsx-productos` (`099ac2c`), pendiente de revisión e integración. Orden sugerido en [CLAUDE-tienda.md §13](../CLAUDE-tienda.md).
 
 ## Avance por módulo
 

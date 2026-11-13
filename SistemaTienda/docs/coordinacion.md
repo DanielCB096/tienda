@@ -28,7 +28,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 
 | Tarea | Agente | Rama | Archivos | Fecha | Estado |
 |-------|--------|------|-----------|-------|--------|
-| T28 | Copilot SDK | feat/importacion-xlsx-productos | Application/InventoryService.cs, LectorProductosXlsx.cs, InventarioPage.xaml(.cs), pruebas y documentación | 2026-11-12 | Tomada |
+| — | — | — | — | — | Sin tareas tomadas |
 
 ## Hecho
 
@@ -70,7 +70,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 | T4 | Bitácora y permisos en servicios | Hecho | — | En `feat/integracion-t4-t9`. Esquema v5: bitácora inmutable, matriz de permisos y validación en servicios. |
 | T5 | Reportes de utilidad | Hecho | T2 | En `feat/reportes-utilidad` (sobre `feat/integracion-t4-t9`). Utilidad bruta y neta por periodo con filtros por fecha; permiso `Consultar`. |
 | T6 | Importación Excel/CSV | Hecho | T2 recomendado | Importación CSV de productos desde Inventario, con validación previa, importación de filas válidas, reporte por línea y sin reemplazar registros. Excel `.xlsx` y plantillas por giro quedan fuera del alcance aprobado. Rama `feat/importacion-catalogo-csv`, commit `03dd398`. |
-| T28 | Importación de productos XLSX | Tomada | T6, T15 | Rama `feat/importacion-xlsx-productos`. Aceptar `.xlsx` además de CSV, usar la primera hoja y los mismos encabezados/validaciones de T6; omitir fórmulas, informar errores por número físico de fila. Sin plantillas por giro. |
+| T28 | Importación de productos XLSX | Hecho | T6, T15 | Rama `feat/importacion-xlsx-productos`, commit `099ac2c`. Acepta CSV y `.xlsx`; lee primera hoja y usa las validaciones de T6; omite fórmulas y reporta errores por número físico de fila. Cinco pruebas nuevas; verificación manual pendiente. |
 | T7 | Interfaz definitiva | Hecho | ADR, T12 | Decisión MAUI validada y base implementada en T12. POS entregado en T13, caja operativa en T14, inventario en T15, detalle/anulación con QR en T16, conteo e historial de cortes en T17, clientes en T18, proveedores en T19, gastos en T21, edición/estado de cuenta de clientes en T22, edición/estado de cuenta de proveedores en T23 y reportes de utilidad en T24. Las pantallas de operación del MVP quedan cubiertas. |
 | T8 | Corte de caja | Hecho | T2 | En `feat/corte-caja` (parte de `feat/ventas-pos`). Esquema v3: cortes, movimientos de caja y abonos con historial. |
 | T9 | Cobertura adicional de pruebas | Hecho | T1–T3 | En `feat/integracion-t4-t9`. 25 pruebas de borde en gastos, saldos, inventario, usuarios y mapeo de tipos. Hallazgos sin corregir: `AjustarStock` no valida que el producto exista; se permiten PIN duplicados y `VerificarAcceso` devuelve el primer usuario por nombre; `AgregarGasto` no recorta el concepto; la búsqueda por nombre no ignora acentos. Ver [deuda-tecnica.md](deuda-tecnica.md). |
@@ -140,3 +140,4 @@ Al terminar, mueve la fila a `Hecho` (o elimínala de En curso) y registra el co
 | 2026-11-12 | GLM (OpenCode) | feat/pago-proveedores-metodo | CI en verde para el PR #18: compilación y pruebas (246 en verde), y app MAUI para Windows y Android | c6c56ed |
 | 2026-11-12 | GLM (OpenCode) | main | Integración de la cadena completa: PR #4, #5, #7, #8, #9, #10, #11, #13, #14, #15, #16, #17 y #18 fusionados en orden con merge commit; #1, #3 y #6 cerrados por estar ya incluidos; `main` en `86cbf67` con 113 commits, 246 pruebas y sin PRs abiertos | 86cbf67 |
 | 2026-11-12 | Copilot SDK | feat/importacion-catalogo-csv | T6 implementada con importación parcial de productos CSV, validación por fila y duplicados; seis pruebas nuevas (252 totales), build de solución y MAUI Windows en verde; verificación manual pendiente en Windows y Android | 03dd398 |
+| 2026-11-12 | Copilot SDK | feat/importacion-xlsx-productos | T28 implementada: importación CSV/XLSX desde Inventario, primera hoja y errores por fila física; cinco pruebas nuevas (257 totales), build de solución y MAUI Windows en verde; verificación manual pendiente | 099ac2c |
