@@ -21,6 +21,15 @@ Cada entrada tiene formato:
 
 Próximamente después de completar los módulos críticos.
 
+### v0.0.27 - 2026-11-12: Importación Excel de productos
+
+- *Agregado*: la acción **Importar CSV/Excel** de Inventario acepta libros `.xlsx` y lee la primera hoja con los encabezados de productos ya definidos para CSV.
+- *Agregado*: las filas válidas se importan sin reemplazar productos; errores de datos, duplicados, fórmulas y celdas con error de Excel se reportan por número físico de fila.
+- *Agregado*: `DocumentFormat.OpenXml` permite leer el formato Open XML localmente, sin servidor ni conexión; `.xls` y plantillas por giro no forman parte del alcance.
+- *Pruebas*: cinco casos cubren valores compartidos/números, importación parcial, fila con fórmula, encabezados, permisos y archivo inválido.
+- *Documentación*: actualizados el módulo de inventario, interfaz MAUI, manual del dueño y roadmap; se agregó el ADR de la dependencia.
+- *Verificación*: solución compilada sin errores ni advertencias; 257 pruebas aprobadas; MAUI Windows compilada sin errores ni advertencias. Verificación manual del selector e importación pendiente.
+
 ### v0.0.26 - 2026-11-12: Importación CSV de productos
 
 - *Agregado*: botón **Importar CSV** en Inventario para dueño y encargado, con selector de archivo y reporte de filas importadas u omitidas.

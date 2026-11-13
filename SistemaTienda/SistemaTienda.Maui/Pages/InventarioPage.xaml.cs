@@ -81,7 +81,7 @@ public partial class InventarioPage : ContentPage
         _puedeDesactivar = AutorizacionService.Puede(usuario, PermisoSistema.DesactivarProducto);
         var puedeConsultar = AutorizacionService.Puede(usuario, PermisoSistema.Consultar);
 
-        ImportarCsvButton.IsVisible = _puedeEditar;
+        ImportarArchivoButton.IsVisible = _puedeEditar;
         NuevoProductoButton.IsVisible = _puedeEditar;
         EditarButton.IsVisible = _puedeEditar;
         EntradaButton.IsVisible = _puedeEntrada;
@@ -361,7 +361,7 @@ public partial class InventarioPage : ContentPage
         AbrirEditorNuevo(EsCodigoBarras(texto) ? texto : null);
     }
 
-    private async void OnImportarCsvClicked(object sender, EventArgs e)
+    private async void OnImportarArchivoClicked(object sender, EventArgs e)
     {
         if (!_puedeEditar || _sesion.Usuario == null)
         {
@@ -375,11 +375,15 @@ public partial class InventarioPage : ContentPage
         {
             archivo = await FilePicker.Default.PickAsync(new PickOptions
             {
-                PickerTitle = "Selecciona un archivo CSV",
+                PickerTitle = "Selecciona un archivo CSV o Excel (.xlsx)",
                 FileTypes = new FilePickerFileType(new Dictionary<DevicePlatform, IEnumerable<string>>
                 {
-                    [DevicePlatform.WinUI] = new[] { ".csv" },
-                    [DevicePlatform.Android] = new[] { "text/csv" }
+                    [DevicePlatform.WinUI] = new[] { ".csv", ".xlsx" },
+                    [DevicePlatform.Android] = new[]
+                    {
+                        "text/csv",
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    }
                 })
             });
         }
@@ -397,21 +401,25 @@ public partial class InventarioPage : ContentPage
         if (archivo == null)
             return;
 
-        if (!Path.GetExtension(archivo.FileName).Equals(".csv", StringComparison.OrdinalIgnoreCase))
+        var extension = Path.GetExtension(archivo.FileName);
+        var esXlsx = extension.Equals(".xlsx", StringComparison.OrdinalIgnoreCase);
+        if (!esXlsx && !extension.Equals(".csv", StringComparison.OrdinalIgnoreCase))
         {
             await DisplayAlertAsync("Archivo no compatible",
-                "Selecciona un archivo con extensión .csv.", "Continuar");
+                "Selecciona un archivo .csv o .xlsx.", "Continuar");
             return;
         }
 
-        ImportarCsvButton.IsEnabled = false;
+        ImportarArchivoButton.IsEnabled = false;
         try
         {
             using var stream = await archivo.OpenReadAsync();
             var resultado = await Task.Run(() =>
             {
                 _sesion.Aplicar();
-                return _inventario.ImportarProductosCsv(stream, _impuestoPredeterminado);
+                return esXlsx
+                    ? _inventario.ImportarProductosXlsx(stream, _impuestoPredeterminado)
+                    : _inventario.ImportarProductosCsv(stream, _impuestoPredeterminado);
             });
 
             if (resultado.IsError)
@@ -441,7 +449,7 @@ public partial class InventarioPage : ContentPage
         }
         finally
         {
-            ImportarCsvButton.IsEnabled = true;
+            ImportarArchivoButton.IsEnabled = true;
         }
     }
 

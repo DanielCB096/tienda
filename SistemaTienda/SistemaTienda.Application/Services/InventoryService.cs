@@ -61,15 +61,11 @@ public class InventoryService
         if (autorizacion.IsError)
             return ProcessResult<ResultadoImportacionProductos>.Error(autorizacion.Message);
 
-        if (archivo == null || !archivo.CanRead)
-            return ProcessResult<ResultadoImportacionProductos>.Error(
-                "No se puede leer el archivo CSV.");
+        var validacion = ValidarImportacion(archivo, impuestoPredeterminado);
+        if (validacion.IsError)
+            return ProcessResult<ResultadoImportacionProductos>.Error(validacion.Message);
 
-        if (impuestoPredeterminado < 0 || impuestoPredeterminado > 100)
-            return ProcessResult<ResultadoImportacionProductos>.Error(
-                "El impuesto predeterminado debe estar entre 0 y 100.");
-
-        var filas = new List<FilaImportacionCsv>();
+        var filas = new List<FilaImportacionProducto>();
         string[] encabezados;
         TextFieldParser parser = null;
 
@@ -106,7 +102,7 @@ public class InventoryService
                     numeroFilas++;
                     if (campos.Length != encabezados.Length)
                     {
-                        filas.Add(new FilaImportacionCsv(numeroFila, string.Empty, null,
+                        filas.Add(new FilaImportacionProducto(numeroFila, string.Empty, null,
                             new List<string>
                             {
                                 $"Se esperaban {encabezados.Length} columnas y se encontraron {campos.Length}."
@@ -114,7 +110,7 @@ public class InventoryService
                         continue;
                     }
 
-                    filas.Add(LeerFilaCsv(campos, indices, numeroFila, impuestoPredeterminado));
+                    filas.Add(LeerFilaProducto(campos, indices, numeroFila, impuestoPredeterminado));
                 }
 
                 if (numeroFilas == 0)
@@ -138,7 +134,93 @@ public class InventoryService
                 "El archivo contiene un número de fila fuera del rango permitido.");
         }
 
-        AgregarErroresPorDuplicadosCsv(filas);
+        return ImportarFilas(filas);
+    }
+
+    public ProcessResult<ResultadoImportacionProductos> ImportarProductosXlsx(
+        Stream archivo, decimal impuestoPredeterminado)
+    {
+        var autorizacion = Autorizar(PermisoSistema.EditarProducto);
+        if (autorizacion.IsError)
+            return ProcessResult<ResultadoImportacionProductos>.Error(autorizacion.Message);
+
+        var validacion = ValidarImportacion(archivo, impuestoPredeterminado);
+        if (validacion.IsError)
+            return ProcessResult<ResultadoImportacionProductos>.Error(validacion.Message);
+
+        HojaProductosXlsx hoja;
+        try
+        {
+            hoja = LectorProductosXlsx.Leer(archivo);
+        }
+        catch (InvalidDataException ex)
+        {
+            return ProcessResult<ResultadoImportacionProductos>.Error(
+                $"El archivo XLSX no es válido: {ex.Message}");
+        }
+        catch (IOException)
+        {
+            return ProcessResult<ResultadoImportacionProductos>.Error(
+                "No se pudo leer el archivo XLSX.");
+        }
+
+        var columnas = CrearMapaColumnas(hoja.Encabezados);
+        if (columnas.IsError)
+            return ProcessResult<ResultadoImportacionProductos>.Error(columnas.Message);
+
+        var filas = new List<FilaImportacionProducto>();
+        foreach (var filaExcel in hoja.Filas)
+        {
+            if (filaExcel.Campos.All(string.IsNullOrWhiteSpace) &&
+                !filaExcel.TieneFormula &&
+                !filaExcel.TieneErrorExcel)
+            {
+                continue;
+            }
+
+            var campos = new string[hoja.Encabezados.Length];
+            Array.Fill(campos, string.Empty);
+            Array.Copy(filaExcel.Campos, campos, Math.Min(filaExcel.Campos.Length, campos.Length));
+            var fila = LeerFilaProducto(
+                campos, columnas.Value, filaExcel.NumeroFila, impuestoPredeterminado);
+
+            if (filaExcel.Campos.Length > campos.Length &&
+                filaExcel.Campos.Skip(campos.Length).Any(campo => !string.IsNullOrWhiteSpace(campo)))
+            {
+                fila.Errores.Add("La fila tiene datos en columnas sin encabezado.");
+            }
+
+            if (filaExcel.TieneFormula)
+                fila.Errores.Add("Las fórmulas no se importan; reemplázalas por sus valores.");
+            if (filaExcel.TieneErrorExcel)
+                fila.Errores.Add("La fila contiene celdas con errores de Excel.");
+
+            filas.Add(fila);
+        }
+
+        if (filas.Count == 0)
+            return ProcessResult<ResultadoImportacionProductos>.Error(
+                "La primera hoja no contiene filas de productos.");
+
+        return ImportarFilas(filas);
+    }
+
+    private static ProcessResult ValidarImportacion(Stream archivo, decimal impuestoPredeterminado)
+    {
+        if (archivo == null || !archivo.CanRead)
+            return ProcessResult.Error("No se puede leer el archivo.");
+
+        if (impuestoPredeterminado < 0 || impuestoPredeterminado > 100)
+            return ProcessResult.Error(
+                "El impuesto predeterminado debe estar entre 0 y 100.");
+
+        return ProcessResult.Success(string.Empty);
+    }
+
+    private ProcessResult<ResultadoImportacionProductos> ImportarFilas(
+        List<FilaImportacionProducto> filas)
+    {
+        AgregarErroresPorDuplicados(filas);
         var codigosExistentes = ObtenerProductos()
             .Select(producto => producto.CodigoBarras.Trim())
             .ToHashSet(StringComparer.Ordinal);
@@ -151,7 +233,7 @@ public class InventoryService
         }
 
         var importados = 0;
-        var errores = new List<ErrorImportacionCsv>();
+        var errores = new List<ErrorImportacionProducto>();
         foreach (var fila in filas)
         {
             if (fila.Errores.Count == 0 && fila.Producto != null)
@@ -164,7 +246,7 @@ public class InventoryService
             }
 
             if (fila.Errores.Count > 0)
-                errores.Add(new ErrorImportacionCsv(
+                errores.Add(new ErrorImportacionProducto(
                     fila.NumeroFila, string.Join(" ", fila.Errores)));
         }
 
@@ -192,7 +274,7 @@ public class InventoryService
             var encabezado = encabezados[indice].Trim().TrimStart('\uFEFF');
             if (encabezado.Length == 0)
                 return ProcessResult<Dictionary<string, int>>.Error(
-                    "El CSV contiene un encabezado vacío.");
+                    "El archivo contiene un encabezado vacío.");
 
             if (!columnasPermitidas.Contains(encabezado))
                 return ProcessResult<Dictionary<string, int>>.Error(
@@ -212,7 +294,7 @@ public class InventoryService
         return ProcessResult<Dictionary<string, int>>.OK(indices);
     }
 
-    private static FilaImportacionCsv LeerFilaCsv(
+    private static FilaImportacionProducto LeerFilaProducto(
         string[] campos, Dictionary<string, int> indices, int numeroFila,
         decimal impuestoPredeterminado)
     {
@@ -227,19 +309,19 @@ public class InventoryService
         if (nombre.Length == 0)
             errores.Add("El nombre es obligatorio.");
 
-        var costo = LeerDineroCsv(costoTexto);
+        var costo = LeerDineroImportado(costoTexto);
         if (!costo.HasValue)
             errores.Add("El costo debe ser un importe no negativo con punto decimal.");
 
-        var precio = LeerDineroCsv(precioTexto);
+        var precio = LeerDineroImportado(precioTexto);
         if (!precio.HasValue)
             errores.Add("El precio debe ser un importe no negativo con punto decimal.");
 
-        var stock = LeerEnteroCsv(LeerColumna(campos, indices, "Stock"), 0);
+        var stock = LeerEnteroImportado(LeerColumna(campos, indices, "Stock"), 0);
         if (!stock.HasValue || stock.Value > 1_000_000)
             errores.Add("El stock debe ser un entero entre 0 y 1,000,000.");
 
-        var stockMinimo = LeerEnteroCsv(
+        var stockMinimo = LeerEnteroImportado(
             LeerColumna(campos, indices, "StockMinimo"), 5);
         if (!stockMinimo.HasValue || stockMinimo.Value > 1_000_000)
             errores.Add("El stock mínimo debe ser un entero entre 0 y 1,000,000.");
@@ -270,14 +352,14 @@ public class InventoryService
             };
         }
 
-        return new FilaImportacionCsv(numeroFila, codigo, producto, errores);
+        return new FilaImportacionProducto(numeroFila, codigo, producto, errores);
     }
 
     private static string LeerColumna(
         string[] campos, Dictionary<string, int> indices, string nombre) =>
         indices.TryGetValue(nombre, out var indice) ? campos[indice] : string.Empty;
 
-    private static long? LeerDineroCsv(string texto)
+    private static long? LeerDineroImportado(string texto)
     {
         if (!decimal.TryParse(texto,
                 NumberStyles.AllowLeadingSign | NumberStyles.AllowDecimalPoint,
@@ -294,7 +376,7 @@ public class InventoryService
         }
     }
 
-    private static int? LeerEnteroCsv(string texto, int valorPredeterminado)
+    private static int? LeerEnteroImportado(string texto, int valorPredeterminado)
     {
         if (string.IsNullOrWhiteSpace(texto))
             return valorPredeterminado;
@@ -305,7 +387,7 @@ public class InventoryService
             : null;
     }
 
-    private static void AgregarErroresPorDuplicadosCsv(List<FilaImportacionCsv> filas)
+    private static void AgregarErroresPorDuplicados(List<FilaImportacionProducto> filas)
     {
         var duplicados = filas
             .Where(fila => !string.IsNullOrEmpty(fila.CodigoBarras))
@@ -321,7 +403,7 @@ public class InventoryService
         }
     }
 
-    private sealed record FilaImportacionCsv(
+    private sealed record FilaImportacionProducto(
         int NumeroFila, string CodigoBarras, Producto Producto, List<string> Errores);
 
     public List<Producto> ObtenerProductos() => _db.ObtenerProductos();

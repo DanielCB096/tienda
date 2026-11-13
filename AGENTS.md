@@ -176,6 +176,13 @@ El detalle vive en el tablero. Resumen y criterios de terminado:
 - No agregar dependencias sin justificación y ADR; Excel `.xlsx` y plantillas por giro quedan fuera de este alcance.
 - Pruebas focalizadas: 6 casos; suite total: 252. Build de la solución y MAUI Windows sin errores ni advertencias; falta verificar el selector y el reporte en Windows y Android.
 
+### T28 — Importación XLSX de productos
+
+- Implementada en `feat/importacion-xlsx-productos` sobre `feat/importacion-catalogo-csv`: el selector de Inventario acepta `.csv` y `.xlsx`; XLSX lee la primera hoja y reutiliza los encabezados, validación, permisos y guardado parcial de T6.
+- El reporte usa el número físico de fila de la hoja; las filas con fórmulas o errores Excel se omiten. No se admiten `.xls` ni plantillas por giro.
+- Se usa `DocumentFormat.OpenXml` 3.5.1 para lectura offline; la justificación está en [ADR-importacion-xlsx.md](SistemaTienda/docs/05-decisiones/ADR-importacion-xlsx.md).
+- Cinco pruebas nuevas cubren importación válida, datos inválidos/duplicados/fórmulas, encabezados, permisos y archivo ilegible; la suite completa tiene 257 pruebas. La solución y MAUI Windows compilan sin errores ni advertencias; verificación manual de la interfaz pendiente.
+
 ### T12 — App MAUI con login y tablero (HECHO)
 
 - Completado en `feat/ui-maui` sobre `feat/anulacion-ventas`.

@@ -7,7 +7,7 @@ Sistema local-first para tiendas pequeñas en México: costo recurrente $0, 100 
 La base técnica está **compilando y con pruebas automatizadas**. El núcleo implementado cubre:
 
 - Configuración inicial de la tienda y usuarios con PIN hasheado (PBKDF2-SHA256).
-- Catálogo de productos e inventario por movimientos (entradas, ventas, mermas, ajustes) con desactivación de productos (esquema v7) e importación CSV de productos: un producto inactivo no se vende ni recibe movimientos, conserva su stock y solo el dueño lo reactiva; la importación informa las filas omitidas y no reemplaza registros existentes.
+- Catálogo de productos e inventario por movimientos (entradas, ventas, mermas, ajustes) con desactivación de productos (esquema v7) e importación CSV/Excel (`.xlsx`): un producto inactivo no se vende ni recibe movimientos, conserva su stock y solo el dueño lo reactiva; la importación informa las filas omitidas y no reemplaza registros existentes.
 - Gastos simples con resumen por origen, historial y alta en la app; total y agrupación por concepto en la consola.
 - Clientes con fiado (saldo y abonos con historial), edición de nombre y teléfono y estado de cuenta con ventas fiadas y abonos; proveedores con saldo y pagos con método e historial inmutable (esquema v8, método y retiro de caja desde v9), edición de datos y estado de cuenta.
 - Ventas / POS: venta atómica multi-línea con costo y precio congelados, pagos en efectivo, tarjeta (comisión), mixto y fiado, ticket de texto con QR informativo y anulación completa con devolución de stock y reverso de fiado.
@@ -20,7 +20,7 @@ La base técnica está **compilando y con pruebas automatizadas**. El núcleo im
 - App MAUI para Windows y Android con asistente de primera configuración, login por PIN, tablero (Inicio, Vender, Inventario, Ventas, Clientes, Proveedores, Gastos, Caja, Reportes y Ajustes), punto de venta con carrito, cobro y ticket con QR, inventario con escaneo/alta/edición/entradas/mermas/ajustes/historial/desactivación, ventas con detalle, reimpresión y anulación, clientes con búsqueda por nombre o teléfono, alta, abonos de fiado, edición de nombre y teléfono y estado de cuenta, proveedores con búsqueda por nombre, clave o teléfono, alta, pagos con método e historial (el efectivo genera retiro de caja), edición de datos y estado de cuenta, gastos con resumen por origen, historial y alta, caja operativa (cierre de corte con conteo por denominaciones, ingresos, retiros, abonos de fiado e historial de cortes), reportes de utilidad por periodo, respaldo manual y automático, y cierre de sesión.
 - Interfaz de consola provisional para tareas de administración, reportes y las operaciones que todavía no están en la app.
 
-Pendiente para el MVP: verificar a mano las pantallas de clientes (con edición y estado de cuenta), proveedores (con método de pago, edición y estado de cuenta), desactivación e importación CSV de productos, gastos y reportes en Windows y Android, persistir el desglose por denominaciones, exportar o imprimir reportes, compartir el QR como imagen, importar archivos Excel `.xlsx` y validar Android en dispositivo. Ver [roadmap.md](roadmap.md) y [deuda-tecnica.md](deuda-tecnica.md).
+Pendiente para el MVP: verificar a mano las pantallas de clientes (con edición y estado de cuenta), proveedores (con método de pago, edición y estado de cuenta), desactivación e importación de productos, gastos y reportes en Windows y Android, persistir el desglose por denominaciones, exportar o imprimir reportes, compartir el QR como imagen y validar Android en dispositivo. Ver [roadmap.md](roadmap.md) y [deuda-tecnica.md](deuda-tecnica.md).
 
 ## Índice
 
@@ -41,6 +41,7 @@ Pendiente para el MVP: verificar a mano las pantallas de clientes (con edición 
 | [03-procesos/respaldo-restauracion.md](03-procesos/respaldo-restauracion.md) | Respaldo y restauración (implementado) |
 | [05-decisiones/ADR-stack.md](05-decisiones/ADR-stack.md) | Decisión de stack |
 | [05-decisiones/ADR-qr-ticket.md](05-decisiones/ADR-qr-ticket.md) | QR informativo del ticket |
+| [05-decisiones/ADR-importacion-xlsx.md](05-decisiones/ADR-importacion-xlsx.md) | Lectura local de libros XLSX |
 | [06-operacion/instalacion-y-actualizacion.md](06-operacion/instalacion-y-actualizacion.md) | Instalación |
 | [07-pruebas/plan-de-pruebas.md](07-pruebas/plan-de-pruebas.md) | Estrategia y cobertura de pruebas |
 | [changelog.md](changelog.md) | Cambios por versión |

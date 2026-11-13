@@ -36,7 +36,7 @@ Este módulo maneja el catálogo de productos y el control de inventario. Es el 
 
 ### Importar productos desde CSV
 
-La acción **Importar CSV** está disponible en Inventario para dueño y encargado. El archivo debe ser UTF-8 (con o sin BOM), separado por comas y con una primera fila de encabezados. Se admiten campos entre comillas dobles y comas dentro de esos campos.
+La acción **Importar CSV/Excel** está disponible en Inventario para dueño y encargado. Para CSV, el archivo debe ser UTF-8 (con o sin BOM), separado por comas y con una primera fila de encabezados. Se admiten campos entre comillas dobles y comas dentro de esos campos.
 
 | Encabezado | Requerido | Formato / valor predeterminado |
 |------------|-----------|--------------------------------|
@@ -59,6 +59,14 @@ CodigoBarras,Nombre,Costo,Precio,Stock,StockMinimo,Categoria,Impuesto
 ```
 
 El servicio valida el archivo antes de guardar. Una fila inválida o con código repetido dentro del archivo o en el catálogo se omite y aparece en el reporte con su número de línea; si un código aparece varias veces en el CSV, se omiten todas esas filas. Las demás filas válidas se importan sin alterar productos existentes. Cada alta y su movimiento de stock inicial se guardan mediante la operación normal de inventario.
+
+### Importar productos desde Excel (.xlsx)
+
+La misma acción de Inventario acepta libros `.xlsx`. Se lee únicamente la primera hoja; la primera fila no vacía se toma como encabezados y debe usar los nombres y columnas obligatorias/opcionales descritos para CSV. Los encabezados no distinguen mayúsculas de minúsculas. Se aceptan celdas de texto y numéricas, incluidas cadenas compartidas e insertadas directamente; los importes y porcentajes deben tener valores numéricos compatibles con el formato invariante.
+
+Las fórmulas no se calculan: cualquier fila con una fórmula se omite y se reporta con el número físico de fila de la hoja. También se reportan filas con errores de Excel, datos extra en columnas sin encabezado, campos inválidos o códigos duplicados. Las filas completamente vacías se ignoran y las demás filas válidas se guardan como en CSV, sin reemplazar productos ni escribir directamente el stock. Un encabezado inválido o un libro ilegible cancela el archivo antes de guardar productos.
+
+Solo se admite `.xlsx`; los archivos `.xls`, las plantillas por giro y la evaluación de fórmulas quedan fuera del alcance.
 
 ### 2. Buscar y consultar productos
 
@@ -193,7 +201,7 @@ Implementadas en la pestaña **Inventario** de la app MAUI desde T15:
 6. **Registrar merma** (cantidad y motivo; reduce el stock).
 7. **Historial de movimientos** (últimos 200, con cantidad firmada, usuario y fecha).
 8. **Desactivar/Reactivar producto** (botón del detalle con confirmación; solo dueño; distintivo INACTIVO en la lista).
-9. **Importar CSV** (dueño y encargado; reporte de filas importadas y omitidas).
+9. **Importar CSV/Excel** (dueño y encargado; reporte de filas importadas y omitidas; XLSX lee la primera hoja).
 
 ## Criterios de Aceptación
 
@@ -209,6 +217,7 @@ Implementadas en la pestaña **Inventario** de la app MAUI desde T15:
 - [x] Los historiales de movimientos se registran y son inmutables.
 - [x] Un producto desactivado no se vende ni recibe movimientos; solo el dueño lo desactiva o reactiva y la acción queda en la bitácora.
 - [x] Importar productos desde CSV: guardar filas válidas, omitir y reportar errores y códigos duplicados por fila sin reemplazar registros.
+- [x] Importar productos desde Excel `.xlsx`: primera hoja, encabezados compatibles con CSV, importación parcial de filas válidas y reporte por número físico de fila; las fórmulas se omiten.
 
 ## Preguntas Abiertas ⚠️
 
@@ -221,10 +230,10 @@ Implementadas en la pestaña **Inventario** de la app MAUI desde T15:
 
 **Estado actual (2026-11-12)**: base implementada y probada, con pantalla de operación en la app MAUI.
 
-- *Implementado*: alta de producto con stock inicial como movimiento de entrada; código de barras único; edición sin tocar stock; búsqueda exacta por código y parcial por nombre; stock bajo; historial de movimientos; ajuste con diferencia y motivo; entradas; reducción por venta/merma; valorizado; desactivación y reactivación con estado `Activo` (esquema v7); importación CSV parcial de filas válidas con reporte por línea. La app MAUI ofrece catálogo, escaneo, alta/edición, entrada, merma, ajuste, historial, filtros Todos/Activos/Stock bajo/Inactivos, desactivar/reactivar e importar CSV, con acciones limitadas por rol.
+- *Implementado*: alta de producto con stock inicial como movimiento de entrada; código de barras único; edición sin tocar stock; búsqueda exacta por código y parcial por nombre; stock bajo; historial de movimientos; ajuste con diferencia y motivo; entradas; reducción por venta/merma; valorizado; desactivación y reactivación con estado `Activo` (esquema v7); importación CSV y `.xlsx` parcial de filas válidas con reporte por línea o fila. La app MAUI ofrece catálogo, escaneo, alta/edición, entrada, merma, ajuste, historial, filtros Todos/Activos/Stock bajo/Inactivos e importación CSV/Excel, con acciones limitadas por rol.
 - *Desviaciones del diseño*: no existe borrado (la desactivación cumple ese papel); el filtro por categoría no está en la interfaz; el historial se limita a los últimos 200 movimientos; el stock mínimo es siempre por producto (no hay umbral global adicional); el costo de una entrada no actualiza el costo del catálogo; la búsqueda por nombre no sugiere mientras se teclea.
-- *Pendiente*: importación de Excel `.xlsx`, edición masiva, reporte de valorizado histórico y filtro por categoría en la app.
-- *Pruebas*: `InventarioTests` (20 pruebas), `InventarioBordeTests`, `DesactivacionProductosTests` (15 pruebas) e `ImportacionProductosCsvTests` (6 pruebas); la interfaz no tiene pruebas automatizadas y la importación debe verificarse manualmente en Windows y Android.
+- *Pendiente*: edición masiva, reporte de valorizado histórico y filtro por categoría en la app.
+- *Pruebas*: `InventarioTests` (20 pruebas), `InventarioBordeTests`, `DesactivacionProductosTests` (15 pruebas), `ImportacionProductosCsvTests` (6 pruebas) e `ImportacionProductosXlsxTests` (5 pruebas); la interfaz no tiene pruebas automatizadas y la importación debe verificarse manualmente en Windows y Android.
 - *Riesgo conocido*: el costo perdido de una merma solo se muestra al registrarla; no queda almacenado (ver [deuda-técnica](../deuda-tecnica.md)). El costo de una entrada queda en el movimiento, no en el catálogo.
 
 **Siguiente módulo después de confirmar**: Módulo 3 - Ventas / POS (que dependerá fortemente de este módulo de inventario).

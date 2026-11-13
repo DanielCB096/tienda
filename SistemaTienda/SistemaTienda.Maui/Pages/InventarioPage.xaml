@@ -16,12 +16,12 @@
                 <HorizontalStackLayout Grid.Row="1"
                                        Spacing="8"
                                        HorizontalOptions="End">
-                    <Button x:Name="ImportarCsvButton"
-                            Text="Importar CSV"
+                    <Button x:Name="ImportarArchivoButton"
+                            Text="Importar CSV/Excel"
                             Style="{StaticResource BotonSecundario}"
-                            WidthRequest="124"
+                            WidthRequest="158"
                             HeightRequest="42"
-                            Clicked="OnImportarCsvClicked" />
+                            Clicked="OnImportarArchivoClicked" />
                     <Button x:Name="NuevoProductoButton"
                             Text="+ Nuevo"
                             Style="{StaticResource BotonSecundario}"
