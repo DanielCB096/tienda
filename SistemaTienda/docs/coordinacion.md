@@ -28,8 +28,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 
 | Tarea | Agente | Rama | Archivos | Fecha | Estado |
 |-------|--------|------|-----------|-------|--------|
-| T6 | Copilot SDK | feat/importacion-catalogo-csv | Application/InventoryService.cs, Application/ResultadoImportacionProductos.cs, Maui/Pages/InventarioPage.*, Tests/ImportacionProductosCsvTests.cs, docs/*, AGENTS.md | 2026-11-12 | En revisión |
-| — | — | — | — | — | Sin otras tareas tomadas |
+| — | — | — | — | — | Sin tareas tomadas |
 
 ## Hecho
 
@@ -42,6 +41,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 | T4 | DeepSeek → Qoder | feat/integracion-t4-t9 | Integración sobre centavos: bitácora pasa a esquema v5, detalles con `Dinero.Formatear`, permisos y bitácora en todos los servicios; 125 pruebas | 9d1dc9f, e009af4 |
 | T9 | DeepSeek → Qoder | feat/integracion-t4-t9 | 25 pruebas de borde integradas y convertidas a centavos: gastos, saldos, inventario, usuarios y mapeo de tipos; 150 pruebas | fd879cc |
 | T5 | Qoder | feat/reportes-utilidad | Reporte de utilidad bruta y neta por periodo (costo congelado, comisión, mermas y gastos), filtro por fecha, permiso `Consultar` y 7 pruebas; 157 pruebas | 1f3152b |
+| T6 | Copilot SDK | feat/importacion-catalogo-csv | Importación de productos CSV desde Inventario: validación previa, importación de filas válidas, reporte de errores y duplicados por línea sin reemplazar registros; seis pruebas nuevas (252 totales) | 03dd398 |
 | T10 | Qoder | feat/respaldo-automatico | Respaldo automático por intervalo al iniciar/cerrar con aviso, bitácora de respaldos manuales y automáticos y 5 pruebas; 162 pruebas | bbc5257 |
 | T11 | Qoder | feat/anulacion-ventas | Esquema v6 (`AnulacionesVenta` inmutable), anulación de venta completa con devolución de stock y reverso de fiado, bloqueo tras corte cerrado, permiso `AnularVenta`, menú [3], exclusión de utilidad/corte y 8 pruebas; 170 pruebas | 7c5ed91 |
 | T12 | Qoder | feat/ui-maui | App MAUI para Windows y Android con asistente, login por PIN, tablero Inicio/Ventas/Caja/Ajustes, respaldo automático y manual, cierre de sesión y job CI de compilación; 170 pruebas sin cambios | 20bcccd, 221fab0 |
@@ -69,7 +69,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 | T3 | Dinero en centavos | Hecho | T1, T2 | En `feat/integracion-t4-t9` (parte de `feat/centavos-enteros`). Esquema v4: importes `long`/`INTEGER`; porcentajes siguen en `decimal`. `Database.cs` y `Program.cs` quedan libres. |
 | T4 | Bitácora y permisos en servicios | Hecho | — | En `feat/integracion-t4-t9`. Esquema v5: bitácora inmutable, matriz de permisos y validación en servicios. |
 | T5 | Reportes de utilidad | Hecho | T2 | En `feat/reportes-utilidad` (sobre `feat/integracion-t4-t9`). Utilidad bruta y neta por periodo con filtros por fecha; permiso `Consultar`. |
-| T6 | Importación Excel/CSV | En revisión | T2 recomendado | Importación CSV de productos desde Inventario, con validación previa, importación de filas válidas, reporte por línea y sin reemplazar registros. Excel `.xlsx` y plantillas por giro quedan fuera del alcance aprobado. Rama `feat/importacion-catalogo-csv`. |
+| T6 | Importación Excel/CSV | Hecho | T2 recomendado | Importación CSV de productos desde Inventario, con validación previa, importación de filas válidas, reporte por línea y sin reemplazar registros. Excel `.xlsx` y plantillas por giro quedan fuera del alcance aprobado. Rama `feat/importacion-catalogo-csv`, commit `03dd398`. |
 | T7 | Interfaz definitiva | Hecho | ADR, T12 | Decisión MAUI validada y base implementada en T12. POS entregado en T13, caja operativa en T14, inventario en T15, detalle/anulación con QR en T16, conteo e historial de cortes en T17, clientes en T18, proveedores en T19, gastos en T21, edición/estado de cuenta de clientes en T22, edición/estado de cuenta de proveedores en T23 y reportes de utilidad en T24. Las pantallas de operación del MVP quedan cubiertas. |
 | T8 | Corte de caja | Hecho | T2 | En `feat/corte-caja` (parte de `feat/ventas-pos`). Esquema v3: cortes, movimientos de caja y abonos con historial. |
 | T9 | Cobertura adicional de pruebas | Hecho | T1–T3 | En `feat/integracion-t4-t9`. 25 pruebas de borde en gastos, saldos, inventario, usuarios y mapeo de tipos. Hallazgos sin corregir: `AjustarStock` no valida que el producto exista; se permiten PIN duplicados y `VerificarAcceso` devuelve el primer usuario por nombre; `AgregarGasto` no recorta el concepto; la búsqueda por nombre no ignora acentos. Ver [deuda-tecnica.md](deuda-tecnica.md). |
@@ -138,3 +138,4 @@ Al terminar, mueve la fila a `Hecho` (o elimínala de En curso) y registra el co
 | 2026-11-12 | GLM (OpenCode) | feat/pago-proveedores-metodo | T25 terminado: esquema v9, métodos de pago en proveedores, retiro de caja automático y atómico para efectivo, estado de cuenta con método y retiro, y 12 pruebas nuevas; 246 pruebas en local; builds de solución y MAUI Windows en verde; verificación manual pendiente por bloqueo del entorno; documentación actualizada; PR #18 abierto | 86994e8, c6c56ed |
 | 2026-11-12 | GLM (OpenCode) | feat/pago-proveedores-metodo | CI en verde para el PR #18: compilación y pruebas (246 en verde), y app MAUI para Windows y Android | c6c56ed |
 | 2026-11-12 | GLM (OpenCode) | main | Integración de la cadena completa: PR #4, #5, #7, #8, #9, #10, #11, #13, #14, #15, #16, #17 y #18 fusionados en orden con merge commit; #1, #3 y #6 cerrados por estar ya incluidos; `main` en `86cbf67` con 113 commits, 246 pruebas y sin PRs abiertos | 86cbf67 |
+| 2026-11-12 | Copilot SDK | feat/importacion-catalogo-csv | T6 implementada con importación parcial de productos CSV, validación por fila y duplicados; seis pruebas nuevas (252 totales), build de solución y MAUI Windows en verde; verificación manual pendiente en Windows y Android | 03dd398 |

@@ -170,7 +170,7 @@ El detalle vive en el tablero. Resumen y criterios de terminado:
 
 ### T6 — Importación Excel/CSV
 
-- Implementado en `feat/importacion-catalogo-csv`: importación de productos CSV desde Inventario para dueño/encargado; se guardan las filas válidas y se omiten con reporte por línea las inválidas y duplicadas, sin reemplazar registros existentes.
+- Completado en `feat/importacion-catalogo-csv` (`03dd398`): importación de productos CSV desde Inventario para dueño/encargado; se guardan las filas válidas y se omiten con reporte por línea las inválidas y duplicadas, sin reemplazar registros existentes.
 - Alcance aprobado: importar productos desde CSV; guardar filas válidas y reportar/omitir por fila errores y códigos duplicados, sin reemplazar registros existentes.
 - El archivo se valida completo antes de empezar a grabar; los códigos duplicados en la base o el CSV se reportan por línea. El stock inicial se conserva como movimiento de inventario.
 - No agregar dependencias sin justificación y ADR; Excel `.xlsx` y plantillas por giro quedan fuera de este alcance.
