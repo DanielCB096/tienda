@@ -21,6 +21,14 @@ Cada entrada tiene formato:
 
 Próximamente después de completar los módulos críticos.
 
+### v0.0.26 - 2026-11-12: Importación CSV de productos
+
+- *Agregado*: botón **Importar CSV** en Inventario para dueño y encargado, con selector de archivo y reporte de filas importadas u omitidas.
+- *Agregado*: `InventoryService.ImportarProductosCsv` valida UTF-8, encabezados, importes en pesos, existencias, impuesto y códigos duplicados antes de guardar; importa únicamente filas válidas y nunca reemplaza productos existentes.
+- *Agregado*: el stock inicial se registra con el movimiento de inventario normal; seis pruebas cubren filas válidas, inválidas, duplicados, encabezados, permisos y numeración de líneas CSV con campos multilínea.
+- *Documentación*: contrato del CSV y flujo en manual del dueño, módulo de inventario, interfaz MAUI y roadmap.
+- *Verificación*: solución compilada sin errores ni advertencias; 252 pruebas aprobadas; MAUI Windows compilada sin errores ni advertencias. La importación requiere verificación manual en Windows y Android.
+
 ### [En desarrollo] v0.1.0-base
 
 - Estructura de solución y proyectos (.NET 8).

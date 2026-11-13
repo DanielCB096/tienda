@@ -7,7 +7,7 @@ Estado al 2026-11-12. Todo el trabajo de T1 a T25 está integrado en `main` (`86
 | # | Módulo | Estado | Notas |
 |---|--------|--------|-------|
 | 1 | Configuración y usuarios | ✅ Base implementada | Asistente, PIN hasheado, roles, gastos, bitácora inmutable y permisos en servicios |
-| 2 | Catálogo e inventario | ✅ Base implementada | Alta/edición, movimientos, stock bajo, búsqueda, escaneo, historial, valorizado y desactivación de productos (v7); operación desde la app MAUI. Falta filtro por categoría |
+| 2 | Catálogo e inventario | ✅ Base implementada | Alta/edición, movimientos, stock bajo, búsqueda, escaneo, historial, valorizado, desactivación (v7) e importación CSV; operación desde la app MAUI. Falta filtro por categoría |
 | 3 | Ventas / POS | ✅ Base implementada | Venta multi-línea atómica, efectivo/tarjeta/mixto/fiado, costo y precio congelados, comisión, ticket de texto con QR informativo y anulación completa con reverso; POS, detalle, reimpresión y anulación en MAUI. Descuentos quedan para Fase 2 |
 | 4 | Mermas | 🟡 Parcial | Descuenta stock y reporta costo; el historial sale de movimientos |
 | 5 | Gastos y pagos | 🟡 Parcial | Gastos simples con resumen por origen, historial y alta en la app; pagos al personal no existen |
@@ -24,7 +24,7 @@ Estado al 2026-11-12. Todo el trabajo de T1 a T25 está integrado en `main` (`86
 ## Siguiente trabajo recomendado
 
 1. **Baja y detección de duplicados de clientes y proveedores**.
-2. **Importación Excel/CSV** y plantillas por giro.
+2. **Importación de Excel `.xlsx`** y plantillas por giro; CSV de productos implementado en T6.
 3. **Copia de respaldos a USB o nube personal** (Fase 2).
 4. **Descuentos** por línea o venta (Fase 2).
 5. **Persistir el desglose por denominaciones** y llevarlo a la consola, si se requiere auditoría.

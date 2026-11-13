@@ -81,6 +81,7 @@ public partial class InventarioPage : ContentPage
         _puedeDesactivar = AutorizacionService.Puede(usuario, PermisoSistema.DesactivarProducto);
         var puedeConsultar = AutorizacionService.Puede(usuario, PermisoSistema.Consultar);
 
+        ImportarCsvButton.IsVisible = _puedeEditar;
         NuevoProductoButton.IsVisible = _puedeEditar;
         EditarButton.IsVisible = _puedeEditar;
         EntradaButton.IsVisible = _puedeEntrada;
@@ -358,6 +359,90 @@ public partial class InventarioPage : ContentPage
         var texto = BuscarEntry.Text?.Trim();
         BuscarEntry.Text = string.Empty;
         AbrirEditorNuevo(EsCodigoBarras(texto) ? texto : null);
+    }
+
+    private async void OnImportarCsvClicked(object sender, EventArgs e)
+    {
+        if (!_puedeEditar || _sesion.Usuario == null)
+        {
+            MostrarMensaje("Tu rol no permite importar productos.");
+            return;
+        }
+
+        _sesion.Aplicar();
+        FileResult? archivo;
+        try
+        {
+            archivo = await FilePicker.Default.PickAsync(new PickOptions
+            {
+                PickerTitle = "Selecciona un archivo CSV",
+                FileTypes = new FilePickerFileType(new Dictionary<DevicePlatform, IEnumerable<string>>
+                {
+                    [DevicePlatform.WinUI] = new[] { ".csv" },
+                    [DevicePlatform.Android] = new[] { "text/csv" }
+                })
+            });
+        }
+        catch (FeatureNotSupportedException ex)
+        {
+            await DisplayAlertAsync("No se pudo abrir el selector", ex.Message, "Continuar");
+            return;
+        }
+        catch (PermissionException ex)
+        {
+            await DisplayAlertAsync("Sin permiso para leer archivos", ex.Message, "Continuar");
+            return;
+        }
+
+        if (archivo == null)
+            return;
+
+        if (!Path.GetExtension(archivo.FileName).Equals(".csv", StringComparison.OrdinalIgnoreCase))
+        {
+            await DisplayAlertAsync("Archivo no compatible",
+                "Selecciona un archivo con extensión .csv.", "Continuar");
+            return;
+        }
+
+        ImportarCsvButton.IsEnabled = false;
+        try
+        {
+            using var stream = await archivo.OpenReadAsync();
+            var resultado = await Task.Run(() =>
+            {
+                _sesion.Aplicar();
+                return _inventario.ImportarProductosCsv(stream, _impuestoPredeterminado);
+            });
+
+            if (resultado.IsError)
+            {
+                await DisplayAlertAsync("No se pudo importar", resultado.Message, "Continuar");
+                return;
+            }
+
+            if (resultado.Value.ProductosImportados > 0)
+                CargarCatalogo(BuscarEntry.Text);
+
+            var errores = string.Join(Environment.NewLine,
+                resultado.Value.Errores.Select(error =>
+                    $"Fila {error.NumeroFila}: {error.Mensaje}"));
+            var mensaje = string.IsNullOrEmpty(errores)
+                ? resultado.Message
+                : $"{resultado.Message}{Environment.NewLine}{Environment.NewLine}{errores}";
+            await DisplayAlertAsync("Resultado de importación", mensaje, "Continuar");
+        }
+        catch (IOException ex)
+        {
+            await DisplayAlertAsync("No se pudo leer el archivo", ex.Message, "Continuar");
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            await DisplayAlertAsync("Sin permiso para leer el archivo", ex.Message, "Continuar");
+        }
+        finally
+        {
+            ImportarCsvButton.IsEnabled = true;
+        }
     }
 
     private void AbrirEditorNuevo(string? codigo = null)

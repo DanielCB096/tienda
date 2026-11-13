@@ -39,9 +39,15 @@ Muestra al abrir la app (después del PIN), en la pestaña **Inicio**:
 Acceso en la app: pestaña **Inventario**.
 
 - Listado de todos los productos con stock, mínimo, categoría y precio; resumen de stock bajo y valorizado.
-- **Acciones**: buscar por nombre o escanear el código, dar de alta, editar, registrar entrada, merma o ajuste, y consultar movimientos. El borrado no está implementado.
+- **Acciones**: buscar por nombre o escanear el código, dar de alta, editar, importar un CSV, registrar entrada, merma o ajuste, y consultar movimientos. El borrado no está implementado.
 - **Precios y ajustes**: solo el dueño puede cambiar costo/precio y ajustar el stock; el encargado puede editar los demás datos y registrar entradas o mermas.
 - **Stock actual**: se muestra el stock disponible y se actualiza por movimientos; nunca se edita directamente desde el formulario.
+
+#### Importar productos desde CSV
+
+En **Inventario**, elige **Importar CSV** y selecciona el archivo. Solo dueño y encargado tienen acceso. El archivo debe usar UTF-8, comas como separador y estos encabezados: `CodigoBarras`, `Nombre`, `Costo`, `Precio`; también puede incluir `Stock`, `StockMinimo`, `Categoria` e `Impuesto`. Los importes se expresan en pesos con punto decimal (por ejemplo, `12.50`); las comas dentro de un campo de texto deben ir entre comillas dobles.
+
+Al terminar, la app muestra cuántos productos se importaron y las filas omitidas con el motivo. Los códigos duplicados en el archivo o ya existentes se omiten; no se reemplazan productos. `Stock` es opcional, vale 0 por defecto y se registra como movimiento inicial; `StockMinimo` vale 5 por defecto; `Impuesto` usa la tasa predeterminada de la tienda si se deja vacío. Si el encabezado, la codificación o la sintaxis CSV no se pueden leer, se cancela todo el archivo sin guardar productos. Las demás reglas y encabezados aceptados están en [modulo-inventario.md](../02-modulos/modulo-inventario.md#importar-productos-desde-csv).
 
 ### 3. Registrar Venta
 
