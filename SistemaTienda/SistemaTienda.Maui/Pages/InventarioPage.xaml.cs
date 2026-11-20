@@ -382,6 +382,11 @@ public partial class InventarioPage : ContentPage
                     [DevicePlatform.Android] = new[]
                     {
                         "text/csv",
+                        "text/comma-separated-values",
+                        "application/csv",
+                        "application/vnd.ms-excel",
+                        "text/plain",
+                        "application/octet-stream",
                         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                     }
                 })

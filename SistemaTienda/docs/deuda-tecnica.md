@@ -134,4 +134,5 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 - Inicio y Ventas muestran el importe de las ventas vigentes como “cobrados”, pero incluyen las ventas a fiado, que no entran a caja (Caja sí las separa). Revisar la etiqueta o excluir el fiado del resumen.
 - Sin pruebas de rendimiento con volúmenes realistas (10 000 productos / 500 ventas por día).
 - Los clientes y proveedores creados antes del 2026-11-19 tienen `FechaRegistro` en UTC y se muestran con la hora desplazada; no se reescriben para no alterar datos históricos. Las altas nuevas ya usan hora local.
+- El selector de archivos de Android filtra por MIME; se añadieron los tipos habituales de CSV y Excel, pero un archivo con un MIME poco común podría seguir sin ser seleccionable. Validar la extensión después de elegir el archivo sigue protegiendo la importación.
 - Comentarios XML heredados de la versión anterior en `InventoryService`; no afectan.
