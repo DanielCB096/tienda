@@ -1,6 +1,6 @@
-# Modelo de Datos (esquema v9)
+# Modelo de Datos (esquema v10)
 
-Base local SQLite, un solo archivo. `PRAGMA user_version = 9`.
+Base local SQLite, un solo archivo. `PRAGMA user_version = 10`.
 
 El acceso vive en `SistemaTienda.Infrastructure/Database.cs` (`DatabaseTools`). Todas las consultas son parametrizadas.
 
@@ -16,6 +16,7 @@ El acceso vive en `SistemaTienda.Infrastructure/Database.cs` (`DatabaseTools`). 
   - **v7** — agrega `Productos.Activo` (`INTEGER NOT NULL DEFAULT 1`): los productos existentes quedan activos. La desactivación es un estado operativo, no una baja del historial.
   - **v8** - crea `PagosProveedor` con índices por proveedor y fecha y disparadores que impiden `UPDATE` y `DELETE` (historial inmutable de pagos a proveedores). Los pagos anteriores a esta migración no se pueden reconstruir.
 - **v9** - agrega `MetodoPago` (texto, vacío para los pagos anteriores) y `MovimientoCajaId` (nullable) a `PagosProveedor`. Los pagos en efectivo registrados desde esta versión generan un retiro en `MovimientosCaja` en la misma transacción; los demás métodos no tocan la caja.
+- **v10** — agrega `Activo INTEGER NOT NULL DEFAULT 1` a `ClientesFiado` y `Proveedores`; las cuentas existentes quedan activas y conservan saldos e historial.
 - Una base nueva se crea directamente en la versión máxima (`Migraciones.VersionMaxima`): no se crea respaldo previo porque aún no hay datos.
 - `MigradorEsquema.Migrar()` se ejecuta dentro de `InicializarBaseDeDatos()` al arrancar:
   1. Lee `user_version`; si la base es más nueva que la app, aborta sin tocar nada.
@@ -167,16 +168,21 @@ Registro inmutable de la anulación de una venta completa (migración v6). Una v
 
 ### ClientesFiado
 
+`Activo = 0` conserva la cuenta y su historial, permite abonos y bloquea nuevas ventas a fiado. Solo el dueño puede cambiar el estado.
+
 | Columna | Tipo | Notas |
 |---------|------|-------|
 | Id | INTEGER PK | |
 | Nombre | TEXT | Obligatorio |
 | Telefono | TEXT | Único dato de contacto; sin RFC ni cédula por privacidad |
 | SaldoActual | INTEGER | Centavos; ≥ 0 |
+| Activo | INTEGER | `1` activo (predeterminado); `0` inactivo (migración v10) |
 | FechaRegistro | DATETIME | |
 | UltimaActualizacion | DATETIME | |
 
 ### Proveedores
+
+`Activo = 0` conserva la cuenta y su historial; los pagos siguen permitidos para liquidar el saldo. Solo el dueño puede cambiar el estado.
 
 | Columna | Tipo | Notas |
 |---------|------|-------|
@@ -186,6 +192,7 @@ Registro inmutable de la anulación de una venta completa (migración v6). Una v
 | Telefono | TEXT | |
 | Direccion | TEXT | |
 | SaldoPendiente | INTEGER | Centavos; ≥ 0 |
+| Activo | INTEGER | `1` activo (predeterminado); `0` inactivo (migración v10) |
 | FechaRegistro | DATETIME | |
 | UltimaActualizacion | DATETIME | |
 

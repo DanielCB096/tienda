@@ -38,7 +38,8 @@ public static class Migraciones
         new Migracion(6, "crea las anulaciones de venta", AplicarVersion6),
         new Migracion(7, "agrega el estado activo de los productos", AplicarVersion7),
         new Migracion(8, "crea el historial inmutable de pagos a proveedores", AplicarVersion8),
-        new Migracion(9, "agrega el método de pago y el retiro de caja a los pagos a proveedores", AplicarVersion9)
+        new Migracion(9, "agrega el método de pago y el retiro de caja a los pagos a proveedores", AplicarVersion9),
+        new Migracion(10, "agrega el estado activo a clientes y proveedores", AplicarVersion10)
     };
 
     private static void AplicarVersion2(SqliteConnection conn, SqliteTransaction tx)
@@ -562,6 +563,17 @@ public static class Migraciones
         cmd.CommandText = @"
             ALTER TABLE PagosProveedor ADD COLUMN MetodoPago TEXT NOT NULL DEFAULT '';
             ALTER TABLE PagosProveedor ADD COLUMN MovimientoCajaId INTEGER;
+        ";
+        cmd.ExecuteNonQuery();
+    }
+
+    private static void AplicarVersion10(SqliteConnection conn, SqliteTransaction tx)
+    {
+        using var cmd = conn.CreateCommand();
+        cmd.Transaction = tx;
+        cmd.CommandText = @"
+            ALTER TABLE ClientesFiado ADD COLUMN Activo INTEGER NOT NULL DEFAULT 1;
+            ALTER TABLE Proveedores ADD COLUMN Activo INTEGER NOT NULL DEFAULT 1;
         ";
         cmd.ExecuteNonQuery();
     }

@@ -9,6 +9,7 @@ public class ClienteFiado
     public string Nombre { get; set; } = string.Empty;
     public string Telefono { get; set; } = string.Empty;
     public long SaldoActual { get; set; }
+    public bool Activo { get; set; } = true;
     public DateTime FechaRegistro { get; set; } = DateTime.Now;
     public DateTime? UltimaActualizacion { get; set; }
 }

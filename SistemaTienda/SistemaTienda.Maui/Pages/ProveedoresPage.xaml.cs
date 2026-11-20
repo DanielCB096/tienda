@@ -8,6 +8,13 @@ namespace SistemaTienda.Maui.Pages;
 
 public partial class ProveedoresPage : ContentPage
 {
+    private enum FiltroProveedores
+    {
+        Todos,
+        ConSaldo,
+        Inactivos
+    }
+
     private static readonly Color ColorSaldo = Color.FromArgb("#B3261E");
     private static readonly Color ColorAlDia = Color.FromArgb("#2E6B4F");
     private static readonly Color ColorPrimario = Color.FromArgb("#2E6B4F");
@@ -15,7 +22,7 @@ public partial class ProveedoresPage : ContentPage
     private readonly ConfiguracionService _config;
     private readonly SesionApp _sesion;
     private static readonly List<string> MetodosPago = new(MetodoPagoProveedor.Todos);
-    private bool _soloConSaldo;
+    private FiltroProveedores _filtro;
     private ProveedorFila? _proveedorPago;
     private ProveedorFila? _proveedorEstado;
 
@@ -40,7 +47,10 @@ public partial class ProveedoresPage : ContentPage
 
         var todos = _config.ObtenerTodosLosProveedores().Value ?? new List<Proveedor>();
         var filtro = BuscarEntry.Text?.Trim() ?? string.Empty;
-        var mostrados = _config.BuscarProveedores(filtro, _soloConSaldo).Value ?? new List<Proveedor>();
+        var mostrados = _config.BuscarProveedores(filtro, _filtro == FiltroProveedores.ConSaldo).Value
+            ?? new List<Proveedor>();
+        if (_filtro == FiltroProveedores.Inactivos)
+            mostrados = mostrados.Where(p => !p.Activo).ToList();
 
         UsuarioLabel.Text = _sesion.Usuario == null
             ? string.Empty
@@ -54,6 +64,8 @@ public partial class ProveedoresPage : ContentPage
             AutorizacionService.Puede(_sesion.Usuario, PermisoSistema.PagarProveedor);
         var puedeEditar = _sesion.Usuario != null &&
             AutorizacionService.Puede(_sesion.Usuario, PermisoSistema.EditarProveedor);
+        var puedeCambiarEstado = _sesion.Usuario != null &&
+            AutorizacionService.Puede(_sesion.Usuario, PermisoSistema.CambiarEstadoProveedor);
 
         ListaProveedores.ItemsSource = mostrados.Select(p => new ProveedorFila
         {
@@ -67,13 +79,17 @@ public partial class ProveedoresPage : ContentPage
             DireccionReal = p.Direccion ?? string.Empty,
             TieneDireccion = !string.IsNullOrWhiteSpace(p.Direccion),
             Saldo = Formato.Moneda(p.SaldoPendiente),
-            Estado = p.SaldoPendiente > 0 ? "Saldo pendiente" : "Al día",
-            EstadoColor = p.SaldoPendiente > 0 ? ColorSaldo : ColorAlDia,
+            Estado = !p.Activo
+                ? p.SaldoPendiente > 0 ? "Inactivo · Saldo pendiente" : "Inactivo · Al día"
+                : p.SaldoPendiente > 0 ? "Saldo pendiente" : "Al día",
+            EstadoColor = !p.Activo ? Colors.Gray : p.SaldoPendiente > 0 ? ColorSaldo : ColorAlDia,
+            Activo = p.Activo,
             PuedePagar = puedePagar && p.SaldoPendiente > 0,
-            PuedeEditar = puedeEditar
+            PuedeEditar = puedeEditar,
+            PuedeCambiarEstado = puedeCambiarEstado
         }).ToList();
 
-        ListaVaciaLabel.Text = filtro.Length > 0 || _soloConSaldo
+        ListaVaciaLabel.Text = filtro.Length > 0 || _filtro != FiltroProveedores.Todos
             ? "No hay proveedores que coincidan con el filtro."
             : "Aún no hay proveedores registrados. Usa + Nuevo para dar de alta al primero.";
 
@@ -83,13 +99,14 @@ public partial class ProveedoresPage : ContentPage
     private void ActualizarFiltros(List<Proveedor> todos, int mostrados)
     {
         var conSaldo = todos.Count(p => p.SaldoPendiente > 0);
+        var inactivos = todos.Count(p => !p.Activo);
         FiltroTodosButton.Text = $"Todos ({todos.Count})";
         FiltroSaldoButton.Text = $"Con saldo ({conSaldo})";
+        FiltroInactivosButton.Text = $"Inactivos ({inactivos})";
 
-        FiltroTodosButton.BackgroundColor = _soloConSaldo ? Colors.Transparent : ColorPrimario;
-        FiltroTodosButton.TextColor = _soloConSaldo ? ColorPrimario : Colors.White;
-        FiltroSaldoButton.BackgroundColor = _soloConSaldo ? ColorPrimario : Colors.Transparent;
-        FiltroSaldoButton.TextColor = _soloConSaldo ? Colors.White : ColorPrimario;
+        MarcarFiltro(FiltroTodosButton, _filtro == FiltroProveedores.Todos);
+        MarcarFiltro(FiltroSaldoButton, _filtro == FiltroProveedores.ConSaldo);
+        MarcarFiltro(FiltroInactivosButton, _filtro == FiltroProveedores.Inactivos);
 
         ResultadosLabel.Text = mostrados == 1
             ? "1 proveedor"
@@ -106,16 +123,67 @@ public partial class ProveedoresPage : ContentPage
 
     private void OnFiltroTodosClicked(object sender, EventArgs e)
     {
-        _soloConSaldo = false;
+        _filtro = FiltroProveedores.Todos;
         BuscarEntry.Text = string.Empty;
         Cargar();
     }
 
     private void OnFiltroSaldoClicked(object sender, EventArgs e)
     {
-        _soloConSaldo = true;
+        _filtro = FiltroProveedores.ConSaldo;
         BuscarEntry.Text = string.Empty;
         Cargar();
+    }
+
+    private void OnFiltroInactivosClicked(object sender, EventArgs e)
+    {
+        _filtro = FiltroProveedores.Inactivos;
+        BuscarEntry.Text = string.Empty;
+        Cargar();
+    }
+
+    private void MarcarFiltro(Button boton, bool seleccionado)
+    {
+        boton.BackgroundColor = seleccionado ? ColorPrimario : Colors.Transparent;
+        boton.TextColor = seleccionado ? Colors.White : ColorPrimario;
+    }
+
+    private async void OnCambiarEstadoClicked(object sender, EventArgs e)
+    {
+        if (sender is not Button { CommandParameter: ProveedorFila fila })
+            return;
+
+        if (_sesion.Usuario == null ||
+            !AutorizacionService.Puede(_sesion.Usuario, PermisoSistema.CambiarEstadoProveedor))
+        {
+            await DisplayAlertAsync("Sin permiso", "Solo el dueño puede dar de baja o reactivar proveedores.", "Continuar");
+            return;
+        }
+
+        var reactivar = !fila.Activo;
+        var confirmar = await DisplayAlertAsync(
+            reactivar ? "Reactivar proveedor" : "Dar de baja al proveedor",
+            reactivar
+                ? "El proveedor volverá a aparecer como activo en el directorio."
+                : "Se conservará su historial. Si tiene saldo pendiente, podrás registrar pagos para liquidarlo.",
+            reactivar ? "Reactivar" : "Dar de baja",
+            "Cancelar");
+        if (!confirmar)
+            return;
+
+        _sesion.Aplicar();
+        var resultado = reactivar
+            ? _config.ReactivarProveedor(fila.Id)
+            : _config.DesactivarProveedor(fila.Id);
+        if (resultado.IsError)
+        {
+            await DisplayAlertAsync("No se pudo cambiar el estado", resultado.Message, "Continuar");
+            return;
+        }
+
+        Cargar();
+        await DisplayAlertAsync(reactivar ? "Proveedor reactivado" : "Proveedor dado de baja",
+            resultado.Message, "Continuar");
     }
 
     private void OnRefrescando(object sender, EventArgs e)
@@ -168,6 +236,13 @@ public partial class ProveedoresPage : ContentPage
         try
         {
             _sesion.Aplicar();
+            if (!await ConfirmarPosiblesDuplicadosProveedorAsync(
+                    NombreEntry.Text ?? string.Empty,
+                    ClaveEntry.Text ?? string.Empty,
+                    null,
+                    NuevoErrorLabel))
+                return;
+
             var resultado = _config.AgregarProveedor(new Proveedor
             {
                 Nombre = NombreEntry.Text ?? string.Empty,
@@ -185,7 +260,7 @@ public partial class ProveedoresPage : ContentPage
 
             NuevoOverlay.IsVisible = false;
             BuscarEntry.Text = string.Empty;
-            _soloConSaldo = false;
+            _filtro = FiltroProveedores.Todos;
             Cargar();
             await DisplayAlertAsync("Proveedor agregado", resultado.Message, "Continuar");
         }
@@ -321,6 +396,13 @@ public partial class ProveedoresPage : ContentPage
         try
         {
             _sesion.Aplicar();
+            if (!await ConfirmarPosiblesDuplicadosProveedorAsync(
+                    EditarNombreEntry.Text ?? string.Empty,
+                    EditarClaveEntry.Text ?? string.Empty,
+                    _proveedorEstado.Id,
+                    EditarErrorLabel))
+                return;
+
             var resultado = _config.EditarProveedor(
                 _proveedorEstado.Id,
                 EditarNombreEntry.Text ?? string.Empty,
@@ -357,6 +439,30 @@ public partial class ProveedoresPage : ContentPage
         {
             GuardarEdicionButton.IsEnabled = true;
         }
+    }
+
+    private async Task<bool> ConfirmarPosiblesDuplicadosProveedorAsync(
+        string nombre, string clave, int? excluirProveedorId, Label errorLabel)
+    {
+        var resultado = _config.DetectarDuplicadosProveedor(nombre, clave, excluirProveedorId);
+        if (resultado.IsError)
+        {
+            MostrarError(errorLabel, resultado.Message);
+            return false;
+        }
+
+        var coincidencias = resultado.Value;
+        if (coincidencias.Count == 0)
+            return true;
+
+        var detalle = string.Join("\n", coincidencias.Select(proveedor =>
+            $"- {proveedor.Nombre} · " +
+            (string.IsNullOrWhiteSpace(proveedor.Clave) ? "sin clave" : proveedor.Clave)));
+        return await DisplayAlertAsync(
+            "Posible proveedor duplicado",
+            $"Coincide el nombre o clave con:\n{detalle}\n\n¿Deseas guardar de todos modos?",
+            "Guardar",
+            "Revisar");
     }
 
     private void OnPagarClicked(object sender, EventArgs e)

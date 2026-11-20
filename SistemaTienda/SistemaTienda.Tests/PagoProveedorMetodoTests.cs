@@ -172,6 +172,8 @@ public sealed class PagoProveedorMetodoTests
         // Simula una base v8: quita las columnas nuevas y baja la versión.
         bd.Db.ExecuteCommand("ALTER TABLE PagosProveedor DROP COLUMN MetodoPago");
         bd.Db.ExecuteCommand("ALTER TABLE PagosProveedor DROP COLUMN MovimientoCajaId");
+        bd.Db.ExecuteCommand("ALTER TABLE ClientesFiado DROP COLUMN Activo");
+        bd.Db.ExecuteCommand("ALTER TABLE Proveedores DROP COLUMN Activo");
         bd.Db.ExecuteCommand("PRAGMA user_version = 8");
 
         bd.Db.ExecuteCommand(@"

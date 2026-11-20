@@ -313,6 +313,40 @@ public class ConfiguracionService
     public ProcessResult<List<ClienteFiado>> ObtenerClientesConSaldo() =>
         ProcessResult<List<ClienteFiado>>.OK(_db.ObtenerClientesConSaldo());
 
+    public ProcessResult DesactivarCliente(int clienteId) =>
+        CambiarEstadoCliente(clienteId, activo: false);
+
+    public ProcessResult ReactivarCliente(int clienteId) =>
+        CambiarEstadoCliente(clienteId, activo: true);
+
+    private ProcessResult CambiarEstadoCliente(int clienteId, bool activo)
+    {
+        var autorizacion = Autorizar(PermisoSistema.CambiarEstadoCliente);
+        if (autorizacion.IsError)
+            return autorizacion;
+
+        var cliente = _db.ObtenerClienteFiadoPorId(clienteId);
+        if (cliente == null)
+            return ProcessResult.Error("Cliente no encontrado");
+
+        if (cliente.Activo == activo)
+            return ProcessResult.Error(activo
+                ? "El cliente ya está activo"
+                : "El cliente ya está inactivo");
+
+        if (!_db.CambiarEstadoCliente(clienteId, activo))
+            return ProcessResult.Error("No se pudo cambiar el estado del cliente");
+
+        _bitacora.Registrar(AccionBitacora.CambiarEstadoCliente, "ClienteFiado",
+            clienteId.ToString(),
+            $"Nombre={cliente.Nombre};Activo={(cliente.Activo ? 1 : 0)};Saldo={Dinero.Formatear(cliente.SaldoActual)}",
+            $"Nombre={cliente.Nombre};Activo={(activo ? 1 : 0)};Saldo={Dinero.Formatear(cliente.SaldoActual)}");
+
+        return ProcessResult.Success(activo
+            ? "Cliente reactivado; podrá recibir nuevas ventas a fiado"
+            : "Cliente dado de baja. Se conserva su historial y se pueden registrar abonos, pero no nuevas ventas a fiado");
+    }
+
     /// <summary>
     /// Filtra por nombre o teléfono sin distinguir mayúsculas ni acentos.
     /// </summary>
@@ -335,6 +369,24 @@ public class ConfiguracionService
         return ProcessResult<List<ClienteFiado>>.OK(lista);
     }
 
+    public ProcessResult<List<ClienteFiado>> DetectarDuplicadosCliente(
+        string nombre, string telefono, int? excluirClienteId = null)
+    {
+        var nombreNormalizado = NormalizarTextoDuplicado(nombre);
+        var telefonoNormalizado = NormalizarTelefono(telefono);
+        var coincidencias = _db.ObtenerTodosLosClientes()
+            .Where(cliente =>
+                (!excluirClienteId.HasValue || cliente.Id != excluirClienteId.Value) &&
+                ((nombreNormalizado.Length > 0 &&
+                  StringComparer.OrdinalIgnoreCase.Equals(
+                      NormalizarTextoDuplicado(cliente.Nombre), nombreNormalizado)) ||
+                 (telefonoNormalizado.Length > 0 &&
+                  NormalizarTelefono(cliente.Telefono) == telefonoNormalizado)))
+            .ToList();
+
+        return ProcessResult<List<ClienteFiado>>.OK(coincidencias);
+    }
+
     private static string SinAcentos(string texto)
     {
         var normalizado = texto.Normalize(NormalizationForm.FormD);
@@ -347,6 +399,16 @@ public class ConfiguracionService
 
         return constructor.ToString().Normalize(NormalizationForm.FormC);
     }
+
+    private static string NormalizarTextoDuplicado(string texto)
+    {
+        var partes = SinAcentos((texto ?? string.Empty).Trim())
+            .Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
+        return string.Join(" ", partes);
+    }
+
+    private static string NormalizarTelefono(string telefono) =>
+        new((telefono ?? string.Empty).Where(char.IsDigit).ToArray());
 
     /// <summary>
     /// Corrige nombre y teléfono de un cliente existente. No toca el saldo:
@@ -476,6 +538,40 @@ public class ConfiguracionService
     public ProcessResult<List<Proveedor>> ObtenerTodosLosProveedores() =>
         ProcessResult<List<Proveedor>>.OK(_db.ObtenerTodosLosProveedores());
 
+    public ProcessResult DesactivarProveedor(int proveedorId) =>
+        CambiarEstadoProveedor(proveedorId, activo: false);
+
+    public ProcessResult ReactivarProveedor(int proveedorId) =>
+        CambiarEstadoProveedor(proveedorId, activo: true);
+
+    private ProcessResult CambiarEstadoProveedor(int proveedorId, bool activo)
+    {
+        var autorizacion = Autorizar(PermisoSistema.CambiarEstadoProveedor);
+        if (autorizacion.IsError)
+            return autorizacion;
+
+        var proveedor = _db.ObtenerProveedorPorId(proveedorId);
+        if (proveedor == null)
+            return ProcessResult.Error("Proveedor no encontrado");
+
+        if (proveedor.Activo == activo)
+            return ProcessResult.Error(activo
+                ? "El proveedor ya está activo"
+                : "El proveedor ya está inactivo");
+
+        if (!_db.CambiarEstadoProveedor(proveedorId, activo))
+            return ProcessResult.Error("No se pudo cambiar el estado del proveedor");
+
+        _bitacora.Registrar(AccionBitacora.CambiarEstadoProveedor, "Proveedor",
+            proveedorId.ToString(),
+            $"Nombre={proveedor.Nombre};Activo={(proveedor.Activo ? 1 : 0)};Saldo={Dinero.Formatear(proveedor.SaldoPendiente)}",
+            $"Nombre={proveedor.Nombre};Activo={(activo ? 1 : 0)};Saldo={Dinero.Formatear(proveedor.SaldoPendiente)}");
+
+        return ProcessResult.Success(activo
+            ? "Proveedor reactivado y disponible en el directorio"
+            : "Proveedor dado de baja. Se conserva su historial y se pueden registrar pagos para liquidar el saldo");
+    }
+
     /// <summary>
     /// Filtra por nombre, clave o teléfono sin distinguir mayúsculas ni acentos.
     /// </summary>
@@ -497,6 +593,25 @@ public class ConfiguracionService
             .ToList();
 
         return ProcessResult<List<Proveedor>>.OK(lista);
+    }
+
+    public ProcessResult<List<Proveedor>> DetectarDuplicadosProveedor(
+        string nombre, string clave, int? excluirProveedorId = null)
+    {
+        var nombreNormalizado = NormalizarTextoDuplicado(nombre);
+        var claveNormalizada = NormalizarTextoDuplicado(clave);
+        var coincidencias = _db.ObtenerTodosLosProveedores()
+            .Where(proveedor =>
+                (!excluirProveedorId.HasValue || proveedor.Id != excluirProveedorId.Value) &&
+                ((nombreNormalizado.Length > 0 &&
+                  StringComparer.OrdinalIgnoreCase.Equals(
+                      NormalizarTextoDuplicado(proveedor.Nombre), nombreNormalizado)) ||
+                 (claveNormalizada.Length > 0 &&
+                  StringComparer.OrdinalIgnoreCase.Equals(
+                      NormalizarTextoDuplicado(proveedor.Clave), claveNormalizada))))
+            .ToList();
+
+        return ProcessResult<List<Proveedor>>.OK(coincidencias);
     }
 
     /// <summary>

@@ -114,6 +114,10 @@ public class VentaService
             if (cliente == null)
                 return ProcessResult<Venta>.Error("Cliente no encontrado");
 
+            if (!cliente.Activo)
+                return ProcessResult<Venta>.Error(
+                    "El cliente está inactivo y no puede recibir nuevas ventas a fiado");
+
             var nuevoSaldo = cliente.SaldoActual + pago.Fiado;
             if (config.LimiCreditoCliente > 0 && nuevoSaldo > config.LimiCreditoCliente)
                 return ProcessResult<Venta>.Error(

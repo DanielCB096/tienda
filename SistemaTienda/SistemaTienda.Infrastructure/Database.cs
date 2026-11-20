@@ -804,6 +804,18 @@ public class DatabaseTools
         return filas > 0;
     }
 
+    public bool CambiarEstadoCliente(int clienteId, bool activo)
+    {
+        var filas = ExecuteCommand(@"
+            UPDATE ClientesFiado
+            SET Activo = @activo, UltimaActualizacion = datetime('now')
+            WHERE Id = @id",
+            new SqliteParameter("@id", clienteId),
+            new SqliteParameter("@activo", activo ? 1 : 0));
+
+        return filas > 0;
+    }
+
     public List<VentaFiadaCliente> ObtenerVentasFiadasDeCliente(int clienteId) =>
         ExecuteReportObjects<VentaFiadaCliente>(@"
             SELECT v.Id, v.Fecha, v.Total, v.PagoFiado, v.MetodoPago, v.Usuario
@@ -911,6 +923,18 @@ public class DatabaseTools
             new SqliteParameter("@clave", clave ?? string.Empty),
             new SqliteParameter("@telefono", telefono ?? string.Empty),
             new SqliteParameter("@direccion", direccion ?? string.Empty));
+
+        return filas > 0;
+    }
+
+    public bool CambiarEstadoProveedor(int proveedorId, bool activo)
+    {
+        var filas = ExecuteCommand(@"
+            UPDATE Proveedores
+            SET Activo = @activo, UltimaActualizacion = datetime('now')
+            WHERE Id = @id",
+            new SqliteParameter("@id", proveedorId),
+            new SqliteParameter("@activo", activo ? 1 : 0));
 
         return filas > 0;
     }
@@ -1116,16 +1140,21 @@ public class DatabaseTools
             return "El fiado está desactivado";
 
         long saldoActual;
+        bool clienteActivo;
         using (var cmd = conn.CreateCommand())
         {
             cmd.Transaction = tx;
-            cmd.CommandText = "SELECT SaldoActual FROM ClientesFiado WHERE Id = @id";
+            cmd.CommandText = "SELECT SaldoActual, Activo FROM ClientesFiado WHERE Id = @id";
             cmd.Parameters.AddWithValue("@id", venta.ClienteId.Value);
-            var valor = cmd.ExecuteScalar();
-            if (valor == null || valor == DBNull.Value)
+            using var reader = cmd.ExecuteReader();
+            if (!reader.Read())
                 return "Cliente no encontrado";
-            saldoActual = Convert.ToInt64(valor, CultureInfo.InvariantCulture);
+            saldoActual = Convert.ToInt64(reader.GetValue(0), CultureInfo.InvariantCulture);
+            clienteActivo = Convert.ToInt64(reader.GetValue(1), CultureInfo.InvariantCulture) != 0;
         }
+
+        if (!clienteActivo)
+            return "El cliente está inactivo y no puede recibir nuevas ventas a fiado";
 
         var nuevoSaldo = saldoActual + venta.PagoFiado;
         if (limite > 0 && nuevoSaldo > limite)

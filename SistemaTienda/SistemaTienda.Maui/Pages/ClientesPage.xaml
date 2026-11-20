@@ -54,7 +54,7 @@
                         Clicked="OnBuscarClicked" />
             </Grid>
 
-            <Grid Grid.Row="3" ColumnDefinitions="Auto,Auto,*" ColumnSpacing="8">
+            <Grid Grid.Row="3" ColumnDefinitions="Auto,Auto,Auto,*" ColumnSpacing="8">
                 <Button x:Name="FiltroTodosButton"
                         Text="Todos"
                         Style="{StaticResource BotonSecundario}"
@@ -70,8 +70,16 @@
                         Padding="12,0"
                         FontSize="13"
                         Clicked="OnFiltroSaldoClicked" />
+                <Button x:Name="FiltroInactivosButton"
+                        Grid.Column="2"
+                        Text="Inactivos"
+                        Style="{StaticResource BotonSecundario}"
+                        HeightRequest="38"
+                        Padding="12,0"
+                        FontSize="13"
+                        Clicked="OnFiltroInactivosClicked" />
                 <Label x:Name="ResultadosLabel"
-                       Grid.Column="2"
+                       Grid.Column="3"
                        Style="{StaticResource TextoNota}"
                        VerticalOptions="Center"
                        HorizontalTextAlignment="End" />
@@ -114,6 +122,13 @@
                                                     CommandParameter="{Binding .}"
                                                     Clicked="OnAbonarClicked"
                                                     IsVisible="{Binding PuedeAbonar}"
+                                                    Style="{StaticResource BotonSecundario}"
+                                                    WidthRequest="88"
+                                                    HeightRequest="38" />
+                                            <Button Text="{Binding AccionEstado}"
+                                                    CommandParameter="{Binding .}"
+                                                    Clicked="OnCambiarEstadoClicked"
+                                                    IsVisible="{Binding PuedeCambiarEstado}"
                                                     Style="{StaticResource BotonSecundario}"
                                                     WidthRequest="88"
                                                     HeightRequest="38" />

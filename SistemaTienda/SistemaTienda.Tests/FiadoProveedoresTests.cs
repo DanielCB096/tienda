@@ -313,4 +313,54 @@ public sealed class FiadoProveedoresTests
         Assert.Contains("Doña Mari", registro.DatosDespues);
         Assert.Equal("Dueño", registro.Usuario);
     }
+
+    [Fact]
+    public void DetectarDuplicadosCliente_ComparaNombreYTelefonoNormalizadosYPermiteExcluirlo()
+    {
+        using var bd = new BaseDatosPrueba();
+        bd.ConfigurarTienda();
+        var alta = bd.Config.AgregarClienteFiado(new ClienteFiado
+        {
+            Nombre = "María   López",
+            Telefono = "(555) 123-4567"
+        });
+        bd.Config.AgregarClienteFiado(new ClienteFiado { Nombre = "Cliente sin teléfono" });
+        var clienteId = alta.Value.ClienteId;
+
+        var porNombre = bd.Config.DetectarDuplicadosCliente("MARIA LOPEZ", "5551234567");
+        var porTelefono = bd.Config.DetectarDuplicadosCliente("Otra persona", "5551234567");
+        var sinDatoDeContacto = bd.Config.DetectarDuplicadosCliente("Otra persona", "");
+        var alEditarElMismo = bd.Config.DetectarDuplicadosCliente(
+            "María López", "(555) 123-4567", clienteId);
+
+        Assert.Equal(clienteId, Assert.Single(porNombre.Value).Id);
+        Assert.Equal(clienteId, Assert.Single(porTelefono.Value).Id);
+        Assert.Empty(sinDatoDeContacto.Value);
+        Assert.Empty(alEditarElMismo.Value);
+    }
+
+    [Fact]
+    public void DetectarDuplicadosProveedor_ComparaNombreYClaveNormalizadosYPermiteExcluirlo()
+    {
+        using var bd = new BaseDatosPrueba();
+        bd.ConfigurarTienda();
+        var alta = bd.Config.AgregarProveedor(new Proveedor
+        {
+            Nombre = "Distribuidora Núñez",
+            Clave = "DNU010101ABC"
+        });
+        bd.Config.AgregarProveedor(new Proveedor { Nombre = "Proveedor sin clave" });
+        var proveedorId = alta.Value.ProveedorId;
+
+        var porNombre = bd.Config.DetectarDuplicadosProveedor("DISTRIBUIDORA NUNEZ", "dnu010101abc");
+        var porClave = bd.Config.DetectarDuplicadosProveedor("Otro proveedor", "dnu010101abc");
+        var sinClave = bd.Config.DetectarDuplicadosProveedor("Otro proveedor", "");
+        var alEditarElMismo = bd.Config.DetectarDuplicadosProveedor(
+            "Distribuidora Núñez", "DNU010101ABC", proveedorId);
+
+        Assert.Equal(proveedorId, Assert.Single(porNombre.Value).Id);
+        Assert.Equal(proveedorId, Assert.Single(porClave.Value).Id);
+        Assert.Empty(sinClave.Value);
+        Assert.Empty(alEditarElMismo.Value);
+    }
 }
