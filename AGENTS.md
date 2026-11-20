@@ -89,7 +89,7 @@ Cada agente: su carpeta, su rama y su PR.
 - Edición y estado de cuenta de clientes (T22) verificado en vivo en Windows el 2026-11-19: botón **Estado** con saldo vigente, total fiado, total abonado e historial de ventas a fiado y abonos (sin anuladas). La edición de nombre y teléfono con permiso `EditarCliente`, bitácora y saldo intacto sigue cubierta por pruebas y conserva la misma pantalla. Android pendiente.
 - Proveedores (T19, T23 y T25) verificado en vivo en Windows el 2026-11-19 con datos ficticios: alta, aviso de duplicado, pago con tarjeta (sin caja) y con efectivo (retiro de caja #1), estado de cuenta con saldo, total pagado, método, usuario y retiro ligado, y baja/reactivación. La edición de datos sigue cubierta por pruebas de servicio. Android pendiente.
 - Gastos (T21) verificado en vivo en Windows el 2026-11-19: alta de un gasto de caja con método efectivo, resumen por origen, historial y reducción del efectivo esperado del corte. Android pendiente.
-- Reportes (T24) verificado en vivo en Windows el 2026-11-19: filtro **Hoy**, ventas cobradas $35.50, costo $18.00, comisión $0.00, utilidad bruta $17.50, gastos $15.00 y utilidad neta $2.50; tras anular la venta en efectivo quedó 1 venta por $15.50 y utilidad neta de -$7.50. Los filtros **Este mes** y **Rango** comparten `PeriodoReporte` con pruebas unitarias. Android pendiente.
+- Reportes (T24) verificado en vivo en Windows el 2026-11-19: filtro **Hoy**, ventas cobradas $35.50, costo $18.00, comisión $0.00, utilidad bruta $17.50, gastos $15.00 y utilidad neta $2.50; tras anular la venta en efectivo quedó 1 venta por $15.50 y utilidad neta de -$7.50. Los filtros **Este mes** y **Rango** comparten `PeriodoReporte` con pruebas unitarias. Verificado también en Android 16 el 2026-11-19 (1 venta por $20.00, utilidad neta $10.00).
 - Implementado: configuración inicial, usuarios/PIN/roles, gastos (consola y app), inventario por movimientos con desactivación de productos, ventas/POS (efectivo, tarjeta, mixto y fiado; costo y precio congelados; comisión; anulación completa con reverso), fiado y proveedores con historial, estados de cuenta, duplicados detectados y baja/reactivación lógica (esquema v10; solo dueño; se conservan saldos e historial, se permite liquidarlos y se bloquea nuevo fiado para clientes inactivos), corte de caja, conteo por denominaciones, bitácora inmutable y permisos en servicios, migraciones con respaldo, respaldo/restauración, dinero en centavos, reportes de utilidad y app MAUI para Windows y Android.
 - No implementado: borrado físico de clientes y proveedores, edición/borrado y fecha retroactiva de gastos, filtro por categoría en la app, exportación o impresión de reportes, copia de respaldos a USB/nube, persistencia del desglose por denominaciones y compartir el QR como imagen.
 - Deuda principal: historial de proveedores solo desde el esquema v8 (los pagos anteriores no se reconstruyen y los previos a v9 no tienen método), merma sin entidad propia, bitácora no atómica con la operación, entrada de inventario que no actualiza el costo del catálogo, clientes sin método de abono, gastos sin edición ni reporte por categoría, reportes sin exportación ni comparación entre periodos, conteo sin desglose persistido, QR limitado a diez productos y sin imagen compartible, app MAUI sin pruebas automatizadas y validación de Android en dispositivo.
@@ -194,7 +194,7 @@ El detalle vive en el tablero. Resumen y criterios de terminado:
 - Asistente de primera configuración, login con 3 intentos, tablero con Inicio/Ventas/Caja/Ajustes, respaldo automático al iniciar y cerrar sesión, respaldo manual y cierre de sesión.
 - `SesionApp` reaplica `SesionActual` en cada evento porque `AsyncLocal` no persiste entre eventos de interfaz.
 - Job `app-maui` en CI compila Windows y Android.
-- Verificado manualmente en Windows; Android pendiente de probar en dispositivo.
+- Verificado manualmente en Windows y en Android 16 (Redmi Note 13) el 2026-11-19.
 - Detalle en [SistemaTienda/docs/02-modulos/interfaz-maui.md](SistemaTienda/docs/02-modulos/interfaz-maui.md).
 
 ### T13 — POS en app MAUI (HECHO)
@@ -385,6 +385,10 @@ dotnet run --project SistemaTienda/SistemaTienda.Maui/SistemaTienda.Maui.csproj 
 
 # Compilar para Android (requiere Android SDK y JDK 17)
 dotnet build SistemaTienda/SistemaTienda.Maui/SistemaTienda.Maui.csproj -f net10.0-android
+
+# Instalar el APK por adb: en Debug hay que embeber los ensamblados
+dotnet build SistemaTienda/SistemaTienda.Maui/SistemaTienda.Maui.csproj -f net10.0-android -p:EmbedAssembliesIntoApk=true
+adb install -r SistemaTienda/SistemaTienda.Maui/bin/Debug/net10.0-android/<ApplicationId>-Signed.apk
 ```
 
 Entorno conocido: el equipo tiene runtime **.NET 10** y SDK 10; los proyectos `net8.0` usan `RollForward=Major` para ejecutarse. Si creas un nuevo ejecutable o proyecto de pruebas, agrega la misma propiedad o fallará al arrancar. La app MAUI usa los frameworks `net10.0-android` y `net10.0-windows10.0.19041.0` y requiere las cargas de trabajo `maui-windows` y `maui-android` instaladas.
