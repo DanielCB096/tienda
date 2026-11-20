@@ -755,12 +755,14 @@ public class DatabaseTools
         conn.Open();
         using var cmd = conn.CreateCommand();
         cmd.CommandText = @"
-            INSERT INTO ClientesFiado (Nombre, Telefono, SaldoActual)
-            VALUES (@nombre, @telefono, @saldo);
+            INSERT INTO ClientesFiado (Nombre, Telefono, SaldoActual, FechaRegistro)
+            VALUES (@nombre, @telefono, @saldo, @fecha);
             SELECT last_insert_rowid();";
         cmd.Parameters.AddWithValue("@nombre", cliente.Nombre);
         cmd.Parameters.AddWithValue("@telefono", cliente.Telefono ?? string.Empty);
         cmd.Parameters.AddWithValue("@saldo", cliente.SaldoActual);
+        // datetime('now') de SQLite es UTC; la fecha de alta es de negocio y va en hora local.
+        cmd.Parameters.AddWithValue("@fecha", cliente.FechaRegistro);
 
         cliente.Id = Convert.ToInt32(cmd.ExecuteScalar(), CultureInfo.InvariantCulture);
         return cliente.Id;
@@ -887,14 +889,16 @@ public class DatabaseTools
         conn.Open();
         using var cmd = conn.CreateCommand();
         cmd.CommandText = @"
-            INSERT INTO Proveedores (Nombre, Clave, Telefono, Direccion, SaldoPendiente)
-            VALUES (@nombre, @clave, @telefono, @direccion, @saldo);
+            INSERT INTO Proveedores (Nombre, Clave, Telefono, Direccion, SaldoPendiente, FechaRegistro)
+            VALUES (@nombre, @clave, @telefono, @direccion, @saldo, @fecha);
             SELECT last_insert_rowid();";
         cmd.Parameters.AddWithValue("@nombre", proveedor.Nombre);
         cmd.Parameters.AddWithValue("@clave", proveedor.Clave ?? string.Empty);
         cmd.Parameters.AddWithValue("@telefono", proveedor.Telefono ?? string.Empty);
         cmd.Parameters.AddWithValue("@direccion", proveedor.Direccion ?? string.Empty);
         cmd.Parameters.AddWithValue("@saldo", proveedor.SaldoPendiente);
+        // datetime('now') de SQLite es UTC; la fecha de alta es de negocio y va en hora local.
+        cmd.Parameters.AddWithValue("@fecha", proveedor.FechaRegistro);
 
         proveedor.Id = Convert.ToInt32(cmd.ExecuteScalar(), CultureInfo.InvariantCulture);
         return proveedor.Id;
