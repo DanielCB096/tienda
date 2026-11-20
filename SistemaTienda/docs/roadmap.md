@@ -1,6 +1,6 @@
 # Roadmap
 
-Estado al 2026-11-12. T1–T25 están integradas en main (86cbf67); T26, T27 y T28 están implementadas en sus ramas y pendientes de revisión, verificación manual e integración. Orden sugerido en [CLAUDE-tienda.md §13](../CLAUDE-tienda.md).
+Estado al 2026-11-19. T1–T25 están integradas en `main` (`86cbf67`); T26, T27 y T28 están implementadas, verificadas manualmente en Windows y pendientes de aprobación e integración. La verificación en vivo encontró y corrigió el alta de clientes/proveedores con fecha UTC; la suite queda en 264 pruebas. Orden sugerido en [CLAUDE-tienda.md §13](../CLAUDE-tienda.md).
 
 ## Avance por módulo
 
@@ -24,9 +24,9 @@ Estado al 2026-11-12. T1–T25 están integradas en main (86cbf67); T26, T27 y T
 ## Siguiente trabajo recomendado
 
 1. **Plantillas por giro para importar catálogos**, si se requieren; CSV y XLSX de productos ya están implementados en T6/T28.
-3. **Copia de respaldos a USB o nube personal** (Fase 2).
-4. **Descuentos** por línea o venta (Fase 2).
-5. **Persistir el desglose por denominaciones** y llevarlo a la consola, si se requiere auditoría.
+2. **Copia de respaldos a USB o nube personal** (Fase 2).
+3. **Descuentos** por línea o venta (Fase 2).
+4. **Persistir el desglose por denominaciones** y llevarlo a la consola, si se requiere auditoría.
 
 ## Riesgos abiertos
 
@@ -34,7 +34,7 @@ Estado al 2026-11-12. T1–T25 están integradas en main (86cbf67); T26, T27 y T
 - La bitácora se escribe después de la operación: una falla al registrarla deja la acción aplicada sin auditoría.
 - La anulación devuelve stock y revierte el fiado, pero no mueve efectivo: la venta se excluye del corte y, si el reembolso se paga después de cerrarlo, debe registrarse como retiro en el corte siguiente.
 - El respaldo automático se evalúa al iniciar o cerrar: en una sesión abierta varios días la copia puede quedar vieja hasta el cierre.
-- La app MAUI (POS, Ventas, Clientes, Proveedores, Gastos, Inventario, Caja, Reportes, sesión y respaldos) no tiene pruebas automatizadas de interfaz; un error de carrito, cobro, anulación, abono, edición de cliente o proveedor, baja/reactivación, pago, gasto, conteo, movimiento de inventario o periodo de reporte se detecta en la verificación manual. El texto y el QR del ticket, la búsqueda de clientes y proveedores, el resumen de gastos, los estados de cuenta de clientes y proveedores, el cálculo del conteo y los límites de `PeriodoReporte` sí están cubiertos por pruebas unitarias. Las pantallas de Clientes (T18/T22/T27), Proveedores (T19/T23/T27), la desactivación de productos (T20), Gastos (T21), Reportes (T24) y la baja/reactivación (T27) quedaron sin verificación manual porque el entorno no permitió abrir la GUI.
+- La app MAUI (POS, Ventas, Clientes, Proveedores, Gastos, Inventario, Caja, Reportes, sesión y respaldos) no tiene pruebas automatizadas de interfaz; un error de carrito, cobro, anulación, abono, edición de cliente o proveedor, baja/reactivación, pago, gasto, conteo, movimiento de inventario o periodo de reporte se detecta en la verificación manual. El texto y el QR del ticket, la búsqueda de clientes y proveedores, el resumen de gastos, los estados de cuenta de clientes y proveedores, el cálculo del conteo y los límites de `PeriodoReporte` sí están cubiertos por pruebas unitarias. Las pantallas de Clientes (T18/T22/T27), Proveedores (T19/T23/T27), la desactivación de productos (T20), Gastos (T21), Reportes (T24), la importación XLSX (T28) y la baja/reactivación (T27) se verificaron en vivo en Windows el 2026-11-19; Android sigue sin probarse en dispositivo.
 - Los gastos registrados en la app no se editan ni se borran, no admiten fecha retroactiva y su reporte por categoría o periodo sigue en la consola.
 - El pago a proveedores elige método (efectivo, tarjeta, transferencia u otro) y, si es en efectivo, genera un retiro de caja en la misma transacción que el historial y el saldo. Los pagos anteriores al esquema v9 no tienen método ni movimiento de caja y así se muestran. El historial solo cubre los pagos hechos desde el esquema v8.
 - El QR del ticket es informativo y offline: no es un comprobante fiscal, no se comparte como imagen, resume hasta diez productos y la reimpresión no incluye el efectivo recibido.
@@ -42,3 +42,4 @@ Estado al 2026-11-12. T1–T25 están integradas en main (86cbf67); T26, T27 y T
 - La app MAUI usa .NET 10 y las bibliotecas `net8.0`; si una biblioteca agrega APIs no disponibles en net8.0 habrá que subir su framework o aislar la dependencia.
 - La app MAUI solo se ha probado en Windows; Android se compila en CI pero no se ha ejecutado en un dispositivo real.
 - T27 agrega baja lógica solo para el dueño. Las cuentas inactivas conservan historial y admiten abonos/pagos para liquidar el saldo; el nuevo fiado a clientes inactivos se bloquea también en la capa de datos.
+- La corrección de fechas locales aplica a las altas nuevas de clientes y proveedores. Los registros creados antes del 2026-11-19 conservan `FechaRegistro` en UTC y no se reescriben, porque no hay forma segura de distinguir la hora original.

@@ -21,14 +21,21 @@ Cada entrada tiene formato:
 
 Próximamente después de completar los módulos críticos.
 
-### v0.0.27 - 2026-11-12: Importación Excel de productos
+### v0.0.29 - 2026-11-19: Verificación manual en Windows y fechas locales
+
+- *Verificado en vivo*: app MAUI de Windows con datos ficticios y base aislada: asistente, login, tablero, alta de producto, importación XLSX con filas válidas/duplicadas/fórmula/error, desactivación y reactivación de producto, venta en efectivo con cambio y ticket QR, venta a fiado, abono, alta de cliente y proveedor con aviso de duplicado, baja y reactivación lógica, estado de cuenta de cliente y proveedor, pago a proveedor con tarjeta y con efectivo (retiro de caja automático), gasto de caja, efectivo esperado, conteo por denominaciones, corte cerrado, reportes por periodo, reimpresión de ticket, anulación de venta y bloqueo de anulación tras corte cerrado, respaldo manual verificado.
+- *Corregido*: el alta de clientes y proveedores guardaba `FechaRegistro` con el valor UTC de `datetime('now')`; ahora se guarda la fecha local del equipo, como el resto de fechas de negocio. Los registros anteriores a esta corrección conservan su valor UTC y no se reescriben.
+- *Pruebas*: `FechasLocalesTests` reproduce el defecto y cubre el alta de cliente y proveedor; suite completa con **264 pruebas** en verde.
+- *Documentación*: actualizados AGENTS, tablero de coordinación, roadmap y este changelog con el resultado de la verificación.
+
+### v0.0.28 - 2026-11-12: Importación Excel de productos
 
 - *Agregado*: la acción **Importar CSV/Excel** de Inventario acepta libros `.xlsx` y lee la primera hoja con los encabezados de productos ya definidos para CSV.
 - *Agregado*: las filas válidas se importan sin reemplazar productos; errores de datos, duplicados, fórmulas y celdas con error de Excel se reportan por número físico de fila.
 - *Agregado*: `DocumentFormat.OpenXml` permite leer el formato Open XML localmente, sin servidor ni conexión; `.xls` y plantillas por giro no forman parte del alcance.
 - *Pruebas*: cinco casos cubren valores compartidos/números, importación parcial, fila con fórmula, encabezados, permisos y archivo inválido.
 - *Documentación*: actualizados el módulo de inventario, interfaz MAUI, manual del dueño y roadmap; se agregó el ADR de la dependencia.
-- *Verificación*: solución compilada sin errores ni advertencias; 257 pruebas aprobadas; MAUI Windows compilada sin errores ni advertencias. Verificación manual del selector e importación pendiente.
+- *Verificación*: solución compilada sin errores ni advertencias; 257 pruebas aprobadas; MAUI Windows compilada sin errores ni advertencias. Selector e importación XLSX verificados en vivo en Windows el 2026-11-19: se importó la fila válida y se reportaron por fila física los duplicados, el nombre vacío, la fórmula y el costo inválido.
 
 ### v0.0.26 - 2026-11-12: Importación CSV de productos
 
@@ -55,7 +62,7 @@ Próximamente después de completar los módulos críticos.
 - *Agregado*: baja/reactivación exclusiva del dueño con permisos y bitácora; los clientes inactivos no pueden recibir nuevas ventas a fiado, y las cuentas inactivas aún admiten abonos/pagos para liquidar saldo.
 - *Agregado*: filtros de inactivos, estado visible y acciones de baja/reactivación en las pantallas MAUI de Clientes y Proveedores.
 - *Pruebas*: cuatro casos en `BajaClientesProveedoresTests`; la suite completa pasa **252 pruebas**. Se ajustaron pruebas de migración que simulan esquemas anteriores para retirar físicamente las columnas de v10.
-- *Verificación*: build de la solución y MAUI Windows sin errores ni advertencias; verificación manual de interfaz pendiente. Commit `a8f6876` publicado en `feat/baja-clientes-proveedores`.
+- *Verificación*: build de la solución y MAUI Windows sin errores ni advertencias; baja, reactivación, filtros de inactivos y distintivo verificados en vivo en Windows el 2026-11-19. Commit `a8f6876` publicado en `feat/baja-clientes-proveedores`.
 
 ### v0.0.26 - 2026-11-12: Aviso de posibles duplicados
 
@@ -63,7 +70,7 @@ Próximamente después de completar los módulos críticos.
 - *Agregado*: `DetectarDuplicadosProveedor` compara nombre y clave sin distinguir mayúsculas, acentos ni espacios repetidos; los teléfonos o claves vacíos no generan coincidencias.
 - *Modificado*: las altas en consola y app MAUI y las ediciones en la app muestran posibles coincidencias; el usuario puede cancelar o confirmar que desea continuar.
 - *Pruebas*: 2 casos nuevos en `FiadoProveedoresTests`; **248 pruebas** pasan en la solución.
-- *Verificación*: `dotnet test SistemaTienda/SistemaTienda.sln` y compilación MAUI para Windows en verde, sin advertencias. Verificación manual de la interfaz pendiente.
+- *Verificación*: `dotnet test SistemaTienda/SistemaTienda.sln` y compilación MAUI para Windows en verde, sin advertencias. Avisos de duplicado de cliente y proveedor verificados en vivo en Windows el 2026-11-19 con nombre en minúsculas y sin acentos.
 
 ### v0.0.25 - 2026-11-12: Integración de la cadena de PRs en main
 
