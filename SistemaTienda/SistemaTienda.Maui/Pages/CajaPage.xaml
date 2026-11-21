@@ -156,7 +156,7 @@
             <Border x:Name="PanelAbono" Style="{StaticResource Tarjeta}" IsVisible="False">
                 <VerticalStackLayout Spacing="8">
                     <Label Text="ABONO DE FIADO" Style="{StaticResource EtiquetaSeccion}" />
-                    <Label Text="El abono se registra como efectivo y entra al corte del periodo."
+                    <Label Text="Solo el abono en efectivo entra al corte del periodo; los demás métodos no tocan la caja."
                            Style="{StaticResource TextoNota}" />
 
                     <Label Text="Cliente" Style="{StaticResource EtiquetaSeccion}" />
@@ -171,6 +171,9 @@
                            Style="{StaticResource CampoTexto}"
                            Keyboard="Numeric"
                            Placeholder="0.00" />
+
+                    <Label Text="Método del abono" Style="{StaticResource EtiquetaSeccion}" />
+                    <Picker x:Name="MetodoAbonoPicker" Title="Selecciona el método" />
 
                     <Label x:Name="AbonoErrorLabel" Style="{StaticResource Error}" IsVisible="False" />
                     <Button x:Name="AbonoButton"

@@ -1,6 +1,6 @@
 # Roadmap
 
-Estado al 2026-11-21. T1–T29 están integradas o implementadas sobre `main`: T1–T25 en `main` (`86cbf67`), T26–T28 verificadas e integradas el 2026-11-19 y T29 (desglose de caja persistido) en `feat/desglose-caja-persistido`. La suite queda en 274 pruebas. Orden sugerido en [CLAUDE-tienda.md §13](../CLAUDE-tienda.md).
+Estado al 2026-11-21. T1–T30 están integradas o implementadas sobre `main`: T1–T25 en `main` (`86cbf67`), T26–T28 verificadas e integradas el 2026-11-19, T29 (desglose de caja persistido) en `feat/desglose-caja-persistido` y T30 (método de pago en abonos) en `feat/abonos-metodo-pago`. La suite queda en 284 pruebas. Orden sugerido en [CLAUDE-tienda.md §13](../CLAUDE-tienda.md).
 
 ## Avance por módulo
 
@@ -11,7 +11,7 @@ Estado al 2026-11-21. T1–T29 están integradas o implementadas sobre `main`: T
 | 3 | Ventas / POS | ✅ Base implementada | Venta multi-línea atómica, efectivo/tarjeta/mixto/fiado, costo y precio congelados, comisión, ticket de texto con QR informativo y anulación completa con reverso; POS, detalle, reimpresión y anulación en MAUI. Descuentos quedan para Fase 2 |
 | 4 | Mermas | 🟡 Parcial | Descuenta stock y reporta costo; el historial sale de movimientos |
 | 5 | Gastos y pagos | 🟡 Parcial | Gastos simples con resumen por origen, historial y alta en la app; pagos al personal no existen |
-| 6 | Clientes y fiado | 🟡 Parcial | Cliente, saldo y abono con historial (`AbonosFiado`); directorio, búsqueda, alta, abono, edición, estado de cuenta, detección de duplicados y baja/reactivación lógica solo del dueño (esquema v10); faltan método del abono y estado de cuenta impreso |
+| 6 | Clientes y fiado | 🟡 Parcial | Cliente, saldo y abono con historial (`AbonosFiado`) y método (Efectivo/Tarjeta/Transferencia/Otro); directorio, búsqueda, alta, abono, edición, estado de cuenta, detección de duplicados y baja/reactivación lógica solo del dueño (esquema v10); falta estado de cuenta impreso |
 | 7 | Proveedores y cuentas por pagar | 🟡 Parcial | Proveedor, saldo, pago con método e historial inmutable; efectivo genera retiro atómico. Directorio, búsqueda, alta, pago, edición, estado de cuenta, detección de duplicados y baja/reactivación lógica solo del dueño (esquema v10); faltan compras por proveedor y estado de cuenta impreso |
 | 8 | Corte de caja | 🟡 Base implementada | Periodo desde el corte anterior, efectivo esperado, diferencia con motivo obligatorio, ingresos/retiros e historial; retiros autorizados y auditados; cierre, conteo por denominaciones con desglose persistido (v11), historial de cortes e ingresos/retiros/abonos desde Caja en MAUI. Falta validar el desglose en Android |
 | 9 | Reportes y utilidad | 🟡 Base implementada | Utilidad por periodo (ventas − costo − comisión − mermas − gastos) más valorizado y stock bajo; pestaña Reportes en la app con filtros hoy/mes/rango. Faltan ventas por día, comparativos y exportación |

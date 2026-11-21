@@ -934,9 +934,26 @@ internal static class Program
         }
 
         var monto = LeerDinero($"Monto del abono (saldo ${Dinero.Formatear(cliente.SaldoActual)})", 1, 0);
-        var resultado = _config.RegistrarAbonoCliente(cliente.Id, monto, _usuarioActual.Nombre);
+
+        Console.WriteLine("\n  Método del abono:");
+        Console.WriteLine("    [1] Efectivo (entra al corte)");
+        Console.WriteLine("    [2] Tarjeta");
+        Console.WriteLine("    [3] Transferencia");
+        Console.WriteLine("    [4] Otro");
+        var opcion = LeerEntero("  Método", 0, 4, 1);
+        if (opcion == 0) return;
+
+        var metodo = opcion switch
+        {
+            1 => MetodoPagoAbono.Efectivo,
+            2 => MetodoPagoAbono.Tarjeta,
+            3 => MetodoPagoAbono.Transferencia,
+            _ => MetodoPagoAbono.Otro
+        };
+
+        var resultado = _config.RegistrarAbonoCliente(cliente.Id, monto, _usuarioActual.Nombre, metodo);
         Aviso(resultado.IsSuccess
-            ? $"Abono registrado. Nuevo saldo: ${Dinero.Formatear(resultado.Value.SaldoRestante)}"
+            ? $"Abono registrado ({metodo}). Nuevo saldo: ${Dinero.Formatear(resultado.Value.SaldoRestante)}"
             : resultado.Message, resultado.IsSuccess);
     }
 

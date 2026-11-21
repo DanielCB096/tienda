@@ -19,8 +19,9 @@ El módulo de clientes y fiado permite a la tienda ofrecer ventas a crédito a s
 2. Ingresa el nombre del cliente
 3. Si el cliente no existe, se ofrece la opción de crearlo
 4. Ingresa el monto del abono
-5. El sistema resta el abono del saldo pendiente
-6. Se actualiza el registro del cliente y se muestra el nuevo saldo
+5. Elige el método: **Efectivo**, **Tarjeta**, **Transferencia** u **Otro**
+6. El sistema resta el abono del saldo pendiente y guarda el método en el historial
+7. Se actualiza el registro del cliente y se muestra el nuevo saldo
 
 ### 6.2.3. Ver Clientes con Saldo
 1. El cajero selecciona la opción "[2] Ver lista de clientes con saldo"
@@ -137,10 +138,10 @@ Nueva Venta a Fiado
 ## 6.9. Estado de implementación (2026-11-12)
 
 - *Implementado*: alta de cliente con nombre, teléfono y saldo inicial; consulta de clientes con saldo; venta a fiado desde el POS (cliente obligatorio, saldo y límite de crédito); abono con validación de monto positivo y de no exceder el saldo; historial inmutable en `AbonosFiado` (fecha, monto, método, usuario) escrito en la misma transacción que descuenta el saldo; el menú de fiado solo aparece si `FiadoActivado` es verdadero.
-- *Implementado en la app (T18)*: pestaña **Clientes** con resumen de cartera, búsqueda por nombre o teléfono sin distinguir mayúsculas ni acentos, filtro **Con saldo**, alta con nombre, teléfono y saldo inicial opcional, y abono en efectivo con actualización inmediata del saldo. El alta recorta espacios y queda en la bitácora. La compilación y las pruebas de servicio están en verde; la verificación manual de la pantalla quedó pendiente porque el entorno de desarrollo no permitió abrir la GUI.
+- *Implementado en la app (T18)*: pestaña **Clientes** con resumen de cartera, búsqueda por nombre o teléfono sin distinguir mayúsculas ni acentos, filtro **Con saldo**, alta con nombre, teléfono y saldo inicial opcional, y abono con actualización inmediata del saldo. El alta recorta espacios y queda en la bitácora. La compilación y las pruebas de servicio están en verde; la verificación manual de la pantalla quedó pendiente porque el entorno de desarrollo no permitió abrir la GUI.
 - *Implementado en la app (T22)*: **Estado** por cliente con saldo vigente, total fiado, total abonado y el historial de ventas a fiado (sin anuladas) y abonos del más reciente al más antiguo, con usuario y método; **Editar datos** para dueño y encargado con permiso `EditarCliente`, bitácora `EditarCliente` y sin tocar el saldo; el estado de cuenta permite abonar y se refresca al terminar. 8 pruebas en `EstadoCuentaClientesTests`.
 - *Implementado*: `DetectarDuplicadosCliente` compara nombre sin distinguir mayúsculas, acentos ni espacios repetidos, y teléfono ignorando formato. En altas y ediciones, la app y la consola advierten coincidencias y permiten continuar explícitamente; el teléfono vacío no se considera coincidencia.
 - *Implementado (T27)*: migración v10 con `ClientesFiado.Activo`; el dueño puede dar de baja o reactivar desde MAUI, con confirmación, permiso y bitácora. Los clientes inactivos conservan saldos e historial, permiten abonos y se bloquean al intentar una nueva venta a fiado (en el servicio y dentro de la transacción de datos).
-- *Pendiente*: cancelación de venta a fiado, límite de crédito por cliente, impresión o exportación del estado de cuenta, método de abono y recordatorios.
-- *Deuda*: el abono se registra siempre como efectivo porque ni la consola ni la app preguntan el método (ver [deuda-técnica](../deuda-tecnica.md)).
+- *Pendiente*: cancelación de venta a fiado, límite de crédito por cliente, impresión o exportación del estado de cuenta y recordatorios.
+- *Implementado (T30)*: el abono elige método **Efectivo**, **Tarjeta**, **Transferencia** u **Otro**; solo el efectivo entra al efectivo esperado del corte y el historial y el estado de cuenta muestran el método. La consola y las pestañas Caja y Clientes lo preguntan; `MetodoPagoAbono` centraliza el catálogo y `ConfiguracionService` rechaza métodos inválidos.
 - *Pruebas*: `FiadoProveedoresTests` (incluye búsqueda y bitácora de alta), `EstadoCuentaClientesTests`, `VentasTests` y `CorteCajaTests`.

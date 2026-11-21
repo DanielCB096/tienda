@@ -30,6 +30,8 @@ public partial class ClientesPage : ContentPage
         InitializeComponent();
         _config = config;
         _sesion = sesion;
+        MetodoAbonoPicker.ItemsSource = MetodoPagoAbono.Todos.ToList();
+        MetodoAbonoPicker.SelectedIndex = 0;
     }
 
     protected override void OnAppearing()
@@ -281,6 +283,7 @@ public partial class ClientesPage : ContentPage
         AbonoClienteLabel.Text = fila.Nombre;
         AbonoSaldoLabel.Text = $"Saldo pendiente: {fila.Saldo}";
         AbonoMontoEntry.Text = string.Empty;
+        MetodoAbonoPicker.SelectedIndex = 0;
         AbonoErrorLabel.IsVisible = false;
         AbonoOverlay.IsVisible = true;
 
@@ -487,8 +490,9 @@ public partial class ClientesPage : ContentPage
         try
         {
             _sesion.Aplicar();
+            var metodo = MetodoAbonoPicker.SelectedItem as string ?? MetodoPagoAbono.Efectivo;
             var resultado = _config.RegistrarAbonoCliente(
-                _clienteAbono.Id, monto.Value, _sesion.Usuario.Nombre);
+                _clienteAbono.Id, monto.Value, _sesion.Usuario.Nombre, metodo);
 
             if (resultado.IsError)
             {
@@ -502,7 +506,8 @@ public partial class ClientesPage : ContentPage
             if (_clienteEstado != null)
                 AbrirEstadoCuenta();
             await DisplayAlertAsync("Abono registrado",
-                $"Saldo restante: {Formato.Moneda(resultado.Value.SaldoRestante)}", "Continuar");
+                $"Método: {metodo}\nSaldo restante: {Formato.Moneda(resultado.Value.SaldoRestante)}",
+                "Continuar");
         }
         finally
         {

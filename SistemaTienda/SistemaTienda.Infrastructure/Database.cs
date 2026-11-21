@@ -840,7 +840,7 @@ public class DatabaseTools
     /// El historial permite reconstruir el efectivo recibido por periodo.
     /// </summary>
     public bool RegistrarAbonoFiado(int clienteId, long monto, long nuevoSaldo,
-        string usuario, string metodoPago = MetodoPagoVenta.Efectivo)
+        string usuario, string metodoPago = MetodoPagoAbono.Efectivo)
     {
         using var conn = CreateConnection();
         conn.Open();
@@ -872,7 +872,7 @@ public class DatabaseTools
             insert.Parameters.AddWithValue("@cliente", clienteId);
             insert.Parameters.AddWithValue("@fecha", DateTime.Now);
             insert.Parameters.AddWithValue("@monto", monto);
-            insert.Parameters.AddWithValue("@metodo", metodoPago ?? MetodoPagoVenta.Efectivo);
+            insert.Parameters.AddWithValue("@metodo", metodoPago ?? MetodoPagoAbono.Efectivo);
             insert.Parameters.AddWithValue("@usuario", usuario ?? string.Empty);
             insert.ExecuteNonQuery();
         }
@@ -1638,7 +1638,7 @@ public class DatabaseTools
             cmd.CommandText = @"
                 SELECT COALESCE(SUM(Monto), 0) FROM AbonosFiado
                 WHERE MetodoPago = @efectivo AND Fecha > @desde AND Fecha <= @hasta";
-            cmd.Parameters.AddWithValue("@efectivo", MetodoPagoVenta.Efectivo);
+            cmd.Parameters.AddWithValue("@efectivo", MetodoPagoAbono.Efectivo);
             cmd.Parameters.AddWithValue("@desde", desde);
             cmd.Parameters.AddWithValue("@hasta", hasta);
             corte.AbonosEfectivo = Convert.ToInt64(cmd.ExecuteScalar() ?? 0L, CultureInfo.InvariantCulture);
