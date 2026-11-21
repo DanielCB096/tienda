@@ -135,11 +135,21 @@ public class ConfiguracionService
         if (!PinValido(pin))
             return ProcessResult<AgregarUsuarioResponse>.Error("El PIN debe tener entre 4 y 6 dígitos");
 
+        var nombreLimpio = nombre.Trim();
+        var usuarios = _db.ObtenerUsuarios();
+        if (NombreUsuarioUsado(nombreLimpio, usuarios))
+            return ProcessResult<AgregarUsuarioResponse>.Error(
+                $"Ya existe un usuario con el nombre \"{nombreLimpio}\"");
+
+        if (PinYaUsado(pin, usuarios))
+            return ProcessResult<AgregarUsuarioResponse>.Error(
+                "Ese PIN ya está en uso por otro usuario; elige uno distinto");
+
         try
         {
             var usuario = new UsuarioSistema
             {
-                Nombre = nombre.Trim(),
+                Nombre = nombreLimpio,
                 PINHash = HashPin(pin),
                 Rol = rol
             };
@@ -159,8 +169,92 @@ public class ConfiguracionService
         }
     }
 
+    public ProcessResult ActualizarUsuario(int usuarioId, string nombre, RolUsuario rol)
+    {
+        var autorizacion = Autorizar(PermisoSistema.GestionarUsuarios);
+        if (autorizacion.IsError)
+            return autorizacion;
+
+        if (string.IsNullOrWhiteSpace(nombre))
+            return ProcessResult.Error("El nombre del usuario es obligatorio");
+
+        var usuario = _db.ObtenerUsuarioPorId(usuarioId);
+        if (usuario == null)
+            return ProcessResult.Error("Usuario no encontrado");
+
+        var nombreLimpio = nombre.Trim();
+        var usuarios = _db.ObtenerUsuarios();
+        if (NombreUsuarioUsado(nombreLimpio, usuarios, usuarioId))
+            return ProcessResult.Error($"Ya existe un usuario con el nombre \"{nombreLimpio}\"");
+
+        if (usuario.Rol == RolUsuario.Dueño && rol != RolUsuario.Dueño &&
+            !usuarios.Any(u => u.Id != usuarioId && u.Rol == RolUsuario.Dueño))
+            return ProcessResult.Error("Debe quedar al menos un usuario con rol Dueño");
+
+        if (!_db.ActualizarUsuario(usuarioId, nombreLimpio, rol))
+            return ProcessResult.Error("No se pudo actualizar el usuario");
+
+        _bitacora.Registrar(AccionBitacora.EditarUsuario, "Usuario", usuarioId.ToString(),
+            $"Nombre={usuario.Nombre};Rol={usuario.Rol}",
+            $"Nombre={nombreLimpio};Rol={rol}");
+        return ProcessResult.Success("Usuario actualizado");
+    }
+
+    public ProcessResult CambiarPin(int usuarioId, string nuevoPin)
+    {
+        var autorizacion = Autorizar(PermisoSistema.GestionarUsuarios);
+        if (autorizacion.IsError)
+            return autorizacion;
+
+        if (!PinValido(nuevoPin))
+            return ProcessResult.Error("El PIN debe tener entre 4 y 6 dígitos");
+
+        var usuario = _db.ObtenerUsuarioPorId(usuarioId);
+        if (usuario == null)
+            return ProcessResult.Error("Usuario no encontrado");
+
+        var usuarios = _db.ObtenerUsuarios();
+        if (PinYaUsado(nuevoPin, usuarios, usuarioId))
+            return ProcessResult.Error("Ese PIN ya está en uso por otro usuario; elige uno distinto");
+
+        if (!_db.ActualizarPinUsuario(usuarioId, HashPin(nuevoPin)))
+            return ProcessResult.Error("No se pudo cambiar el PIN");
+
+        _bitacora.Registrar(AccionBitacora.CambiarPin, "Usuario", usuarioId.ToString(),
+            string.Empty, $"PIN actualizado para {usuario.Nombre}");
+        return ProcessResult.Success("PIN actualizado");
+    }
+
     public ProcessResult<List<UsuarioSistema>> ObtenerUsuarios() =>
         ProcessResult<List<UsuarioSistema>>.OK(_db.ObtenerUsuarios());
+
+    private static bool NombreUsuarioUsado(string nombre, List<UsuarioSistema> usuarios,
+        int? excluirId = null) =>
+        usuarios.Any(u => (excluirId == null || u.Id != excluirId.Value) &&
+                          string.Equals(u.Nombre.Trim(), nombre.Trim(),
+                              StringComparison.CurrentCultureIgnoreCase));
+
+    private static bool PinYaUsado(string pin, List<UsuarioSistema> usuarios,
+        int? excluirId = null)
+    {
+        foreach (var usuario in usuarios)
+        {
+            if (excluirId.HasValue && usuario.Id == excluirId.Value)
+                continue;
+
+            try
+            {
+                if (VerifyPin(pin, usuario.PINHash))
+                    return true;
+            }
+            catch (FormatException)
+            {
+                // Un hash heredado mal formado no debe impedir elegir un PIN nuevo.
+            }
+        }
+
+        return false;
+    }
 
     public ProcessResult<UsuarioSistema> VerificarAcceso(string pinIngresado)
     {

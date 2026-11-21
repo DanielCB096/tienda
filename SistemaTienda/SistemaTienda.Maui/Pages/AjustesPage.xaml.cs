@@ -20,6 +20,8 @@ public partial class AjustesPage : ContentPage
         _respaldos = respaldos;
         _sesion = sesion;
         _navegacion = navegacion;
+        UsuarioRolPicker.ItemsSource = new[] { "Dueño", "Encargado", "Empleado" };
+        UsuarioRolPicker.SelectedIndex = 2;
     }
 
     protected override void OnAppearing()
@@ -51,6 +53,8 @@ public partial class AjustesPage : ContentPage
 
         EditarConfiguracionButton.IsVisible = _sesion.Usuario != null &&
             AutorizacionService.Puede(_sesion.Usuario, PermisoSistema.Configurar);
+        UsuariosButton.IsVisible = _sesion.Usuario != null &&
+            AutorizacionService.Puede(_sesion.Usuario, PermisoSistema.GestionarUsuarios);
 
         RutaBaseLabel.Text = _respaldos.RutaBaseDatos;
         RutaRespaldosLabel.Text = _respaldos.DirectorioRespaldos;
@@ -65,6 +69,220 @@ public partial class AjustesPage : ContentPage
         RespaldoDetalleLabel.Text = cantidad == 1
             ? "1 copia local verificada."
             : $"{cantidad} copias locales verificadas.";
+    }
+
+    private UsuarioSistema? _usuarioEditando;
+
+    private void OnUsuariosClicked(object sender, EventArgs e)
+    {
+        if (_sesion.Usuario == null ||
+            !AutorizacionService.Puede(_sesion.Usuario, PermisoSistema.GestionarUsuarios))
+        {
+            _ = DisplayAlertAsync("Sin permiso",
+                "Solo el dueño puede gestionar usuarios y PIN.", "Continuar");
+            return;
+        }
+
+        UsuariosOverlay.IsVisible = true;
+        CargarUsuarios();
+    }
+
+    private void CargarUsuarios()
+    {
+        var usuarios = _config.ObtenerUsuarios().Value ?? new List<UsuarioSistema>();
+        ListaUsuarios.Children.Clear();
+
+        if (usuarios.Count == 0)
+        {
+            ListaUsuarios.Children.Add(new Label
+            {
+                Text = "No hay usuarios registrados.",
+                HorizontalTextAlignment = TextAlignment.Center
+            });
+            return;
+        }
+
+        foreach (var usuario in usuarios)
+        {
+            var fila = new Grid
+            {
+                ColumnDefinitions =
+                {
+                    new ColumnDefinition(GridLength.Star),
+                    new ColumnDefinition(GridLength.Auto),
+                    new ColumnDefinition(GridLength.Auto)
+                },
+                ColumnSpacing = 8
+            };
+
+            var datos = new VerticalStackLayout { Spacing = 1 };
+            datos.Children.Add(new Label
+            {
+                Text = usuario.Nombre,
+                FontAttributes = FontAttributes.Bold,
+                FontSize = 15
+            });
+            datos.Children.Add(new Label
+            {
+                Text = usuario.Rol.ToString(),
+                FontSize = 13
+            });
+
+            var editar = new Button { Text = "Editar" };
+            editar.SetDynamicResource(Button.StyleProperty, "BotonSecundario");
+            editar.Clicked += (_, _) => AbrirFormularioUsuario(usuario);
+
+            var pin = new Button { Text = "Cambiar PIN" };
+            pin.SetDynamicResource(Button.StyleProperty, "BotonSecundario");
+            pin.Clicked += (_, _) => AbrirFormularioPin(usuario);
+
+            Grid.SetColumn(editar, 1);
+            Grid.SetColumn(pin, 2);
+            fila.Children.Add(datos);
+            fila.Children.Add(editar);
+            fila.Children.Add(pin);
+
+            var borde = new Border { Content = fila, Padding = 10 };
+            borde.SetDynamicResource(VisualElement.StyleProperty, "Tarjeta");
+            ListaUsuarios.Children.Add(borde);
+        }
+    }
+
+    private void OnNuevoUsuarioClicked(object sender, EventArgs e) =>
+        AbrirFormularioUsuario(null);
+
+    private void AbrirFormularioUsuario(UsuarioSistema? usuario)
+    {
+        _usuarioEditando = usuario;
+        UsuarioFormTitulo.Text = usuario == null ? "Nuevo usuario" : "Editar usuario";
+        UsuarioNombreEntry.Text = usuario?.Nombre ?? string.Empty;
+        UsuarioRolPicker.SelectedIndex = usuario == null ? 2 : (int)usuario.Rol;
+        UsuarioPinEntry.Text = string.Empty;
+        UsuarioPinEntry.Placeholder = usuario == null
+            ? "PIN de 4 a 6 dígitos"
+            : "Nuevo PIN (vacío = conservar)";
+        UsuarioFormAyuda.IsVisible = usuario != null;
+        UsuarioFormError.IsVisible = false;
+        UsuarioFormOverlay.IsVisible = true;
+    }
+
+    private void AbrirFormularioPin(UsuarioSistema usuario)
+    {
+        _usuarioEditando = usuario;
+        UsuarioFormTitulo.Text = "Cambiar PIN";
+        UsuarioNombreEntry.Text = usuario.Nombre;
+        UsuarioRolPicker.SelectedIndex = (int)usuario.Rol;
+        UsuarioPinEntry.Text = string.Empty;
+        UsuarioPinEntry.Placeholder = "Nuevo PIN de 4 a 6 dígitos";
+        UsuarioFormAyuda.IsVisible = false;
+        UsuarioFormError.IsVisible = false;
+        UsuarioFormOverlay.IsVisible = true;
+        UsuarioPinEntry.Focus();
+    }
+
+    private async void OnGuardarUsuarioClicked(object sender, EventArgs e)
+    {
+        if (_sesion.Usuario == null ||
+            !AutorizacionService.Puede(_sesion.Usuario, PermisoSistema.GestionarUsuarios))
+        {
+            MostrarErrorUsuario("Solo el dueño puede gestionar usuarios y PIN.");
+            return;
+        }
+
+        UsuarioFormError.IsVisible = false;
+        var nombre = UsuarioNombreEntry.Text?.Trim() ?? string.Empty;
+        var pin = UsuarioPinEntry.Text?.Trim() ?? string.Empty;
+        var rol = UsuarioRolPicker.SelectedIndex switch
+        {
+            0 => RolUsuario.Dueño,
+            1 => RolUsuario.Encargado,
+            _ => RolUsuario.Empleado
+        };
+
+        if (nombre.Length == 0)
+        {
+            MostrarErrorUsuario("El nombre del usuario es obligatorio.");
+            return;
+        }
+
+        GuardarUsuarioButton.IsEnabled = false;
+        try
+        {
+            _sesion.Aplicar();
+
+            if (_usuarioEditando == null)
+            {
+                if (!ConfiguracionService.PinValido(pin))
+                {
+                    MostrarErrorUsuario("El PIN debe tener entre 4 y 6 dígitos.");
+                    return;
+                }
+
+                var alta = _config.AgregarUsuario(nombre, pin, rol);
+                if (alta.IsError)
+                {
+                    MostrarErrorUsuario(alta.Message);
+                    return;
+                }
+
+                CerrarFormularioUsuario();
+                CargarUsuarios();
+                await DisplayAlertAsync("Usuario agregado", alta.Value.Mensaje, "Continuar");
+                return;
+            }
+
+            var edicion = _config.ActualizarUsuario(_usuarioEditando.Id, nombre, rol);
+            if (edicion.IsError)
+            {
+                MostrarErrorUsuario(edicion.Message);
+                return;
+            }
+
+            if (pin.Length > 0)
+            {
+                var cambioPin = _config.CambiarPin(_usuarioEditando.Id, pin);
+                if (cambioPin.IsError)
+                {
+                    MostrarErrorUsuario(cambioPin.Message);
+                    return;
+                }
+            }
+
+            var esUsuarioActual = _usuarioEditando.Id == _sesion.Usuario.Id;
+            CerrarFormularioUsuario();
+            CargarUsuarios();
+            await DisplayAlertAsync("Usuario actualizado", edicion.Message, "Continuar");
+
+            if (esUsuarioActual && (rol != _sesion.Usuario.Rol ||
+                                    !string.Equals(nombre, _sesion.Usuario.Nombre,
+                                        StringComparison.CurrentCulture)))
+                await DisplayAlertAsync("Sesión",
+                    "Cierra sesión y vuelve a entrar para aplicar los cambios en tu cuenta.",
+                    "Continuar");
+        }
+        finally
+        {
+            GuardarUsuarioButton.IsEnabled = true;
+        }
+    }
+
+    private void OnCancelarUsuarioClicked(object sender, EventArgs e) =>
+        CerrarFormularioUsuario();
+
+    private void CerrarFormularioUsuario()
+    {
+        UsuarioFormOverlay.IsVisible = false;
+        UsuarioFormError.IsVisible = false;
+        _usuarioEditando = null;
+    }
+
+    private void OnCerrarUsuariosClicked(object sender, EventArgs e) =>
+        UsuariosOverlay.IsVisible = false;
+
+    private void MostrarErrorUsuario(string mensaje)
+    {
+        UsuarioFormError.Text = mensaje;
+        UsuarioFormError.IsVisible = true;
     }
 
     private void OnEditarConfiguracionClicked(object sender, EventArgs e)
