@@ -21,6 +21,7 @@ public partial class ReportesPage : ContentPage
     private readonly ReporteUtilidadService _reportes;
     private readonly SesionApp _sesion;
     private PeriodoSeleccionado _periodo = PeriodoSeleccionado.Hoy;
+    private ReporteUtilidad? _reporteActual;
 
     public ReportesPage(ReporteUtilidadService reportes, SesionApp sesion)
     {
@@ -68,6 +69,8 @@ public partial class ReportesPage : ContentPage
 
     private void MostrarReporte(ReporteUtilidad reporte)
     {
+        _reporteActual = reporte;
+        ExportarCsvButton.IsEnabled = true;
         MensajeLabel.IsVisible = false;
 
         PeriodoLabel.Text = $"PERIODO · {reporte.Desde:dd/MM/yyyy} al {reporte.Hasta:dd/MM/yyyy}";
@@ -99,6 +102,23 @@ public partial class ReportesPage : ContentPage
     }
 
     private void OnActualizarClicked(object sender, EventArgs e) => Cargar();
+
+    private async void OnExportarCsvClicked(object sender, EventArgs e)
+    {
+        if (_reporteActual == null)
+            return;
+
+        try
+        {
+            var nombre = $"reporte-utilidad-{DateTime.Now:yyyyMMdd-HHmmss}.csv";
+            await ExportacionCsvApp.CompartirAsync(
+                nombre, ExportadorCsv.ReporteUtilidad(_reporteActual));
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlertAsync("No se pudo exportar", ex.Message, "Continuar");
+        }
+    }
 
     private void OnHoyClicked(object sender, EventArgs e)
     {

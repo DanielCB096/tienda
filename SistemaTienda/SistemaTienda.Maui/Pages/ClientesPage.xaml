@@ -252,7 +252,7 @@
                     HorizontalOptions="Fill"
                     VerticalOptions="Fill"
                     MaximumWidthRequest="640">
-                <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" RowSpacing="10">
+                <Grid RowDefinitions="Auto,Auto,Auto,*,Auto,Auto" RowSpacing="10">
                     <VerticalStackLayout Spacing="1">
                         <Label Text="Estado de cuenta" FontSize="22" FontAttributes="Bold" />
                         <Label x:Name="EstadoClienteLabel" FontAttributes="Bold" FontSize="17" />
@@ -334,6 +334,11 @@
                                 Style="{StaticResource BotonPrincipal}"
                                 Clicked="OnCerrarEstadoClicked" />
                     </Grid>
+
+                    <Button Grid.Row="5"
+                            Text="Exportar estado de cuenta (CSV)"
+                            Style="{StaticResource BotonSecundario}"
+                            Clicked="OnExportarEstadoClicked" />
                 </Grid>
             </Border>
         </Grid>

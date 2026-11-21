@@ -25,6 +25,7 @@ public partial class ProveedoresPage : ContentPage
     private FiltroProveedores _filtro;
     private ProveedorFila? _proveedorPago;
     private ProveedorFila? _proveedorEstado;
+    private EstadoCuentaProveedor? _estadoActual;
 
     public ProveedoresPage(ConfiguracionService config, SesionApp sesion)
     {
@@ -293,6 +294,7 @@ public partial class ProveedoresPage : ContentPage
         }
 
         var estado = resultado.Value;
+        _estadoActual = estado;
         EstadoProveedorLabel.Text = estado.Proveedor.Nombre;
 
         var partes = new List<string>();
@@ -347,6 +349,24 @@ public partial class ProveedoresPage : ContentPage
     {
         EstadoOverlay.IsVisible = false;
         _proveedorEstado = null;
+        _estadoActual = null;
+    }
+
+    private async void OnExportarEstadoClicked(object sender, EventArgs e)
+    {
+        if (_estadoActual == null)
+            return;
+
+        try
+        {
+            var nombre = $"estado-proveedor-{_estadoActual.Proveedor.Id}-{DateTime.Now:yyyyMMdd-HHmm}.csv";
+            await ExportacionCsvApp.CompartirAsync(
+                nombre, ExportadorCsv.EstadoCuentaProveedor(_estadoActual));
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlertAsync("No se pudo exportar", ex.Message, "Continuar");
+        }
     }
 
     private void OnEditarProveedorClicked(object sender, EventArgs e)
