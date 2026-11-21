@@ -7,10 +7,12 @@ namespace SistemaTienda.Maui.Pages;
 public sealed class TicketPage : ContentPage
 {
     private readonly string _texto;
+    private readonly string? _contenidoQr;
 
     public TicketPage(string texto, string? contenidoQr = null)
     {
         _texto = texto;
+        _contenidoQr = contenidoQr;
         Title = "Ticket de venta";
 
         var encabezado = new Label { Text = "Ticket de venta" };
@@ -21,7 +23,7 @@ public sealed class TicketPage : ContentPage
         {
             Text = qr == null
                 ? "Comprobante interno, no fiscal. Puedes compartirlo o copiarlo."
-                : "Comprobante interno, no fiscal. El cliente puede escanear el QR; el texto se puede compartir o copiar."
+                : "Comprobante interno, no fiscal. El cliente puede escanear el QR o recibirlo como imagen; el texto se puede compartir o copiar."
         };
         nota.SetDynamicResource(VisualElement.StyleProperty, "TextoNota");
 
@@ -57,6 +59,14 @@ public sealed class TicketPage : ContentPage
         compartir.SetDynamicResource(VisualElement.StyleProperty, "BotonPrincipal");
         compartir.Clicked += async (_, _) => await Compartir();
 
+        var compartirQr = new Button
+        {
+            Text = "Compartir QR como imagen",
+            IsVisible = qr != null && !string.IsNullOrWhiteSpace(_contenidoQr)
+        };
+        compartirQr.SetDynamicResource(VisualElement.StyleProperty, "BotonSecundario");
+        compartirQr.Clicked += async (_, _) => await CompartirQr();
+
         var copiar = new Button { Text = "Copiar" };
         copiar.SetDynamicResource(VisualElement.StyleProperty, "BotonSecundario");
         copiar.Clicked += async (_, _) => await Copiar();
@@ -76,6 +86,7 @@ public sealed class TicketPage : ContentPage
                 new RowDefinition(GridLength.Star),
                 new RowDefinition(GridLength.Auto),
                 new RowDefinition(GridLength.Auto),
+                new RowDefinition(GridLength.Auto),
                 new RowDefinition(GridLength.Auto)
             },
             Children =
@@ -83,6 +94,7 @@ public sealed class TicketPage : ContentPage
                 encabezado,
                 nota,
                 marco,
+                compartirQr,
                 compartir,
                 copiar,
                 cerrar
@@ -91,9 +103,10 @@ public sealed class TicketPage : ContentPage
         Grid.SetRow(encabezado, 0);
         Grid.SetRow(nota, 1);
         Grid.SetRow(marco, 2);
-        Grid.SetRow(compartir, 3);
-        Grid.SetRow(copiar, 4);
-        Grid.SetRow(cerrar, 5);
+        Grid.SetRow(compartirQr, 3);
+        Grid.SetRow(compartir, 4);
+        Grid.SetRow(copiar, 5);
+        Grid.SetRow(cerrar, 6);
 
         Content = contenido;
     }
@@ -112,6 +125,22 @@ public sealed class TicketPage : ContentPage
         {
             await DisplayAlertAsync("No se pudo compartir",
                 $"Copia el ticket manualmente.\n\n{ex.Message}", "Continuar");
+        }
+    }
+
+    private async Task CompartirQr()
+    {
+        if (string.IsNullOrWhiteSpace(_contenidoQr))
+            return;
+
+        try
+        {
+            await QrImagenApp.CompartirAsync(_contenidoQr);
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlertAsync("No se pudo compartir el QR",
+                $"El ticket se puede compartir como texto.\n\n{ex.Message}", "Continuar");
         }
     }
 

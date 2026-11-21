@@ -14,6 +14,8 @@
 
   <ItemGroup>
     <PackageReference Include="DocumentFormat.OpenXml" Version="3.5.1" />
+    <!-- Solo genera la matriz QR; el PNG se codifica localmente sin dependencias. -->
+    <PackageReference Include="Net.Codecrete.QrCodeGenerator" Version="3.2.1" />
   </ItemGroup>
 
 </Project>
