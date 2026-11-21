@@ -469,6 +469,23 @@ Pendiente de la pantalla:
 - Imprimir o exportar el estado de cuenta y cubrir la interfaz con pruebas automatizadas.
 - Baja y detección de duplicados de proveedores.
 
+## Verificación Android 16 de T29–T35 (2026-11-21)
+
+Dispositivo: Redmi Note 13 (`2311DRK48G`), Android 16 / API 36. APK Debug con ensamblados embebidos, instalado por `adb` y con datos temporales borrados al terminar.
+
+| Flujo | Resultado |
+|-------|-----------|
+| Ajustes → Editar configuración | Pasó: nombre, impuesto 8 %, comisión 2.5 %, fondo $300, límite $500 y fiado activado |
+| Ajustes → Usuarios y PIN | Pasó: alta de “CajeraAndroid” con PIN 5678 y rol Encargado |
+| Abono con método | Pasó: $100 por Transferencia; saldo $500 → $400; el efectivo esperado siguió en $325 |
+| Venta en efectivo con cambio | Pasó: total $25, recibido $50, cambio $25 |
+| Reimpresión del ticket | Pasó: mostró recibido y cambio |
+| Compartir QR como imagen | Pasó: diálogo de Android con Quick Share, WhatsApp, Drive, etc. |
+| Exportar CSV de Reportes | Pasó: diálogo de Android con `reporte-utilidad-*.csv` |
+| Corte con desglose | Pasó: 3×$100 + 1×$20 + 1×$5 = $325, diferencia $0; el historial mostró el conteo |
+
+**Entorno**: el instalador MSI de workloads falla en este equipo con `NullReferenceException`; se usó un SDK .NET 10 basado en archivos en `%LOCALAPPDATA%\dotnet10` con `maui-android`. El SDK de Android tiene `platforms;android-36` y `build-tools;36.0.0/36.1.0`.
+
 ## Herramientas de Prueba
 
 - **Datos de prueba ficticios**: Un script o conjunto de datos iniciales que incluir:
