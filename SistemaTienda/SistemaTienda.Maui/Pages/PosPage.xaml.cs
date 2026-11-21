@@ -346,7 +346,7 @@ public partial class PosPage : ContentPage
                     return false;
                 }
 
-                pago = new PagoSolicitado { Efectivo = total };
+                pago = new PagoSolicitado { Efectivo = total, EfectivoRecibido = recibido.Value };
                 return true;
 
             case MetodoPagoVenta.Tarjeta:

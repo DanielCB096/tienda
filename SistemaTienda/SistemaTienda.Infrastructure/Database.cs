@@ -1057,10 +1057,10 @@ public class DatabaseTools
                 cmd.CommandText = @"
                     INSERT INTO Ventas
                         (Fecha, Usuario, ClienteId, MetodoPago, Total, CostoTotal,
-                         PagoEfectivo, PagoTarjeta, PagoFiado, ComisionTarjeta)
+                         PagoEfectivo, PagoTarjeta, PagoFiado, ComisionTarjeta, EfectivoRecibido)
                     VALUES
                         (@fecha, @usuario, @cliente, @metodo, @total, @costo,
-                         @efectivo, @tarjeta, @fiado, @comision);
+                         @efectivo, @tarjeta, @fiado, @comision, @recibido);
                     SELECT last_insert_rowid();";
                 cmd.Parameters.AddWithValue("@fecha", venta.Fecha);
                 cmd.Parameters.AddWithValue("@usuario", venta.Usuario ?? string.Empty);
@@ -1072,6 +1072,7 @@ public class DatabaseTools
                 cmd.Parameters.AddWithValue("@tarjeta", venta.PagoTarjeta);
                 cmd.Parameters.AddWithValue("@fiado", venta.PagoFiado);
                 cmd.Parameters.AddWithValue("@comision", venta.ComisionTarjeta);
+                cmd.Parameters.AddWithValue("@recibido", (object)venta.EfectivoRecibido ?? DBNull.Value);
                 ventaId = Convert.ToInt32(cmd.ExecuteScalar(), CultureInfo.InvariantCulture);
             }
 

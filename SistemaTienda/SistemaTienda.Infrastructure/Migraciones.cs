@@ -40,7 +40,8 @@ public static class Migraciones
         new Migracion(8, "crea el historial inmutable de pagos a proveedores", AplicarVersion8),
         new Migracion(9, "agrega el método de pago y el retiro de caja a los pagos a proveedores", AplicarVersion9),
         new Migracion(10, "agrega el estado activo a clientes y proveedores", AplicarVersion10),
-        new Migracion(11, "crea el desglose por denominaciones de los cortes de caja", AplicarVersion11)
+        new Migracion(11, "crea el desglose por denominaciones de los cortes de caja", AplicarVersion11),
+        new Migracion(12, "guarda el efectivo recibido de las ventas en efectivo", AplicarVersion12)
     };
 
     private static void AplicarVersion2(SqliteConnection conn, SqliteTransaction tx)
@@ -611,6 +612,29 @@ public static class Migraciones
             BEGIN
                 SELECT RAISE(ABORT, 'El desglose del corte es inmutable: no se puede borrar');
             END;
+        ";
+        cmd.ExecuteNonQuery();
+    }
+
+    /// <summary>
+    /// Guarda el efectivo entregado en ventas en efectivo para reconstruir el cambio
+    /// al reimprimir. Las ventas anteriores quedan con NULL: no se puede reconstruir.
+    /// </summary>
+    private static void AplicarVersion12(SqliteConnection conn, SqliteTransaction tx)
+    {
+        using (var revision = conn.CreateCommand())
+        {
+            revision.Transaction = tx;
+            revision.CommandText =
+                "SELECT COUNT(*) FROM pragma_table_info('Ventas') WHERE name = 'EfectivoRecibido'";
+            if (Convert.ToInt32(revision.ExecuteScalar()) > 0)
+                return;
+        }
+
+        using var cmd = conn.CreateCommand();
+        cmd.Transaction = tx;
+        cmd.CommandText = @"
+            ALTER TABLE Ventas ADD COLUMN EfectivoRecibido INTEGER;
         ";
         cmd.ExecuteNonQuery();
     }

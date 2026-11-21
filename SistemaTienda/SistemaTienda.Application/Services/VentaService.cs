@@ -21,6 +21,12 @@ public sealed class PagoSolicitado
     public long Tarjeta { get; set; }
     public long Fiado { get; set; }
     public int? ClienteId { get; set; }
+
+    /// <summary>
+    /// Efectivo entregado por el cliente cuando paga todo en efectivo. No forma
+    /// parte de la suma de pagos: solo sirve para guardar el cambio.
+    /// </summary>
+    public long? EfectivoRecibido { get; set; }
 }
 
 public class VentaService
@@ -154,6 +160,15 @@ public class VentaService
             PagoFiado = pago.Fiado,
             ComisionTarjeta = Dinero.Porcentaje(pago.Tarjeta, config.ComisionTarjeta)
         };
+
+        if (metodoPago == MetodoPagoVenta.Efectivo && pago.EfectivoRecibido.HasValue)
+        {
+            if (pago.EfectivoRecibido.Value < total)
+                return ProcessResult<Venta>.Error(
+                    "El efectivo recibido no alcanza para cubrir el total de la venta");
+
+            venta.EfectivoRecibido = pago.EfectivoRecibido.Value;
+        }
 
         var guardado = _db.RegistrarVenta(venta, lineasVenta);
         if (guardado.IsError)
