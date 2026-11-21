@@ -21,6 +21,16 @@ Cada entrada tiene formato:
 
 Próximamente después de completar los módulos críticos.
 
+### v0.0.37 - 2026-11-21: Verificación en Android 16 de T29–T35
+
+- *Verificado*: Redmi Note 13 (`2311DRK48G`, Android 16 / API 36), APK Debug con ensamblados embebidos instalado por `adb`.
+- *Configuración*: **Ajustes → Editar configuración** cambió nombre, impuesto, comisión, fondo, límite y activó el fiado; la tarjeta reflejó los valores.
+- *Usuarios*: se creó “CajeraAndroid” con PIN 5678 y rol Encargado, y la lista mostró el usuario.
+- *Caja y abonos*: venta en efectivo de $25 con recibido $50 y cambio $25; abono de $100 por **Transferencia** (saldo $500 → $400) sin sumar al efectivo; corte con 3×$100 + 1×$20 + 1×$5 = $325, diferencia $0 y desglose visible en el historial.
+- *Exportación y QR*: **Exportar CSV** abrió el diálogo de Android con `reporte-utilidad-*.csv`; **Compartir QR como imagen** abrió el diálogo con Quick Share, WhatsApp, Drive, etc.; la reimpresión mostró recibido y cambio.
+- *Entorno*: JDK 17 y un SDK .NET 10 basado en archivos en `%LOCALAPPDATA%\dotnet10` con `maui-android`, porque el instalador MSI de workloads falla con `NullReferenceException` en este equipo. El SDK de Android quedó con `platforms;android-36`, `build-tools;36.0.0/36.1.0` y `cmdline-tools`.
+- *Limpieza*: se borraron los datos de prueba de la app en el teléfono; la app quedó instalada.
+
 ### v0.0.36 - 2026-11-21: Gestión de usuarios y PIN en Ajustes
 
 - *Agregado*: **Ajustes → Usuarios y PIN** (solo dueño) lista los usuarios y permite agregar, cambiar nombre, rol o PIN en una capa propia de la página.

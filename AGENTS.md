@@ -83,6 +83,7 @@ Cada agente: su carpeta, su rama y su PR.
 - En T27, la solución compiló sin errores ni advertencias y pasaron **252 pruebas**; MAUI Windows también compiló sin errores ni advertencias. La baja, reactivación, filtros de inactivos y distintivo se verificaron en vivo el 2026-11-19.
 - Verificación en vivo del 2026-11-19 encontró que el alta de clientes y proveedores guardaba `FechaRegistro` en UTC (`datetime('now')`). Se corrigió para guardar la hora local con la prueba `FechasLocalesTests`; los registros anteriores conservan su valor UTC y no se reescriben.
 - Android verificado el 2026-11-19 en un Redmi Note 13 (Android 16 / API 36): instalación por `adb`, asistente, login, inventario, POS en efectivo con cambio y QR, ventas con reimpresión y anulación, caja con conteo y corte, reportes, clientes (duplicado y baja/reactivación), proveedores (duplicado, pago con retiro de caja y estado de cuenta), gastos e importación CSV/XLSX. La prueba encontró que los CSV con MIME genérico no eran seleccionables; se añadieron los MIME habituales en `InventarioPage`.
+- Android verificado el 2026-11-21 en el mismo Redmi Note 13 (Android 16 / API 36): edición de configuración con activación del fiado, alta de usuario con PIN y login con ese PIN, abono por transferencia sin afectar el efectivo, corte con desglose persistido y diferencia cero, exportación CSV por el diálogo de compartir, QR del ticket compartido como PNG y reimpresión con recibido/cambio. La app quedó instalada y sin datos de prueba.
 - POS verificado manualmente en Windows el 2026-10-25 con datos ficticios: los cuatro métodos de pago, cambio, límite y stock 0, ticket con copiar/cerrar y totales coherentes en Ventas/Caja. Pendientes: botón Compartir y ejecución en Android.
 - Caja verificada manualmente en Windows el 2026-10-25: cierre con faltante y observación (corte #1), ingreso, retiro con confirmación, abono de fiado y cierre sin diferencia (corte #2), y en T17 conteo por denominaciones e historial de cortes (corte #3), con el efectivo esperado coincidiendo con la base. Reverificada el 2026-11-19: efectivo esperado $500.00 con venta en efectivo, abono, retiro por pago a proveedor y gasto de caja; conteo de $480.00 por denominaciones, diferencia $0.00 y corte cerrado; el siguiente periodo inicia con fondo de $480.00. Pendientes: desglose persistido, roles distintos al dueño y Android.
 - Ventas (T16) verificado manualmente en Windows el 2026-10-25: venta #10 de tres productos, ticket con QR decodificado offline, reimpresión, anulación con motivo y confirmación `ANULAR`, restauración de stock y bitácora; rechazo con motivo vacío, confirmación incorrecta y corte cerrado; encargado ve la acción y empleado no. Reverificado el 2026-11-19: venta en efectivo con cambio y ticket QR, venta a fiado, reimpresión, anulación de la venta en efectivo con devolución de stock, y rechazo de anulación de una venta incluida en un corte cerrado.
@@ -356,46 +357,46 @@ El detalle vive en el tablero. Resumen y criterios de terminado:
 - El desglose se guarda en la misma transacción que el corte y su suma debe coincidir con el efectivo contado; solo se conservan cantidades mayores a cero. Los cortes anteriores conservan solo el total.
 - `ConteoEfectivo.CrearDesglose` valida el catálogo, cantidades y duplicados; `CorteCajaService.RegistrarCorte` recibe el conteo opcional y `ObtenerDesglose` consulta el detalle.
 - La app MAUI guarda el desglose al cerrar desde el conteo y el historial lo muestra; la consola permite contar por denominaciones y muestra el detalle al registrar y en el historial.
-- 10 pruebas nuevas en `DesgloseCajaTests`; la suite completa pasa **274 pruebas**. Solución y MAUI Windows compilan sin errores ni advertencias. Verificación manual del desglose pendiente en Windows y Android.
+- 10 pruebas nuevas en `DesgloseCajaTests`; la suite completa pasa **274 pruebas**. Solución y MAUI Windows compilan sin errores ni advertencias. Verificado en Windows y Android 16 el 2026-11-21.
 
 ### T30 — Método de pago en abonos de clientes
 
 - Implementada en `feat/abonos-metodo-pago` sobre `feat/desglose-caja-persistido`: el abono elige **Efectivo**, **Tarjeta**, **Transferencia** u **Otro** desde la consola y las pestañas Caja y Clientes; **Efectivo** es el valor predeterminado.
 - `MetodoPagoAbono` (Core) centraliza el catálogo y la validación; `ConfiguracionService.RegistrarAbonoCliente` rechaza métodos inválidos sin descontar el saldo y registra `Metodo=` en la bitácora.
 - Solo los abonos en efectivo suman a `AbonosEfectivo` y al efectivo esperado; los demás métodos reducen el saldo y quedan en el historial y el estado de cuenta sin tocar la caja. No requiere migración: `AbonosFiado.MetodoPago` existe desde la v3.
-- 10 pruebas nuevas en `AbonosMetodoPagoTests`; la suite completa pasa **284 pruebas**. Solución y MAUI Windows compilan sin errores ni advertencias. Verificación manual pendiente en Windows y Android.
+- 10 pruebas nuevas en `AbonosMetodoPagoTests`; la suite completa pasa **284 pruebas**. Solución y MAUI Windows compilan sin errores ni advertencias. Verificado en Windows y Android 16 el 2026-11-21.
 
 ### T31 — Exportación CSV de reportes y estados de cuenta
 
 - Implementada en `feat/exportacion-csv-reportes` sobre `main`: `ExportadorCsv` (capa `Application`) genera el reporte de utilidad y los estados de cuenta de cliente y proveedor con coma, punto decimal invariante y escape de comas, comillas y saltos.
 - La consola exporta el reporte de utilidad a `exportaciones/` junto a la base, con BOM UTF-8. La app MAUI agrega **Exportar CSV** en Reportes, Clientes y Proveedores; el archivo se comparte o guarda con el diálogo del sistema.
 - El estado de cuenta de cliente incluye saldo, totales y movimientos con método; el de proveedor incluye saldo, total pagado y pagos con método, usuario y saldo después.
-- 10 pruebas nuevas en `ExportadorCsvTests`; la suite completa pasa **294 pruebas**. Solución y MAUI Windows compilan sin errores ni advertencias. Verificación manual pendiente en Windows y Android.
+- 10 pruebas nuevas en `ExportadorCsvTests`; la suite completa pasa **294 pruebas**. Solución y MAUI Windows compilan sin errores ni advertencias. Verificado en Windows y Android 16 el 2026-11-21.
 
 ### T32 — QR del ticket compartible como imagen
 
 - Implementada en `feat/qr-imagen-compartir` sobre `main`: `QrImagenService` (capa `Application`) rasteriza el QR a PNG en escala de grises con zona de silencio y módulos de tamaño entero, usando `ZLibStream` y CRC32 propios; no agrega bibliotecas de dibujo.
 - `TicketPage` agrega **Compartir QR como imagen**: escribe el PNG en la caché y abre el diálogo del sistema. El compartir texto y el copiar siguen disponibles.
-- 8 pruebas nuevas en `QrImagenServiceTests` (firma, dimensiones, chunks, píxeles contra la matriz, zona de silencio, escalado y parámetros inválidos); la suite completa pasa **302 pruebas**. Solución y MAUI Windows compilan sin errores ni advertencias. Verificación manual pendiente en Windows y Android.
+- 8 pruebas nuevas en `QrImagenServiceTests` (firma, dimensiones, chunks, píxeles contra la matriz, zona de silencio, escalado y parámetros inválidos); la suite completa pasa **302 pruebas**. Solución y MAUI Windows compilan sin errores ni advertencias. Verificado en Windows y Android 16 el 2026-11-21.
 
 ### T33 — Efectivo recibido guardado para la reimpresión
 
 - Implementada en `feat/efectivo-recibido-reimpresion` sobre `main`: esquema **v12** con `Ventas.EfectivoRecibido` (nullable) y migración idempotente.
 - `VentaService` valida que el efectivo recibido cubra el total y lo guarda solo en ventas en efectivo; tarjeta, fiado, mixto y ventas anteriores quedan en `NULL`.
 - `TicketService` usa el recibido guardado cuando la interfaz no lo pasa, así que la reimpresión desde Ventas repite **Recibido** y **Cambio**. La consola también lo guarda e imprime.
-- 7 pruebas nuevas en `EfectivoRecibidoTests`; la suite completa pasa **309 pruebas**. Solución y MAUI Windows compilan sin errores ni advertencias. Verificación manual pendiente en Windows y Android.
+- 7 pruebas nuevas en `EfectivoRecibidoTests`; la suite completa pasa **309 pruebas**. Solución y MAUI Windows compilan sin errores ni advertencias. Verificado en Windows y Android 16 el 2026-11-21.
 
 ### T34 — Editar configuración desde Ajustes
 
 - Implementada en `feat/ajustes-editar-configuracion` sobre `main`: la pestaña **Ajustes** agrega **Editar configuración** solo para el dueño, con nombre, giro, impuesto, comisión, fondo, fiado, límite y días de respaldo.
 - Se puede activar o desactivar el fiado después del asistente inicial; al desactivarlo, el límite queda en cero. `ConfiguracionService.ActualizarConfiguracion` valida, conserva Id/versión/fecha y deja bitácora `Configuracion`; el botón y el servicio validan el permiso.
-- 6 pruebas nuevas en `ConfiguracionEdicionTests`; la suite completa pasa **315 pruebas**. Solución y MAUI Windows compilan sin errores ni advertencias. Verificado en Windows el 2026-11-21: se abrió el formulario, se activó el fiado y se guardaron nombre, impuesto, comisión, fondo, límite y respaldo; Android pendiente.
+- 6 pruebas nuevas en `ConfiguracionEdicionTests`; la suite completa pasa **315 pruebas**. Solución y MAUI Windows compilan sin errores ni advertencias. Verificado en Windows y Android 16 el 2026-11-21: se abrió el formulario, se activó el fiado y se guardaron nombre, impuesto, comisión, fondo, límite y respaldo.
 
 ### T35 — Gestión de usuarios y PIN en Ajustes
 
 - Implementada en `feat/usuarios-pin-ajustes` sobre `main`: **Ajustes → Usuarios y PIN** (solo dueño) lista usuarios y permite agregar, cambiar nombre, rol o PIN en una capa propia de la página.
 - `ConfiguracionService` exige nombre y PIN únicos, valida el formato, protege al último dueño y deja bitácora (`Usuario`, `EditarUsuario`, `CambiarPin`) sin guardar el PIN. `DatabaseTools` agrega las actualizaciones de usuario y hash.
-- 12 pruebas nuevas en `UsuariosPinTests`; la suite completa pasa **327 pruebas**. Solución y MAUI Windows compilan sin errores ni advertencias. Verificado en Windows el 2026-11-21: se creó “Cajera” con PIN 5678 y rol Encargado, se inició sesión con ese PIN y el rol no vio las opciones de dueño; Android pendiente.
+- 12 pruebas nuevas en `UsuariosPinTests`; la suite completa pasa **327 pruebas**. Solución y MAUI Windows compilan sin errores ni advertencias. Verificado en Windows y Android 16 el 2026-11-21: se creó “Cajera”/“CajeraAndroid” con PIN 5678 y rol Encargado, se inició sesión con ese PIN y el rol no vio las opciones de dueño.
 
 ### T7 — Pantallas de operación en MAUI
 
@@ -440,6 +441,8 @@ adb install -r SistemaTienda/SistemaTienda.Maui/bin/Debug/net10.0-android/<Appli
 ```
 
 Entorno conocido: el equipo tiene runtime **.NET 10** y SDK 10; los proyectos `net8.0` usan `RollForward=Major` para ejecutarse. Si creas un nuevo ejecutable o proyecto de pruebas, agrega la misma propiedad o fallará al arrancar. La app MAUI usa los frameworks `net10.0-android` y `net10.0-windows10.0.19041.0` y requiere las cargas de trabajo `maui-windows` y `maui-android` instaladas.
+
+**Compilación Android local (2026-11-21)**: el instalador MSI de `dotnet workload install maui-android` falla en este equipo con `Object reference not set to an instance of an object`, incluso elevado. Se usó un SDK .NET 10 basado en archivos en `%LOCALAPPDATA%\dotnet10` (instalado con `dotnet-install.ps1`), donde `maui-android` sí se instala. Requiere JDK 17 (`C:\Program Files\Microsoft\jdk-17.0.21.102-hotspot`), `JAVA_HOME`, `ANDROID_HOME=%LOCALAPPDATA%\Android\Sdk`, `cmdline-tools`, `platforms;android-36` y `build-tools;36.0.0`/`36.1.0`. Compilar con ese `dotnet.exe` y `-p:EmbedAssembliesIntoApk=true`; instalar el APK `*-Signed.apk` por `adb`.
 
 **Nota local (2026-11-12)**: el bloqueo `0x800711C7` de Control de aplicaciones es intermitente. Corrió 230 pruebas en verde el 2026-11-11, pero volvió a bloquear el `SistemaTienda.Tests.dll` recién compilado el 2026-11-12 (también al compilar a una carpeta temporal). La compilación de la solución y de la app MAUI funciona. Mientras el bloqueo esté activo, la verificación de pruebas se hace con el CI de GitHub Actions, que es la referencia para cada PR; revisa Seguridad de Windows → Control de aplicaciones y navegador (o Smart App Control) si necesitas correrlas en local.
 
