@@ -112,9 +112,10 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 
 ### Validaciones de borde sin corregir (hallazgos de T9)
 
-- **Dónde**: `InventoryService.AjustarStock`, `ConfiguracionService.AgregarUsuario` y `VerificarAcceso`, `ConfiguracionService.AgregarGasto`, `InventoryService.BuscarPorNombre`.
-- **Impacto**: `AjustarStock` no valida que el producto exista (con stock mayor a cero falla por llave foránea; con stock cero reporta éxito sin haber ajustado). Se permiten PIN duplicados y `VerificarAcceso` devuelve el primer usuario por nombre, lo que puede asignar el rol equivocado. `AgregarGasto` no recorta el concepto, así que agrupa distinguiendo mayúsculas y espacios. La búsqueda por nombre no ignora acentos.
-- **Cierre**: validar existencia antes de ajustar, exigir PIN único (o verificar por usuario y PIN), recortar el concepto al guardar y normalizar la búsqueda (mayúsculas/acentos).
+- **Dónde**: `InventoryService.AjustarStock`, `ConfiguracionService.AgregarGasto`, `InventoryService.BuscarPorNombre`.
+- **Impacto**: `AjustarStock` no valida que el producto exista (con stock mayor a cero falla por llave foránea; con stock cero reporta éxito sin haber ajustado). `AgregarGasto` no recorta el concepto, así que agrupa distinguiendo mayúsculas y espacios. La búsqueda por nombre no ignora acentos.
+- **Resuelto (T35)**: el alta y la edición de usuarios exigen nombre y PIN únicos, y el PIN se valida en el servicio. Los usuarios creados antes de T35 podrían conservar un PIN duplicado; en ese caso `VerificarAcceso` devuelve el primero que coincide y conviene cambiar el PIN desde Ajustes.
+- **Cierre**: validar existencia antes de ajustar, recortar el concepto al guardar y normalizar la búsqueda (mayúsculas/acentos).
 
 ### Reportes sin PDF, comparación ni desglose
 

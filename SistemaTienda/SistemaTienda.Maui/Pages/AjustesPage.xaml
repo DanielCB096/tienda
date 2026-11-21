@@ -28,6 +28,20 @@
 
             <Border Style="{StaticResource Tarjeta}">
                 <VerticalStackLayout Spacing="6">
+                    <Label Text="USUARIOS" Style="{StaticResource EtiquetaSeccion}" />
+                    <Label Text="Agrega usuarios y cambia su nombre, rol o PIN. Solo el dueño."
+                           Style="{StaticResource TextoNota}" />
+                    <Button x:Name="UsuariosButton"
+                            Text="Usuarios y PIN"
+                            Style="{StaticResource BotonSecundario}"
+                            Clicked="OnUsuariosClicked"
+                            IsVisible="False"
+                            Margin="0,8,0,0" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Style="{StaticResource Tarjeta}">
+                <VerticalStackLayout Spacing="6">
                     <Label Text="RESPALDO" Style="{StaticResource EtiquetaSeccion}" />
                     <Label x:Name="UltimoRespaldoLabel" FontSize="18" FontAttributes="Bold" />
                     <Label x:Name="RespaldoDetalleLabel" Style="{StaticResource TextoNota}" />
@@ -119,6 +133,88 @@
                                 Text="Cancelar"
                                 Style="{StaticResource BotonSecundario}"
                                 Clicked="OnCancelarConfiguracionClicked" />
+                    </Grid>
+                </VerticalStackLayout>
+            </ScrollView>
+        </Border>
+    </Grid>
+
+    <Grid x:Name="UsuariosOverlay"
+          IsVisible="False"
+          BackgroundColor="#99000000"
+          Padding="16"
+          ZIndex="11">
+        <Border Style="{StaticResource Tarjeta}"
+                Padding="18"
+                HorizontalOptions="Fill"
+                VerticalOptions="Center"
+                MaximumWidthRequest="620">
+            <Grid RowDefinitions="Auto,*,Auto" RowSpacing="10">
+                <VerticalStackLayout Spacing="2">
+                    <Label Text="Usuarios y PIN" FontSize="22" FontAttributes="Bold" />
+                    <Label Text="Solo el dueño. Los cambios quedan en la bitácora."
+                           Style="{StaticResource TextoNota}" />
+                </VerticalStackLayout>
+
+                <ScrollView Grid.Row="1">
+                    <VerticalStackLayout x:Name="ListaUsuarios" Spacing="8" />
+                </ScrollView>
+
+                <Grid Grid.Row="2" ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                    <Button Text="+ Nuevo usuario"
+                            Style="{StaticResource BotonSecundario}"
+                            Clicked="OnNuevoUsuarioClicked" />
+                    <Button Grid.Column="1"
+                            Text="Cerrar"
+                            Style="{StaticResource BotonPrincipal}"
+                            Clicked="OnCerrarUsuariosClicked" />
+                </Grid>
+            </Grid>
+        </Border>
+    </Grid>
+
+    <Grid x:Name="UsuarioFormOverlay"
+          IsVisible="False"
+          BackgroundColor="#99000000"
+          Padding="16"
+          ZIndex="12">
+        <Border Style="{StaticResource Tarjeta}"
+                Padding="18"
+                HorizontalOptions="Fill"
+                VerticalOptions="Center"
+                MaximumWidthRequest="520">
+            <ScrollView>
+                <VerticalStackLayout Spacing="8">
+                    <Label x:Name="UsuarioFormTitulo" FontSize="22" FontAttributes="Bold" />
+
+                    <Label Text="Nombre" Style="{StaticResource EtiquetaSeccion}" Margin="0,8,0,0" />
+                    <Entry x:Name="UsuarioNombreEntry" Style="{StaticResource CampoTexto}" MaxLength="60" />
+
+                    <Label Text="Rol" Style="{StaticResource EtiquetaSeccion}" Margin="0,8,0,0" />
+                    <Picker x:Name="UsuarioRolPicker" Title="Selecciona el rol" />
+
+                    <Label Text="PIN (4 a 6 dígitos)" Style="{StaticResource EtiquetaSeccion}" Margin="0,8,0,0" />
+                    <Entry x:Name="UsuarioPinEntry"
+                           Style="{StaticResource CampoTexto}"
+                           IsPassword="True"
+                           Keyboard="Numeric"
+                           MaxLength="6" />
+                    <Label x:Name="UsuarioFormAyuda"
+                           Text="Al editar, deja el PIN vacío para conservarlo."
+                           Style="{StaticResource TextoNota}"
+                           IsVisible="False" />
+
+                    <Label x:Name="UsuarioFormError" Style="{StaticResource Error}" IsVisible="False" />
+
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10" Margin="0,8,0,0">
+                        <Button x:Name="GuardarUsuarioButton"
+                                Text="Guardar"
+                                Style="{StaticResource BotonPrincipal}"
+                                Clicked="OnGuardarUsuarioClicked" />
+                        <Button Grid.Column="1"
+                                Text="Cancelar"
+                                Style="{StaticResource BotonSecundario}"
+                                Clicked="OnCancelarUsuarioClicked" />
                     </Grid>
                 </VerticalStackLayout>
             </ScrollView>

@@ -386,6 +386,23 @@ public class DatabaseTools
         ExecuteReportObject<UsuarioSistema>("SELECT * FROM UsuariosSistema WHERE Id = @id",
             new SqliteParameter("@id", usuarioId));
 
+    public bool ActualizarUsuario(int usuarioId, string nombre, RolUsuario rol) =>
+        ExecuteCommand(@"
+            UPDATE UsuariosSistema
+            SET Nombre = @nombre, Rol = @rol
+            WHERE Id = @id",
+            new SqliteParameter("@id", usuarioId),
+            new SqliteParameter("@nombre", nombre),
+            new SqliteParameter("@rol", (int)rol)) > 0;
+
+    public bool ActualizarPinUsuario(int usuarioId, string pinHash) =>
+        ExecuteCommand(@"
+            UPDATE UsuariosSistema
+            SET PINHash = @pin
+            WHERE Id = @id",
+            new SqliteParameter("@id", usuarioId),
+            new SqliteParameter("@pin", pinHash)) > 0;
+
     public int ContarUsuarios() =>
         ExecuteScalar<int>("SELECT COUNT(*) FROM UsuariosSistema");
 
