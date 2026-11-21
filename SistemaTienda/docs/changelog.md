@@ -21,6 +21,16 @@ Cada entrada tiene formato:
 
 Próximamente después de completar los módulos críticos.
 
+### v0.0.36 - 2026-11-21: Gestión de usuarios y PIN en Ajustes
+
+- *Agregado*: **Ajustes → Usuarios y PIN** (solo dueño) lista los usuarios y permite agregar, cambiar nombre, rol o PIN en una capa propia de la página.
+- *Agregado*: el alta y la edición exigen nombre y PIN únicos; el PIN se valida con 4 a 6 dígitos y se guarda hasheado con PBKDF2-SHA256.
+- *Agregado*: no se puede degradar al último usuario con rol Dueño. Cada cambio deja bitácora (`Usuario`, `EditarUsuario`, `CambiarPin`) sin guardar el PIN.
+- *Pruebas*: 12 casos nuevos en `UsuariosPinTests` (alta, nombre/PIN duplicados, permisos, edición de nombre y rol, último dueño, cambio de PIN y bitácora); suite completa con **327 pruebas** en verde. Solución y app MAUI de Windows compilan sin errores ni advertencias.
+- *Verificado*: Windows, 2026-11-21. Se creó “Cajera” con PIN 5678 y rol Encargado, se inició sesión con ese PIN y el rol no vio las opciones de dueño en Ajustes. Android pendiente.
+- *Documentación*: actualizados módulo de configuración, interfaz MAUI, manual del dueño, deuda técnica, README, roadmap y plan de pruebas.
+- *Pendiente*: eliminación o baja de usuarios, recuperación de PIN y verificación manual en Android.
+
 ### v0.0.35 - 2026-11-21: Editar configuración desde Ajustes
 
 - *Agregado*: la pestaña **Ajustes** de la app MAUI tiene **Editar configuración** (solo dueño) con nombre, giro, impuesto, comisión de tarjeta, fondo inicial, fiado, límite de crédito y días entre respaldos.
