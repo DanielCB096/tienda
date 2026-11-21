@@ -24,6 +24,7 @@ public partial class ClientesPage : ContentPage
     private FiltroClientes _filtro;
     private ClienteFila? _clienteAbono;
     private ClienteFila? _clienteEstado;
+    private EstadoCuentaCliente? _estadoActual;
 
     public ClientesPage(ConfiguracionService config, SesionApp sesion)
     {
@@ -314,6 +315,7 @@ public partial class ClientesPage : ContentPage
         }
 
         var estado = resultado.Value;
+        _estadoActual = estado;
         EstadoClienteLabel.Text = estado.Cliente.Nombre;
         EstadoContactoLabel.Text = string.IsNullOrWhiteSpace(estado.Cliente.Telefono)
             ? $"Sin teléfono · Cliente desde {Formato.FechaHora(estado.Cliente.FechaRegistro)}"
@@ -372,6 +374,24 @@ public partial class ClientesPage : ContentPage
     {
         EstadoOverlay.IsVisible = false;
         _clienteEstado = null;
+        _estadoActual = null;
+    }
+
+    private async void OnExportarEstadoClicked(object sender, EventArgs e)
+    {
+        if (_estadoActual == null)
+            return;
+
+        try
+        {
+            var nombre = $"estado-cliente-{_estadoActual.Cliente.Id}-{DateTime.Now:yyyyMMdd-HHmm}.csv";
+            await ExportacionCsvApp.CompartirAsync(
+                nombre, ExportadorCsv.EstadoCuentaCliente(_estadoActual));
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlertAsync("No se pudo exportar", ex.Message, "Continuar");
+        }
     }
 
     private void OnEditarClienteClicked(object sender, EventArgs e)

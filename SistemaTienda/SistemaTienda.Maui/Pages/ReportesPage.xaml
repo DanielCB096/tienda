@@ -139,6 +139,12 @@
                        TextColor="#7A4F01" />
             </Border>
 
+            <Button x:Name="ExportarCsvButton"
+                    Text="Exportar CSV"
+                    Style="{StaticResource BotonSecundario}"
+                    IsEnabled="False"
+                    Clicked="OnExportarCsvClicked" />
+
             <Label x:Name="MensajeLabel"
                    Style="{StaticResource TextoNota}"
                    HorizontalTextAlignment="Center"

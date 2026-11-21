@@ -17,7 +17,7 @@
 3. El sistema valida y muestra el tablero (Inicio, Vender, Inventario, Ventas, Clientes, Proveedores, Gastos, Caja, Reportes y Ajustes).
 4. Si el PIN está mal tres veces seguidas, la app bloquea el acceso hasta cerrarla y abrirla de nuevo.
 
-> **Estado de la app (2026-11-21)**: el tablero muestra ventas del día, efectivo esperado del corte, stock bajo y último respaldo. **Vender** registra ventas con carrito, cobros y ticket interno con QR compartible como texto. **Inventario** permite consultar, escanear, dar de alta o editar productos, y registrar entradas, mermas y ajustes según el rol. **Ventas** muestra el detalle de cada venta, permite reimprimir el ticket con su QR y anular la venta completa (solo dueño o encargado). **Clientes** muestra el directorio, permite buscar, dar de alta, abonar al fiado, editar los datos y consultar el estado de cuenta. **Proveedores** muestra el directorio, permite buscar, dar de alta, pagar el saldo con método e historial (el efectivo genera retiro de caja), editar los datos y consultar el estado de cuenta. **Gastos** registra el gasto con su origen y resume lo pagado de la caja y lo externo. **Caja** permite cerrar el corte con conteo por billetes y monedas o con el total directo, registrar ingresos y retiros, abonar al fiado y consultar los últimos 20 cortes. **Reportes** muestra la utilidad del periodo con filtros hoy, mes o rango, con ventas, costo, comisión, mermas, gastos y utilidad neta. El desglose del conteo se guarda con el corte y se muestra en el historial. La anulación también sigue disponible en la consola provisional. El manual describe el flujo completo planeado; revisa en cada versión qué partes ya están en la app.
+> **Estado de la app (2026-11-21)**: el tablero muestra ventas del día, efectivo esperado del corte, stock bajo y último respaldo. **Vender** registra ventas con carrito, cobros y ticket interno con QR compartible como texto. **Inventario** permite consultar, escanear, dar de alta o editar productos, y registrar entradas, mermas y ajustes según el rol. **Ventas** muestra el detalle de cada venta, permite reimprimir el ticket con su QR y anular la venta completa (solo dueño o encargado). **Clientes** muestra el directorio, permite buscar, dar de alta, abonar al fiado, editar los datos y consultar y exportar el estado de cuenta. **Proveedores** muestra el directorio, permite buscar, dar de alta, pagar el saldo con método e historial (el efectivo genera retiro de caja), editar los datos y consultar y exportar el estado de cuenta. **Gastos** registra el gasto con su origen y resume lo pagado de la caja y lo externo. **Caja** permite cerrar el corte con conteo por billetes y monedas o con el total directo, registrar ingresos y retiros, abonar al fiado y consultar los últimos 20 cortes. **Reportes** muestra la utilidad del periodo con filtros hoy, mes o rango, con ventas, costo, comisión, mermas, gastos y utilidad neta, y permite exportarla a CSV. El desglose del conteo se guarda con el corte y se muestra en el historial. La anulación también sigue disponible en la consola provisional. El manual describe el flujo completo planeado; revisa en cada versión qué partes ya están en la app.
 
 ### 2. Catálogo / Búsqueda de Producto
 
@@ -69,7 +69,7 @@ El directorio muestra nombre, teléfono, saldo y estado; la búsqueda acepta nom
 - **Abonar** (dueño o encargado): abre el cliente, captura el monto, elige el método y confirma. El abono no puede superar el saldo y queda en el historial con su método; solo el efectivo entra al corte del periodo. El empleado puede consultar el directorio, pero no ve el botón.
 - **Estado** (todos los roles): muestra el saldo vigente, el total fiado, el total abonado y la lista de ventas a fiado y abonos del cliente, del más reciente al más antiguo. Las ventas anuladas no aparecen.
 - **Editar datos** (dueño o encargado, dentro del estado de cuenta): corrige nombre y teléfono; no cambia el saldo y queda en la bitácora.
-- **Pendiente**: dar de baja clientes, detectar duplicados e imprimir o exportar el estado de cuenta. La verificación manual de esta pantalla está pendiente (2026-11-11).
+- **Pendiente**: dar de baja clientes, detectar duplicados e imprimir el estado de cuenta. El estado de cuenta se exporta a CSV desde la app. La verificación manual de esta pantalla está pendiente (2026-11-11).
 
 ### 3.2 Proveedores y pagos (pestaña Proveedores)
 
@@ -81,7 +81,7 @@ El directorio muestra nombre, clave o RFC, teléfono, dirección, saldo y estado
 - **Estado** (todos los roles): abre el estado de cuenta con los datos del proveedor, el saldo pendiente, el total pagado y el historial de pagos del más reciente al más antiguo con el método, el usuario, el saldo antes y después y el retiro ligado si fue en efectivo. Los pagos anteriores a esta versión (esquema v8) no se pueden reconstruir y los previos a la v9 no tienen método.
 - **Editar datos** (dueño o encargado, desde el estado de cuenta): corrige nombre, clave o RFC, teléfono y dirección; queda en la bitácora y no toca el saldo.
 - **Importante**: el aviso del formulario cambia según el método; revisa que el efectivo esperado del corte sea el correcto después de un pago en efectivo.
-- **Pendiente**: dar de baja proveedores, detectar duplicados, compras por proveedor e imprimir o exportar el estado de cuenta. La verificación manual de esta pantalla está pendiente (2026-11-12).
+- **Pendiente**: dar de baja proveedores, detectar duplicados, compras por proveedor e imprimir el estado de cuenta. El estado de cuenta se exporta a CSV desde la app. La verificación manual de esta pantalla está pendiente (2026-11-12).
 
 ### 4. Inventario (pestaña Inventario)
 
@@ -131,8 +131,9 @@ Acceso en la app: pestaña **Reportes** (disponible para todos los roles con per
 - **Desglose**: ventas cobradas, costo de ventas, comisión de tarjeta, utilidad bruta, mermas, gastos y utilidad neta.
 - **Cálculo**: utilidad bruta = ventas − costo − comisión; utilidad neta = bruta − mermas − gastos. Las ventas anuladas no se incluyen.
 - **Color**: verde cuando la utilidad es positiva o cero y rojo cuando es negativa.
+- **Exportar CSV**: genera el archivo del periodo y abre el diálogo del sistema para compartirlo o guardarlo.
 - **Stock bajo y mermas recientes**: se consultan en **Inicio** e **Inventario**.
-- **Pendiente**: exportar o imprimir el reporte y comparar periodos.
+- **Pendiente**: imprimir el reporte o generar PDF, comparar periodos y verificar la exportación en Windows y Android.
 
 ### 8. Corte de Caja (Parcial o Diario)
 

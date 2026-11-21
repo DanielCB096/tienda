@@ -1,5 +1,6 @@
 // Punto de entrada de la aplicación (interfaz de consola provisional)
 using System.Globalization;
+using System.Text;
 using SistemaTienda.Application.Services;
 using SistemaTienda.Core;
 using SistemaTienda.Infrastructure;
@@ -1184,7 +1185,23 @@ internal static class Program
         Console.WriteLine($"  Mermas: ${Dinero.Formatear(reporte.Mermas)}");
         Console.WriteLine($"  Gastos: ${Dinero.Formatear(reporte.Gastos)}");
         Console.WriteLine($"  Utilidad neta: ${Dinero.Formatear(reporte.UtilidadNeta)}");
+
+        if (LeerSiNo("¿Exportar este reporte a CSV?", false))
+        {
+            var ruta = RutaExportacion($"reporte-utilidad-{DateTime.Now:yyyyMMdd-HHmmss}.csv");
+            File.WriteAllText(ruta, ExportadorCsv.ReporteUtilidad(reporte), new UTF8Encoding(true));
+            Console.WriteLine($"\n  Archivo exportado: {ruta}");
+        }
+
         Pausa();
+    }
+
+    private static string RutaExportacion(string nombreArchivo)
+    {
+        var directorioBase = Path.GetDirectoryName(_db.RutaBaseDatos) ?? ".";
+        var directorio = Path.Combine(directorioBase, "exportaciones");
+        Directory.CreateDirectory(directorio);
+        return Path.Combine(directorio, nombreArchivo);
     }
 
     private static DateTime LeerFecha(string etiqueta, DateTime porDefecto)
