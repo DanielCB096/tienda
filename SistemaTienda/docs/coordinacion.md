@@ -28,7 +28,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 
 | Tarea | Agente | Rama | Archivos | Fecha | Estado |
 |-------|--------|------|-----------|-------|--------|
-| T33 | DeepSeek (OpenCode) | feat/efectivo-recibido-reimpresion | `Core/Venta.cs`, `Application/Services/{VentaService,TicketService}.cs`, `Infrastructure/{Migraciones,Database}.cs`, `Presentation/Program.cs`, `Maui/Pages/PosPage.xaml.cs`, `Tests/EfectivoRecibidoTests.cs`, documentación | 2026-11-21 | Tomada |
+| T34 | DeepSeek (OpenCode) | feat/ajustes-editar-configuracion | `Maui/Pages/AjustesPage.xaml(.cs)`, `Tests/ConfiguracionEdicionTests.cs`, documentación | 2026-11-21 | Tomada |
 
 ## Hecho
 
@@ -76,6 +76,7 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 | T31 | Exportación CSV de reportes y estados de cuenta | Hecho | T24, T22, T23 | Rama `feat/exportacion-csv-reportes` desde `main`, commit `95ec443`. `ExportadorCsv` genera reporte de utilidad y estados de cuenta con escape y punto invariante; consola exporta a `exportaciones/` y la app comparte el archivo desde Reportes, Clientes y Proveedores. 10 pruebas nuevas; 294 totales. Verificación manual pendiente. |
 | T32 | QR del ticket compartible como imagen | Hecho | T16, T13 | Rama `feat/qr-imagen-compartir` desde `main`, commit `bf25be4`. `QrImagenService` rasteriza el QR a PNG con codificador propio; `TicketPage` comparte la imagen por el diálogo del sistema. 8 pruebas nuevas; 302 totales. Verificación manual pendiente. |
 | T33 | Efectivo recibido guardado para la reimpresión | Hecho | T2, T16 | Rama `feat/efectivo-recibido-reimpresion` desde `main`, commit `b07bbff`. Esquema v12 con `Ventas.EfectivoRecibido`; validación en `VentaService`; `TicketService` repite recibido y cambio en la reimpresión; consola incluida. 7 pruebas nuevas; 309 totales. Verificación manual pendiente. |
+| T34 | Editar configuración desde Ajustes | Hecho | T1, T12 | Rama `feat/ajustes-editar-configuracion` desde `main`. Formulario en Ajustes solo para dueño; activa/desactiva fiado después del asistente; bitácora y validación en `ConfiguracionService`. 6 pruebas nuevas; 315 totales. Verificación manual pendiente. |
 | T7 | Interfaz definitiva | Hecho | ADR, T12 | Decisión MAUI validada y base implementada en T12. POS entregado en T13, caja operativa en T14, inventario en T15, detalle/anulación con QR en T16, conteo e historial de cortes en T17, clientes en T18, proveedores en T19, gastos en T21, edición/estado de cuenta de clientes en T22, edición/estado de cuenta de proveedores en T23 y reportes de utilidad en T24. Las pantallas de operación del MVP quedan cubiertas. |
 | T8 | Corte de caja | Hecho | T2 | En `feat/corte-caja` (parte de `feat/ventas-pos`). Esquema v3: cortes, movimientos de caja y abonos con historial. |
 | T9 | Cobertura adicional de pruebas | Hecho | T1–T3 | En `feat/integracion-t4-t9`. 25 pruebas de borde en gastos, saldos, inventario, usuarios y mapeo de tipos. Hallazgos sin corregir: `AjustarStock` no valida que el producto exista; se permiten PIN duplicados y `VerificarAcceso` devuelve el primer usuario por nombre; `AgregarGasto` no recorta el concepto; la búsqueda por nombre no ignora acentos. Ver [deuda-tecnica.md](deuda-tecnica.md). |
