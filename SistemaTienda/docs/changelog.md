@@ -21,6 +21,18 @@ Cada entrada tiene formato:
 
 Próximamente después de completar los módulos críticos.
 
+### v0.0.30 - 2026-11-21: Desglose de caja persistido
+
+- *Agregado*: el esquema **v11** crea `CorteCajaDesglose`, que guarda por corte los billetes y monedas contados con valor en centavos y cantidad; la suma de los subtotales debe coincidir exactamente con el efectivo contado.
+- *Agregado*: el desglose se inserta en la misma transacción que el corte y es inmutable (disparadores contra `UPDATE` y `DELETE`). Los cortes anteriores a la v11 conservan solo el total y no se reconstruyen.
+- *Agregado*: la app MAUI guarda el desglose cuando el cierre viene del conteo por denominaciones y el historial de los últimos 20 cortes muestra el detalle.
+- *Agregado*: la consola permite contar por denominaciones al cerrar el corte, calcula el total y muestra el desglose al registrar y en el historial.
+- *Agregado*: `ConteoEfectivo.CrearDesglose` valida denominaciones del catálogo, cantidades enteras sin duplicados y descarta las cantidades en cero; `CorteCajaService.ObtenerDesglose` consulta el detalle de un corte.
+- *Modificado*: el detalle de la bitácora del corte incluye `Desglose=No` o la lista de denominaciones contadas.
+- *Pruebas*: 10 casos nuevos en `DesgloseCajaTests`; suite completa con **274 pruebas** en verde. Solución y app MAUI de Windows compilan sin errores ni advertencias.
+- *Documentación*: actualizados modelo de datos, proceso de corte, interfaz MAUI, manual del dueño, plan de pruebas, roadmap, README y deuda técnica.
+- *Pendiente*: verificación manual del desglose en Windows y Android.
+
 ### v0.0.29 - 2026-11-19: Verificación manual en Windows y fechas locales
 
 - *Verificado en vivo*: app MAUI de Windows con datos ficticios y base aislada: asistente, login, tablero, alta de producto, importación XLSX con filas válidas/duplicadas/fórmula/error, desactivación y reactivación de producto, venta en efectivo con cambio y ticket QR, venta a fiado, abono, alta de cliente y proveedor con aviso de duplicado, baja y reactivación lógica, estado de cuenta de cliente y proveedor, pago a proveedor con tarjeta y con efectivo (retiro de caja automático), gasto de caja, efectivo esperado, conteo por denominaciones, corte cerrado, reportes por periodo, reimpresión de ticket, anulación de venta y bloqueo de anulación tras corte cerrado, respaldo manual verificado.

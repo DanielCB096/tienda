@@ -1,6 +1,6 @@
-# Modelo de Datos (esquema v10)
+# Modelo de Datos (esquema v11)
 
-Base local SQLite, un solo archivo. `PRAGMA user_version = 10`.
+Base local SQLite, un solo archivo. `PRAGMA user_version = 11`.
 
 El acceso vive en `SistemaTienda.Infrastructure/Database.cs` (`DatabaseTools`). Todas las consultas son parametrizadas.
 
@@ -17,6 +17,7 @@ El acceso vive en `SistemaTienda.Infrastructure/Database.cs` (`DatabaseTools`). 
   - **v8** - crea `PagosProveedor` con índices por proveedor y fecha y disparadores que impiden `UPDATE` y `DELETE` (historial inmutable de pagos a proveedores). Los pagos anteriores a esta migración no se pueden reconstruir.
 - **v9** - agrega `MetodoPago` (texto, vacío para los pagos anteriores) y `MovimientoCajaId` (nullable) a `PagosProveedor`. Los pagos en efectivo registrados desde esta versión generan un retiro en `MovimientosCaja` en la misma transacción; los demás métodos no tocan la caja.
 - **v10** — agrega `Activo INTEGER NOT NULL DEFAULT 1` a `ClientesFiado` y `Proveedores`; las cuentas existentes quedan activas y conservan saldos e historial.
+- **v11** — crea `CorteCajaDesglose` con índice por corte, restricción única por denominación y disparadores que impiden `UPDATE` y `DELETE`. Los cortes anteriores solo tienen el total contado y no se reconstruyen.
 - Una base nueva se crea directamente en la versión máxima (`Migraciones.VersionMaxima`): no se crea respaldo previo porque aún no hay datos.
 - `MigradorEsquema.Migrar()` se ejecuta dentro de `InicializarBaseDeDatos()` al arrancar:
   1. Lee `user_version`; si la base es más nueva que la app, aborta sin tocar nada.
@@ -257,6 +258,19 @@ Cabecera inmutable de cada corte (migración v3). Guarda los totales calculados 
 | Observaciones | TEXT | Motivo obligatorio si hay diferencia; notas opcionales |
 | FechaRegistro | DATETIME | Hora local en que se guardó |
 
+### CorteCajaDesglose
+
+Desglose de billetes y monedas contados en un corte (migración v11). Es inmutable: los disparadores `TR_CorteCajaDesglose_NoUpdate` y `TR_CorteCajaDesglose_NoDelete` rechazan cambios y borrados. Solo se guardan denominaciones con cantidad mayor a cero; la suma de los subtotales debe ser exactamente `CortesCaja.EfectivoContado`.
+
+| Columna | Tipo | Notas |
+|---------|------|-------|
+| Id | INTEGER PK | |
+| CorteCajaId | INTEGER | FK a `CortesCaja(Id)`; único junto con `ValorCentavos` |
+| ValorCentavos | INTEGER | Valor de la denominación en centavos, del catálogo de `ConteoEfectivo` |
+| Cantidad | INTEGER | Billetes o monedas contados; > 0 |
+
+El subtotal (`ValorCentavos * Cantidad`) se calcula al consultar y no se guarda, igual que los totales derivados del corte. Los cortes anteriores a la v11 no tienen renglones.
+
 ### MovimientosCaja
 
 Entradas y salidas manuales de efectivo que no son ventas, abonos ni gastos.
@@ -318,11 +332,11 @@ El precio y el costo de cada línea se copian al vender; cambios posteriores en 
 
 `EfectivoEsperado = FondoInicial + VentasEfectivo + AbonosEfectivo + IngresosCaja − RetirosCaja − GastosCaja`.
 
-Si `Diferencia ≠ 0` y `Observaciones` está vacía, la operación se rechaza y se revierte. Un corte guardado nunca se edita ni se borra. Los abonos de fiado también son atómicos: el descuento de `ClientesFiado.SaldoActual` y la fila de `AbonosFiado` se escriben juntos o no se escriben.
+Si `Diferencia ≠ 0` y `Observaciones` está vacía, la operación se rechaza y se revierte. Un corte guardado nunca se edita ni se borra. Cuando se captura el conteo por denominaciones, sus renglones se insertan en la misma transacción y su suma debe coincidir con `EfectivoContado`; si no coincide, no se guarda nada. Los abonos de fiado también son atómicos: el descuento de `ClientesFiado.SaldoActual` y la fila de `AbonosFiado` se escriben juntos o no se escriben.
 
 ## Índices
 
-`Productos(CodigoBarras)`, `Productos(Nombre)`, `Productos(Stock)`, `MovimientoInventario(ProductoId)`, `MovimientoInventario(Fecha)`, `Gastos(Fecha)`, `ClientesFiado(Nombre)`, `Proveedores(Nombre)`, `PagosProveedor(ProveedorId)`, `PagosProveedor(Fecha)`, `Ventas(Fecha)`, `VentaLineas(VentaId)`, `VentaLineas(ProductoId)`, `CortesCaja(Hasta)`, `MovimientosCaja(Fecha)`, `AbonosFiado(Fecha)`, `AbonosFiado(ClienteId)`, `AnulacionesVenta(Fecha)` (además del índice único implícito en `VentaId`).
+`Productos(CodigoBarras)`, `Productos(Nombre)`, `Productos(Stock)`, `MovimientoInventario(ProductoId)`, `MovimientoInventario(Fecha)`, `Gastos(Fecha)`, `ClientesFiado(Nombre)`, `Proveedores(Nombre)`, `PagosProveedor(ProveedorId)`, `PagosProveedor(Fecha)`, `Ventas(Fecha)`, `VentaLineas(VentaId)`, `VentaLineas(ProductoId)`, `CortesCaja(Hasta)`, `CorteCajaDesglose(CorteCajaId)`, `MovimientosCaja(Fecha)`, `AbonosFiado(Fecha)`, `AbonosFiado(ClienteId)`, `AnulacionesVenta(Fecha)` (además de los índices únicos implícitos en `VentaId`, `PagosProveedor` y la pareja `CorteCajaId, ValorCentavos`).
 
 ## Notas de tipado
 

@@ -109,9 +109,9 @@ Gastos reutiliza `ConfiguracionService`. El resumen superior muestra el total ga
 
 Caja reutiliza `CorteCajaService` y `ConfiguracionService`. Al cerrar, la página recalcula el efectivo esperado con el fondo capturado, muestra la diferencia en vivo y exige observaciones cuando no es cero; la confirmación advierte que el periodo queda inmutable. Los ingresos y retiros piden monto y motivo, y los retiros piden una confirmación adicional. Los abonos de fiado muestran el saldo del cliente y se listan solo si el fiado está activado. Después de cualquier operación se vuelve a leer el periodo desde la base, sin sumar importes en la interfaz.
 
-El conteo por denominaciones es opcional y usa `ConteoEfectivo` (capa `Core`): 11 valores en pesos mexicanos, de `$1000` a `$0.50`, agrupados en billetes y monedas. Cada fila captura una cantidad entera y muestra su subtotal; el total se escribe en **Efectivo contado** en modo solo lectura. Una cantidad inválida oculta el total, muestra un error y bloquea el cierre; **Limpiar conteo** borra las cantidades y devuelve la captura manual. Si se borran todas las cantidades después de haber usado el conteo, el contado derivado se limpia para no cerrar con un total viejo. El desglose no se guarda: el corte solo persiste esperado, contado y diferencia, así que el historial no repite los billetes y monedas.
+El conteo por denominaciones es opcional y usa `ConteoEfectivo` (capa `Core`): 11 valores en pesos mexicanos, de `$1000` a `$0.50`, agrupados en billetes y monedas. Cada fila captura una cantidad entera y muestra su subtotal; el total se escribe en **Efectivo contado** en modo solo lectura. Una cantidad inválida oculta el total, muestra un error y bloquea el cierre; **Limpiar conteo** borra las cantidades y devuelve la captura manual. Si se borran todas las cantidades después de haber usado el conteo, el contado derivado se limpia para no cerrar con un total viejo. Al cerrar desde el conteo, el desglose viaja con el corte y se guarda en `CorteCajaDesglose` dentro de la misma transacción; si la suma no coincide con el contado, `CorteCajaService` rechaza el cierre.
 
-El historial se lee con `CorteCajaService.ObtenerCortes(20)` y muestra los últimos 20 cortes cerrados del más reciente al más antiguo, con folio, periodo, esperado, contado, diferencia coloreada (verde en cero, rojo en faltante o sobrante), responsable, fecha y observaciones. Es solo lectura y se recarga después de cada cierre.
+El historial se lee con `CorteCajaService.ObtenerCortes(20)` y muestra los últimos 20 cortes cerrados del más reciente al más antiguo, con folio, periodo, esperado, contado, diferencia coloreada (verde en cero, rojo en faltante o sobrante), responsable, fecha, el desglose guardado cuando existe y las observaciones. Es solo lectura y se recarga después de cada cierre.
 
 Reportes reutiliza `ReporteUtilidadService` (T5) sin tocar el cálculo y con el permiso `Consultar` validado en el servicio. Los botones **Hoy**, **Este mes** y **Rango** fijan el periodo; **Rango** muestra dos `DatePicker` (desde y hasta) con el botón **Ver**. `PeriodoReporte` (capa `Core`) calcula los límites con fechas sin hora y la pantalla llama a `Obtener(desde, hasta)`. El resumen muestra la utilidad neta en grande, el número de ventas y el periodo; el desglose lista ventas cobradas, costo de ventas, comisión de tarjeta, utilidad bruta, mermas, gastos y utilidad neta. La utilidad bruta y neta se pintan en verde cuando son mayores o iguales a cero y en rojo cuando son negativas. Las ventas anuladas quedan excluidas porque el cálculo ya las filtra. **Actualizar** vuelve a leer el periodo seleccionado y la página recarga al aparecer.
 
@@ -159,7 +159,7 @@ No se usa `Shell` ni rutas jerárquicas. `NavegacionApp` cambia la página raíz
 ## Limitaciones de esta entrega
 
 - Desde la app se vende, se opera el inventario, se gestionan clientes y proveedores, se registran gastos, se cierra la caja y se anulan ventas.
-- El conteo por denominaciones no se guarda: el corte conserva solo el total contado, así que no se puede auditar el desglose de billetes y monedas de un corte pasado.
+- El conteo por denominaciones se guarda con el corte desde el esquema v11 y se consulta en el historial; los cortes anteriores solo conservan el total contado.
 - Inventario no permite borrar productos (la desactivación cumple ese papel), filtrar por categoría, actualizar el costo del catálogo al registrar una entrada ni reportar un valorizado histórico.
 - Clientes permite editar nombre y teléfono y consultar el estado de cuenta, pero no borrar ni dar de baja clientes, detectar duplicados al dar de alta ni elegir el método del abono; el abono se registra siempre como efectivo. El estado de cuenta no imprime ni exporta.
 - Proveedores permite editar los datos y consultar el estado de cuenta con el historial de pagos, y el pago elige método: el efectivo genera el retiro de caja en la misma transacción y los demás métodos no tocan el efectivo esperado. No permite borrar ni dar de baja proveedores ni detectar duplicados. El historial solo cubre los pagos registrados desde la migración v8; los anteriores a la v9 se muestran sin método ni movimiento de caja, y el estado de cuenta no se imprime ni exporta.
@@ -363,7 +363,7 @@ Implementados en código y verificados manualmente en Windows el 2026-10-25:
 - [x] Al cerrar desde el conteo, el corte guarda el total contado y el siguiente periodo arranca con ese monto.
 - [x] El historial muestra los últimos 20 cortes del más reciente al más antiguo con folio, periodo, esperado, contado, diferencia, responsable y observaciones.
 - [x] La diferencia del historial se colorea en verde en cero y en rojo cuando hay faltante o sobrante.
-- [ ] El desglose por denominaciones se guarda y se consulta en cortes pasados.
+- [x] El desglose por denominaciones se guarda y se consulta en cortes pasados (esquema v11; falta verificarlo a mano en la app).
 
 ## Compilar y ejecutar
 

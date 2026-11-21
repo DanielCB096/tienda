@@ -24,12 +24,11 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 - **Impacto**: el QR es informativo y no fiscal; resume hasta diez productos, no se guarda ni se comparte como imagen, no permite validar la venta contra nada y no se ha probado en Android. La reimpresión reconstruye el ticket, pero no incluye el efectivo recibido ni el cambio porque la venta solo guarda el total. WhatsApp y correo dependen del diálogo de compartir del sistema, que sigue sin verificarse. Ver [ADR-qr-ticket.md](05-decisiones/ADR-qr-ticket.md).
 - **Cierre**: renderizar el QR a PNG y compartirlo como archivo, decidir si se sube el límite de productos, guardar el efectivo recibido si se quiere reimprimir el cambio y validar el QR en un dispositivo Android.
 
-### Conteo por denominaciones sin persistencia
+### Conteo por denominaciones (persistencia resuelta el 2026-11-21)
 
-- **Dónde**: `ConteoEfectivo` (Core), `CajaPage` y `Program.CerrarCorte`; registro de abonos.
-- **Por qué**: T17 agregó el conteo en la app sin cambiar el esquema; el corte sigue guardando solo esperado, contado y diferencia.
-- **Impacto**: el desglose de billetes y monedas se usa para calcular el contado, pero no se guarda, así que no se puede auditar después ni reconstruir un faltante por denominación. La consola todavía captura un total directo y el abono de fiado siempre se registra como efectivo (no se pregunta el método ni en Caja ni en Clientes).
-- **Cierre**: tabla de desglose por corte si se requiere auditoría, captura por denominaciones en la consola y método de pago en abonos.
+- **Dónde**: `ConteoEfectivo` (Core), `CajaPage`, `Program.CerrarCorte` y `CorteCajaDesglose`.
+- **Resuelto**: el esquema v11 guarda el desglose por corte y su suma debe coincidir con el efectivo contado; la app y la consola lo capturan y el historial lo muestra. Los renglones son inmutables y los cortes anteriores a la v11 no se reconstruyen.
+- **Pendiente**: el abono de fiado siempre se registra como efectivo (no se pregunta el método); ver la entrada de clientes sin método de abono.
 
 ## Media prioridad
 
@@ -63,14 +62,14 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 
 - **Dónde**: `ConfiguracionService` y la pestaña Clientes de la app MAUI.
 - **Por qué**: T27 agregó baja lógica solo para el dueño y bloqueó el nuevo fiado para clientes inactivos; la cuenta conserva saldo e historial y permite liquidarlos.
-- **Impacto**: el abono se registra siempre como efectivo (no se pregunta el método). El estado de cuenta no se imprime ni exporta. La pantalla aún no se ha verificado a mano en Windows ni en Android.
+- **Impacto**: el abono se registra siempre como efectivo (no se pregunta el método). El estado de cuenta no se imprime ni exporta. La pantalla se verificó en vivo en Windows el 2026-11-19; Android sigue pendiente.
 - **Cierre**: método de pago del abono e impresión/exportación del estado de cuenta.
 
 ### Proveedores sin compras ni exportación del estado de cuenta
 
 - **Dónde**: `ConfiguracionService` y la pestaña Proveedores de la app MAUI.
 - **Por qué**: T27 agregó baja lógica exclusiva del dueño; las cuentas inactivas conservan saldo e historial y admiten pagos para liquidarlas.
-- **Impacto**: aún no se asocian compras a proveedores ni se imprime/exporta el estado de cuenta. El historial solo cubre pagos desde v8; los anteriores no se reconstruyen y los previos a v9 carecen de método y movimiento de caja. La pantalla aún no se ha verificado a mano en Windows ni en Android.
+- **Impacto**: aún no se asocian compras a proveedores ni se imprime/exporta el estado de cuenta. El historial solo cubre pagos desde v8; los anteriores no se reconstruyen y los previos a v9 carecen de método y movimiento de caja. La pantalla se verificó en vivo en Windows el 2026-11-19; Android sigue pendiente.
 - **Cierre**: asociar entradas/compras a proveedores e imprimir o exportar el estado de cuenta.
 
 ### La app MAUI no cubre todas las operaciones
