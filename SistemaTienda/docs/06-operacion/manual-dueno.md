@@ -18,7 +18,7 @@
    - **Proveedores**: directorio con búsqueda, filtros de saldo e inactivos, alta, pagos, edición, estado de cuenta y baja/reactivación lógica (solo dueño). Los pagos siguen permitidos para liquidar una cuenta inactiva.
    - **Gastos**: resumen de lo gastado en total, lo pagado del efectivo de la caja y lo pagado con otra fuente; historial de los últimos 200 gastos y alta de gastos con concepto, monto, método, origen y observaciones (dueño o encargado).
    - **Caja**: periodo abierto (efectivo esperado, fondo, ventas por método, abonos, ingresos/retiros y gastos), cierre de corte con diferencia justificada, conteo por billetes y monedas con desglose guardado, registro de ingresos y retiros, abonos de fiado e historial de los últimos 20 cortes.
-   - **Ajustes**: datos de la tienda, reglas configuradas, rutas de la base y de los respaldos, último respaldo, botón para crear un respaldo y cierre de sesión.
+   - **Ajustes**: datos de la tienda, reglas configuradas, rutas de la base y de los respaldos, último respaldo, botón para crear un respaldo, edición de la configuración (solo dueño) y cierre de sesión.
 4. **Importante**: desde la app ya se vende, se opera el inventario, se gestionan clientes y proveedores (incluida la baja lógica), se registran gastos, se opera la caja y se anulan ventas desde Ventas. La baja/reactivación de cuentas es exclusiva del dueño; las cuentas inactivas conservan saldo e historial y permiten liquidar lo pendiente. Un cliente inactivo no admite nuevas ventas a fiado. El desglose del conteo se guarda con el corte y se consulta en el historial; el catálogo aún no filtra por categoría.
 5. **Dónde están los datos**: en Windows, `%LOCALAPPDATA%\SistemaTienda\com.sistematienda.tienda\Data\tienda.db` y los respaldos en la carpeta `respaldos` junto a ese archivo. En Android están en el almacenamiento privado de la app. Las rutas exactas se muestran en Ajustes.
 
@@ -91,6 +91,8 @@ Acceso en la app: pestaña **Reportes** (visible para dueño, encargado y emplea
 ### 6. Configuración
 
 Acceso restringido (PIN de admin). Opciones:
+
+En la app, el dueño entra a **Ajustes → Editar configuración** para cambiar estos datos después del asistente inicial; los cambios quedan en la bitácora.
 
 - **Nombre y giro de la tienda**.
 - **Impuestos**: Configurar tasas (16% IVA, 0%, exento) por producto o por defecto.
