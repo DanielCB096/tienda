@@ -1418,11 +1418,29 @@ public class DatabaseTools
 
     /// <summary>
     /// Calcula y guarda el corte en una sola transacción para que los totales
-    /// correspondan exactamente a lo que queda registrado.
+    /// correspondan exactamente a lo que queda registrado. Si se recibe el desglose
+    /// por denominaciones, su suma debe coincidir con el efectivo contado.
     /// </summary>
     public ProcessResult<CorteCaja> RegistrarCorteCaja(long efectivoContado, long fondoInicial,
-        string usuario, string observaciones)
+        string usuario, string observaciones, IReadOnlyList<CorteCajaDesglose> desglose = null)
     {
+        var renglones = desglose?.ToList() ?? new List<CorteCajaDesglose>();
+        if (desglose != null)
+        {
+            if (renglones.Any(d => d == null || d.ValorCentavos <= 0 || d.Cantidad <= 0))
+                return ProcessResult<CorteCaja>.Error(
+                    "El desglose contiene una denominación o cantidad inválida");
+
+            if (renglones.Select(d => d.ValorCentavos).Distinct().Count() != renglones.Count)
+                return ProcessResult<CorteCaja>.Error("El desglose tiene denominaciones repetidas");
+
+            var totalDesglose = renglones.Sum(d => d.ValorCentavos * d.Cantidad);
+            if (totalDesglose != efectivoContado)
+                return ProcessResult<CorteCaja>.Error(
+                    $"El desglose suma ${Dinero.Formatear(totalDesglose)} y el efectivo contado es " +
+                    $"${Dinero.Formatear(efectivoContado)}; deben coincidir");
+        }
+
         using var conn = CreateConnection();
         conn.Open();
         using var tx = conn.BeginTransaction();
@@ -1487,18 +1505,66 @@ public class DatabaseTools
             corte.Id = Convert.ToInt32(cmd.ExecuteScalar(), CultureInfo.InvariantCulture);
         }
 
+        if (renglones.Count > 0)
+        {
+            using var cmdDesglose = conn.CreateCommand();
+            cmdDesglose.Transaction = tx;
+            cmdDesglose.CommandText = @"
+                INSERT INTO CorteCajaDesglose (CorteCajaId, ValorCentavos, Cantidad)
+                VALUES (@corte, @valor, @cantidad);";
+
+            var parametroCorte = cmdDesglose.Parameters.Add("@corte", SqliteType.Integer);
+            var parametroValor = cmdDesglose.Parameters.Add("@valor", SqliteType.Integer);
+            var parametroCantidad = cmdDesglose.Parameters.Add("@cantidad", SqliteType.Integer);
+
+            foreach (var renglon in renglones)
+            {
+                parametroCorte.Value = corte.Id;
+                parametroValor.Value = renglon.ValorCentavos;
+                parametroCantidad.Value = renglon.Cantidad;
+                cmdDesglose.ExecuteNonQuery();
+            }
+        }
+
+        corte.Desglose = renglones;
+
         tx.Commit();
         return ProcessResult<CorteCaja>.OK(corte, $"Corte #{corte.Id} registrado");
     }
 
-    public CorteCaja ObtenerUltimoCorteCaja() =>
-        ExecuteReportObject<CorteCaja>(
+    public CorteCaja ObtenerUltimoCorteCaja()
+    {
+        var corte = ExecuteReportObject<CorteCaja>(
             "SELECT * FROM CortesCaja ORDER BY Hasta DESC, Id DESC LIMIT 1");
+        if (corte != null)
+            corte.Desglose = ObtenerDesgloseCorte(corte.Id);
+        return corte;
+    }
 
-    public List<CorteCaja> ObtenerCortesCaja(int limite = 20) =>
-        ExecuteReportObjects<CorteCaja>(
+    public List<CorteCaja> ObtenerCortesCaja(int limite = 20)
+    {
+        var cortes = ExecuteReportObjects<CorteCaja>(
             "SELECT * FROM CortesCaja ORDER BY Hasta DESC, Id DESC LIMIT @limite",
             new SqliteParameter("@limite", limite));
+
+        foreach (var corte in cortes)
+            corte.Desglose = ObtenerDesgloseCorte(corte.Id);
+
+        return cortes;
+    }
+
+    /// <summary>
+    /// Desglose por denominaciones de un corte. Los cortes anteriores a la migración v11
+    /// no tienen renglones porque solo se guardaba el total contado.
+    /// </summary>
+    public List<CorteCajaDesglose> ObtenerDesgloseCorte(int corteCajaId) =>
+        ExecuteReportObjects<CorteCajaDesglose>(@"
+            SELECT Id, CorteCajaId, ValorCentavos, Cantidad,
+                   ValorCentavos * Cantidad AS Subtotal
+            FROM CorteCajaDesglose
+            WHERE CorteCajaId = @corte
+            ORDER BY ValorCentavos DESC",
+            new SqliteParameter("@corte", corteCajaId));
 
     public int RegistrarMovimientoCaja(MovimientoCaja movimiento)
     {

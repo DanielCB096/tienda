@@ -8,6 +8,8 @@ public sealed class CorteFila
     public string Cierre { get; init; } = string.Empty;
     public string Diferencia { get; init; } = string.Empty;
     public Color DiferenciaColor { get; init; } = Colors.Gray;
+    public string Desglose { get; init; } = string.Empty;
+    public bool TieneDesglose => !string.IsNullOrWhiteSpace(Desglose);
     public string Observaciones { get; init; } = string.Empty;
     public bool TieneObservaciones => !string.IsNullOrWhiteSpace(Observaciones);
 }

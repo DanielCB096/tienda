@@ -30,9 +30,12 @@ public class CorteCajaService
     /// <summary>
     /// Cierra el periodo abierto. Si el contado no coincide con el esperado,
     /// el motivo es obligatorio: el corte no se guarda sin explicación.
+    /// El conteo por denominaciones es opcional; cuando se recibe, su suma debe
+    /// coincidir con el efectivo contado y queda guardado con el corte.
     /// </summary>
     public ProcessResult<CorteCaja> RegistrarCorte(long efectivoContado, long fondoInicial,
-        string usuario, string observaciones = "")
+        string usuario, string observaciones = "",
+        IEnumerable<(DenominacionEfectivo Denominacion, int Cantidad)> conteo = null)
     {
         var autorizacion = Autorizar(PermisoSistema.CorteCaja);
         if (autorizacion.IsError)
@@ -47,18 +50,47 @@ public class CorteCajaService
         if (string.IsNullOrWhiteSpace(usuario))
             return ProcessResult<CorteCaja>.Error("El corte requiere el usuario responsable");
 
-        var resultado = _db.RegistrarCorteCaja(efectivoContado, fondoInicial, usuario.Trim(), observaciones);
+        var desglose = ConteoEfectivo.CrearDesglose(conteo);
+        if (desglose.IsError)
+            return ProcessResult<CorteCaja>.Error(desglose.Message);
+
+        if (conteo != null)
+        {
+            var totalConteo = desglose.Value.Sum(d => d.Subtotal);
+            if (totalConteo != efectivoContado)
+                return ProcessResult<CorteCaja>.Error(
+                    $"El conteo suma ${Dinero.Formatear(totalConteo)} y el efectivo contado es " +
+                    $"${Dinero.Formatear(efectivoContado)}; deben coincidir");
+        }
+
+        var resultado = _db.RegistrarCorteCaja(efectivoContado, fondoInicial, usuario.Trim(),
+            observaciones, conteo == null ? null : desglose.Value);
         if (resultado.IsSuccess)
         {
+            var detalleDesglose = resultado.Value.Desglose.Count == 0
+                ? "Desglose=No"
+                : "Desglose=" + string.Join(", ", resultado.Value.Desglose.Select(
+                    d => $"{ConteoEfectivo.Etiqueta(d.ValorCentavos)}x{d.Cantidad}"));
+
             _bitacora.Registrar(AccionBitacora.CorteCaja, "CorteCaja", resultado.Value.Id.ToString(),
                 string.Empty,
                 $"Esperado={Dinero.Formatear(resultado.Value.EfectivoEsperado)};" +
                 $"Contado={Dinero.Formatear(resultado.Value.EfectivoContado)};" +
-                $"Diferencia={Dinero.Formatear(resultado.Value.Diferencia)}",
+                $"Diferencia={Dinero.Formatear(resultado.Value.Diferencia)};" +
+                detalleDesglose,
                 observaciones);
         }
 
         return resultado;
+    }
+
+    /// <summary>Desglose guardado de un corte; vacío si se capturó con total manual.</summary>
+    public ProcessResult<List<CorteCajaDesglose>> ObtenerDesglose(int corteCajaId)
+    {
+        if (corteCajaId <= 0)
+            return ProcessResult<List<CorteCajaDesglose>>.Error("El corte no es válido");
+
+        return ProcessResult<List<CorteCajaDesglose>>.OK(_db.ObtenerDesgloseCorte(corteCajaId));
     }
 
     public ProcessResult<MovimientoCaja> RegistrarMovimiento(string tipo, long monto,

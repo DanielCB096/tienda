@@ -125,13 +125,14 @@ dotnet test SistemaTienda/SistemaTienda.sln
 | `RespaldoAutomaticoTests` | Respaldo automático sin copia previa y su auditoría, respaldo vigente que no duplica, intervalo cumplido, intervalo 0 deshabilitado y auditoría del respaldo manual |
 | `TicketServiceTests` | Texto del ticket (efectivo con recibido y cambio, mixto con comisión, fiado con cliente), marcador de anulación, contenido del QR con estado, límite de diez productos y nombre de tienda por defecto |
 | `ConteoEfectivoTests` | Catálogo de 11 denominaciones de mayor a menor y sin duplicados, subtotal por cantidad, cantidades cero o negativas ignoradas, total de billetes y monedas y líneas sin cantidad |
+| `DesgloseCajaTests` | Desglose guardado con el corte y suma contra el contado, descarte de cantidades en cero, rechazo por suma distinta, denominación fuera del catálogo, cantidad negativa o repetida, corte manual sin desglose, historial con desglose por corte, migración v10 → v11 con tabla inmutable y corte previo conservado |
 | `DesactivacionProductosTests` | Migración v6 → v7 conserva productos y los marca activos, alta activa por defecto, desactivar conserva stock y bloquea la venta, reactivar devuelve a la venta, permiso solo dueño, bitácora, estados ya aplicados e inexistente, entrada/merma/ajuste bloqueados, búsqueda y stock bajo con filtro de activos y localización por código |
 | `EstadoCuentaClientesTests` | Edición de nombre y teléfono con permiso `EditarCliente` y bitácora, rechazo para empleado, saldo intacto, recorte y validaciones, totales fiado/abonado, exclusión de ventas anuladas del historial y del total, cliente sin movimientos y cliente inexistente |
 | `EstadoCuentaProveedoresTests` | Edición con permiso `EditarProveedor` y bitácora, rechazo para empleado, saldo intacto, recorte y validaciones, pago atómico con historial y saldo antes/después, pago mayor al saldo sin historial, inmutabilidad de `PagosProveedor`, totales del estado de cuenta, proveedor sin pagos y proveedor inexistente; migración v8 con tabla y disparadores |
 | `PeriodoReporteTests` | Hoy ignora la hora, mes en curso empieza el día 1 y termina hoy, enero no se sale del año y el rango normaliza las horas de ambas fechas |
 | `PagoProveedorMetodoTests` | Pago en efectivo genera retiro y reduce el efectivo esperado (retiros y motivo), tarjeta/transferencia/otro no tocan la caja, método inválido o vacío no cambia saldo, historial, caja ni bitácora, recorte de espacios, encargado con efectivo y bitácora con método y retiro, empleado rechazado y migración v8 → v9 que conserva pagos con método vacío y movimiento nulo |
 
-Total actual: 246 casos, todos en verde en local el 2026-11-12 y confirmados por el CI del PR #18 (234 de T24 más 12 de T25). Los puntos 1, 2, 3, 5, 6, 7, 8 y 9 del listado de áreas críticas tienen cobertura parcial; falta rendimiento y la interfaz MAUI sigue sin pruebas automatizadas. La restauración se prueba sobre una base temporal: se verifica que el contenido vuelve al del respaldo (no byte a byte).
+Total actual: 274 casos, todos en verde en local el 2026-11-21 (264 previos de la verificación manual más 10 de T29). Los puntos 1, 2, 3, 5, 6, 7, 8 y 9 del listado de áreas críticas tienen cobertura parcial; falta rendimiento y la interfaz MAUI sigue sin pruebas automatizadas. La restauración se prueba sobre una base temporal: se verifica que el contenido vuelve al del respaldo (no byte a byte).
 
 La verificación se ejecuta en GitHub Actions (`windows-latest`) en cada push y también puede correr localmente con `dotnet test`; ver `CLAUDE-tienda.md` para el entorno actual.
 
@@ -288,7 +289,7 @@ Ejecutada en Windows el 2026-10-25 sobre la misma base demo del POS, la Caja, el
 | Historial de cortes | Pasó (#3, #2 y #1 del más reciente al más antiguo, con periodo, esperado, contado, “Cerrado … por Dueño” y nota en cursiva en el #1) |
 | Diferencia en el historial | Pasó (corte #1 en rojo con −$10.00 y nota “Falta de prueba en el conteo”; cortes sin diferencia en verde) |
 | Borrar la última cantidad capturada | Pasó (el contado derivado se limpia y vuelve a edición manual, sin conservar un total viejo) |
-| Conteo persistido en cortes pasados | Limitación (solo se guarda el total contado; el desglose no se conserva) |
+| Conteo persistido en cortes pasados | Implementado (esquema v11; el desglose se guarda con el corte y se muestra en el historial) |
 
 Pendiente del conteo y el historial:
 

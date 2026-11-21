@@ -1246,7 +1246,28 @@ internal static class Program
         var fondo = LeerDinero("Fondo inicial del periodo ($)", 0, r.FondoInicial);
         var esperado = r.EfectivoEsperado - r.FondoInicial + fondo;
         Console.WriteLine($"  Efectivo esperado:   ${Dinero.Formatear(esperado),10}");
-        var contado = LeerDinero("Efectivo contado en caja ($)", 0, esperado);
+
+        List<(DenominacionEfectivo Denominacion, int Cantidad)> conteo = null;
+        long contado;
+        if (LeerSiNo("¿Contar por denominaciones?", false))
+        {
+            conteo = new List<(DenominacionEfectivo, int)>();
+            Console.WriteLine();
+            foreach (var denominacion in ConteoEfectivo.Denominaciones)
+            {
+                var cantidad = LeerEntero($"Cantidad de {denominacion.Etiqueta}",
+                    0, ConteoEfectivo.MaximoCantidad, 0);
+                conteo.Add((denominacion, cantidad));
+            }
+
+            contado = ConteoEfectivo.CalcularTotal(conteo);
+            Console.WriteLine($"  Total contado por denominaciones: ${Dinero.Formatear(contado)}");
+        }
+        else
+        {
+            contado = LeerDinero("Efectivo contado en caja ($)", 0, esperado);
+        }
+
         var diferencia = contado - esperado;
         Console.WriteLine($"  Diferencia:          ${Dinero.Formatear(diferencia),10}");
 
@@ -1263,7 +1284,7 @@ internal static class Program
             observaciones = LeerTextoConDefecto("Observaciones (opcional)", string.Empty);
         }
 
-        var resultado = _cortes.RegistrarCorte(contado, fondo, _usuarioActual.Nombre, observaciones);
+        var resultado = _cortes.RegistrarCorte(contado, fondo, _usuarioActual.Nombre, observaciones, conteo);
         if (resultado.IsError)
         {
             Aviso(resultado.Message);
@@ -1278,6 +1299,13 @@ internal static class Program
         Console.WriteLine($"  Efectivo esperado: ${Dinero.Formatear(c.EfectivoEsperado)}");
         Console.WriteLine($"  Efectivo contado:  ${Dinero.Formatear(c.EfectivoContado)}");
         Console.WriteLine($"  Diferencia:        ${Dinero.Formatear(c.Diferencia)}  {EstadoDiferencia(c.Diferencia)}");
+        if (c.Desglose.Count > 0)
+        {
+            Console.WriteLine("  Desglose del conteo:");
+            foreach (var renglon in c.Desglose)
+                Console.WriteLine($"    {ConteoEfectivo.Etiqueta(renglon.ValorCentavos),-8} " +
+                                  $"x {renglon.Cantidad,-4} = ${Dinero.Formatear(renglon.Subtotal)}");
+        }
         if (!string.IsNullOrWhiteSpace(c.Observaciones))
             Console.WriteLine($"  Observaciones: {c.Observaciones}");
         Console.WriteLine($"\n  El próximo periodo inicia con ${Dinero.Formatear(c.EfectivoContado)} en caja.");
@@ -1318,9 +1346,15 @@ internal static class Program
         else
         {
             foreach (var c in cortes)
+            {
                 Console.WriteLine($"  #{c.Id,-4} {c.Hasta:g}  {c.Usuario,-12} " +
                                   $"esperado ${Dinero.Formatear(c.EfectivoEsperado),8}  contado ${Dinero.Formatear(c.EfectivoContado),8}  " +
                                   $"dif. ${Dinero.Formatear(c.Diferencia),7}");
+                if (c.Desglose.Count > 0)
+                    Console.WriteLine("        Desglose: " + string.Join(", ", c.Desglose.Select(
+                        d => $"{ConteoEfectivo.Etiqueta(d.ValorCentavos)}x{d.Cantidad}")) +
+                        $" = ${Dinero.Formatear(c.Desglose.Sum(d => d.Subtotal))}");
+            }
         }
         Pausa();
     }

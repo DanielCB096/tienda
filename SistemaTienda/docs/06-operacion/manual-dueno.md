@@ -17,9 +17,9 @@
    - **Clientes**: directorio con búsqueda, filtros de saldo e inactivos, alta, abonos, edición, estado de cuenta y baja/reactivación lógica (solo dueño). Los abonos siguen permitidos para liquidar una cuenta inactiva.
    - **Proveedores**: directorio con búsqueda, filtros de saldo e inactivos, alta, pagos, edición, estado de cuenta y baja/reactivación lógica (solo dueño). Los pagos siguen permitidos para liquidar una cuenta inactiva.
    - **Gastos**: resumen de lo gastado en total, lo pagado del efectivo de la caja y lo pagado con otra fuente; historial de los últimos 200 gastos y alta de gastos con concepto, monto, método, origen y observaciones (dueño o encargado).
-   - **Caja**: periodo abierto (efectivo esperado, fondo, ventas por método, abonos, ingresos/retiros y gastos), cierre de corte con diferencia justificada, conteo por billetes y monedas, registro de ingresos y retiros, abonos de fiado e historial de los últimos 20 cortes.
+   - **Caja**: periodo abierto (efectivo esperado, fondo, ventas por método, abonos, ingresos/retiros y gastos), cierre de corte con diferencia justificada, conteo por billetes y monedas con desglose guardado, registro de ingresos y retiros, abonos de fiado e historial de los últimos 20 cortes.
    - **Ajustes**: datos de la tienda, reglas configuradas, rutas de la base y de los respaldos, último respaldo, botón para crear un respaldo y cierre de sesión.
-4. **Importante**: desde la app ya se vende, se opera el inventario, se gestionan clientes y proveedores (incluida la baja lógica), se registran gastos, se opera la caja y se anulan ventas desde Ventas. La baja/reactivación de cuentas es exclusiva del dueño; las cuentas inactivas conservan saldo e historial y permiten liquidar lo pendiente. Un cliente inactivo no admite nuevas ventas a fiado. El desglose del conteo no se guarda en el corte: solo el total contado; el catálogo aún no filtra por categoría.
+4. **Importante**: desde la app ya se vende, se opera el inventario, se gestionan clientes y proveedores (incluida la baja lógica), se registran gastos, se opera la caja y se anulan ventas desde Ventas. La baja/reactivación de cuentas es exclusiva del dueño; las cuentas inactivas conservan saldo e historial y permiten liquidar lo pendiente. Un cliente inactivo no admite nuevas ventas a fiado. El desglose del conteo se guarda con el corte y se consulta en el historial; el catálogo aún no filtra por categoría.
 5. **Dónde están los datos**: en Windows, `%LOCALAPPDATA%\SistemaTienda\com.sistematienda.tienda\Data\tienda.db` y los respaldos en la carpeta `respaldos` junto a ese archivo. En Android están en el almacenamiento privado de la app. Las rutas exactas se muestran en Ajustes.
 
 ## Pantallas Principales
@@ -74,7 +74,7 @@ Acceso en la app: pestaña **Caja** (requiere PIN de dueño o encargado; el reti
 
 - **Conteo por denominaciones**: anota cuántos billetes y monedas hay de cada valor; el subtotal y el total se calculan solos y el importe pasa a **Efectivo contado** en solo lectura. También puedes capturar el total directamente. **Limpiar conteo** borra las cantidades y devuelve la captura manual.
 - **Cierre**: revisa el efectivo esperado contra el contado, justifica cualquier diferencia y confirma; el periodo queda cerrado e inmutable y el siguiente arranca con lo contado.
-- **Historial**: consulta los últimos 20 cortes con periodo, esperado, contado, diferencia coloreada, responsable, fecha y observaciones. El desglose de billetes y monedas no se guarda.
+- **Historial**: consulta los últimos 20 cortes con periodo, esperado, contado, diferencia coloreada, responsable, fecha, desglose de billetes y monedas cuando se capturó y observaciones.
 
 ### 5. Reportes y Utilidad
 

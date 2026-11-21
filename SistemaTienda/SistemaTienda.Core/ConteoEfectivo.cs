@@ -9,6 +9,8 @@ public sealed record DenominacionEfectivo(long ValorCentavos, string Etiqueta, s
 
 public static class ConteoEfectivo
 {
+    public const int MaximoCantidad = 100_000;
+
     public static IReadOnlyList<DenominacionEfectivo> Denominaciones { get; } =
         new List<DenominacionEfectivo>
         {
@@ -34,4 +36,56 @@ public static class ConteoEfectivo
 
         return total;
     }
+
+    /// <summary>
+    /// Valida el conteo capturado y lo convierte en renglones persistibles.
+    /// Se descartan las cantidades en cero y se rechazan denominaciones
+    /// desconocidas, repetidas o cantidades fuera de rango.
+    /// </summary>
+    public static ProcessResult<List<CorteCajaDesglose>> CrearDesglose(
+        IEnumerable<(DenominacionEfectivo Denominacion, int Cantidad)> conteo)
+    {
+        var renglones = new List<CorteCajaDesglose>();
+        if (conteo == null)
+            return ProcessResult<List<CorteCajaDesglose>>.OK(renglones);
+
+        var vistas = new HashSet<long>();
+        foreach (var (denominacion, cantidad) in conteo)
+        {
+            if (denominacion == null)
+                return ProcessResult<List<CorteCajaDesglose>>.Error(
+                    "El desglose incluye una denominación vacía");
+
+            var catalogo = Denominaciones.FirstOrDefault(
+                d => d.ValorCentavos == denominacion.ValorCentavos);
+            if (catalogo == null)
+                return ProcessResult<List<CorteCajaDesglose>>.Error(
+                    $"La denominación {denominacion.Etiqueta} no está en el catálogo de efectivo");
+
+            if (cantidad < 0 || cantidad > MaximoCantidad)
+                return ProcessResult<List<CorteCajaDesglose>>.Error(
+                    $"La cantidad de {catalogo.Etiqueta} debe ser un entero entre 0 y {MaximoCantidad}");
+
+            if (!vistas.Add(catalogo.ValorCentavos))
+                return ProcessResult<List<CorteCajaDesglose>>.Error(
+                    $"La denominación {catalogo.Etiqueta} está repetida en el conteo");
+
+            if (cantidad == 0)
+                continue;
+
+            renglones.Add(new CorteCajaDesglose
+            {
+                ValorCentavos = catalogo.ValorCentavos,
+                Cantidad = cantidad,
+                Subtotal = catalogo.Subtotal(cantidad)
+            });
+        }
+
+        return ProcessResult<List<CorteCajaDesglose>>.OK(renglones);
+    }
+
+    /// <summary>Etiqueta legible de un valor en centavos; si no es del catálogo, lo formatea.</summary>
+    public static string Etiqueta(long valorCentavos) =>
+        Denominaciones.FirstOrDefault(d => d.ValorCentavos == valorCentavos)?.Etiqueta
+        ?? $"${Dinero.Formatear(valorCentavos)}";
 }

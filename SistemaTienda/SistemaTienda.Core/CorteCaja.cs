@@ -29,6 +29,9 @@ public class CorteCaja
     public string Usuario { get; set; } = string.Empty;
     public string Observaciones { get; set; } = string.Empty;
     public DateTime FechaRegistro { get; set; }
+
+    /// <summary>Desglose de billetes y monedas; vacío si el corte se capturó con total manual.</summary>
+    public List<CorteCajaDesglose> Desglose { get; set; } = new();
 }
 
 public class MovimientoCaja

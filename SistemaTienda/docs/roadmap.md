@@ -1,6 +1,6 @@
 # Roadmap
 
-Estado al 2026-11-19. T1–T25 están integradas en `main` (`86cbf67`); T26, T27 y T28 están implementadas, verificadas manualmente en Windows y pendientes de aprobación e integración. La verificación en vivo encontró y corrigió el alta de clientes/proveedores con fecha UTC; la suite queda en 264 pruebas. Orden sugerido en [CLAUDE-tienda.md §13](../CLAUDE-tienda.md).
+Estado al 2026-11-21. T1–T29 están integradas o implementadas sobre `main`: T1–T25 en `main` (`86cbf67`), T26–T28 verificadas e integradas el 2026-11-19 y T29 (desglose de caja persistido) en `feat/desglose-caja-persistido`. La suite queda en 274 pruebas. Orden sugerido en [CLAUDE-tienda.md §13](../CLAUDE-tienda.md).
 
 ## Avance por módulo
 
@@ -13,7 +13,7 @@ Estado al 2026-11-19. T1–T25 están integradas en `main` (`86cbf67`); T26, T27
 | 5 | Gastos y pagos | 🟡 Parcial | Gastos simples con resumen por origen, historial y alta en la app; pagos al personal no existen |
 | 6 | Clientes y fiado | 🟡 Parcial | Cliente, saldo y abono con historial (`AbonosFiado`); directorio, búsqueda, alta, abono, edición, estado de cuenta, detección de duplicados y baja/reactivación lógica solo del dueño (esquema v10); faltan método del abono y estado de cuenta impreso |
 | 7 | Proveedores y cuentas por pagar | 🟡 Parcial | Proveedor, saldo, pago con método e historial inmutable; efectivo genera retiro atómico. Directorio, búsqueda, alta, pago, edición, estado de cuenta, detección de duplicados y baja/reactivación lógica solo del dueño (esquema v10); faltan compras por proveedor y estado de cuenta impreso |
-| 8 | Corte de caja | 🟡 Base implementada | Periodo desde el corte anterior, efectivo esperado, diferencia con motivo obligatorio, ingresos/retiros e historial; retiros autorizados y auditados; cierre, conteo por denominaciones, historial de cortes e ingresos/retiros/abonos desde Caja en MAUI. Falta persistir el desglose y llevar el conteo a la consola |
+| 8 | Corte de caja | 🟡 Base implementada | Periodo desde el corte anterior, efectivo esperado, diferencia con motivo obligatorio, ingresos/retiros e historial; retiros autorizados y auditados; cierre, conteo por denominaciones con desglose persistido (v11), historial de cortes e ingresos/retiros/abonos desde Caja en MAUI. Falta validar el desglose en Android |
 | 9 | Reportes y utilidad | 🟡 Base implementada | Utilidad por periodo (ventas − costo − comisión − mermas − gastos) más valorizado y stock bajo; pestaña Reportes en la app con filtros hoy/mes/rango. Faltan ventas por día, comparativos y exportación |
 | 10 | Respaldo y restauración | 🟡 Base implementada | Manual y automático por intervalo (al iniciar/cerrar), antes de migrar y antes de restaurar, con verificación y bitácora; falta USB/nube y respaldo durante sesiones largas |
 | — | Interfaz definitiva | 🟡 Base implementada | App MAUI para Windows y Android con asistente, login, tablero, punto de venta con QR, inventario, ventas con anulación, clientes con abonos y proveedores con pagos, ambos con edición, estado de cuenta y baja lógica, gastos, caja, reportes y respaldo. Ver [interfaz-maui.md](02-modulos/interfaz-maui.md) |
@@ -26,7 +26,7 @@ Estado al 2026-11-19. T1–T25 están integradas en `main` (`86cbf67`); T26, T27
 1. **Plantillas por giro para importar catálogos**, si se requieren; CSV y XLSX de productos ya están implementados en T6/T28.
 2. **Copia de respaldos a USB o nube personal** (Fase 2).
 3. **Descuentos** por línea o venta (Fase 2).
-4. **Persistir el desglose por denominaciones** y llevarlo a la consola, si se requiere auditoría.
+4. **Verificar en Android** el desglose de caja persistido y el resto de pantallas pendientes.
 
 ## Riesgos abiertos
 

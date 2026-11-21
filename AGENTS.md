@@ -72,13 +72,13 @@ git worktree add ../tienda-ia2 -b feat/mi-tarea feat/base-compilable
 
 Cada agente: su carpeta, su rama y su PR.
 
-## Estado del proyecto (2026-11-19)
+## Estado del proyecto (2026-11-21)
 
 - **`main` ya contiene todo el trabajo** (`86cbf67`, 113 commits, 246 pruebas): el 2026-11-12 se fusionaron en orden los PR #4, #5, #7, #8, #9, #10, #11, #13, #14, #15, #16, #17 y #18 con merge commit. Los PR #1, #3 y #6 se cerraron sin fusionar porque su contenido ya estaba en la cadena (eran contra ramas intermedias o duplicaban #5). No queda ningún PR abierto.
 - Las ramas `feat/*` se conservan como respaldo, sin borrar: `feat/base-compilable`, `feat/migraciones-respaldo`, `feat/ventas-pos`, `feat/corte-caja`, `feat/centavos-enteros`, `feat/integracion-t4-t9`, `feat/reportes-utilidad`, `feat/respaldo-automatico`, `feat/anulacion-ventas`, `feat/ui-maui` y las de la app MAUI hasta `feat/pago-proveedores-metodo`.
 - Trabajo nuevo: rama desde `main` actualizado; ya no hay que partir de `feat/base-compilable`.
 - T26 quedó implementada en `feat/duplicados-clientes-proveedores` (`e87ea40`): avisos no bloqueantes de posibles duplicados en altas y ediciones MAUI, y en altas desde la consola. T27 quedó implementada en `feat/baja-clientes-proveedores` (`a8f6876`). Ambas, junto con T28, se verificaron en vivo en Windows el 2026-11-19.
-- Build: 0 errores, 0 advertencias. La suite pasa **264 pruebas** en local el 2026-11-19 (incluye `FechasLocalesTests`); la app MAUI compila para Windows en local y para Windows y Android en CI. Los CI anteriores de PR #8 a #18 se registran en sus entradas históricas.
+- Build: 0 errores, 0 advertencias. La suite pasa **274 pruebas** en local el 2026-11-21 (incluye `DesgloseCajaTests` y `FechasLocalesTests`); la app MAUI compila para Windows en local y para Windows y Android en CI. Los CI anteriores de PR #8 a #18 se registran en sus entradas históricas.
 - En T26, la solución compiló sin errores ni advertencias, pasaron **248 pruebas** y la app MAUI de Windows compiló sin errores ni advertencias; los avisos de duplicado de cliente y proveedor se verificaron en vivo el 2026-11-19.
 - En T27, la solución compiló sin errores ni advertencias y pasaron **252 pruebas**; MAUI Windows también compiló sin errores ni advertencias. La baja, reactivación, filtros de inactivos y distintivo se verificaron en vivo el 2026-11-19.
 - Verificación en vivo del 2026-11-19 encontró que el alta de clientes y proveedores guardaba `FechaRegistro` en UTC (`datetime('now')`). Se corrigió para guardar la hora local con la prueba `FechasLocalesTests`; los registros anteriores conservan su valor UTC y no se reescriben.
@@ -91,9 +91,9 @@ Cada agente: su carpeta, su rama y su PR.
 - Proveedores (T19, T23 y T25) verificado en vivo en Windows el 2026-11-19 con datos ficticios: alta, aviso de duplicado, pago con tarjeta (sin caja) y con efectivo (retiro de caja #1), estado de cuenta con saldo, total pagado, método, usuario y retiro ligado, y baja/reactivación. La edición de datos sigue cubierta por pruebas de servicio. Android pendiente.
 - Gastos (T21) verificado en vivo en Windows el 2026-11-19: alta de un gasto de caja con método efectivo, resumen por origen, historial y reducción del efectivo esperado del corte. Android pendiente.
 - Reportes (T24) verificado en vivo en Windows el 2026-11-19: filtro **Hoy**, ventas cobradas $35.50, costo $18.00, comisión $0.00, utilidad bruta $17.50, gastos $15.00 y utilidad neta $2.50; tras anular la venta en efectivo quedó 1 venta por $15.50 y utilidad neta de -$7.50. Los filtros **Este mes** y **Rango** comparten `PeriodoReporte` con pruebas unitarias. Verificado también en Android 16 el 2026-11-19 (1 venta por $20.00, utilidad neta $10.00).
-- Implementado: configuración inicial, usuarios/PIN/roles, gastos (consola y app), inventario por movimientos con desactivación de productos, ventas/POS (efectivo, tarjeta, mixto y fiado; costo y precio congelados; comisión; anulación completa con reverso), fiado y proveedores con historial, estados de cuenta, duplicados detectados y baja/reactivación lógica (esquema v10; solo dueño; se conservan saldos e historial, se permite liquidarlos y se bloquea nuevo fiado para clientes inactivos), corte de caja, conteo por denominaciones, bitácora inmutable y permisos en servicios, migraciones con respaldo, respaldo/restauración, dinero en centavos, reportes de utilidad y app MAUI para Windows y Android.
-- No implementado: borrado físico de clientes y proveedores, edición/borrado y fecha retroactiva de gastos, filtro por categoría en la app, exportación o impresión de reportes, copia de respaldos a USB/nube, persistencia del desglose por denominaciones y compartir el QR como imagen.
-- Deuda principal: historial de proveedores solo desde el esquema v8 (los pagos anteriores no se reconstruyen y los previos a v9 no tienen método), merma sin entidad propia, bitácora no atómica con la operación, entrada de inventario que no actualiza el costo del catálogo, clientes sin método de abono, gastos sin edición ni reporte por categoría, reportes sin exportación ni comparación entre periodos, conteo sin desglose persistido, QR limitado a diez productos y sin imagen compartible, app MAUI sin pruebas automatizadas y validación de Android en dispositivo.
+- Implementado: configuración inicial, usuarios/PIN/roles, gastos (consola y app), inventario por movimientos con desactivación de productos, ventas/POS (efectivo, tarjeta, mixto y fiado; costo y precio congelados; comisión; anulación completa con reverso), fiado y proveedores con historial, estados de cuenta, duplicados detectados y baja/reactivación lógica (esquema v10; solo dueño; se conservan saldos e historial, se permite liquidarlos y se bloquea nuevo fiado para clientes inactivos), corte de caja, conteo por denominaciones con desglose persistido (esquema v11), bitácora inmutable y permisos en servicios, migraciones con respaldo, respaldo/restauración, dinero en centavos, reportes de utilidad y app MAUI para Windows y Android.
+- No implementado: borrado físico de clientes y proveedores, edición/borrado y fecha retroactiva de gastos, filtro por categoría en la app, exportación o impresión de reportes, copia de respaldos a USB/nube y compartir el QR como imagen.
+- Deuda principal: historial de proveedores solo desde el esquema v8 (los pagos anteriores no se reconstruyen y los previos a v9 no tienen método), merma sin entidad propia, bitácora no atómica con la operación, entrada de inventario que no actualiza el costo del catálogo, clientes sin método de abono, gastos sin edición ni reporte por categoría, reportes sin exportación ni comparación entre periodos, QR limitado a diez productos y sin imagen compartible, app MAUI sin pruebas automatizadas y validación de Android en dispositivo.
 
 ## Tareas disponibles
 
@@ -349,6 +349,14 @@ El detalle vive en el tablero. Resumen y criterios de terminado:
 - Clientes y Proveedores en MAUI tienen filtros de inactivos, distintivo de estado y acciones de baja/reactivación solo para el dueño. POS MAUI y selector de consola omiten clientes inactivos.
 - 4 pruebas nuevas en `BajaClientesProveedoresTests`; la suite completa pasa 252 pruebas. Se ajustaron pruebas de migración que bajaban `user_version` para eliminar físicamente las columnas de v10.
 - Build de solución y MAUI Windows sin errores ni advertencias; la verificación manual de la interfaz queda pendiente. Commit publicado: `a8f6876`.
+
+### T29 — Desglose de caja persistido
+
+- Implementada en `feat/desglose-caja-persistido` sobre `main`: esquema **v11** con `CorteCajaDesglose` (corte, valor en centavos, cantidad), índice por corte, restricción única por denominación y disparadores de inmutabilidad.
+- El desglose se guarda en la misma transacción que el corte y su suma debe coincidir con el efectivo contado; solo se conservan cantidades mayores a cero. Los cortes anteriores conservan solo el total.
+- `ConteoEfectivo.CrearDesglose` valida el catálogo, cantidades y duplicados; `CorteCajaService.RegistrarCorte` recibe el conteo opcional y `ObtenerDesglose` consulta el detalle.
+- La app MAUI guarda el desglose al cerrar desde el conteo y el historial lo muestra; la consola permite contar por denominaciones y muestra el detalle al registrar y en el historial.
+- 10 pruebas nuevas en `DesgloseCajaTests`; la suite completa pasa **274 pruebas**. Solución y MAUI Windows compilan sin errores ni advertencias. Verificación manual del desglose pendiente en Windows y Android.
 
 ### T7 — Pantallas de operación en MAUI
 
