@@ -21,6 +21,16 @@ Cada entrada tiene formato:
 
 Próximamente después de completar los módulos críticos.
 
+### v0.0.34 - 2026-11-21: Efectivo recibido guardado para la reimpresión
+
+- *Agregado*: el esquema **v12** agrega `Ventas.EfectivoRecibido` (nullable) para conservar lo que entregó el cliente en ventas en efectivo.
+- *Agregado*: `VentaService` valida que el efectivo recibido cubra el total y lo guarda solo en ventas en efectivo; tarjeta, fiado, mixto y ventas anteriores quedan en `NULL`.
+- *Modificado*: `TicketService` usa el recibido guardado cuando la interfaz no lo pasa, así que la reimpresión desde Ventas repite **Recibido** y **Cambio**.
+- *Modificado*: la consola guarda el recibido en efectivo y lo imprime en el ticket.
+- *Pruebas*: 7 casos nuevos en `EfectivoRecibidoTests` (guardado, reimpresión, sin recibido, tarjeta, mixto, recibido insuficiente y migración v11 → v12 idempotente); suite completa con **309 pruebas** en verde. Solución y app MAUI de Windows compilan sin errores ni advertencias.
+- *Documentación*: actualizados modelo de datos, venta, interfaz MAUI, manuales, roadmap, README y deuda técnica.
+- *Pendiente*: verificación manual del cambio reimpreso en Windows y Android.
+
 ### v0.0.33 - 2026-11-21: QR del ticket compartible como imagen
 
 - *Agregado*: `QrImagenService` (capa `Application`) convierte el contenido del QR en un PNG en escala de grises con zona de silencio y módulos de tamaño entero, usando `ZLibStream` y CRC32 propios; no agrega bibliotecas de dibujo.

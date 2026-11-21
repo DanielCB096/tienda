@@ -1,6 +1,6 @@
 # Roadmap
 
-Estado al 2026-11-21. T1–T32 están integradas o implementadas sobre `main`: T1–T25 en `main` (`86cbf67`), T26–T28 verificadas e integradas el 2026-11-19, T29–T31 fusionadas en `main` (`85e18ad`) y T32 (QR como imagen) en `feat/qr-imagen-compartir`. La suite queda en 302 pruebas. Orden sugerido en [CLAUDE-tienda.md §13](../CLAUDE-tienda.md).
+Estado al 2026-11-21. T1–T33 están integradas o implementadas sobre `main`: T1–T25 en `main` (`86cbf67`), T26–T28 verificadas e integradas el 2026-11-19, T29–T32 fusionadas en `main` (`5d599a1`) y T33 (efectivo recibido) en `feat/efectivo-recibido-reimpresion`. La suite queda en 309 pruebas. Orden sugerido en [CLAUDE-tienda.md §13](../CLAUDE-tienda.md).
 
 ## Avance por módulo
 
@@ -8,7 +8,7 @@ Estado al 2026-11-21. T1–T32 están integradas o implementadas sobre `main`: T
 |---|--------|--------|-------|
 | 1 | Configuración y usuarios | ✅ Base implementada | Asistente, PIN hasheado, roles, gastos, bitácora inmutable y permisos en servicios |
 | 2 | Catálogo e inventario | ✅ Base implementada | Alta/edición, movimientos, stock bajo, búsqueda, escaneo, historial, valorizado, desactivación (v7) e importación CSV/XLSX; operación desde la app MAUI. Falta filtro por categoría |
-| 3 | Ventas / POS | ✅ Base implementada | Venta multi-línea atómica, efectivo/tarjeta/mixto/fiado, costo y precio congelados, comisión, ticket de texto con QR informativo compartible como texto o imagen PNG y anulación completa con reverso; POS, detalle, reimpresión y anulación en MAUI. Descuentos quedan para Fase 2 |
+| 3 | Ventas / POS | ✅ Base implementada | Venta multi-línea atómica, efectivo/tarjeta/mixto/fiado, costo y precio congelados, comisión, efectivo recibido guardado para reimprimir el cambio (v12), ticket de texto con QR informativo compartible como texto o imagen PNG y anulación completa con reverso; POS, detalle, reimpresión y anulación en MAUI. Descuentos quedan para Fase 2 |
 | 4 | Mermas | 🟡 Parcial | Descuenta stock y reporta costo; el historial sale de movimientos |
 | 5 | Gastos y pagos | 🟡 Parcial | Gastos simples con resumen por origen, historial y alta en la app; pagos al personal no existen |
 | 6 | Clientes y fiado | 🟡 Parcial | Cliente, saldo y abono con historial (`AbonosFiado`) y método (Efectivo/Tarjeta/Transferencia/Otro); directorio, búsqueda, alta, abono, edición, estado de cuenta con exportación CSV, detección de duplicados y baja/reactivación lógica solo del dueño (esquema v10); falta impresión/PDF del estado de cuenta |
@@ -26,7 +26,7 @@ Estado al 2026-11-21. T1–T32 están integradas o implementadas sobre `main`: T
 1. **Plantillas por giro para importar catálogos**, si se requieren; CSV y XLSX de productos ya están implementados en T6/T28.
 2. **Copia de respaldos a USB o nube personal** (Fase 2).
 3. **Descuentos** por línea o venta (Fase 2).
-4. **Verificar en Windows y Android** la exportación CSV, el desglose de caja persistido y el QR compartido como imagen.
+4. **Verificar en Windows y Android** la exportación CSV, el desglose de caja persistido, el QR compartido como imagen y el cambio en la reimpresión.
 
 ## Riesgos abiertos
 
@@ -37,7 +37,7 @@ Estado al 2026-11-21. T1–T32 están integradas o implementadas sobre `main`: T
 - La app MAUI (POS, Ventas, Clientes, Proveedores, Gastos, Inventario, Caja, Reportes, sesión y respaldos) no tiene pruebas automatizadas de interfaz; un error de carrito, cobro, anulación, abono, edición de cliente o proveedor, baja/reactivación, pago, gasto, conteo, movimiento de inventario o periodo de reporte se detecta en la verificación manual. El texto y el QR del ticket, la búsqueda de clientes y proveedores, el resumen de gastos, los estados de cuenta de clientes y proveedores, el cálculo del conteo y los límites de `PeriodoReporte` sí están cubiertos por pruebas unitarias. Las pantallas de Clientes (T18/T22/T27), Proveedores (T19/T23/T27), la desactivación de productos (T20), Gastos (T21), Reportes (T24), la importación XLSX (T28) y la baja/reactivación (T27) se verificaron en vivo en Windows el 2026-11-19; en Android 16 se verificaron instalación, login, inventario, venta en efectivo con ticket QR, caja, reportes y clientes con duplicado y baja/reactivación en un Redmi Note 13, pero faltan otros fabricantes y versiones.
 - Los gastos registrados en la app no se editan ni se borran, no admiten fecha retroactiva y su reporte por categoría o periodo sigue en la consola.
 - El pago a proveedores elige método (efectivo, tarjeta, transferencia u otro) y, si es en efectivo, genera un retiro de caja en la misma transacción que el historial y el saldo. Los pagos anteriores al esquema v9 no tienen método ni movimiento de caja y así se muestran. El historial solo cubre los pagos hechos desde el esquema v8.
-- El QR del ticket es informativo y offline: no es un comprobante fiscal, se comparte como texto o imagen PNG, resume hasta diez productos y la reimpresión no incluye el efectivo recibido. Falta validar la imagen y el diálogo en Android.
+- El QR del ticket es informativo y offline: no es un comprobante fiscal, se comparte como texto o imagen PNG, resume hasta diez productos y la reimpresión repite el efectivo recibido y el cambio desde el esquema v12. Falta validar la imagen y el diálogo en Android.
 - El costo de una entrada de inventario no actualiza el costo del catálogo; el valorizado usa el costo que se edita por separado.
 - La app MAUI usa .NET 10 y las bibliotecas `net8.0`; si una biblioteca agrega APIs no disponibles en net8.0 habrá que subir su framework o aislar la dependencia.
 - La app MAUI solo se ha probado en Windows y en un Redmi Note 13 con Android 16; falta validar en otros fabricantes y versiones de Android y en tabletas.

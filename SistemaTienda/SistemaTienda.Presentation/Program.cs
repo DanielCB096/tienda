@@ -565,7 +565,7 @@ internal static class Program
                 case "1":
                     var recibido = LeerDinero("Efectivo recibido", total, total);
                     Console.WriteLine($"\n  Cambio: ${Dinero.Formatear(recibido - total)}");
-                    return new PagoSolicitado { Efectivo = total };
+                    return new PagoSolicitado { Efectivo = total, EfectivoRecibido = recibido };
                 case "2":
                     Console.WriteLine($"\n  La comisión de tarjeta ({_configTienda.ComisionTarjeta:F2}%) se descuenta de la utilidad.");
                     return new PagoSolicitado { Tarjeta = total };
@@ -574,7 +574,7 @@ internal static class Program
                     if (efectivo >= total)
                     {
                         Console.WriteLine($"\n  Cambio: ${Dinero.Formatear(efectivo - total)}");
-                        return new PagoSolicitado { Efectivo = total };
+                        return new PagoSolicitado { Efectivo = total, EfectivoRecibido = efectivo };
                     }
                     return new PagoSolicitado { Efectivo = efectivo, Tarjeta = total - efectivo };
                 case "4":
@@ -651,6 +651,13 @@ internal static class Program
 
         if (venta.ComisionTarjeta > 0)
             Console.WriteLine($"  Comisión tarjeta: ${Dinero.Formatear(venta.ComisionTarjeta)} (afecta la utilidad)");
+
+        if (venta.MetodoPago == MetodoPagoVenta.Efectivo && venta.EfectivoRecibido.HasValue
+            && venta.EfectivoRecibido.Value >= venta.Total)
+        {
+            Console.WriteLine($"  Recibido: ${Dinero.Formatear(venta.EfectivoRecibido.Value)}");
+            Console.WriteLine($"  Cambio:   ${Dinero.Formatear(venta.EfectivoRecibido.Value - venta.Total)}");
+        }
 
         Console.WriteLine("\n  Gracias por su compra.");
     }

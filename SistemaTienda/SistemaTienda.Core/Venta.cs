@@ -17,6 +17,13 @@ public class Venta
     public long PagoTarjeta { get; set; }
     public long PagoFiado { get; set; }
     public long ComisionTarjeta { get; set; }
+
+    /// <summary>
+    /// Efectivo entregado por el cliente en ventas en efectivo. Es nulo en ventas
+    /// con tarjeta, fiado, mixto o anteriores al esquema v12.
+    /// </summary>
+    public long? EfectivoRecibido { get; set; }
+
     public bool Anulada { get; set; }
 }
 

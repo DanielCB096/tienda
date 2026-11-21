@@ -148,7 +148,7 @@ El ticket es un texto interno generado en el momento de la venta; NO tiene valid
 - Folio, fecha y hora, y cajero.
 - Lista de productos comprados (cantidad, nombre, precio unitario e importe).
 - Total y método de pago (Efectivo/Tarjeta/Mixto/Fiado); en mixto, el desglose de efectivo y tarjeta; en fiado, el cliente.
-- En efectivo, el monto recibido y el cambio (solo en el ticket recién cobrado; la reimpresión no los incluye).
+- En efectivo, el monto recibido y el cambio; se guardan con la venta y la reimpresión también los muestra (esquema v12). Las ventas anteriores solo muestran el total.
 - Comisión de tarjeta cuando aplica.
 - Un QR informativo offline con folio, fecha, estado, total, método pago y hasta diez productos, con la leyenda “No es un comprobante fiscal”.
 - Si está anulada, el sello con usuario, fecha, motivo y la leyenda de que ya no es válido.

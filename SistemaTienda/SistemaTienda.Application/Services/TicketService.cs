@@ -32,10 +32,11 @@ public sealed class TicketService
         var tienda = string.IsNullOrWhiteSpace(configuracion?.NombreTienda)
             ? "Mi tienda"
             : configuracion.NombreTienda.Trim();
+        var recibido = efectivoRecibido ?? venta.EfectivoRecibido;
 
         return new TicketGenerado
         {
-            Texto = ConstruirTexto(venta, productos, tienda, nombreCliente, efectivoRecibido, anulacion),
+            Texto = ConstruirTexto(venta, productos, tienda, nombreCliente, recibido, anulacion),
             ContenidoQr = ConstruirContenidoQr(venta, productos, tienda)
         };
     }
@@ -69,7 +70,8 @@ public sealed class TicketService
         if (venta.PagoFiado > 0)
             sb.AppendLine($"   Fiado a: {nombreCliente ?? "cliente"}");
 
-        if (efectivoRecibido.HasValue && venta.MetodoPago == MetodoPagoVenta.Efectivo)
+        if (efectivoRecibido.HasValue && venta.MetodoPago == MetodoPagoVenta.Efectivo
+            && efectivoRecibido.Value >= venta.Total)
         {
             sb.AppendLine($"Recibido: ${Dinero.Formatear(efectivoRecibido.Value)}");
             sb.AppendLine($"Cambio: ${Dinero.Formatear(efectivoRecibido.Value - venta.Total)}");
