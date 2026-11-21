@@ -21,6 +21,16 @@ Cada entrada tiene formato:
 
 Próximamente después de completar los módulos críticos.
 
+### v0.0.32 - 2026-11-21: Exportación CSV de reportes y estados de cuenta
+
+- *Agregado*: `ExportadorCsv` (capa `Application`) convierte el reporte de utilidad y los estados de cuenta de cliente y proveedor en CSV con coma, punto decimal invariante y comillas solo cuando hacen falta.
+- *Agregado*: la consola ofrece exportar el reporte de utilidad; el archivo se guarda con BOM UTF-8 en `exportaciones/` junto a la base y se muestra la ruta.
+- *Agregado*: las pestañas **Reportes**, **Clientes** y **Proveedores** de la app tienen **Exportar CSV**; el archivo se escribe en la caché y se comparte o guarda con el diálogo del sistema, sin red.
+- *Agregado*: el estado de cuenta de cliente incluye saldo, totales y el historial de ventas y abonos con método; el de proveedor incluye saldo, total pagado y pagos con método, usuario y saldo después.
+- *Pruebas*: 10 casos nuevos en `ExportadorCsvTests`; suite completa con **294 pruebas** en verde. Solución y app MAUI de Windows compilan sin errores ni advertencias.
+- *Documentación*: actualizados reportes, cliente/fiado, proveedores, interfaz MAUI, manuales, roadmap, README y deuda técnica.
+- *Pendiente*: verificación manual de la exportación en Windows y Android.
+
 ### v0.0.31 - 2026-11-21: Método de pago en abonos de clientes
 
 - *Agregado*: el abono de fiado pide método (**Efectivo**, **Tarjeta**, **Transferencia** u **Otro**) en la consola y en las pestañas Caja y Clientes de la app MAUI; **Efectivo** queda como opción predeterminada.

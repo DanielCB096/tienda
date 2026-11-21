@@ -57,19 +57,19 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 - **Impacto**: la restauración reemplaza toda la base y no deja registro de quién la ejecutó ni de qué archivo se usó. El respaldo `antes-restaurar` evita la pérdida de datos, pero la acción no queda auditada.
 - **Cierre**: registrar `AccionBitacora.Respaldo` con motivo `Restauracion` y la ruta usada inmediatamente después de restaurar.
 
-### Clientes sin exportación del estado de cuenta
+### Clientes sin impresión del estado de cuenta
 
 - **Dónde**: `ConfiguracionService` y la pestaña Clientes de la app MAUI.
-- **Por qué**: T27 agregó baja lógica solo para el dueño y bloqueó el nuevo fiado para clientes inactivos; la cuenta conserva saldo e historial y permite liquidarlos. T30 agregó el método del abono.
-- **Impacto**: el estado de cuenta no se imprime ni exporta. La pantalla se verificó en vivo en Windows el 2026-11-19; Android sigue pendiente.
-- **Cierre**: impresión/exportación del estado de cuenta.
+- **Por qué**: T27 agregó baja lógica solo para el dueño y bloqueó el nuevo fiado para clientes inactivos; la cuenta conserva saldo e historial y permite liquidarlos. T30 agregó el método del abono y T31 la exportación CSV.
+- **Impacto**: el estado de cuenta se exporta a CSV, pero no se imprime ni se genera PDF. La pantalla se verificó en vivo en Windows el 2026-11-19; Android sigue pendiente.
+- **Cierre**: impresión o PDF del estado de cuenta.
 
-### Proveedores sin compras ni exportación del estado de cuenta
+### Proveedores sin compras ni impresión del estado de cuenta
 
 - **Dónde**: `ConfiguracionService` y la pestaña Proveedores de la app MAUI.
-- **Por qué**: T27 agregó baja lógica exclusiva del dueño; las cuentas inactivas conservan saldo e historial y admiten pagos para liquidarlas.
-- **Impacto**: aún no se asocian compras a proveedores ni se imprime/exporta el estado de cuenta. El historial solo cubre pagos desde v8; los anteriores no se reconstruyen y los previos a v9 carecen de método y movimiento de caja. La pantalla se verificó en vivo en Windows el 2026-11-19; Android sigue pendiente.
-- **Cierre**: asociar entradas/compras a proveedores e imprimir o exportar el estado de cuenta.
+- **Por qué**: T27 agregó baja lógica exclusiva del dueño; las cuentas inactivas conservan saldo e historial y admiten pagos para liquidarlas. T31 agregó la exportación CSV.
+- **Impacto**: aún no se asocian compras a proveedores ni se imprime o genera PDF del estado de cuenta. El historial solo cubre pagos desde v8; los anteriores no se reconstruyen y los previos a v9 carecen de método y movimiento de caja. La pantalla se verificó en vivo en Windows el 2026-11-19; Android sigue pendiente.
+- **Cierre**: asociar entradas/compras a proveedores e imprimir o generar PDF del estado de cuenta.
 
 ### La app MAUI no cubre todas las operaciones
 
@@ -116,11 +116,11 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 - **Impacto**: `AjustarStock` no valida que el producto exista (con stock mayor a cero falla por llave foránea; con stock cero reporta éxito sin haber ajustado). Se permiten PIN duplicados y `VerificarAcceso` devuelve el primer usuario por nombre, lo que puede asignar el rol equivocado. `AgregarGasto` no recorta el concepto, así que agrupa distinguiendo mayúsculas y espacios. La búsqueda por nombre no ignora acentos.
 - **Cierre**: validar existencia antes de ajustar, exigir PIN único (o verificar por usuario y PIN), recortar el concepto al guardar y normalizar la búsqueda (mayúsculas/acentos).
 
-### Reportes sin exportación, comparación ni desglose
+### Reportes sin PDF, comparación ni desglose
 
-- **Dónde**: `ReporteUtilidadService`, `PeriodoReporte` y la pestaña Reportes de la app MAUI.
-- **Impacto**: ya existe la utilidad por periodo (ventas, costo congelado, comisión, mermas y gastos) y desde T24 se consulta en la app con filtros hoy/mes/rango, pero faltan ventas por día, comparativos entre periodos, utilidad por producto o método, exportación e impresión. La consulta de ventas de fechas anteriores sigue solo en la consola.
-- **Cierre**: consultas agregadas por producto, método y periodo con índices por fecha (ya existen en `Ventas(Fecha)`), exportación a CSV/PDF y comparación entre periodos.
+- **Dónde**: `ReporteUtilidadService`, `PeriodoReporte`, `ExportadorCsv` y la pestaña Reportes de la app MAUI.
+- **Impacto**: ya existe la utilidad por periodo (ventas, costo congelado, comisión, mermas y gastos), se consulta en la app con filtros hoy/mes/rango y desde T31 se exporta a CSV. Faltan ventas por día, comparativos entre periodos, utilidad por producto o método, impresión y PDF. La consulta de ventas de fechas anteriores sigue solo en la consola.
+- **Cierre**: consultas agregadas por producto, método y periodo con índices por fecha (ya existen en `Ventas(Fecha)`), impresión/PDF y comparación entre periodos.
 
 ## Baja prioridad
 

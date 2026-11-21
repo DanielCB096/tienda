@@ -85,7 +85,8 @@ Acceso en la app: pestaña **Reportes** (visible para dueño, encargado y emplea
 - **Desglose**: ventas cobradas, costo de ventas, comisión de tarjeta, utilidad bruta, mermas, gastos y utilidad neta.
 - **Cálculo**: utilidad bruta = ventas − costo de ventas − comisión de tarjeta; utilidad neta = bruta − mermas − gastos. Las ventas anuladas no se incluyen.
 - **Color**: la utilidad bruta y neta se ven en verde cuando son positivas o cero y en rojo cuando son negativas.
-- **Pendiente**: exportar o imprimir el reporte, comparar periodos y desglosar por método de pago, producto o categoría. La verificación manual de esta pantalla en Windows y Android está pendiente (2026-11-12).
+- **Exportar CSV**: genera un archivo con el desglose del periodo y abre el diálogo del sistema para compartirlo o guardarlo; se puede abrir en Excel.
+- **Pendiente**: imprimir el reporte o generar PDF, comparar periodos y desglosar por método de pago, producto o categoría. La verificación manual de la exportación en Windows y Android está pendiente (2026-11-21).
 
 ### 6. Configuración
 
@@ -112,7 +113,7 @@ Acceso en la app: pestaña **Clientes**.
 - **Estado de cuenta**: toca **Estado** en el renglón del cliente. Muestra su teléfono, la fecha en que se registró, el saldo vigente, el total fiado, el total abonado y la lista de ventas a fiado y abonos del más reciente al más antiguo. Las ventas anuladas no aparecen. Desde ahí también puedes abonar.
 - **Editar datos**: dueño o encargado, desde el estado de cuenta. Corrige nombre y teléfono; queda en la bitácora con los datos anteriores y nuevos. El saldo no se edita: solo cambia con ventas y abonos.
 - **Dar de baja o reactivar**: solo el dueño, desde el renglón del cliente y con confirmación. La cuenta y su saldo se conservan; puedes seguir registrando abonos para liquidarla. Una cuenta inactiva no se puede seleccionar para nuevas ventas a fiado.
-- **Pendiente**: imprimir o exportar el estado de cuenta y recordatorio por WhatsApp. La verificación manual de esta pantalla en Windows y Android está pendiente (2026-11-12).
+- **Pendiente**: imprimir el estado de cuenta y recordatorio por WhatsApp. El estado de cuenta se exporta a CSV desde la app. La verificación manual de esta pantalla en Windows y Android está pendiente (2026-11-12).
 
 ### 8. Proveedores (pestaña Proveedores)
 
@@ -125,7 +126,7 @@ Acceso en la app: pestaña **Proveedores**.
 - **Estado de cuenta**: toca **Estado** en el renglón del proveedor. Muestra clave o RFC, teléfono, dirección, la fecha en que se registró, el saldo pendiente, el total pagado y la lista de pagos del más reciente al más antiguo con el método, el usuario, el saldo antes y después y, si fue en efectivo, el retiro de caja ligado. Los pagos anteriores a esta versión (esquema v8) no se pueden reconstruir y los previos a la v9 no tienen método; la pantalla lo advierte.
 - **Editar datos**: dueño o encargado, desde el estado de cuenta. Corrige nombre, clave o RFC, teléfono y dirección; queda en la bitácora con los datos anteriores y nuevos. El saldo solo cambia con pagos.
 - **Dar de baja o reactivar**: solo el dueño, desde el renglón del proveedor y con confirmación. La cuenta y su historial se conservan; puedes seguir registrando pagos para liquidar el saldo.
-- **Pendiente**: compras por proveedor e imprimir o exportar el estado de cuenta. La verificación manual de esta pantalla en Windows y Android está pendiente (2026-11-12).
+- **Pendiente**: compras por proveedor e imprimir el estado de cuenta. El estado de cuenta se exporta a CSV desde la app. La verificación manual de esta pantalla en Windows y Android está pendiente (2026-11-12).
 
 ### 9. Gastos (pestaña Gastos)
 

@@ -1,6 +1,6 @@
 # Reportes
 
-## Estado de implementación (2026-11-12)
+## Estado de implementación (2026-11-21)
 
 Base implementada en consola y en la app MAUI. Los reportes ya existentes (valorizado, stock bajo, gastos, saldos y cortes) se complementan con el reporte de utilidad por periodo.
 
@@ -13,7 +13,8 @@ Base implementada en consola y en la app MAUI. Los reportes ya existentes (valor
 | Ventas y utilidad | ✅ Utilidad bruta y neta por día, mes o rango, en consola y en la pestaña **Reportes** de la app |
 | Ventas por día / comparativos | ⛔ Pendiente |
 | Utilidad por producto | ⛔ Pendiente |
-| Exportación o impresión | ⛔ Pendiente |
+| Exportación CSV | ✅ Reporte de utilidad desde la consola y la pestaña **Reportes** de la app |
+| Impresión o PDF | ⛔ Pendiente |
 
 ## Reporte de utilidad
 
@@ -56,8 +57,15 @@ Pestaña **Reportes**, entre Caja y Ajustes:
 5. `PeriodoReporte` (Core) calcula los límites de hoy y del mes en curso con fechas sin hora; el rango normaliza ambas fechas. La pantalla llama a `ReporteUtilidadService.Obtener` y el permiso `Consultar` se valida en el servicio.
 6. La pestaña está disponible para dueño, encargado y empleado porque los tres tienen `Consultar`; la pantalla solo lee.
 
+## Exportación CSV
+
+`ExportadorCsv` (capa `Application`) convierte el reporte en texto CSV con encabezado `Concepto,Valor`, coma como separador, punto decimal invariante y comillas solo cuando el campo las necesita. Incluye periodo, número de ventas, ventas cobradas, costo, comisión, utilidad bruta, mermas, gastos y utilidad neta.
+
+- **Consola**: al terminar el reporte de utilidad pregunta si se exporta; el archivo se guarda con BOM UTF-8 en `exportaciones/` junto a la base y se muestra la ruta.
+- **App MAUI**: el botón **Exportar CSV** escribe el archivo en la caché y abre el diálogo del sistema para compartirlo o guardarlo. Es local y no requiere red.
+
 ## Limitaciones conocidas
 
 - Las ventas a fiado cuentan como ingreso del periodo aunque el efectivo llegue después con el abono; no hay reporte de flujo de efectivo por separado (el corte de caja sí lo cubre a nivel de caja).
 - Las mermas registradas antes de que existiera el costo congelado en el movimiento (esquema anterior a v4) se convierten en la migración y conservan su importe, pero no su detalle.
-- No hay exportación ni impresión del reporte, comparación entre periodos, ni desglose por producto, método o categoría; ver [deuda-tecnica.md](../deuda-tecnica.md). La pantalla de la app aún no se verifica manualmente en Windows ni Android.
+- No hay impresión ni PDF, comparación entre periodos, ni desglose por producto, método o categoría; ver [deuda-tecnica.md](../deuda-tecnica.md). La exportación CSV queda pendiente de verificación manual en Windows y Android.
