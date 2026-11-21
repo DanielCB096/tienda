@@ -21,6 +21,15 @@ Cada entrada tiene formato:
 
 Próximamente después de completar los módulos críticos.
 
+### v0.0.35 - 2026-11-21: Editar configuración desde Ajustes
+
+- *Agregado*: la pestaña **Ajustes** de la app MAUI tiene **Editar configuración** (solo dueño) con nombre, giro, impuesto, comisión de tarjeta, fondo inicial, fiado, límite de crédito y días entre respaldos.
+- *Agregado*: se puede activar o desactivar el fiado después del asistente inicial; al desactivarlo, el límite de crédito se guarda en cero.
+- *Modificado*: `ConfiguracionService.ActualizarConfiguracion` conserva Id, versión y fecha de creación, valida los datos y registra la acción `Configuracion` en la bitácora. El botón y el servicio vuelven a validar el permiso del dueño.
+- *Pruebas*: 6 casos nuevos en `ConfiguracionEdicionTests` (campos completos y bitácora, activar/desactivar fiado, roles sin permiso, nombre vacío y valores negativos); suite completa con **315 pruebas** en verde. Solución y app MAUI de Windows compilan sin errores ni advertencias.
+- *Verificado*: Windows, 2026-11-21. Se abrió **Editar configuración**, se activó el fiado y se guardaron nombre, impuesto, comisión, fondo, límite y días de respaldo; la tarjeta de Ajustes reflejó `Fiado activado` y los valores nuevos. Android pendiente.
+- *Documentación*: actualizados módulo de configuración, interfaz MAUI, manual del dueño, README, roadmap y plan de pruebas.
+
 ### v0.0.34 - 2026-11-21: Efectivo recibido guardado para la reimpresión
 
 - *Agregado*: el esquema **v12** agrega `Ventas.EfectivoRecibido` (nullable) para conservar lo que entregó el cliente en ventas en efectivo.

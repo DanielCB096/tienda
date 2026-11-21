@@ -1,5 +1,6 @@
 using System.Globalization;
 using SistemaTienda.Application.Services;
+using SistemaTienda.Core;
 using SistemaTienda.Maui.Services;
 
 namespace SistemaTienda.Maui.Pages;
@@ -48,6 +49,9 @@ public partial class AjustesPage : ContentPage
             ? string.Empty
             : $"Sesión: {_sesion.Usuario.Nombre} · Rol: {_sesion.Usuario.Rol}";
 
+        EditarConfiguracionButton.IsVisible = _sesion.Usuario != null &&
+            AutorizacionService.Puede(_sesion.Usuario, PermisoSistema.Configurar);
+
         RutaBaseLabel.Text = _respaldos.RutaBaseDatos;
         RutaRespaldosLabel.Text = _respaldos.DirectorioRespaldos;
 
@@ -63,9 +67,158 @@ public partial class AjustesPage : ContentPage
             : $"{cantidad} copias locales verificadas.";
     }
 
-    private async void OnCrearRespaldoClicked(object sender, EventArgs e)
+    private void OnEditarConfiguracionClicked(object sender, EventArgs e)
     {
-        CrearRespaldoButton.IsEnabled = false;
+        if (_sesion.Usuario == null ||
+            !AutorizacionService.Puede(_sesion.Usuario, PermisoSistema.Configurar))
+        {
+            _ = DisplayAlertAsync("Sin permiso",
+                "Solo el dueño puede cambiar la configuración.", "Continuar");
+            return;
+        }
+
+        var config = _config.ObtenerConfiguracion().Value;
+        if (config == null)
+        {
+            _ = DisplayAlertAsync("No se pudo abrir",
+                "No se encontró la configuración de la tienda.", "Continuar");
+            return;
+        }
+
+        ConfigNombreEntry.Text = config.NombreTienda;
+        ConfigGiroEntry.Text = config.Giro;
+        ConfigImpuestoEntry.Text =
+            config.ImpuestoPredeterminado.ToString("0.##", CultureInfo.InvariantCulture);
+        ConfigComisionEntry.Text =
+            config.ComisionTarjeta.ToString("0.##", CultureInfo.InvariantCulture);
+        ConfigFondoEntry.Text = Pesos(config.FondoCajaInicial);
+        ConfigFiadoSwitch.IsToggled = config.FiadoActivado;
+        ConfigLimiteEntry.Text = Pesos(config.LimiCreditoCliente);
+        ConfigRespaldoEntry.Text =
+            config.RespaldoIntervaloDias.ToString(CultureInfo.InvariantCulture);
+        ConfigErrorLabel.IsVisible = false;
+        ConfigOverlay.IsVisible = true;
+    }
+
+    private void OnCancelarConfiguracionClicked(object sender, EventArgs e)
+    {
+        ConfigOverlay.IsVisible = false;
+        ConfigErrorLabel.IsVisible = false;
+    }
+
+    private async void OnGuardarConfiguracionClicked(object sender, EventArgs e)
+    {
+        if (_sesion.Usuario == null ||
+            !AutorizacionService.Puede(_sesion.Usuario, PermisoSistema.Configurar))
+        {
+            MostrarErrorConfig("Solo el dueño puede cambiar la configuración.");
+            return;
+        }
+
+        ConfigErrorLabel.IsVisible = false;
+        var nombre = ConfigNombreEntry.Text?.Trim() ?? string.Empty;
+        var giro = ConfigGiroEntry.Text?.Trim() ?? string.Empty;
+        var impuesto = LeerPorcentaje(ConfigImpuestoEntry.Text);
+        var comision = LeerPorcentaje(ConfigComisionEntry.Text);
+        var fondo = LeerCentavos(ConfigFondoEntry.Text);
+        var fiado = ConfigFiadoSwitch.IsToggled;
+        var limite = fiado ? LeerCentavos(ConfigLimiteEntry.Text) : 0L;
+        var respaldo = LeerDias(ConfigRespaldoEntry.Text);
+
+        if (nombre.Length == 0 || giro.Length == 0 ||
+            !impuesto.HasValue || !comision.HasValue || !fondo.HasValue ||
+            !limite.HasValue || !respaldo.HasValue)
+        {
+            MostrarErrorConfig(
+                "Revisa los datos: nombre y giro son obligatorios; los importes y días no pueden ser negativos.");
+            return;
+        }
+
+        var config = new ConfiguracionTienda
+        {
+            NombreTienda = nombre,
+            Giro = giro,
+            ImpuestoPredeterminado = impuesto.Value,
+            ComisionTarjeta = comision.Value,
+            FondoCajaInicial = fondo.Value,
+            FiadoActivado = fiado,
+            LimiCreditoCliente = limite.Value,
+            RespaldoIntervaloDias = respaldo.Value
+        };
+
+        GuardarConfiguracionButton.IsEnabled = false;
+        try
+        {
+            _sesion.Aplicar();
+            var resultado = _config.ActualizarConfiguracion(config);
+            if (resultado.IsError)
+            {
+                MostrarErrorConfig(resultado.Message);
+                return;
+            }
+
+            ConfigOverlay.IsVisible = false;
+            Cargar();
+            await DisplayAlertAsync("Configuración actualizada", resultado.Message, "Continuar");
+        }
+        finally
+        {
+            GuardarConfiguracionButton.IsEnabled = true;
+        }
+    }
+
+    private void MostrarErrorConfig(string mensaje)
+    {
+        ConfigErrorLabel.Text = mensaje;
+        ConfigErrorLabel.IsVisible = true;
+    }
+
+    private static decimal? LeerPorcentaje(string? texto)
+    {
+        if (string.IsNullOrWhiteSpace(texto))
+            return null;
+
+        var limpio = texto.Replace("%", string.Empty).Replace(" ", string.Empty).Replace(",", ".");
+        if (!decimal.TryParse(limpio, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture,
+                out var valor))
+            return null;
+
+        return valor is >= 0 and <= 100 ? valor : null;
+    }
+
+    private static int? LeerDias(string? texto)
+    {
+        if (string.IsNullOrWhiteSpace(texto))
+            return null;
+
+        if (!int.TryParse(texto.Trim(), NumberStyles.None, CultureInfo.InvariantCulture,
+                out var valor) || valor is < 0 or > 365)
+            return null;
+
+        return valor;
+    }
+
+    private static long? LeerCentavos(string? texto)
+    {
+        if (string.IsNullOrWhiteSpace(texto))
+            return null;
+
+        var limpio = texto.Replace("$", string.Empty).Replace(" ", string.Empty).Replace(",", ".");
+        if (!decimal.TryParse(limpio, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture,
+                out var pesos))
+            return null;
+
+        if (pesos < 0 || pesos > 1_000_000)
+            return null;
+
+        return Dinero.DePesos(pesos);
+    }
+
+    private static string Pesos(long centavos) =>
+        (centavos / 100m).ToString("0.00", CultureInfo.InvariantCulture);
+
+    private async void OnCrearRespaldoClicked(object sender, EventArgs e)
+    {        CrearRespaldoButton.IsEnabled = false;
         try
         {
             _sesion.Aplicar();

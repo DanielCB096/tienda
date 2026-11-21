@@ -4,6 +4,7 @@
              x:Class="SistemaTienda.Maui.Pages.AjustesPage"
              Title="Ajustes">
 
+    <Grid>
     <ScrollView>
         <VerticalStackLayout Padding="20" Spacing="12">
 
@@ -16,6 +17,12 @@
                     <Label x:Name="TiendaLabel" FontSize="18" FontAttributes="Bold" />
                     <Label x:Name="DetalleTiendaLabel" Style="{StaticResource TextoNota}" />
                     <Label x:Name="ReglasLabel" Style="{StaticResource TextoNota}" />
+                    <Button x:Name="EditarConfiguracionButton"
+                            Text="Editar configuración"
+                            Style="{StaticResource BotonSecundario}"
+                            Clicked="OnEditarConfiguracionClicked"
+                            IsVisible="False"
+                            Margin="0,8,0,0" />
                 </VerticalStackLayout>
             </Border>
 
@@ -53,4 +60,69 @@
                    Margin="0,8,0,0" />
         </VerticalStackLayout>
     </ScrollView>
+
+    <Grid x:Name="ConfigOverlay"
+          IsVisible="False"
+          BackgroundColor="#99000000"
+          Padding="16"
+          ZIndex="10">
+        <Border Style="{StaticResource Tarjeta}"
+                Padding="18"
+                HorizontalOptions="Fill"
+                VerticalOptions="Center"
+                MaximumWidthRequest="560">
+            <ScrollView>
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Editar configuración" FontSize="22" FontAttributes="Bold" />
+                    <Label Text="Solo el dueño puede cambiar estos datos. Los cambios aplican a las operaciones nuevas y quedan en la bitácora."
+                           Style="{StaticResource TextoNota}" />
+
+                    <Label Text="Nombre de la tienda" Style="{StaticResource EtiquetaSeccion}" Margin="0,8,0,0" />
+                    <Entry x:Name="ConfigNombreEntry" Style="{StaticResource CampoTexto}" />
+
+                    <Label Text="Giro del negocio" Style="{StaticResource EtiquetaSeccion}" Margin="0,8,0,0" />
+                    <Entry x:Name="ConfigGiroEntry" Style="{StaticResource CampoTexto}" />
+
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <VerticalStackLayout Spacing="2">
+                            <Label Text="Impuesto (%)" Style="{StaticResource EtiquetaSeccion}" Margin="0,8,0,0" />
+                            <Entry x:Name="ConfigImpuestoEntry" Style="{StaticResource CampoTexto}" Keyboard="Numeric" />
+                        </VerticalStackLayout>
+                        <VerticalStackLayout Grid.Column="1" Spacing="2">
+                            <Label Text="Comisión tarjeta (%)" Style="{StaticResource EtiquetaSeccion}" Margin="0,8,0,0" />
+                            <Entry x:Name="ConfigComisionEntry" Style="{StaticResource CampoTexto}" Keyboard="Numeric" />
+                        </VerticalStackLayout>
+                    </Grid>
+
+                    <Label Text="Fondo de caja inicial ($)" Style="{StaticResource EtiquetaSeccion}" Margin="0,8,0,0" />
+                    <Entry x:Name="ConfigFondoEntry" Style="{StaticResource CampoTexto}" Keyboard="Numeric" />
+
+                    <HorizontalStackLayout Spacing="12" Margin="0,8,0,0">
+                        <Switch x:Name="ConfigFiadoSwitch" />
+                        <Label Text="Activar fiado a clientes" VerticalOptions="Center" />
+                    </HorizontalStackLayout>
+
+                    <Label Text="Límite de crédito por cliente ($, 0 = sin límite)" Style="{StaticResource EtiquetaSeccion}" Margin="0,8,0,0" />
+                    <Entry x:Name="ConfigLimiteEntry" Style="{StaticResource CampoTexto}" Keyboard="Numeric" />
+
+                    <Label Text="Días entre respaldos (0 = deshabilitado)" Style="{StaticResource EtiquetaSeccion}" Margin="0,8,0,0" />
+                    <Entry x:Name="ConfigRespaldoEntry" Style="{StaticResource CampoTexto}" Keyboard="Numeric" />
+
+                    <Label x:Name="ConfigErrorLabel" Style="{StaticResource Error}" IsVisible="False" Margin="0,8,0,0" />
+
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10" Margin="0,8,0,0">
+                        <Button x:Name="GuardarConfiguracionButton"
+                                Text="Guardar"
+                                Style="{StaticResource BotonPrincipal}"
+                                Clicked="OnGuardarConfiguracionClicked" />
+                        <Button Grid.Column="1"
+                                Text="Cancelar"
+                                Style="{StaticResource BotonSecundario}"
+                                Clicked="OnCancelarConfiguracionClicked" />
+                    </Grid>
+                </VerticalStackLayout>
+            </ScrollView>
+        </Border>
+    </Grid>
+    </Grid>
 </ContentPage>
