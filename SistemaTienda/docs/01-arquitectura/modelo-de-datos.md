@@ -225,7 +225,7 @@ Historial inmutable de pagos de clientes con fiado (migración v3). Se inserta e
 | ClienteId | INTEGER FK → ClientesFiado | |
 | Fecha | DATETIME | Hora local del abono |
 | Monto | INTEGER | Centavos; > 0 |
-| MetodoPago | TEXT | `Efectivo` por defecto; solo efectivo entra al corte |
+| MetodoPago | TEXT | `Efectivo`, `Tarjeta`, `Transferencia` u `Otro`; solo efectivo entra al corte |
 | Usuario | TEXT | Quien registró el abono |
 
 ### CortesCaja

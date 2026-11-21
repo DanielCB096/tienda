@@ -21,6 +21,16 @@ Cada entrada tiene formato:
 
 Próximamente después de completar los módulos críticos.
 
+### v0.0.31 - 2026-11-21: Método de pago en abonos de clientes
+
+- *Agregado*: el abono de fiado pide método (**Efectivo**, **Tarjeta**, **Transferencia** u **Otro**) en la consola y en las pestañas Caja y Clientes de la app MAUI; **Efectivo** queda como opción predeterminada.
+- *Agregado*: `MetodoPagoAbono` centraliza el catálogo y la validación; `ConfiguracionService.RegistrarAbonoCliente` rechaza métodos inválidos sin descontar el saldo y registra `Metodo=` en la bitácora.
+- *Modificado*: solo los abonos en efectivo suman a `AbonosEfectivo` y al efectivo esperado del corte; tarjeta, transferencia y otro reducen el saldo pero no tocan la caja.
+- *Modificado*: el historial de `AbonosFiado` y el estado de cuenta del cliente muestran el método elegido y quién lo registró.
+- *Pruebas*: 10 casos nuevos en `AbonosMetodoPagoTests`; suite completa con **284 pruebas** en verde. Solución y app MAUI de Windows compilan sin errores ni advertencias.
+- *Documentación*: actualizados cliente/fiado, corte de caja, interfaz MAUI, manuales, modelo de datos, plan de pruebas, roadmap, README y deuda técnica.
+- *Pendiente*: verificación manual en Windows y Android.
+
 ### v0.0.30 - 2026-11-21: Desglose de caja persistido
 
 - *Agregado*: el esquema **v11** crea `CorteCajaDesglose`, que guarda por corte los billetes y monedas contados con valor en centavos y cantidad; la suma de los subtotales debe coincidir exactamente con el efectivo contado.

@@ -108,11 +108,11 @@ Acceso en la app: pestaña **Clientes**.
 - **Directorio**: lista con nombre, teléfono, saldo y estado (“Con saldo pendiente” o “Al día”), más el resumen de clientes, con saldo y total por cobrar.
 - **Buscar y filtrar**: busca por nombre o teléfono sin distinguir mayúsculas ni acentos; alterna entre **Todos**, **Con saldo** e **Inactivos**.
 - **Nuevo cliente**: pide nombre, teléfono opcional y saldo inicial opcional (solo para deudas que ya existían).
-- **Registrar abono**: dueño o encargado; el monto no puede superar el saldo. El abono se registra como efectivo, entra al corte del periodo y queda en la bitácora.
+- **Registrar abono**: dueño o encargado; el monto no puede superar el saldo. Elige el método (**Efectivo**, **Tarjeta**, **Transferencia** u **Otro**). El abono reduce el saldo y queda en la bitácora; solo el efectivo entra al corte del periodo.
 - **Estado de cuenta**: toca **Estado** en el renglón del cliente. Muestra su teléfono, la fecha en que se registró, el saldo vigente, el total fiado, el total abonado y la lista de ventas a fiado y abonos del más reciente al más antiguo. Las ventas anuladas no aparecen. Desde ahí también puedes abonar.
 - **Editar datos**: dueño o encargado, desde el estado de cuenta. Corrige nombre y teléfono; queda en la bitácora con los datos anteriores y nuevos. El saldo no se edita: solo cambia con ventas y abonos.
 - **Dar de baja o reactivar**: solo el dueño, desde el renglón del cliente y con confirmación. La cuenta y su saldo se conservan; puedes seguir registrando abonos para liquidarla. Una cuenta inactiva no se puede seleccionar para nuevas ventas a fiado.
-- **Pendiente**: imprimir o exportar el estado de cuenta, recordatorio por WhatsApp y elegir el método del abono. La verificación manual de esta pantalla en Windows y Android está pendiente (2026-11-12).
+- **Pendiente**: imprimir o exportar el estado de cuenta y recordatorio por WhatsApp. La verificación manual de esta pantalla en Windows y Android está pendiente (2026-11-12).
 
 ### 8. Proveedores (pestaña Proveedores)
 

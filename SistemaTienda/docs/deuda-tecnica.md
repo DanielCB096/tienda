@@ -28,7 +28,6 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 
 - **Dónde**: `ConteoEfectivo` (Core), `CajaPage`, `Program.CerrarCorte` y `CorteCajaDesglose`.
 - **Resuelto**: el esquema v11 guarda el desglose por corte y su suma debe coincidir con el efectivo contado; la app y la consola lo capturan y el historial lo muestra. Los renglones son inmutables y los cortes anteriores a la v11 no se reconstruyen.
-- **Pendiente**: el abono de fiado siempre se registra como efectivo (no se pregunta el método); ver la entrada de clientes sin método de abono.
 
 ## Media prioridad
 
@@ -58,12 +57,12 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 - **Impacto**: la restauración reemplaza toda la base y no deja registro de quién la ejecutó ni de qué archivo se usó. El respaldo `antes-restaurar` evita la pérdida de datos, pero la acción no queda auditada.
 - **Cierre**: registrar `AccionBitacora.Respaldo` con motivo `Restauracion` y la ruta usada inmediatamente después de restaurar.
 
-### Clientes sin método de abono ni exportación del estado de cuenta
+### Clientes sin exportación del estado de cuenta
 
 - **Dónde**: `ConfiguracionService` y la pestaña Clientes de la app MAUI.
-- **Por qué**: T27 agregó baja lógica solo para el dueño y bloqueó el nuevo fiado para clientes inactivos; la cuenta conserva saldo e historial y permite liquidarlos.
-- **Impacto**: el abono se registra siempre como efectivo (no se pregunta el método). El estado de cuenta no se imprime ni exporta. La pantalla se verificó en vivo en Windows el 2026-11-19; Android sigue pendiente.
-- **Cierre**: método de pago del abono e impresión/exportación del estado de cuenta.
+- **Por qué**: T27 agregó baja lógica solo para el dueño y bloqueó el nuevo fiado para clientes inactivos; la cuenta conserva saldo e historial y permite liquidarlos. T30 agregó el método del abono.
+- **Impacto**: el estado de cuenta no se imprime ni exporta. La pantalla se verificó en vivo en Windows el 2026-11-19; Android sigue pendiente.
+- **Cierre**: impresión/exportación del estado de cuenta.
 
 ### Proveedores sin compras ni exportación del estado de cuenta
 

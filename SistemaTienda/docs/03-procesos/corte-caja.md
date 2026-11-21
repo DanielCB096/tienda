@@ -9,7 +9,7 @@ Base implementada en consola y en la app MAUI sobre el esquema vigente (v11, imp
 | Periodo | ✅ Desde el `Hasta` del corte anterior (exclusivo). El primero arranca en el primer movimiento registrado |
 | Fondo inicial | ✅ Se sugiere el efectivo contado del corte anterior o el configurado; el cajero puede ajustarlo |
 | Ventas por método | ✅ Totales y número de transacciones (efectivo, tarjeta, mixto, fiado) |
-| Abonos en efectivo | ✅ Nuevo historial `AbonosFiado`; los abonos previos a la v3 no tienen registro |
+| Abonos en efectivo | ✅ Historial `AbonosFiado` con método; solo los abonos en efectivo suman al corte. Los abonos previos a la v3 no tienen registro |
 | Ingresos y retiros | ✅ `MovimientosCaja` con monto, motivo y usuario |
 | Gastos de caja | ✅ Solo los gastos con origen `Caja` restan; los `Externo` no |
 | Diferencia | ✅ Si no es cero, el motivo es obligatorio y el corte no se guarda sin él |
@@ -29,7 +29,7 @@ La pestaña **Caja** reutiliza `CorteCajaService` y `ConfiguracionService`; no r
 - **Conteo por denominaciones**: es opcional y se captura con el teclado numérico. El catálogo tiene 11 valores en pesos mexicanos, de `$1000` a `$0.50`; cada fila muestra el subtotal y el total del conteo se escribe en **Efectivo contado** en modo solo lectura. Si una cantidad no es un entero, el total se oculta y el cierre se bloquea hasta corregirla. **Limpiar conteo** borra las cantidades y devuelve la captura manual del total. Al cerrar desde el conteo, el corte guarda el desglose completo; si la suma no coincide con el contado, el servicio rechaza la operación y no se guarda nada.
 - **Historial**: muestra los últimos 20 cortes cerrados, del más reciente al más antiguo, con folio, periodo, esperado, contado, diferencia con color (verde en cero, rojo en faltante o sobrante), quién lo cerró, cuándo, la nota cuando existe y el desglose guardado cuando el corte se capturó con conteo. Se consulta con `CorteCajaService.ObtenerCortes(20)` y no se puede editar.
 - **Ingresos y retiros**: piden monto y motivo. El retiro confirma antes de guardar y solo lo autoriza el dueño; un rechazo del servicio se muestra en la propia pantalla.
-- **Abonos de fiado**: se muestran solo si el fiado está activado; el cliente se elige de la lista con saldo y el abono se registra como efectivo del periodo.
+- **Abonos de fiado**: se muestran solo si el fiado está activado; el cliente se elige de la lista con saldo, se captura el monto y el método. Solo el abono en efectivo entra al efectivo esperado del periodo; tarjeta, transferencia y otro no tocan la caja.
 
 Las validaciones de negocio siguen en `Application`: la app solo captura y muestra errores. El detalle de la pantalla está en [interfaz-maui.md](../02-modulos/interfaz-maui.md).
 
@@ -58,7 +58,7 @@ Los totales y el registro del corte se calculan y guardan dentro de una sola tra
 2. **Primer corte**: abarca todo el historial registrado; el cajero debe indicar el fondo que había al inicio de ese periodo.
 3. **Motivo obligatorio**: una diferencia distinta de cero exige observaciones; sin ellas el corte se rechaza y no se guarda.
 4. **Gastos**: solo restan los marcados como pagados del efectivo de la caja (`Origen = Caja`).
-5. **Abonos**: se registran como efectivo; ni la consola ni la app preguntan el método del abono.
+5. **Abonos**: se registra el método elegido (Efectivo, Tarjeta, Transferencia u Otro), pero solo el efectivo suma a `AbonosEfectivo` y al efectivo esperado; los demás métodos no tocan la caja.
 6. **Responsable**: se guarda el usuario que cierra el corte junto con la fecha y hora.
 7. **Sin borrado**: no existe operación para editar o eliminar un corte o un movimiento.
 8. **Desglose opcional y consistente**: si se captura el conteo por denominaciones, se guardan solo las cantidades mayores a cero y su suma debe ser exactamente el efectivo contado. Los renglones quedan ligados al corte y son inmutables.
@@ -122,5 +122,5 @@ Implementado en `CortesCaja`: `Usuario`, `FechaRegistro`, `Diferencia` y `Observ
 
 - **Ventas**: Cada venta registrada actualiza automáticamente los totales del corte.
 - **Gastos**: Los gastos pagados de caja afectan el "Efectivo Esperado" (se restan).
-- **Fiado**: Los abonos en efectivo de fiado entran al corte del día en que se cobran.
+- **Fiado**: Los abonos en efectivo de fiado entran al corte del día en que se cobran; los abonos con tarjeta, transferencia u otro método reducen el saldo pero no la caja.
 - **Utilidad**: El efectivo del corte es base para calcular la utilidad neta del período.
