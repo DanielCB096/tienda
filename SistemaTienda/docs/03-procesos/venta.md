@@ -15,7 +15,7 @@ Base implementada en `feat/ventas-pos` (esquema v2; la anulación se agregó en 
 | Venta a fiado (exclusiva, valida límite de crédito) | ✅ Implementado |
 | Ticket interno en pantalla | ✅ Implementado (texto en consola y app) |
 | QR informativo en el ticket | ✅ Implementado en la app MAUI (T16): offline, hasta diez productos, sin validez fiscal |
-| Compartir o copiar el ticket | ✅ Implementado en la app MAUI (T13): texto por el diálogo del sistema y copiar; el QR no se comparte como imagen |
+| Compartir o copiar el ticket | ✅ Implementado en la app MAUI (T13/T32): texto por el diálogo del sistema, copiar y QR como imagen PNG |
 | Detalle de venta y reimpresión | ✅ Implementado en la app MAUI (T16) |
 | Descuentos | ⛔ Fase 2 (no incluidos en MVP) |
 | Anulación posterior de una venta | ✅ Implementado (T11 consola, T16 app; esquema v6): venta completa, permiso dueño/encargado, devolución de stock y reverso de fiado |
@@ -35,7 +35,7 @@ La pestaña **Vender** replica el flujo de la consola sobre los mismos servicios
 3. El total se calcula con `Dinero.Multiplicar` y se muestra al instante.
 4. **Cobrar** abre el panel de pago: efectivo (muestra un recuadro “Cambio a entregar” con lo recibido y el cambio, y bloquea faltantes), tarjeta (muestra la comisión configurada), mixto (exige que la suma sea el total) o fiado (cliente y límite de crédito).
 5. Al confirmar, `VentaService.RegistrarVenta` guarda la venta y descuenta el stock en una transacción. La app limpia el carrito y muestra el ticket.
-6. El ticket interno (no fiscal) incluye un QR informativo y se puede compartir como texto con el sistema o copiar al portapapeles. Si el pago fue en efectivo, imprime el monto recibido y el cambio.
+6. El ticket interno (no fiscal) incluye un QR informativo, se puede compartir como texto o como imagen PNG con el sistema, o copiar al portapapeles. Si el pago fue en efectivo, imprime el monto recibido y el cambio.
 
 El detalle, la reimpresión y la anulación desde Ventas llegaron en T16; los descuentos siguen fuera del alcance. El cierre de corte se hace desde la pestaña Caja. La interfaz no tiene pruebas automatizadas: el POS se verificó manualmente en Windows el 2026-10-25 (efectivo con cambio, tarjeta, mixto, fiado, límite de stock, producto agotado y ticket con copiar/cerrar); compartir con el diálogo del sistema y Android siguen pendientes.
 
@@ -47,7 +47,7 @@ El detalle, la reimpresión y la anulación desde Ventas llegaron en T16; los de
 4. `VentaService.AnularVenta` vuelve a validar el permiso, rechaza una venta ya anulada o incluida en un corte cerrado y, en una transacción, registra la anulación, devuelve el stock con el costo congelado, revierte el fiado y deja la bitácora.
 5. La app recarga la lista y el detalle, y avisa que el reembolso en efectivo es manual. El empleado no ve la acción y, si se llamara al servicio, este la rechazaría.
 
-El QR es informativo y offline: incluye tienda, folio, fecha, estado (`Vigente`/`Anulada`), total, método de pago y hasta diez productos, con la leyenda de que no es un comprobante fiscal. No contiene enlaces, no valida la venta y no se comparte como imagen. La decisión y sus límites están en [ADR-qr-ticket.md](../05-decisiones/ADR-qr-ticket.md).
+El QR es informativo y offline: incluye tienda, folio, fecha, estado (`Vigente`/`Anulada`), total, método de pago y hasta diez productos, con la leyenda de que no es un comprobante fiscal. No contiene enlaces ni valida la venta. Se muestra en pantalla y se puede compartir como PNG generado localmente con `QrImagenService`, sin bibliotecas de dibujo adicionales. La decisión y sus límites están en [ADR-qr-ticket.md](../05-decisiones/ADR-qr-ticket.md).
 
 ## Anulación de Venta (T11, esquema v6)
 
@@ -104,7 +104,7 @@ Las ventas anuladas se excluyen del corte pendiente y del reporte de utilidad, y
      * Texto por el diálogo del sistema (WhatsApp, correo u otra app instalada).
      * Mostrar en pantalla (para que el cliente lo fotografíe); el QR se ve en pantalla.
      * Copiar el texto del ticket.
-     * Guardar el QR como imagen: pendiente.
+     * Guardar el QR como imagen: implementado (PNG compartido con el sistema).
 6. REDUCIR STOCK AUTOMÁTICAMENTE
    - El stock del producto se reduce de forma atómica en el momento de finalizar la venta.
    - Si el stock es insuficiente en el momento de la venta, se bloquea con mensaje: "Stock insuficiente. Stock actual: X, necesario: Y".
@@ -155,7 +155,7 @@ Las ventas anuladas se excluyen del corte pendiente y del reporte de utilidad, y
 - [ ] Al pagar en efectivo, el cambio se calcula automáticamente: `Cambio = Recibido - Total`.
 - [ ] Al pagar con tarjeta, se registra el método y se muestra el mensaje de comisión aplicada a utilidad.
 - [x] Después de finalizar la venta, se genera el ticket digital con código QR (app MAUI, T16).
-- [ ] Las opciones de compartir (WhatsApp, Correo, Guardar) están disponibles en el ticket; hoy se comparte el texto con el diálogo del sistema y el QR no se guarda como imagen.
+- [x] Las opciones de compartir (WhatsApp, Correo, Guardar) están disponibles en el ticket; se comparte el texto y el QR como PNG con el diálogo del sistema.
 - [ ] Si se cancela una venta (única en progreso), el stock se devuelve automáticamente.
 - [ ] Las ventas a fiado (si están activadas) generan saldo en el cliente y no afectan el efectivo esperado hasta el abono.
 - [ ] La comisión de tarjeta configurada se refleja en el reporte de utilidad neta.
@@ -170,4 +170,4 @@ Las ventas anuladas se excluyen del corte pendiente y del reporte de utilidad, y
 
 ---
 
-**Próximos pasos en código**: descuentos (Fase 2), compartir el QR como imagen, reimpresión con efectivo recibido y validación del QR en Android. El ticket con QR y la anulación ya están implementados en la app.
+**Próximos pasos en código**: descuentos (Fase 2), reimpresión con efectivo recibido y validación del QR y su imagen en Android. El ticket con QR y la anulación ya están implementados en la app.

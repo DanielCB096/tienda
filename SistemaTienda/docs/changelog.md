@@ -21,6 +21,15 @@ Cada entrada tiene formato:
 
 Próximamente después de completar los módulos críticos.
 
+### v0.0.33 - 2026-11-21: QR del ticket compartible como imagen
+
+- *Agregado*: `QrImagenService` (capa `Application`) convierte el contenido del QR en un PNG en escala de grises con zona de silencio y módulos de tamaño entero, usando `ZLibStream` y CRC32 propios; no agrega bibliotecas de dibujo.
+- *Agregado*: el ticket de la app MAUI tiene **Compartir QR como imagen**; el PNG se escribe en la caché y se comparte con el diálogo del sistema, sin red.
+- *Modificado*: la nota del ticket y el ADR del QR reflejan que la imagen ya se comparte; el texto y el copiado siguen disponibles.
+- *Pruebas*: 8 casos nuevos en `QrImagenServiceTests` (firma, dimensiones, chunks, píxeles contra la matriz, zona de silencio, escalado y parámetros inválidos); suite completa con **302 pruebas** en verde. Solución y app MAUI de Windows compilan sin errores ni advertencias.
+- *Documentación*: actualizados ADR del QR, proceso de venta, interfaz MAUI, manuales, roadmap, README y deuda técnica.
+- *Pendiente*: validar el diálogo de compartir y la imagen en Windows y Android.
+
 ### v0.0.32 - 2026-11-21: Exportación CSV de reportes y estados de cuenta
 
 - *Agregado*: `ExportadorCsv` (capa `Application`) convierte el reporte de utilidad y los estados de cuenta de cliente y proveedor en CSV con coma, punto decimal invariante y comillas solo cuando hacen falta.

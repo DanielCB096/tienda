@@ -17,12 +17,12 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 - **Impacto**: el total es siempre precio de catálogo × cantidad. La anulación ya existe (solo venta completa, bloqueada tras un corte cerrado), pero no hay descuentos por línea ni por venta.
 - **Cierre**: descuentos como fase 2 con autorización y registro en bitácora.
 
-### QR del ticket sin imagen ni validación
+### QR del ticket: imagen resuelta, validación pendiente
 
-- **Dónde**: `TicketService`, `QrTicketView`, `TicketPage` y `VentasPage` de la app MAUI; `Program.ImprimirTicket` en la consola.
-- **Por qué**: el alcance de T16 era mostrar el QR en pantalla con una dependencia mínima (`Net.Codecrete.QrCodeGenerator`), sin generar archivos ni integrar la galería o el menú de compartir con imágenes.
-- **Impacto**: el QR es informativo y no fiscal; resume hasta diez productos, no se guarda ni se comparte como imagen, no permite validar la venta contra nada y no se ha probado en Android. La reimpresión reconstruye el ticket, pero no incluye el efectivo recibido ni el cambio porque la venta solo guarda el total. WhatsApp y correo dependen del diálogo de compartir del sistema, que sigue sin verificarse. Ver [ADR-qr-ticket.md](05-decisiones/ADR-qr-ticket.md).
-- **Cierre**: renderizar el QR a PNG y compartirlo como archivo, decidir si se sube el límite de productos, guardar el efectivo recibido si se quiere reimprimir el cambio y validar el QR en un dispositivo Android.
+- **Dónde**: `TicketService`, `QrImagenService`, `QrTicketView`, `TicketPage` y `VentasPage` de la app MAUI; `Program.ImprimirTicket` en la consola.
+- **Resuelto (T32)**: el QR se genera como PNG en escala de grises con `QrImagenService` (codificador propio sobre `ZLibStream`, sin bibliotecas de dibujo) y se comparte con el diálogo del sistema desde `TicketPage`. `QrImagenServiceTests` cubre firma, dimensiones, chunks y píxeles.
+- **Impacto restante**: el QR es informativo y no fiscal; resume hasta diez productos, no permite validar la venta contra nada y no se ha probado en Android. La reimpresión reconstruye el ticket, pero no incluye el efectivo recibido ni el cambio porque la venta solo guarda el total. WhatsApp y correo dependen del diálogo de compartir del sistema, que sigue sin verificarse en dispositivo.
+- **Cierre**: validar la imagen y el diálogo en Windows y Android, decidir si se sube el límite de productos y guardar el efectivo recibido si se quiere reimprimir el cambio. Ver [ADR-qr-ticket.md](05-decisiones/ADR-qr-ticket.md).
 
 ### Conteo por denominaciones (persistencia resuelta el 2026-11-21)
 
