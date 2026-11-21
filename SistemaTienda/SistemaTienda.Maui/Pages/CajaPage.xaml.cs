@@ -316,6 +316,11 @@ public partial class CajaPage : ContentPage
         Cierre = $"Cerrado el {Formato.FechaHora(corte.FechaRegistro)} por {corte.Usuario}",
         Diferencia = Formato.MonedaConSigno(corte.Diferencia),
         DiferenciaColor = corte.Diferencia == 0 ? ColorCuadra : ColorDiferencia,
+        Desglose = corte.Desglose.Count == 0
+            ? string.Empty
+            : "Conteo: " + string.Join(" · ", corte.Desglose.Select(
+                d => $"{ConteoEfectivo.Etiqueta(d.ValorCentavos)} × {d.Cantidad}")) +
+              $" = {Formato.Moneda(corte.Desglose.Sum(d => d.Subtotal))}",
         Observaciones = string.IsNullOrWhiteSpace(corte.Observaciones)
             ? string.Empty
             : $"Nota: {corte.Observaciones}"
@@ -387,6 +392,18 @@ public partial class CajaPage : ContentPage
         }
 
         CierreErrorLabel.IsVisible = false;
+
+        List<(DenominacionEfectivo Denominacion, int Cantidad)>? conteo = null;
+        if (_conteoAplicado)
+        {
+            conteo = new List<(DenominacionEfectivo, int)>();
+            foreach (var linea in _lineasConteo)
+            {
+                var cantidad = LeerCantidad(linea.Entrada.Text?.Trim() ?? string.Empty) ?? 0;
+                conteo.Add((linea.Denominacion, cantidad));
+            }
+        }
+
         var confirmar = await DisplayAlertAsync(
             "Cerrar el corte",
             $"Esperado: {Formato.Moneda(esperado)}\n" +
@@ -402,7 +419,7 @@ public partial class CajaPage : ContentPage
         {
             _sesion.Aplicar();
             var resultado = _cortes.RegistrarCorte(contado.Value, fondo.Value,
-                _sesion.Usuario.Nombre, observaciones);
+                _sesion.Usuario.Nombre, observaciones, conteo);
 
             if (resultado.IsError)
             {

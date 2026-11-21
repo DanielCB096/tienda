@@ -1,5 +1,6 @@
 using SistemaTienda.Application.Services;
 using SistemaTienda.Core;
+using SistemaTienda.Infrastructure;
 
 namespace SistemaTienda.Tests;
 
@@ -31,7 +32,8 @@ public sealed class BajaClientesProveedoresTests
         var clienteMigrado = bd.Db.ObtenerClienteFiadoPorId(cliente.Value.ClienteId);
         var proveedorMigrado = bd.Db.ObtenerProveedorPorId(proveedor.Value.ProveedorId);
 
-        Assert.Equal(10, bd.Db.ExecuteScalar<int>("PRAGMA user_version"));
+        Assert.Equal(Migraciones.VersionMaxima(Migraciones.ObtenerTodas()),
+            bd.Db.ExecuteScalar<int>("PRAGMA user_version"));
         Assert.True(clienteMigrado.Activo);
         Assert.Equal(1_250, clienteMigrado.SaldoActual);
         Assert.True(proveedorMigrado.Activo);

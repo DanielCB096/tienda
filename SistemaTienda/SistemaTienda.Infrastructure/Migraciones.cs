@@ -39,7 +39,8 @@ public static class Migraciones
         new Migracion(7, "agrega el estado activo de los productos", AplicarVersion7),
         new Migracion(8, "crea el historial inmutable de pagos a proveedores", AplicarVersion8),
         new Migracion(9, "agrega el método de pago y el retiro de caja a los pagos a proveedores", AplicarVersion9),
-        new Migracion(10, "agrega el estado activo a clientes y proveedores", AplicarVersion10)
+        new Migracion(10, "agrega el estado activo a clientes y proveedores", AplicarVersion10),
+        new Migracion(11, "crea el desglose por denominaciones de los cortes de caja", AplicarVersion11)
     };
 
     private static void AplicarVersion2(SqliteConnection conn, SqliteTransaction tx)
@@ -574,6 +575,42 @@ public static class Migraciones
         cmd.CommandText = @"
             ALTER TABLE ClientesFiado ADD COLUMN Activo INTEGER NOT NULL DEFAULT 1;
             ALTER TABLE Proveedores ADD COLUMN Activo INTEGER NOT NULL DEFAULT 1;
+        ";
+        cmd.ExecuteNonQuery();
+    }
+
+    /// <summary>
+    /// Guarda el desglose de billetes y monedas de cada corte. Los cortes anteriores
+    /// a esta migración no tienen desglose porque solo se capturaba el total.
+    /// </summary>
+    private static void AplicarVersion11(SqliteConnection conn, SqliteTransaction tx)
+    {
+        using var cmd = conn.CreateCommand();
+        cmd.Transaction = tx;
+        cmd.CommandText = @"
+            CREATE TABLE IF NOT EXISTS CorteCajaDesglose (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                CorteCajaId INTEGER NOT NULL,
+                ValorCentavos INTEGER NOT NULL,
+                Cantidad INTEGER NOT NULL,
+                FOREIGN KEY (CorteCajaId) REFERENCES CortesCaja(Id),
+                UNIQUE (CorteCajaId, ValorCentavos)
+            );
+
+            CREATE INDEX IF NOT EXISTS IX_CorteCajaDesglose_CorteCajaId
+                ON CorteCajaDesglose(CorteCajaId);
+
+            CREATE TRIGGER IF NOT EXISTS TR_CorteCajaDesglose_NoUpdate
+            BEFORE UPDATE ON CorteCajaDesglose
+            BEGIN
+                SELECT RAISE(ABORT, 'El desglose del corte es inmutable: no se puede modificar');
+            END;
+
+            CREATE TRIGGER IF NOT EXISTS TR_CorteCajaDesglose_NoDelete
+            BEFORE DELETE ON CorteCajaDesglose
+            BEGIN
+                SELECT RAISE(ABORT, 'El desglose del corte es inmutable: no se puede borrar');
+            END;
         ";
         cmd.ExecuteNonQuery();
     }

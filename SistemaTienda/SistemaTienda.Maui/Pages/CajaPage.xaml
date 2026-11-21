@@ -209,6 +209,9 @@
                                         <Label Text="{Binding Periodo}" Style="{StaticResource TextoNota}" />
                                         <Label Text="{Binding Montos}" Style="{StaticResource TextoNota}" />
                                         <Label Text="{Binding Cierre}" Style="{StaticResource TextoNota}" />
+                                        <Label Text="{Binding Desglose}"
+                                               Style="{StaticResource TextoNota}"
+                                               IsVisible="{Binding TieneDesglose}" />
                                         <Label Text="{Binding Observaciones}"
                                                Style="{StaticResource TextoNota}"
                                                FontAttributes="Italic"
