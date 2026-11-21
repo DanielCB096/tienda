@@ -27,22 +27,29 @@ El contenido del ticket y del QR se construye en `Application/Services/TicketSer
 
 ## Consecuencias
 
-- El QR se muestra en pantalla y no se guarda como imagen ni se incluye en el texto compartido.
+- El QR se muestra en pantalla y, desde T32, también se genera como PNG y se comparte con el diálogo del sistema.
 - El QR resume hasta diez productos; si hay más, indica cuántos quedaron fuera. El ticket en pantalla y el texto compartido conservan todas las líneas.
 - El QR no es un comprobante fiscal ni un mecanismo de validación; un cliente no puede usarlo para reclamar una devolución sin el ticket y la revisión del negocio.
 - La generación es local y no requiere permisos de red.
-- La app Android sigue compilándose en CI; la visualización del QR en un dispositivo físico queda pendiente de validar.
+- La app Android sigue compilándose en CI; la visualización del QR y el compartir la imagen en un dispositivo físico quedan pendientes de validar.
+
+## Actualización 2026-11-21 (T32)
+
+- **Decisión**: renderizar el QR a PNG con un codificador propio mínimo (firma, `IHDR`, `IDAT` con `ZLibStream`, `IEND` y CRC32) en `Application/Services/QrImagenService.cs`. No se agrega una biblioteca de dibujo: se reutiliza `Net.Codecrete.QrCodeGenerator` solo para la matriz y se mantiene todo offline.
+- **Consecuencias**: el PNG es en escala de grises, sin pérdida, con zona de silencio y módulos de tamaño entero. `TicketPage` agrega **Compartir QR como imagen** y usa la caché de la app; el texto sigue disponible para compartir o copiar. La imagen no se adjunta al texto ni se guarda en la galería por sí sola: eso lo decide el diálogo del sistema.
+- **Pruebas**: `QrImagenServiceTests` valida firma, dimensiones, chunks, CRC implícito en la estructura, píxeles contra la matriz y parámetros inválidos.
 
 ## Implementación
 
 - `SistemaTienda.Maui.csproj`: referencia al paquete.
 - `Services/QrTicketView.cs`: dibuja módulos de tamaño entero con zona de silencio y sin red.
 - `Application/Services/TicketService.cs`: genera el texto completo y el resumen del QR.
-- `Pages/TicketPage.cs`: muestra el QR y mantiene compartir/copiar.
+- `Application/Services/QrImagenService.cs`: genera el PNG del QR.
+- `Pages/TicketPage.cs`: muestra el QR y permite compartirlo como texto, como imagen, copiarlo o cerrarlo.
 - `Pages/VentasPage.xaml(.cs)`: permite reabrir el ticket y anular ventas con el permiso correspondiente.
 
 ## Verificación
 
 El 2026-10-25 se probó en Windows con una venta ficticia de tres productos: el QR se decodificó sin conexión con ZXing.Net y contenía tienda, folio, fecha, estado `Vigente`, total, método de pago, tres productos y la leyenda de que no es un comprobante fiscal. Tras anular la venta, el QR pasó a `Estado: Anulada`. Los botones del ticket se mantuvieron visibles al agregar el QR. El detalle está en [plan-de-pruebas.md](../07-pruebas/plan-de-pruebas.md).
 
-Las reglas del texto y del resumen del QR están cubiertas por `TicketServiceTests` (6 casos). Quedan pendientes compartir el QR como imagen y validarlo en un dispositivo Android.
+Las reglas del texto y del resumen del QR están cubiertas por `TicketServiceTests` (6 casos) y el PNG por `QrImagenServiceTests` (8 casos). Queda pendiente validar el compartir la imagen en Windows y Android.

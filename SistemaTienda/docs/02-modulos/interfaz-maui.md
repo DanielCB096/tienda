@@ -9,7 +9,7 @@ Alcance de esta entrega:
 - Asistente de primera configuración.
 - Inicio de sesión con PIN.
 - Tablero con diez pestañas: Inicio, Vender, Inventario, Ventas, Clientes, Proveedores, Gastos, Caja, Reportes y Ajustes.
-- Punto de venta: búsqueda o escaneo, carrito, cobro en efectivo, tarjeta, mixto o fiado, y ticket interno con QR que se puede compartir o copiar.
+- Punto de venta: búsqueda o escaneo, carrito, cobro en efectivo, tarjeta, mixto o fiado, y ticket interno con QR que se puede compartir como texto o imagen, o copiar.
 - Ventas: detalle de la venta con líneas, pagos y estado, reimpresión del ticket y anulación completa con motivo y confirmación.
 - Clientes: directorio con búsqueda, filtros de saldo e inactivos, alta, abono con método, estado de cuenta, edición y baja/reactivación lógica (solo dueño).
 - Proveedores: directorio con búsqueda, filtros de saldo e inactivos, alta, pago con historial, edición, estado de cuenta y baja/reactivación lógica (solo dueño).
@@ -55,7 +55,7 @@ SistemaTienda.Maui/
 │   ├── InicioPage                 # Tablero del día
 │   ├── PosPage                    # Punto de venta: carrito, cobro y ticket
 │   ├── InventarioPage             # Catálogo, alta/edición y movimientos
-│   ├── TicketPage                 # Ticket interno con QR, compartir y copiar
+│   ├── TicketPage                 # Ticket interno con QR, compartir texto/imagen y copiar
 │   ├── VentasPage                 # Ventas del día: detalle, reimpresión y anulación
 │   ├── ClientesPage               # Directorio, alta, abonos, estado de cuenta y edición
 │   ├── ProveedoresPage            # Directorio, alta, pagos, estado de cuenta y edición
@@ -68,8 +68,9 @@ SistemaTienda.Maui/
 │   ├── ArranqueApp.cs             # Decide asistente o login al iniciar
 │   ├── SesionApp.cs               # Sesión de la app sobre SesionActual
 │   ├── NavegacionApp.cs           # Cambio de página raíz
-│   └── QrTicketView.cs            # Dibuja el QR del ticket sobre GraphicsView
-└── Platforms/                     # Android y Windows
+│   ├── QrTicketView.cs            # Dibuja el QR del ticket sobre GraphicsView
+│   └── QrImagenApp.cs             # Comparte el PNG del QR
+├── Platforms/                     # Android y Windows
 ```
 
 ## Arranque
@@ -95,7 +96,7 @@ SistemaTienda.Maui/
 | Reportes | Utilidad del periodo con filtros Hoy, Este mes y Rango: ventas cobradas, costo de ventas, comisión de tarjeta, utilidad bruta, mermas, gastos y utilidad neta, con número de ventas y periodo | Solo lectura (permiso `Consultar`) |
 | Ajustes | Datos de la tienda, reglas configuradas, rutas de base y respaldos, último respaldo, crear respaldo y cerrar sesión | Respaldo manual y cierre de sesión |
 
-El POS reutiliza `VentaService`: la validación de stock, precios congelados, pagos y fiado ocurre en la capa de aplicación; la página solo arma el carrito y captura los importes. La búsqueda del POS devuelve solo productos activos y, si se escanea un producto desactivado, avisa que no se puede vender en lugar de agregarlo. En efectivo, la página muestra un recuadro **Cambio a entregar** con el monto recibido y el cambio, y el ticket imprime ambos importes. El ticket se arma con `TicketService` (capa `Application`) y se abre en una página modal que muestra el QR, el texto completo y las opciones de compartir y copiar. El QR es informativo y offline: resume folio, fecha, estado, total, método de pago y hasta diez productos, y advierte que no es un comprobante fiscal. Se dibuja con `QrTicketView` sobre `GraphicsView`, sin guardarse como imagen.
+El POS reutiliza `VentaService`: la validación de stock, precios congelados, pagos y fiado ocurre en la capa de aplicación; la página solo arma el carrito y captura los importes. La búsqueda del POS devuelve solo productos activos y, si se escanea un producto desactivado, avisa que no se puede vender en lugar de agregarlo. En efectivo, la página muestra un recuadro **Cambio a entregar** con el monto recibido y el cambio, y el ticket imprime ambos importes. El ticket se arma con `TicketService` (capa `Application`) y se abre en una página modal que muestra el QR, el texto completo y las opciones de compartir el texto, compartir el QR como imagen PNG, copiar o cerrar. El QR es informativo y offline: resume folio, fecha, estado, total, método de pago y hasta diez productos, y advierte que no es un comprobante fiscal. Se dibuja con `QrTicketView` sobre `GraphicsView` y se rasteriza con `QrImagenService` para compartirlo.
 
 Inventario reutiliza `InventoryService`. El catálogo se filtra con los chips **Todos**, **Activos**, **Stock bajo** e **Inactivos**, y el filtro también aplica a la búsqueda por nombre. El detalle muestra un aviso rojo para los productos inactivos, oculta entrada/merma/ajuste mientras duren, y ofrece **Desactivar producto** o **Reactivar producto** solo al dueño, con confirmación y aviso de que el stock se conserva. La acción valida `PermisoSistema.DesactivarProducto` en el servicio y queda en la bitácora como `CambiarEstadoProducto`.
 
@@ -164,12 +165,12 @@ No se usa `Shell` ni rutas jerárquicas. `NavegacionApp` cambia la página raíz
 - Clientes permite editar nombre y teléfono y consultar el estado de cuenta, pero no borrar ni dar de baja clientes ni detectar duplicados al dar de alta. El abono elige método y solo el efectivo entra al corte. El estado de cuenta se exporta a CSV, pero no se imprime.
 - Proveedores permite editar los datos y consultar el estado de cuenta con el historial de pagos, y el pago elige método: el efectivo genera el retiro de caja en la misma transacción y los demás métodos no tocan el efectivo esperado. No permite borrar ni dar de baja proveedores ni detectar duplicados. El historial solo cubre los pagos registrados desde la migración v8; los anteriores a la v9 se muestran sin método ni movimiento de caja. El estado de cuenta se exporta a CSV, pero no se imprime.
 - Reportes muestra la utilidad del periodo y la exporta a CSV, pero no la imprime ni genera PDF, no compara periodos entre sí y no desglosa por método de pago o categoría. Los gastos no se editan ni se borran, no admiten fecha retroactiva y su resumen por categoría o periodo sigue en la consola.
-- El ticket es texto interno con QR informativo (no fiscal); no se genera PDF ni imagen, el QR no se comparte como imagen y resume hasta diez productos. Copiar sí se verificó; compartir depende del diálogo de Windows y sigue pendiente de probar.
+- El ticket es texto interno con QR informativo (no fiscal); no se genera PDF, el QR se comparte como PNG y resume hasta diez productos. Copiar sí se verificó; el diálogo de compartir texto e imagen depende del sistema y queda pendiente de probar en Windows y Android.
 - La reimpresión desde Ventas no incluye el efectivo recibido ni el cambio, porque la venta solo guarda el total.
 - El QR no se ha validado en un dispositivo Android.
 - No hay cierre por inactividad; el bloqueo por PIN es manual (cerrar sesión).
 - Android solo se ha compilado en CI, no probado en un dispositivo físico.
-- La interfaz no está cubierta por pruebas automatizadas; la verificación es manual y la compilación en CI. El contenido del ticket y del QR sí tiene pruebas unitarias en `TicketServiceTests`.
+- La interfaz no está cubierta por pruebas automatizadas; la verificación es manual y la compilación en CI. El contenido del ticket y del QR sí tiene pruebas unitarias en `TicketServiceTests` y `QrImagenServiceTests`.
 
 ## Criterios de aceptación cumplidos
 
@@ -251,7 +252,7 @@ Implementados en código y verificados manualmente en Windows el 2026-10-25, sal
 - [x] La anulación exige motivo y confirmación `ANULAR`; con motivo vacío o confirmación incorrecta no se modifica la base.
 - [x] Al anular se devuelve el stock con el costo congelado y queda el registro en la bitácora.
 - [x] Una venta incluida en un corte cerrado no se puede anular.
-- [ ] El QR se comparte como imagen y la reimpresión incluye el efectivo recibido.
+- [x] El QR se comparte como imagen PNG (T32); falta que la reimpresión incluya el efectivo recibido.
 - [ ] El QR se valida en un dispositivo Android.
 
 Detalle de la decisión y límites del QR en [ADR-qr-ticket.md](../05-decisiones/ADR-qr-ticket.md).

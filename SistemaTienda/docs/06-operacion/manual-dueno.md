@@ -157,7 +157,7 @@ El ticket es un texto interno generado en el momento de la venta; NO tiene valid
 
 1. Después de finalizar la venta, la app muestra el ticket con el QR.
 2. El cajero toca **Compartir** para enviar el texto por el diálogo del sistema (WhatsApp, correo u otra app instalada) o **Copiar** para el portapapeles.
-3. El QR se muestra en pantalla para que el cliente lo fotografíe; todavía no se guarda ni se comparte como imagen.
+3. El QR se muestra en pantalla y se puede compartir como imagen PNG con el diálogo del sistema o como texto; no es un comprobante fiscal.
 
 ### Historial de tickets
 

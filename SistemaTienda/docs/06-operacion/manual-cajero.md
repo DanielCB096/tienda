@@ -50,7 +50,7 @@ Flujo paso a paso:
      - El ticket se genera indicando "Venta a Fiado".
 6. **Pagar y generar ticket**: Tocar "Finalizar Venta".
    - El sistema registra la venta, actualiza inventario (si es que corresponde) y genera el ticket digital.
-   - El ticket muestra un QR informativo (no fiscal) y se puede compartir como texto con el sistema o copiar. El QR no se guarda como imagen.
+   - El ticket muestra un QR informativo (no fiscal) y se puede compartir como texto o como imagen PNG con el sistema, o copiar.
 
 **Ver el detalle, reimprimir o anular una venta**
 
