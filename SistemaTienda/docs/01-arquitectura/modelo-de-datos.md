@@ -1,6 +1,6 @@
-# Modelo de Datos (esquema v11)
+# Modelo de Datos (esquema v12)
 
-Base local SQLite, un solo archivo. `PRAGMA user_version = 11`.
+Base local SQLite, un solo archivo. `PRAGMA user_version = 12`.
 
 El acceso vive en `SistemaTienda.Infrastructure/Database.cs` (`DatabaseTools`). Todas las consultas son parametrizadas.
 
@@ -18,6 +18,7 @@ El acceso vive en `SistemaTienda.Infrastructure/Database.cs` (`DatabaseTools`). 
 - **v9** - agrega `MetodoPago` (texto, vacío para los pagos anteriores) y `MovimientoCajaId` (nullable) a `PagosProveedor`. Los pagos en efectivo registrados desde esta versión generan un retiro en `MovimientosCaja` en la misma transacción; los demás métodos no tocan la caja.
 - **v10** — agrega `Activo INTEGER NOT NULL DEFAULT 1` a `ClientesFiado` y `Proveedores`; las cuentas existentes quedan activas y conservan saldos e historial.
 - **v11** — crea `CorteCajaDesglose` con índice por corte, restricción única por denominación y disparadores que impiden `UPDATE` y `DELETE`. Los cortes anteriores solo tienen el total contado y no se reconstruyen.
+- **v12** — agrega `Ventas.EfectivoRecibido` (`INTEGER`, nullable) para reconstruir el cambio al reimprimir. Las ventas con tarjeta, fiado o mixto y las anteriores a la v12 quedan en `NULL`.
 - Una base nueva se crea directamente en la versión máxima (`Migraciones.VersionMaxima`): no se crea respaldo previo porque aún no hay datos.
 - `MigradorEsquema.Migrar()` se ejecuta dentro de `InicializarBaseDeDatos()` al arrancar:
   1. Lee `user_version`; si la base es más nueva que la app, aborta sin tocar nada.
@@ -126,6 +127,7 @@ Cabecera inmutable de cada venta (migración v2). No se edita ni se borra: un er
 | PagoTarjeta | INTEGER | Centavos |
 | PagoFiado | INTEGER | Centavos |
 | ComisionTarjeta | INTEGER | Centavos; `Dinero.Porcentaje(PagoTarjeta, ComisionTarjeta%)` al momento de la venta |
+| EfectivoRecibido | INTEGER | Centavos entregados por el cliente en ventas en efectivo (migración v12); `NULL` en tarjeta, fiado, mixto y ventas anteriores |
 
 ### VentaLineas
 

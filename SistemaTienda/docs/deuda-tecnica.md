@@ -21,8 +21,8 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 
 - **Dónde**: `TicketService`, `QrImagenService`, `QrTicketView`, `TicketPage` y `VentasPage` de la app MAUI; `Program.ImprimirTicket` en la consola.
 - **Resuelto (T32)**: el QR se genera como PNG en escala de grises con `QrImagenService` (codificador propio sobre `ZLibStream`, sin bibliotecas de dibujo) y se comparte con el diálogo del sistema desde `TicketPage`. `QrImagenServiceTests` cubre firma, dimensiones, chunks y píxeles.
-- **Impacto restante**: el QR es informativo y no fiscal; resume hasta diez productos, no permite validar la venta contra nada y no se ha probado en Android. La reimpresión reconstruye el ticket, pero no incluye el efectivo recibido ni el cambio porque la venta solo guarda el total. WhatsApp y correo dependen del diálogo de compartir del sistema, que sigue sin verificarse en dispositivo.
-- **Cierre**: validar la imagen y el diálogo en Windows y Android, decidir si se sube el límite de productos y guardar el efectivo recibido si se quiere reimprimir el cambio. Ver [ADR-qr-ticket.md](05-decisiones/ADR-qr-ticket.md).
+- **Impacto restante**: el QR es informativo y no fiscal; resume hasta diez productos, no permite validar la venta contra nada y no se ha probado en Android. WhatsApp y correo dependen del diálogo de compartir del sistema, que sigue sin verificarse en dispositivo.
+- **Cierre**: validar la imagen y el diálogo en Windows y Android y decidir si se sube el límite de productos. Ver [ADR-qr-ticket.md](05-decisiones/ADR-qr-ticket.md).
 
 ### Conteo por denominaciones (persistencia resuelta el 2026-11-21)
 

@@ -2,7 +2,7 @@
 
 ## Estado de implementación (2026-10-25)
 
-Base implementada en `feat/ventas-pos` (esquema v2; la anulación se agregó en v6). La venta se opera en la consola provisional y en la app MAUI (T13); el detalle, la reimpresión con QR y la anulación están en la app desde T16, y la anulación también sigue disponible en la consola.
+Base implementada en `feat/ventas-pos` (esquema v12; la anulación se agregó en v6 y el efectivo recibido en v12). La venta se opera en la consola provisional y en la app MAUI (T13); el detalle, la reimpresión con QR y la anulación están en la app desde T16, y la anulación también sigue disponible en la consola.
 
 | Función | Estado |
 |---------|--------|
@@ -42,7 +42,7 @@ El detalle, la reimpresión y la anulación desde Ventas llegaron en T16; los de
 ## Detalle, reimpresión y anulación en la app MAUI (T16)
 
 1. En **Ventas**, tocar una venta abre el detalle con folio, fecha, cajero, estado, método de pago, cliente, líneas, total, pagos y comisión. Si está anulada, también muestra el usuario, la fecha y el motivo.
-2. **Ver ticket** reconstruye el ticket con `TicketService` y lo muestra con su QR, las mismas acciones de compartir y copiar, y el sello de anulación cuando corresponde. No guarda el efectivo recibido: la venta solo conserva el total, así que una reimpresión no repite el cambio original.
+2. **Ver ticket** reconstruye el ticket con `TicketService` y lo muestra con su QR, las mismas acciones de compartir y copiar, y el sello de anulación cuando corresponde. Desde el esquema v12 la venta guarda `EfectivoRecibido`, así que la reimpresión de una venta en efectivo repite el monto recibido y el cambio; las ventas anteriores no lo tienen y solo muestran el total.
 3. **Anular venta** solo aparece si el usuario tiene el permiso `AnularVenta` (dueño o encargado). Pide el motivo (obligatorio, hasta 200 caracteres) y luego exige escribir `ANULAR` para confirmar.
 4. `VentaService.AnularVenta` vuelve a validar el permiso, rechaza una venta ya anulada o incluida en un corte cerrado y, en una transacción, registra la anulación, devuelve el stock con el costo congelado, revierte el fiado y deja la bitácora.
 5. La app recarga la lista y el detalle, y avisa que el reembolso en efectivo es manual. El empleado no ve la acción y, si se llamara al servicio, este la rechazaría.
@@ -152,7 +152,7 @@ Las ventas anuladas se excluyen del corte pendiente y del reporte de utilidad, y
 - [ ] La búsqueda por nombre funciona mientras se teclea, mostrando coincidencias.
 - [ ] El total mostrado es exactamente: `Precio × Cantidad` (sin cálculos adicionales de impuesto en pantalla).
 - [ ] El sistema bloquea la venta si el stock es insuficiente, con mensaje claro.
-- [ ] Al pagar en efectivo, el cambio se calcula automáticamente: `Cambio = Recibido - Total`.
+- [x] Al pagar en efectivo, el cambio se calcula automáticamente: `Cambio = Recibido - Total`, y se guarda para la reimpresión (esquema v12).
 - [ ] Al pagar con tarjeta, se registra el método y se muestra el mensaje de comisión aplicada a utilidad.
 - [x] Después de finalizar la venta, se genera el ticket digital con código QR (app MAUI, T16).
 - [x] Las opciones de compartir (WhatsApp, Correo, Guardar) están disponibles en el ticket; se comparte el texto y el QR como PNG con el diálogo del sistema.
@@ -170,4 +170,4 @@ Las ventas anuladas se excluyen del corte pendiente y del reporte de utilidad, y
 
 ---
 
-**Próximos pasos en código**: descuentos (Fase 2), reimpresión con efectivo recibido y validación del QR y su imagen en Android. El ticket con QR y la anulación ya están implementados en la app.
+**Próximos pasos en código**: descuentos (Fase 2) y validación del QR, su imagen y el diálogo de compartir en Android. El ticket con QR, la reimpresión con cambio y la anulación ya están implementados en la app.

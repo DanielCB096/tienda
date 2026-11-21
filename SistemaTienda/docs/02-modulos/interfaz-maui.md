@@ -96,7 +96,7 @@ SistemaTienda.Maui/
 | Reportes | Utilidad del periodo con filtros Hoy, Este mes y Rango: ventas cobradas, costo de ventas, comisión de tarjeta, utilidad bruta, mermas, gastos y utilidad neta, con número de ventas y periodo | Solo lectura (permiso `Consultar`) |
 | Ajustes | Datos de la tienda, reglas configuradas, rutas de base y respaldos, último respaldo, crear respaldo y cerrar sesión | Respaldo manual y cierre de sesión |
 
-El POS reutiliza `VentaService`: la validación de stock, precios congelados, pagos y fiado ocurre en la capa de aplicación; la página solo arma el carrito y captura los importes. La búsqueda del POS devuelve solo productos activos y, si se escanea un producto desactivado, avisa que no se puede vender en lugar de agregarlo. En efectivo, la página muestra un recuadro **Cambio a entregar** con el monto recibido y el cambio, y el ticket imprime ambos importes. El ticket se arma con `TicketService` (capa `Application`) y se abre en una página modal que muestra el QR, el texto completo y las opciones de compartir el texto, compartir el QR como imagen PNG, copiar o cerrar. El QR es informativo y offline: resume folio, fecha, estado, total, método de pago y hasta diez productos, y advierte que no es un comprobante fiscal. Se dibuja con `QrTicketView` sobre `GraphicsView` y se rasteriza con `QrImagenService` para compartirlo.
+El POS reutiliza `VentaService`: la validación de stock, precios congelados, pagos y fiado ocurre en la capa de aplicación; la página solo arma el carrito y captura los importes. La búsqueda del POS devuelve solo productos activos y, si se escanea un producto desactivado, avisa que no se puede vender en lugar de agregarlo. En efectivo, la página muestra un recuadro **Cambio a entregar** con el monto recibido y el cambio, y el ticket imprime ambos importes. El efectivo recibido se guarda en la venta desde el esquema v12, así que la reimpresión repite el cambio. El ticket se arma con `TicketService` (capa `Application`) y se abre en una página modal que muestra el QR, el texto completo y las opciones de compartir el texto, compartir el QR como imagen PNG, copiar o cerrar. El QR es informativo y offline: resume folio, fecha, estado, total, método de pago y hasta diez productos, y advierte que no es un comprobante fiscal. Se dibuja con `QrTicketView` sobre `GraphicsView` y se rasteriza con `QrImagenService` para compartirlo.
 
 Inventario reutiliza `InventoryService`. El catálogo se filtra con los chips **Todos**, **Activos**, **Stock bajo** e **Inactivos**, y el filtro también aplica a la búsqueda por nombre. El detalle muestra un aviso rojo para los productos inactivos, oculta entrada/merma/ajuste mientras duren, y ofrece **Desactivar producto** o **Reactivar producto** solo al dueño, con confirmación y aviso de que el stock se conserva. La acción valida `PermisoSistema.DesactivarProducto` en el servicio y queda en la bitácora como `CambiarEstadoProducto`.
 
@@ -166,7 +166,7 @@ No se usa `Shell` ni rutas jerárquicas. `NavegacionApp` cambia la página raíz
 - Proveedores permite editar los datos y consultar el estado de cuenta con el historial de pagos, y el pago elige método: el efectivo genera el retiro de caja en la misma transacción y los demás métodos no tocan el efectivo esperado. No permite borrar ni dar de baja proveedores ni detectar duplicados. El historial solo cubre los pagos registrados desde la migración v8; los anteriores a la v9 se muestran sin método ni movimiento de caja. El estado de cuenta se exporta a CSV, pero no se imprime.
 - Reportes muestra la utilidad del periodo y la exporta a CSV, pero no la imprime ni genera PDF, no compara periodos entre sí y no desglosa por método de pago o categoría. Los gastos no se editan ni se borran, no admiten fecha retroactiva y su resumen por categoría o periodo sigue en la consola.
 - El ticket es texto interno con QR informativo (no fiscal); no se genera PDF, el QR se comparte como PNG y resume hasta diez productos. Copiar sí se verificó; el diálogo de compartir texto e imagen depende del sistema y queda pendiente de probar en Windows y Android.
-- La reimpresión desde Ventas no incluye el efectivo recibido ni el cambio, porque la venta solo guarda el total.
+- La reimpresión desde Ventas incluye el efectivo recibido y el cambio desde el esquema v12; las ventas anteriores solo muestran el total.
 - El QR no se ha validado en un dispositivo Android.
 - No hay cierre por inactividad; el bloqueo por PIN es manual (cerrar sesión).
 - Android solo se ha compilado en CI, no probado en un dispositivo físico.
@@ -252,7 +252,7 @@ Implementados en código y verificados manualmente en Windows el 2026-10-25, sal
 - [x] La anulación exige motivo y confirmación `ANULAR`; con motivo vacío o confirmación incorrecta no se modifica la base.
 - [x] Al anular se devuelve el stock con el costo congelado y queda el registro en la bitácora.
 - [x] Una venta incluida en un corte cerrado no se puede anular.
-- [x] El QR se comparte como imagen PNG (T32); falta que la reimpresión incluya el efectivo recibido.
+- [x] El QR se comparte como imagen PNG y la reimpresión incluye el efectivo recibido y el cambio (esquema v12).
 - [ ] El QR se valida en un dispositivo Android.
 
 Detalle de la decisión y límites del QR en [ADR-qr-ticket.md](../05-decisiones/ADR-qr-ticket.md).
