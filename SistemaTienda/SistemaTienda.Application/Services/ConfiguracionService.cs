@@ -472,7 +472,7 @@ public class ConfiguracionService
     }
 
     public ProcessResult<RegistrarAbonoResponse> RegistrarAbonoCliente(int clienteId, long montoAbono,
-        string usuario = "")
+        string usuario = "", string metodoPago = MetodoPagoAbono.Efectivo)
     {
         var autorizacion = Autorizar(PermisoSistema.RegistrarAbono);
         if (autorizacion.IsError)
@@ -480,6 +480,11 @@ public class ConfiguracionService
 
         if (montoAbono <= 0)
             return ProcessResult<RegistrarAbonoResponse>.Error("El abono debe ser mayor a cero");
+
+        var metodo = MetodoPagoAbono.Normalizar(metodoPago);
+        if (!MetodoPagoAbono.EsValido(metodo))
+            return ProcessResult<RegistrarAbonoResponse>.Error(
+                $"El método del abono debe ser uno de: {string.Join(", ", MetodoPagoAbono.Todos)}");
 
         var cliente = _db.ObtenerClienteFiadoPorId(clienteId);
         if (cliente == null)
@@ -490,12 +495,12 @@ public class ConfiguracionService
                 $"El abono (${Dinero.Formatear(montoAbono)}) supera el saldo pendiente (${Dinero.Formatear(cliente.SaldoActual)})");
 
         var nuevoSaldo = cliente.SaldoActual - montoAbono;
-        if (!_db.RegistrarAbonoFiado(cliente.Id, montoAbono, nuevoSaldo, usuario))
+        if (!_db.RegistrarAbonoFiado(cliente.Id, montoAbono, nuevoSaldo, usuario, metodo))
             return ProcessResult<RegistrarAbonoResponse>.Error("No se pudo registrar el abono");
 
         _bitacora.Registrar(AccionBitacora.Abono, "ClienteFiado", cliente.Id.ToString(),
             $"Saldo={Dinero.Formatear(cliente.SaldoActual)}",
-            $"Saldo={Dinero.Formatear(nuevoSaldo)};Abono={Dinero.Formatear(montoAbono)}");
+            $"Saldo={Dinero.Formatear(nuevoSaldo)};Abono={Dinero.Formatear(montoAbono)};Metodo={metodo}");
         return ProcessResult<RegistrarAbonoResponse>.OK(new RegistrarAbonoResponse
         {
             ClienteId = cliente.Id,

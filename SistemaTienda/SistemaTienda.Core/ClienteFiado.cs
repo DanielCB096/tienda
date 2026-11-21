@@ -41,6 +41,27 @@ public class AbonoFiadoCliente
 }
 
 /// <summary>
+/// Métodos aceptados al abonar al fiado. Solo <c>Efectivo</c> suma al efectivo
+/// esperado del corte; los demás no tocan la caja.
+/// </summary>
+public static class MetodoPagoAbono
+{
+    public const string Efectivo = "Efectivo";
+    public const string Tarjeta = "Tarjeta";
+    public const string Transferencia = "Transferencia";
+    public const string Otro = "Otro";
+
+    public static readonly IReadOnlyList<string> Todos =
+        new[] { Efectivo, Tarjeta, Transferencia, Otro };
+
+    public static bool EsValido(string metodo) =>
+        !string.IsNullOrWhiteSpace(metodo) && Todos.Contains(metodo.Trim());
+
+    public static string Normalizar(string metodo) =>
+        (metodo ?? string.Empty).Trim();
+}
+
+/// <summary>
 /// Estado de cuenta de un cliente: sus datos, el saldo vigente y el historial
 /// de ventas a fiado y abonos. El saldo inicial del alta no aparece como
 /// movimiento, así que el saldo vigente es la fuente de verdad.

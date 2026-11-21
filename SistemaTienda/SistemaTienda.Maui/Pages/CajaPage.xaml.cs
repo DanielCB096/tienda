@@ -29,6 +29,8 @@ public partial class CajaPage : ContentPage
 
         MovimientoPicker.ItemsSource = new[] { TipoMovimientoCaja.Ingreso, TipoMovimientoCaja.Retiro };
         MovimientoPicker.SelectedIndex = 0;
+        MetodoAbonoPicker.ItemsSource = MetodoPagoAbono.Todos.ToList();
+        MetodoAbonoPicker.SelectedIndex = 0;
         ConstruirConteo();
     }
 
@@ -531,7 +533,9 @@ public partial class CajaPage : ContentPage
         try
         {
             _sesion.Aplicar();
-            var resultado = _config.RegistrarAbonoCliente(opcion.Cliente.Id, monto.Value, _sesion.Usuario.Nombre);
+            var metodo = MetodoAbonoPicker.SelectedItem as string ?? MetodoPagoAbono.Efectivo;
+            var resultado = _config.RegistrarAbonoCliente(
+                opcion.Cliente.Id, monto.Value, _sesion.Usuario.Nombre, metodo);
 
             if (resultado.IsError)
             {
@@ -540,8 +544,10 @@ public partial class CajaPage : ContentPage
             }
 
             AbonoMontoEntry.Text = string.Empty;
+            MetodoAbonoPicker.SelectedIndex = 0;
             await DisplayAlertAsync("Abono registrado",
-                $"Saldo restante: {Formato.Moneda(resultado.Value.SaldoRestante)}", "Continuar");
+                $"Método: {metodo}\nSaldo restante: {Formato.Moneda(resultado.Value.SaldoRestante)}",
+                "Continuar");
             Cargar(reiniciarCierre: false);
         }
         finally

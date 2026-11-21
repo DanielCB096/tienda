@@ -216,8 +216,11 @@
                                Keyboard="Numeric"
                                Placeholder="0.00" />
 
+                        <Label Text="Método del abono" Style="{StaticResource EtiquetaSeccion}" />
+                        <Picker x:Name="MetodoAbonoPicker" Title="Selecciona el método" />
+
                         <Border Style="{StaticResource Aviso}">
-                            <Label Text="El abono se registra como efectivo y entra al corte de caja del periodo."
+                            <Label Text="Solo el abono en efectivo entra al corte de caja del periodo; los demás métodos no tocan la caja."
                                    FontSize="13"
                                    TextColor="#7A4F01" />
                         </Border>
