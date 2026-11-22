@@ -69,7 +69,8 @@ El directorio muestra nombre, teléfono, saldo y estado; la búsqueda acepta nom
 - **Abonar** (dueño o encargado): abre el cliente, captura el monto, elige el método y confirma. El abono no puede superar el saldo y queda en el historial con su método; solo el efectivo entra al corte del periodo. El empleado puede consultar el directorio, pero no ve el botón.
 - **Estado** (todos los roles): muestra el saldo vigente, el total fiado, el total abonado y la lista de ventas a fiado y abonos del cliente, del más reciente al más antiguo. Las ventas anuladas no aparecen.
 - **Editar datos** (dueño o encargado, dentro del estado de cuenta): corrige nombre y teléfono; no cambia el saldo y queda en la bitácora.
-- **Pendiente**: dar de baja clientes, detectar duplicados e imprimir el estado de cuenta. El estado de cuenta se exporta a CSV desde la app. La verificación manual de esta pantalla está pendiente (2026-11-11).
+- **Exportar CSV / Exportar PDF**: generan el estado de cuenta y abren el diálogo del sistema para compartirlo, guardarlo o imprimirlo.
+- **Baja y duplicados**: el dueño puede dar de baja o reactivar al cliente; al darlo de alta se avisa si ya existe un nombre o teléfono parecido. La verificación manual se completó en Windows y Android 16.
 
 ### 3.2 Proveedores y pagos (pestaña Proveedores)
 
@@ -81,7 +82,9 @@ El directorio muestra nombre, clave o RFC, teléfono, dirección, saldo y estado
 - **Estado** (todos los roles): abre el estado de cuenta con los datos del proveedor, el saldo pendiente, el total pagado y el historial de pagos del más reciente al más antiguo con el método, el usuario, el saldo antes y después y el retiro ligado si fue en efectivo. Los pagos anteriores a esta versión (esquema v8) no se pueden reconstruir y los previos a la v9 no tienen método.
 - **Editar datos** (dueño o encargado, desde el estado de cuenta): corrige nombre, clave o RFC, teléfono y dirección; queda en la bitácora y no toca el saldo.
 - **Importante**: el aviso del formulario cambia según el método; revisa que el efectivo esperado del corte sea el correcto después de un pago en efectivo.
-- **Pendiente**: dar de baja proveedores, detectar duplicados, compras por proveedor e imprimir el estado de cuenta. El estado de cuenta se exporta a CSV desde la app. La verificación manual de esta pantalla está pendiente (2026-11-12).
+- **Exportar CSV / Exportar PDF**: generan el estado de cuenta y abren el diálogo del sistema para compartirlo, guardarlo o imprimirlo.
+- **Baja y duplicados**: el dueño puede dar de baja o reactivar al proveedor; al darlo de alta se avisa si ya existe un nombre o clave parecidos. La verificación manual se completó en Windows y Android 16.
+- **Pendiente**: compras por proveedor.
 
 ### 4. Inventario (pestaña Inventario)
 
@@ -131,9 +134,9 @@ Acceso en la app: pestaña **Reportes** (disponible para todos los roles con per
 - **Desglose**: ventas cobradas, costo de ventas, comisión de tarjeta, utilidad bruta, mermas, gastos y utilidad neta.
 - **Cálculo**: utilidad bruta = ventas − costo − comisión; utilidad neta = bruta − mermas − gastos. Las ventas anuladas no se incluyen.
 - **Color**: verde cuando la utilidad es positiva o cero y rojo cuando es negativa.
-- **Exportar CSV**: genera el archivo del periodo y abre el diálogo del sistema para compartirlo o guardarlo.
+- **Exportar CSV / Exportar PDF**: generan el archivo del periodo y abren el diálogo del sistema para compartirlo, guardarlo o imprimirlo.
 - **Stock bajo y mermas recientes**: se consultan en **Inicio** e **Inventario**.
-- **Pendiente**: imprimir el reporte o generar PDF, comparar periodos y verificar la exportación en Windows y Android.
+- **Pendiente**: comparar periodos entre sí y desglosar por método, producto o categoría.
 
 ### 8. Corte de Caja (Parcial o Diario)
 
