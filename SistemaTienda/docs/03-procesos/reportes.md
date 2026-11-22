@@ -14,7 +14,7 @@ Base implementada en consola y en la app MAUI. Los reportes ya existentes (valor
 | Ventas por día / comparativos | ⛔ Pendiente |
 | Utilidad por producto | ⛔ Pendiente |
 | Exportación CSV | ✅ Reporte de utilidad desde la consola y la pestaña **Reportes** de la app |
-| Impresión o PDF | ⛔ Pendiente |
+| Exportación PDF | ✅ Reporte de utilidad desde la consola y la pestaña **Reportes** de la app |
 
 ## Reporte de utilidad
 
@@ -57,15 +57,17 @@ Pestaña **Reportes**, entre Caja y Ajustes:
 5. `PeriodoReporte` (Core) calcula los límites de hoy y del mes en curso con fechas sin hora; el rango normaliza ambas fechas. La pantalla llama a `ReporteUtilidadService.Obtener` y el permiso `Consultar` se valida en el servicio.
 6. La pestaña está disponible para dueño, encargado y empleado porque los tres tienen `Consultar`; la pantalla solo lee.
 
-## Exportación CSV
+## Exportación CSV y PDF
 
 `ExportadorCsv` (capa `Application`) convierte el reporte en texto CSV con encabezado `Concepto,Valor`, coma como separador, punto decimal invariante y comillas solo cuando el campo las necesita. Incluye periodo, número de ventas, ventas cobradas, costo, comisión, utilidad bruta, mermas, gastos y utilidad neta.
 
-- **Consola**: al terminar el reporte de utilidad pregunta si se exporta; el archivo se guarda con BOM UTF-8 en `exportaciones/` junto a la base y se muestra la ruta.
-- **App MAUI**: el botón **Exportar CSV** escribe el archivo en la caché y abre el diálogo del sistema para compartirlo o guardarlo. Es local y no requiere red.
+`ExportadorPdf` usa `PdfDocumento`, un generador PDF mínimo sin dependencias externas, para producir un documento tamaño carta con el mismo desglose. Usa las fuentes base Helvetica y Helvetica-Bold, codifica el texto en Latin-1 y agrega saltos de página automáticos; el archivo se puede abrir con cualquier lector e imprimir desde él.
+
+- **Consola**: al terminar el reporte de utilidad pregunta si se exporta a CSV y/o PDF; los archivos se guardan en `exportaciones/` junto a la base y se muestra la ruta.
+- **App MAUI**: los botones **Exportar CSV** y **Exportar PDF** escriben el archivo en la caché y abren el diálogo del sistema para compartirlo, guardarlo o imprimirlo. Es local y no requiere red.
 
 ## Limitaciones conocidas
 
 - Las ventas a fiado cuentan como ingreso del periodo aunque el efectivo llegue después con el abono; no hay reporte de flujo de efectivo por separado (el corte de caja sí lo cubre a nivel de caja).
 - Las mermas registradas antes de que existiera el costo congelado en el movimiento (esquema anterior a v4) se convierten en la migración y conservan su importe, pero no su detalle.
-- No hay impresión ni PDF, comparación entre periodos, ni desglose por producto, método o categoría; ver [deuda-tecnica.md](../deuda-tecnica.md). La exportación CSV queda pendiente de verificación manual en Windows y Android.
+- No hay comparación entre periodos ni desglose por producto, método o categoría; ver [deuda-tecnica.md](../deuda-tecnica.md). La exportación CSV y PDF está cubierta por pruebas y se verificó en Windows; Android queda pendiente de verificación manual.

@@ -139,11 +139,19 @@
                        TextColor="#7A4F01" />
             </Border>
 
-            <Button x:Name="ExportarCsvButton"
-                    Text="Exportar CSV"
-                    Style="{StaticResource BotonSecundario}"
-                    IsEnabled="False"
-                    Clicked="OnExportarCsvClicked" />
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                <Button x:Name="ExportarCsvButton"
+                        Text="Exportar CSV"
+                        Style="{StaticResource BotonSecundario}"
+                        IsEnabled="False"
+                        Clicked="OnExportarCsvClicked" />
+                <Button x:Name="ExportarPdfButton"
+                        Grid.Column="1"
+                        Text="Exportar PDF"
+                        Style="{StaticResource BotonSecundario}"
+                        IsEnabled="False"
+                        Clicked="OnExportarPdfClicked" />
+            </Grid>
 
             <Label x:Name="MensajeLabel"
                    Style="{StaticResource TextoNota}"

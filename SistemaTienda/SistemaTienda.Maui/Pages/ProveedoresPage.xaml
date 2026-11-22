@@ -350,10 +350,15 @@
                                 Clicked="OnCerrarEstadoClicked" />
                     </Grid>
 
-                    <Button Grid.Row="5"
-                            Text="Exportar estado de cuenta (CSV)"
-                            Style="{StaticResource BotonSecundario}"
-                            Clicked="OnExportarEstadoClicked" />
+                    <Grid Grid.Row="5" ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <Button Text="Exportar CSV"
+                                Style="{StaticResource BotonSecundario}"
+                                Clicked="OnExportarEstadoClicked" />
+                        <Button Grid.Column="1"
+                                Text="Exportar PDF"
+                                Style="{StaticResource BotonSecundario}"
+                                Clicked="OnExportarEstadoPdfClicked" />
+                    </Grid>
                 </Grid>
             </Border>
         </Grid>

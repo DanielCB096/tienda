@@ -486,6 +486,20 @@ Dispositivo: Redmi Note 13 (`2311DRK48G`), Android 16 / API 36. APK Debug con en
 
 **Entorno**: el instalador MSI de workloads falla en este equipo con `NullReferenceException`; se usó un SDK .NET 10 basado en archivos en `%LOCALAPPDATA%\dotnet10` con `maui-android`. El SDK de Android tiene `platforms;android-36` y `build-tools;36.0.0/36.1.0`.
 
+## Verificación manual de exportación PDF (T36, 2026-11-21)
+
+| Flujo | Resultado |
+|-------|-----------|
+| Reportes → Exportar PDF | Pasó: generó `reporte-utilidad-*.pdf` en la caché y abrió el diálogo de Windows |
+| Apertura del PDF | Pasó: `pypdf` leyó una página con tienda, periodo, ventas, costo, comisión, utilidad bruta, mermas, gastos y utilidad neta |
+| Render en visor | Pasó: Edge mostró el documento tamaño carta con el desglose |
+| Estado de cuenta de cliente | Cubierto por `PdfExportTests`: datos, saldo, totales y movimientos con método |
+| Estado de cuenta de proveedor | Cubierto por `PdfExportTests`: datos, saldo, total pagado y pagos con método, usuario y saldo después |
+| Texto largo | Pasó en pruebas: 200 líneas generan varias páginas |
+| Acentos y paréntesis | Pasó en pruebas: conserva Latin-1 y escapa `(` `)` `\` |
+
+Pendiente de T36: repetir la exportación y el diálogo de compartir en Android.
+
 ## Herramientas de Prueba
 
 - **Datos de prueba ficticios**: Un script o conjunto de datos iniciales que incluir:

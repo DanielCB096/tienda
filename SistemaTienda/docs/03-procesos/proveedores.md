@@ -187,6 +187,7 @@ Reporte de proveedores muestra saldos actualizados
 - *Desviaciones del diseño*: los métodos que no son efectivo no entran al corte porque no mueven efectivo. La consola pregunta el método, pero no muestra el estado de cuenta. Los pagos anteriores a la migración v8 no aparecen en el historial y los anteriores a v9 se muestran sin método ni movimiento de caja.
 - *Implementado*: `DetectarDuplicadosProveedor` compara nombre y clave sin distinguir mayúsculas, acentos ni espacios repetidos. En altas y ediciones, la app y la consola advierten coincidencias y permiten continuar explícitamente; la clave vacía no se considera coincidencia.
 - *Implementado (T27)*: migración v10 con `Proveedores.Activo`; el dueño puede dar de baja o reactivar desde MAUI, con confirmación, permiso y bitácora. Las cuentas inactivas conservan saldo e historial y permiten registrar pagos para liquidarlas.
-- *Pendiente*: impresión del estado de cuenta y compras por proveedor.
-- *Implementado (T31)*: el estado de cuenta se exporta a CSV desde la app con **Exportar estado de cuenta (CSV)**; incluye datos del proveedor, saldo, total pagado e historial de pagos con método, usuario y saldo después. Ver [deuda-tecnica.md](../deuda-tecnica.md).
+- *Pendiente*: compras por proveedor.
+- *Implementado (T31)*: el estado de cuenta se exporta a CSV desde la app con **Exportar CSV**; incluye datos del proveedor, saldo, total pagado e historial de pagos con método, usuario y saldo después. Ver [deuda-tecnica.md](../deuda-tecnica.md).
+- *Implementado (T36)*: el estado de cuenta también se genera como PDF con **Exportar PDF**, listo para abrir o imprimir con cualquier lector; conserva saldo, total pagado e historial de pagos.
 - *Verificación*: compilación y 252 pruebas en verde en local el 2026-11-12; la verificación manual de la pantalla en Windows y Android quedó pendiente porque el entorno de desarrollo no permitió abrir la GUI.

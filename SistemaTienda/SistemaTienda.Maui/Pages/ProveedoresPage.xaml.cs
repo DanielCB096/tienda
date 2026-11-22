@@ -369,6 +369,24 @@ public partial class ProveedoresPage : ContentPage
         }
     }
 
+    private async void OnExportarEstadoPdfClicked(object sender, EventArgs e)
+    {
+        if (_estadoActual == null)
+            return;
+
+        try
+        {
+            var nombre = $"estado-proveedor-{_estadoActual.Proveedor.Id}-{DateTime.Now:yyyyMMdd-HHmm}.pdf";
+            var tienda = _config.ObtenerConfiguracion().Value?.NombreTienda;
+            await ExportacionPdfApp.CompartirAsync(
+                nombre, ExportadorPdf.EstadoCuentaProveedor(_estadoActual, tienda));
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlertAsync("No se pudo exportar", ex.Message, "Continuar");
+        }
+    }
+
     private void OnEditarProveedorClicked(object sender, EventArgs e)
     {
         if (_proveedorEstado == null)

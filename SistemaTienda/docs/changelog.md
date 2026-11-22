@@ -21,6 +21,14 @@ Cada entrada tiene formato:
 
 Próximamente después de completar los módulos críticos.
 
+### v0.0.38 - 2026-11-21: PDF de reportes y estados de cuenta
+
+- *Agregado*: `PdfDocumento` (capa `Application`) genera PDF tamaño carta sin dependencias externas, con fuentes base Helvetica y Helvetica-Bold, saltos de página automáticos y texto en Latin-1.
+- *Agregado*: `ExportadorPdf` produce el reporte de utilidad y los estados de cuenta de cliente y proveedor con los mismos datos y totales que el CSV.
+- *Agregado*: botones **Exportar PDF** en Reportes, Clientes y Proveedores de la app MAUI; el archivo se escribe en la caché y se comparte, guarda o imprime con el diálogo del sistema. La consola ofrece PDF además de CSV al terminar el reporte.
+- *Pruebas*: 9 pruebas nuevas en `PdfExportTests`; la suite pasa **336 pruebas**. Solución y MAUI Windows compilan sin errores ni advertencias.
+- *Verificado*: el PDF se abre y se extrae con `pypdf`, y el reporte de utilidad se renderizó en Edge.
+
 ### v0.0.37 - 2026-11-21: Verificación en Android 16 de T29–T35
 
 - *Verificado*: Redmi Note 13 (`2311DRK48G`, Android 16 / API 36), APK Debug con ensamblados embebidos instalado por `adb`.
