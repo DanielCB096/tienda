@@ -394,6 +394,24 @@ public partial class ClientesPage : ContentPage
         }
     }
 
+    private async void OnExportarEstadoPdfClicked(object sender, EventArgs e)
+    {
+        if (_estadoActual == null)
+            return;
+
+        try
+        {
+            var nombre = $"estado-cliente-{_estadoActual.Cliente.Id}-{DateTime.Now:yyyyMMdd-HHmm}.pdf";
+            var tienda = _config.ObtenerConfiguracion().Value?.NombreTienda;
+            await ExportacionPdfApp.CompartirAsync(
+                nombre, ExportadorPdf.EstadoCuentaCliente(_estadoActual, tienda));
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlertAsync("No se pudo exportar", ex.Message, "Continuar");
+        }
+    }
+
     private void OnEditarClienteClicked(object sender, EventArgs e)
     {
         if (_clienteEstado == null)

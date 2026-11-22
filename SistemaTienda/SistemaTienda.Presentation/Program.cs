@@ -1200,6 +1200,14 @@ internal static class Program
             Console.WriteLine($"\n  Archivo exportado: {ruta}");
         }
 
+        if (LeerSiNo("¿Exportar este reporte a PDF?", false))
+        {
+            var ruta = RutaExportacion($"reporte-utilidad-{DateTime.Now:yyyyMMdd-HHmmss}.pdf");
+            File.WriteAllBytes(ruta,
+                ExportadorPdf.ReporteUtilidad(reporte, _configTienda.NombreTienda));
+            Console.WriteLine($"\n  PDF exportado: {ruta}");
+        }
+
         Pausa();
     }
 

@@ -19,14 +19,17 @@ public partial class ReportesPage : ContentPage
     }
 
     private readonly ReporteUtilidadService _reportes;
+    private readonly ConfiguracionService _config;
     private readonly SesionApp _sesion;
     private PeriodoSeleccionado _periodo = PeriodoSeleccionado.Hoy;
     private ReporteUtilidad? _reporteActual;
 
-    public ReportesPage(ReporteUtilidadService reportes, SesionApp sesion)
+    public ReportesPage(ReporteUtilidadService reportes, ConfiguracionService config,
+        SesionApp sesion)
     {
         InitializeComponent();
         _reportes = reportes;
+        _config = config;
         _sesion = sesion;
 
         DesdePicker.Date = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
@@ -71,6 +74,7 @@ public partial class ReportesPage : ContentPage
     {
         _reporteActual = reporte;
         ExportarCsvButton.IsEnabled = true;
+        ExportarPdfButton.IsEnabled = true;
         MensajeLabel.IsVisible = false;
 
         PeriodoLabel.Text = $"PERIODO · {reporte.Desde:dd/MM/yyyy} al {reporte.Hasta:dd/MM/yyyy}";
@@ -113,6 +117,24 @@ public partial class ReportesPage : ContentPage
             var nombre = $"reporte-utilidad-{DateTime.Now:yyyyMMdd-HHmmss}.csv";
             await ExportacionCsvApp.CompartirAsync(
                 nombre, ExportadorCsv.ReporteUtilidad(_reporteActual));
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlertAsync("No se pudo exportar", ex.Message, "Continuar");
+        }
+    }
+
+    private async void OnExportarPdfClicked(object sender, EventArgs e)
+    {
+        if (_reporteActual == null)
+            return;
+
+        try
+        {
+            var nombre = $"reporte-utilidad-{DateTime.Now:yyyyMMdd-HHmmss}.pdf";
+            var tienda = _config.ObtenerConfiguracion().Value?.NombreTienda;
+            await ExportacionPdfApp.CompartirAsync(
+                nombre, ExportadorPdf.ReporteUtilidad(_reporteActual, tienda));
         }
         catch (Exception ex)
         {
