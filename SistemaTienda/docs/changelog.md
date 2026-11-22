@@ -27,7 +27,7 @@ Próximamente después de completar los módulos críticos.
 - *Agregado*: `ExportadorPdf` produce el reporte de utilidad y los estados de cuenta de cliente y proveedor con los mismos datos y totales que el CSV.
 - *Agregado*: botones **Exportar PDF** en Reportes, Clientes y Proveedores de la app MAUI; el archivo se escribe en la caché y se comparte, guarda o imprime con el diálogo del sistema. La consola ofrece PDF además de CSV al terminar el reporte.
 - *Pruebas*: 9 pruebas nuevas en `PdfExportTests`; la suite pasa **336 pruebas**. Solución y MAUI Windows compilan sin errores ni advertencias.
-- *Verificado*: el PDF se abre y se extrae con `pypdf`, y el reporte de utilidad se renderizó en Edge.
+- *Verificado*: el PDF se abre y se extrae con `pypdf`, y el reporte de utilidad se renderizó en Edge. En Android 16 (Redmi Note 13) el botón abrió el diálogo de compartir con la opción **Imprimir** y el archivo extraído conservó tienda, periodo y desglose.
 
 ### v0.0.37 - 2026-11-21: Verificación en Android 16 de T29–T35
 

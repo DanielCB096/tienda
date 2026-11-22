@@ -70,4 +70,4 @@ Pestaña **Reportes**, entre Caja y Ajustes:
 
 - Las ventas a fiado cuentan como ingreso del periodo aunque el efectivo llegue después con el abono; no hay reporte de flujo de efectivo por separado (el corte de caja sí lo cubre a nivel de caja).
 - Las mermas registradas antes de que existiera el costo congelado en el movimiento (esquema anterior a v4) se convierten en la migración y conservan su importe, pero no su detalle.
-- No hay comparación entre periodos ni desglose por producto, método o categoría; ver [deuda-tecnica.md](../deuda-tecnica.md). La exportación CSV y PDF está cubierta por pruebas y se verificó en Windows; Android queda pendiente de verificación manual.
+- No hay comparación entre periodos ni desglose por producto, método o categoría; ver [deuda-tecnica.md](../deuda-tecnica.md). La exportación CSV y PDF está cubierta por pruebas y se verificó en Windows y en Android 16 el 2026-11-21.
