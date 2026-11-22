@@ -16,6 +16,7 @@ Base implementada en consola y en la app MAUI. Los reportes ya existentes (valor
 | Exportación CSV | ✅ Reporte de utilidad desde la consola y la pestaña **Reportes** de la app |
 | Exportación PDF | ✅ Reporte de utilidad desde la consola y la pestaña **Reportes** de la app |
 | Desglose de cobros por método | ✅ Efectivo, tarjeta y fiado en consola, app, CSV y PDF |
+| Comparación con el periodo anterior | ✅ Bloque previo de la misma duración, con diferencia y porcentaje en consola y app |
 
 ## Reporte de utilidad
 
@@ -47,6 +48,14 @@ Utilidad neta  = Utilidad bruta − Mermas − Gastos
 - El fiado se muestra aparte porque es una cuenta por cobrar, no efectivo disponible en caja.
 - La comisión de tarjeta se resta en la utilidad y no se descuenta del monto cobrado con tarjeta.
 
+### Comparación con el periodo anterior
+
+`PeriodoReporte.Anterior` toma el bloque inmediatamente anterior de la misma duración: un día contra el día previo y un rango de 7 días contra los 7 anteriores. `ReporteUtilidadService.ObtenerComparacion` devuelve el reporte actual, el anterior y las diferencias de ventas, utilidad neta y gastos.
+
+- La diferencia se muestra en dinero; el porcentaje solo aparece cuando el periodo anterior es distinto de cero, porque dividir entre cero no está definido.
+- La comparación valida el mismo permiso `Consultar` y el mismo orden de fechas que el reporte normal.
+- No cambia el periodo mostrado: es una lectura adicional para decidir, no un ajuste contable.
+
 ## Consulta en la consola
 
 Menú `[7] Reportes` → `[5] Ventas y utilidad`:
@@ -65,6 +74,7 @@ Pestaña **Reportes**, entre Caja y Ajustes:
 4. La utilidad bruta y neta se colorean en verde cuando son ≥ 0 y en rojo cuando son negativas.
 5. `PeriodoReporte` (Core) calcula los límites de hoy y del mes en curso con fechas sin hora; el rango normaliza ambas fechas. La pantalla llama a `ReporteUtilidadService.Obtener` y el permiso `Consultar` se valida en el servicio.
 6. La pestaña está disponible para dueño, encargado y empleado porque los tres tienen `Consultar`; la pantalla solo lee.
+7. **Comparar con periodo anterior** muestra una tabla con ventas, utilidad neta y gastos del periodo actual y del bloque previo de la misma duración, con diferencia en dinero y porcentaje cuando el anterior no es cero.
 
 ## Exportación CSV y PDF
 
@@ -79,4 +89,4 @@ Pestaña **Reportes**, entre Caja y Ajustes:
 
 - Las ventas a fiado cuentan como ingreso del periodo aunque el efectivo llegue después con el abono; no hay reporte de flujo de efectivo por separado (el corte de caja sí lo cubre a nivel de caja).
 - Las mermas registradas antes de que existiera el costo congelado en el movimiento (esquema anterior a v4) se convierten en la migración y conservan su importe, pero no su detalle.
-- No hay comparación entre periodos ni desglose por producto o categoría; ver [deuda-tecnica.md](../deuda-tecnica.md). La exportación CSV y PDF está cubierta por pruebas y se verificó en Windows y en Android 16 el 2026-11-21; el desglose por método queda pendiente de verificación manual.
+- No hay ventas por día ni desglose por producto o categoría; ver [deuda-tecnica.md](../deuda-tecnica.md). La exportación CSV y PDF está cubierta por pruebas y se verificó en Windows y en Android 16 el 2026-11-21; el desglose por método y la comparación entre periodos quedan pendientes de verificación manual.

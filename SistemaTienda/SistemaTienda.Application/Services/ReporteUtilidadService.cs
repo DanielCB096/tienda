@@ -24,4 +24,27 @@ public class ReporteUtilidadService
 
         return ProcessResult<ReporteUtilidad>.OK(_db.ObtenerReporteUtilidad(desde, hasta));
     }
+
+    /// <summary>
+    /// Compara el periodo indicado contra el bloque inmediatamente anterior de la
+    /// misma duración. Sirve para saber si las ventas o la utilidad subieron o bajaron.
+    /// </summary>
+    public ProcessResult<ComparacionReporte> ObtenerComparacion(DateTime desde, DateTime hasta)
+    {
+        var autorizacion = AutorizacionService.Exigir(SesionActual.Usuario, PermisoSistema.Consultar);
+        if (autorizacion.IsError)
+            return ProcessResult<ComparacionReporte>.Error(autorizacion.Message);
+
+        if (hasta.Date < desde.Date)
+            return ProcessResult<ComparacionReporte>.Error("La fecha final no puede ser anterior a la inicial");
+
+        var periodo = PeriodoReporte.Entre(desde, hasta);
+        var anterior = periodo.Anterior();
+
+        return ProcessResult<ComparacionReporte>.OK(new ComparacionReporte
+        {
+            Actual = _db.ObtenerReporteUtilidad(periodo.Desde, periodo.Hasta),
+            Anterior = _db.ObtenerReporteUtilidad(anterior.Desde, anterior.Hasta)
+        });
+    }
 }

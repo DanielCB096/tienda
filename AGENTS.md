@@ -78,7 +78,7 @@ Cada agente: su carpeta, su rama y su PR.
 - Las ramas `feat/*` se conservan como respaldo, sin borrar: `feat/base-compilable`, `feat/migraciones-respaldo`, `feat/ventas-pos`, `feat/corte-caja`, `feat/centavos-enteros`, `feat/integracion-t4-t9`, `feat/reportes-utilidad`, `feat/respaldo-automatico`, `feat/anulacion-ventas`, `feat/ui-maui` y las de la app MAUI hasta `feat/pago-proveedores-metodo`.
 - Trabajo nuevo: rama desde `main` actualizado; ya no hay que partir de `feat/base-compilable`.
 - T26 quedó implementada en `feat/duplicados-clientes-proveedores` (`e87ea40`): avisos no bloqueantes de posibles duplicados en altas y ediciones MAUI, y en altas desde la consola. T27 quedó implementada en `feat/baja-clientes-proveedores` (`a8f6876`). Ambas, junto con T28, se verificaron en vivo en Windows el 2026-11-19.
-- Build: 0 errores, 0 advertencias. La suite pasa **338 pruebas** en local el 2026-11-22 (incluye `DesgloseCajaTests`, `AbonosMetodoPagoTests`, `ExportadorCsvTests`, `PdfExportTests`, `QrImagenServiceTests`, `EfectivoRecibidoTests`, `ConfiguracionEdicionTests`, `UsuariosPinTests`, `ReportesTests` y `FechasLocalesTests`); la app MAUI compila para Windows en local y para Windows y Android en CI. Los CI anteriores de PR #8 a #18 se registran en sus entradas históricas.
+- Build: 0 errores, 0 advertencias. La suite pasa **344 pruebas** en local el 2026-11-22 (incluye `DesgloseCajaTests`, `AbonosMetodoPagoTests`, `ExportadorCsvTests`, `PdfExportTests`, `QrImagenServiceTests`, `EfectivoRecibidoTests`, `ConfiguracionEdicionTests`, `UsuariosPinTests`, `ReportesTests`, `PeriodoReporteTests` y `FechasLocalesTests`); la app MAUI compila para Windows en local y para Windows y Android en CI. Los CI anteriores de PR #8 a #18 se registran en sus entradas históricas.
 - En T26, la solución compiló sin errores ni advertencias, pasaron **248 pruebas** y la app MAUI de Windows compiló sin errores ni advertencias; los avisos de duplicado de cliente y proveedor se verificaron en vivo el 2026-11-19.
 - En T27, la solución compiló sin errores ni advertencias y pasaron **252 pruebas**; MAUI Windows también compiló sin errores ni advertencias. La baja, reactivación, filtros de inactivos y distintivo se verificaron en vivo el 2026-11-19.
 - Verificación en vivo del 2026-11-19 encontró que el alta de clientes y proveedores guardaba `FechaRegistro` en UTC (`datetime('now')`). Se corrigió para guardar la hora local con la prueba `FechasLocalesTests`; los registros anteriores conservan su valor UTC y no se reescriben.
@@ -412,6 +412,14 @@ El detalle vive en el tablero. Resumen y criterios de terminado:
 - Implementada en `feat/reportes-desglose-metodo` sobre `main`: `ReporteUtilidad.DesglosePagos` separa Efectivo, Tarjeta y Fiado con número de ventas e importe. Una venta mixta suma su parte en efectivo y su parte con tarjeta; el fiado cuenta como cuenta por cobrar y las anuladas quedan fuera.
 - La app MAUI muestra la tarjeta **Cobros por método** en Reportes; la consola imprime las mismas líneas y el CSV y el PDF las incluyen.
 - 2 pruebas nuevas en `ReportesTests` (venta mixta y anulada); la suite pasa **338 pruebas**. Solución y MAUI Windows compilan sin errores ni advertencias.
+- Pendiente: verificación manual en Windows y Android.
+
+### T38 — Comparación de reportes con el periodo anterior
+
+- Implementada en `feat/reportes-comparacion-periodos` sobre `main`: `PeriodoReporte.Anterior` devuelve el bloque previo de la misma duración y `ComparacionReporte` expone ventas, utilidad neta y gastos del periodo actual y del anterior con diferencia y variación porcentual.
+- `ReporteUtilidadService.ObtenerComparacion` valida el permiso `Consultar` y el rango; si el periodo anterior vale cero, la variación porcentual queda nula y la interfaz muestra solo la diferencia.
+- La app MAUI agrega **Comparar con periodo anterior** en Reportes con una tabla de actual, anterior y Δ; la consola pregunta al terminar y muestra el mismo comparativo.
+- 6 pruebas nuevas en `PeriodoReporteTests` y `ReportesTests`; la suite pasa **344 pruebas**. Solución y MAUI Windows compilan sin errores ni advertencias.
 - Pendiente: verificación manual en Windows y Android.
 
 ### T7 — Pantallas de operación en MAUI

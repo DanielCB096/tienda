@@ -1200,6 +1200,9 @@ internal static class Program
         Console.WriteLine($"  Gastos: ${Dinero.Formatear(reporte.Gastos)}");
         Console.WriteLine($"  Utilidad neta: ${Dinero.Formatear(reporte.UtilidadNeta)}");
 
+        if (LeerSiNo("¿Comparar con el periodo anterior?", false))
+            MostrarComparacionReporte(desde, hasta);
+
         if (LeerSiNo("¿Exportar este reporte a CSV?", false))
         {
             var ruta = RutaExportacion($"reporte-utilidad-{DateTime.Now:yyyyMMdd-HHmmss}.csv");
@@ -1216,6 +1219,42 @@ internal static class Program
         }
 
         Pausa();
+    }
+
+    private static void MostrarComparacionReporte(DateTime desde, DateTime hasta)
+    {
+        var resultado = _reportes.ObtenerComparacion(desde, hasta);
+        if (resultado.IsError)
+        {
+            Aviso(resultado.Message);
+            return;
+        }
+
+        var comparacion = resultado.Value;
+        var actual = comparacion.Actual;
+        var anterior = comparacion.Anterior;
+        Console.WriteLine();
+        Console.WriteLine("=== COMPARACIÓN CON EL PERIODO ANTERIOR ===");
+        Console.WriteLine($"  Actual: {actual.Desde:dd/MM/yyyy} a {actual.Hasta:dd/MM/yyyy}");
+        Console.WriteLine($"  Anterior: {anterior.Desde:dd/MM/yyyy} a {anterior.Hasta:dd/MM/yyyy}");
+        Console.WriteLine($"  Ventas: ${Dinero.Formatear(actual.VentasTotal)} vs " +
+                          $"${Dinero.Formatear(anterior.VentasTotal)} " +
+                          $"({TextoVariacion(comparacion.DiferenciaMontoVentas, comparacion.VariacionVentas)})");
+        Console.WriteLine($"  Utilidad neta: ${Dinero.Formatear(actual.UtilidadNeta)} vs " +
+                          $"${Dinero.Formatear(anterior.UtilidadNeta)} " +
+                          $"({TextoVariacion(comparacion.DiferenciaUtilidadNeta, comparacion.VariacionUtilidadNeta)})");
+        Console.WriteLine($"  Gastos: ${Dinero.Formatear(actual.Gastos)} vs " +
+                          $"${Dinero.Formatear(anterior.Gastos)} " +
+                          $"({TextoVariacion(comparacion.DiferenciaGastos, comparacion.VariacionGastos)})");
+    }
+
+    private static string TextoVariacion(long diferencia, decimal? variacion)
+    {
+        var signo = diferencia > 0 ? "+" : diferencia < 0 ? "-" : string.Empty;
+        var texto = $"{signo}${Dinero.Formatear(Math.Abs(diferencia))}";
+        return variacion.HasValue
+            ? $"{texto}, {variacion.Value:+0.0;-0.0;0.0}%"
+            : $"{texto}, porcentaje no disponible";
     }
 
     private static string RutaExportacion(string nombreArchivo)
