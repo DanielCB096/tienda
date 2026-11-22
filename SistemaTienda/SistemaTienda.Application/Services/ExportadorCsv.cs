@@ -25,6 +25,9 @@ public static class ExportadorCsv
             Fila("Periodo hasta", reporte.Hasta.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)),
             Fila("Ventas", reporte.NumeroVentas.ToString(CultureInfo.InvariantCulture)),
             Fila("Ventas cobradas", Importe(reporte.VentasTotal)),
+            Fila("Cobros en efectivo", Importe(MontoDe(reporte, MetodoPagoVenta.Efectivo))),
+            Fila("Cobros con tarjeta", Importe(MontoDe(reporte, MetodoPagoVenta.Tarjeta))),
+            Fila("Ventas a fiado", Importe(MontoDe(reporte, MetodoPagoVenta.Fiado))),
             Fila("Costo de ventas", Importe(reporte.CostoVentas)),
             Fila("Comision de tarjeta", Importe(reporte.ComisionTarjeta)),
             Fila("Utilidad bruta", Importe(reporte.UtilidadBruta)),
@@ -133,4 +136,7 @@ public static class ExportadorCsv
 
     private static string Fila(string concepto, string valor) =>
         string.Join(",", Campo(concepto), Campo(valor));
+
+    private static long MontoDe(ReporteUtilidad reporte, string metodo) =>
+        reporte.DesglosePagos.FirstOrDefault(d => d.Metodo == metodo)?.Monto ?? 0;
 }

@@ -89,6 +89,8 @@ public partial class ReportesPage : ContentPage
         MermasLabel.Text = Formato.Moneda(reporte.Mermas);
         GastosLabel.Text = Formato.Moneda(reporte.Gastos);
 
+        MostrarCobros(reporte);
+
         UtilidadBrutaLabel.Text = Formato.Moneda(reporte.UtilidadBruta);
         UtilidadBrutaLabel.TextColor = reporte.UtilidadBruta >= 0 ? ColorPositivo : ColorNegativo;
 
@@ -97,6 +99,28 @@ public partial class ReportesPage : ContentPage
         UtilidadNetaDetalleLabel.Text = Formato.Moneda(reporte.UtilidadNeta);
         UtilidadNetaDetalleLabel.TextColor = reporte.UtilidadNeta >= 0 ? ColorPositivo : ColorNegativo;
     }
+
+    private void MostrarCobros(ReporteUtilidad reporte)
+    {
+        var efectivo = DesgloseDe(reporte, MetodoPagoVenta.Efectivo);
+        var tarjeta = DesgloseDe(reporte, MetodoPagoVenta.Tarjeta);
+        var fiado = DesgloseDe(reporte, MetodoPagoVenta.Fiado);
+
+        EfectivoTituloLabel.Text = TituloCobro("Efectivo", efectivo.NumeroVentas);
+        TarjetaTituloLabel.Text = TituloCobro("Tarjeta", tarjeta.NumeroVentas);
+        FiadoTituloLabel.Text = TituloCobro("Fiado", fiado.NumeroVentas);
+
+        EfectivoMontoLabel.Text = Formato.Moneda(efectivo.Monto);
+        TarjetaMontoLabel.Text = Formato.Moneda(tarjeta.Monto);
+        FiadoMontoLabel.Text = Formato.Moneda(fiado.Monto);
+    }
+
+    private static DesgloseMetodoPago DesgloseDe(ReporteUtilidad reporte, string metodo) =>
+        reporte.DesglosePagos.FirstOrDefault(d => d.Metodo == metodo)
+        ?? new DesgloseMetodoPago { Metodo = metodo };
+
+    private static string TituloCobro(string nombre, int ventas) =>
+        ventas == 1 ? $"{nombre} (1 venta)" : $"{nombre} ({ventas} ventas)";
 
     private void MostrarMensaje(string mensaje)
     {

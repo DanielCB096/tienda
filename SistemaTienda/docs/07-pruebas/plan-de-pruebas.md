@@ -501,6 +501,16 @@ Dispositivo: Redmi Note 13 (`2311DRK48G`), Android 16 / API 36. APK Debug con en
 
 Pendiente de T36: nada; el diálogo de compartir y la apertura del PDF se verificaron en Windows y en Android 16 el 2026-11-21.
 
+## Verificación de T37, desglose por método (pendiente)
+
+| Caso | Resultado |
+|------|-----------|
+| Venta en efectivo, tarjeta, mixta y fiado en el mismo periodo | Pendiente |
+| La venta mixta aparece en Efectivo y Tarjeta con su parte correspondiente | Pendiente |
+| Una venta anulada desaparece del desglose | Pendiente |
+| Los totales por método coinciden con caja y con el estado de cuenta del cliente | Pendiente |
+| CSV y PDF incluyen las líneas de cobro | Pendiente |
+
 ## Herramientas de Prueba
 
 - **Datos de prueba ficticios**: Un script o conjunto de datos iniciales que incluir:

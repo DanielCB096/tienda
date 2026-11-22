@@ -15,6 +15,7 @@ Base implementada en consola y en la app MAUI. Los reportes ya existentes (valor
 | Utilidad por producto | ⛔ Pendiente |
 | Exportación CSV | ✅ Reporte de utilidad desde la consola y la pestaña **Reportes** de la app |
 | Exportación PDF | ✅ Reporte de utilidad desde la consola y la pestaña **Reportes** de la app |
+| Desglose de cobros por método | ✅ Efectivo, tarjeta y fiado en consola, app, CSV y PDF |
 
 ## Reporte de utilidad
 
@@ -37,6 +38,14 @@ Utilidad neta  = Utilidad bruta − Mermas − Gastos
 - El servicio valida el permiso `Consultar` en la capa de aplicación; el dueño, el encargado y el empleado pueden consultarlo.
 - La fecha final no puede ser anterior a la inicial.
 - Un cambio posterior del costo en el catálogo no altera la utilidad histórica: la venta conserva su costo congelado.
+
+### Cobros por método
+
+`ReporteUtilidad.DesglosePagos` agrupa los cobros del periodo en **Efectivo**, **Tarjeta** y **Fiado**, cada uno con su número de ventas y su importe. Se calcula con `Ventas.PagoEfectivo`, `PagoTarjeta` y `PagoFiado`, sin contar anuladas:
+
+- Una venta mixta suma su parte en efectivo y su parte con tarjeta, así que aparece en ambos renglones.
+- El fiado se muestra aparte porque es una cuenta por cobrar, no efectivo disponible en caja.
+- La comisión de tarjeta se resta en la utilidad y no se descuenta del monto cobrado con tarjeta.
 
 ## Consulta en la consola
 
@@ -70,4 +79,4 @@ Pestaña **Reportes**, entre Caja y Ajustes:
 
 - Las ventas a fiado cuentan como ingreso del periodo aunque el efectivo llegue después con el abono; no hay reporte de flujo de efectivo por separado (el corte de caja sí lo cubre a nivel de caja).
 - Las mermas registradas antes de que existiera el costo congelado en el movimiento (esquema anterior a v4) se convierten en la migración y conservan su importe, pero no su detalle.
-- No hay comparación entre periodos ni desglose por producto, método o categoría; ver [deuda-tecnica.md](../deuda-tecnica.md). La exportación CSV y PDF está cubierta por pruebas y se verificó en Windows y en Android 16 el 2026-11-21.
+- No hay comparación entre periodos ni desglose por producto o categoría; ver [deuda-tecnica.md](../deuda-tecnica.md). La exportación CSV y PDF está cubierta por pruebas y se verificó en Windows y en Android 16 el 2026-11-21; el desglose por método queda pendiente de verificación manual.

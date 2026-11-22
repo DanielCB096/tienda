@@ -17,6 +17,21 @@ public static class ExportadorPdf
 
         pdf.Fila("Ventas", reporte.NumeroVentas.ToString(CultureInfo.InvariantCulture));
         pdf.Fila("Ventas cobradas", Dinero.Formatear(reporte.VentasTotal));
+
+        if (reporte.DesglosePagos.Count > 0)
+        {
+            pdf.Espacio(4);
+            pdf.Texto("Cobros por metodo", 10, true);
+            foreach (var desglose in reporte.DesglosePagos)
+            {
+                var etiqueta = desglose.NumeroVentas == 1
+                    ? $"{desglose.Metodo} (1 venta)"
+                    : $"{desglose.Metodo} ({desglose.NumeroVentas} ventas)";
+                pdf.Fila(etiqueta, Dinero.Formatear(desglose.Monto), 9);
+            }
+        }
+
+        pdf.Espacio(4);
         pdf.Fila("Costo de ventas", Dinero.Formatear(reporte.CostoVentas));
         pdf.Fila("Comision de tarjeta", Dinero.Formatear(reporte.ComisionTarjeta));
         pdf.LineaHorizontal();

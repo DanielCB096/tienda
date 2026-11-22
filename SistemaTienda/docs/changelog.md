@@ -21,6 +21,12 @@ Cada entrada tiene formato:
 
 Próximamente después de completar los módulos críticos.
 
+### v0.0.39 - 2026-11-22: Desglose de cobros por método en reportes
+
+- *Agregado*: `ReporteUtilidad.DesglosePagos` separa los cobros del periodo en Efectivo, Tarjeta y Fiado; una venta mixta suma su parte en efectivo y su parte con tarjeta, el fiado se reporta como cuenta por cobrar y las ventas anuladas quedan excluidas.
+- *Agregado*: tarjeta **Cobros por método** en la pestaña Reportes, con número de ventas e importe por método; los mismos datos aparecen en la consola y en las exportaciones CSV y PDF.
+- *Pruebas*: 2 pruebas nuevas en `ReportesTests` (venta mixta y venta anulada); la suite pasa **338 pruebas**. Solución y MAUI Windows compilan sin errores ni advertencias.
+
 ### v0.0.38 - 2026-11-21: PDF de reportes y estados de cuenta
 
 - *Agregado*: `PdfDocumento` (capa `Application`) genera PDF tamaño carta sin dependencias externas, con fuentes base Helvetica y Helvetica-Bold, saltos de página automáticos y texto en Latin-1.
