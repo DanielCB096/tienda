@@ -14,4 +14,19 @@ public sealed record PeriodoReporte(DateTime Desde, DateTime Hasta)
 
     public static PeriodoReporte Entre(DateTime desde, DateTime hasta) =>
         new(desde.Date, hasta.Date);
+
+    /// <summary>
+    /// Bloque inmediatamente anterior de la misma duración. Por ejemplo, del 1 al 7
+    /// de noviembre (7 días) devuelve del 25 al 31 de octubre.
+    /// </summary>
+    public PeriodoReporte Anterior()
+    {
+        var inicio = Desde.Date;
+        var fin = Hasta.Date;
+        var dias = (fin - inicio).Days + 1;
+        if (dias < 1)
+            dias = 1;
+
+        return new PeriodoReporte(inicio.AddDays(-dias), inicio.AddDays(-1));
+    }
 }

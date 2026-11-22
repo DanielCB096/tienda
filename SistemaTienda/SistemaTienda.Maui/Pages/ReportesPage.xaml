@@ -41,6 +41,66 @@
                         Clicked="OnRangoClicked" />
             </Grid>
 
+            <Button x:Name="CompararButton"
+                    Text="Comparar con periodo anterior"
+                    Style="{StaticResource BotonSecundario}"
+                    HeightRequest="40"
+                    Clicked="OnCompararClicked" />
+
+            <Border x:Name="ComparacionPanel"
+                    IsVisible="False"
+                    Style="{StaticResource Tarjeta}"
+                    Padding="16">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="COMPARACIÓN CON EL PERIODO ANTERIOR"
+                           Style="{StaticResource EtiquetaSeccion}" />
+                    <Label x:Name="ComparacionPeriodoLabel" Style="{StaticResource TextoNota}" />
+
+                    <Grid ColumnDefinitions="1.4*,*,*,1.1*" ColumnSpacing="6">
+                        <Label Text="CONCEPTO" Style="{StaticResource EtiquetaSeccion}" />
+                        <Label Grid.Column="1" Text="ACTUAL" Style="{StaticResource EtiquetaSeccion}"
+                               HorizontalTextAlignment="End" />
+                        <Label Grid.Column="2" Text="ANTERIOR" Style="{StaticResource EtiquetaSeccion}"
+                               HorizontalTextAlignment="End" />
+                        <Label Grid.Column="3" Text="Δ" Style="{StaticResource EtiquetaSeccion}"
+                               HorizontalTextAlignment="End" />
+                    </Grid>
+
+                    <Grid ColumnDefinitions="1.4*,*,*,1.1*" ColumnSpacing="6">
+                        <Label Text="Ventas" FontSize="14" />
+                        <Label x:Name="CompVentasActual" Grid.Column="1" Text="$0.00"
+                               FontSize="14" HorizontalTextAlignment="End" />
+                        <Label x:Name="CompVentasAnterior" Grid.Column="2" Text="$0.00"
+                               FontSize="14" HorizontalTextAlignment="End" />
+                        <Label x:Name="CompVentasDelta" Grid.Column="3" Text="—"
+                               FontSize="13" FontAttributes="Bold" HorizontalTextAlignment="End" />
+                    </Grid>
+
+                    <Grid ColumnDefinitions="1.4*,*,*,1.1*" ColumnSpacing="6">
+                        <Label Text="Utilidad neta" FontSize="14" FontAttributes="Bold" />
+                        <Label x:Name="CompUtilidadActual" Grid.Column="1" Text="$0.00"
+                               FontSize="14" FontAttributes="Bold" HorizontalTextAlignment="End" />
+                        <Label x:Name="CompUtilidadAnterior" Grid.Column="2" Text="$0.00"
+                               FontSize="14" HorizontalTextAlignment="End" />
+                        <Label x:Name="CompUtilidadDelta" Grid.Column="3" Text="—"
+                               FontSize="13" FontAttributes="Bold" HorizontalTextAlignment="End" />
+                    </Grid>
+
+                    <Grid ColumnDefinitions="1.4*,*,*,1.1*" ColumnSpacing="6">
+                        <Label Text="Gastos" FontSize="14" />
+                        <Label x:Name="CompGastosActual" Grid.Column="1" Text="$0.00"
+                               FontSize="14" HorizontalTextAlignment="End" />
+                        <Label x:Name="CompGastosAnterior" Grid.Column="2" Text="$0.00"
+                               FontSize="14" HorizontalTextAlignment="End" />
+                        <Label x:Name="CompGastosDelta" Grid.Column="3" Text="—"
+                               FontSize="13" FontAttributes="Bold" HorizontalTextAlignment="End" />
+                    </Grid>
+
+                    <Label Text="La comparación usa el bloque inmediatamente anterior de la misma duración; el porcentaje no se muestra cuando el periodo anterior vale cero."
+                           Style="{StaticResource TextoNota}" />
+                </VerticalStackLayout>
+            </Border>
+
             <Border x:Name="RangoPanel" IsVisible="False" Style="{StaticResource Tarjeta}" Padding="14">
                 <Grid ColumnDefinitions="*,*,Auto" ColumnSpacing="10">
                     <VerticalStackLayout Spacing="2">

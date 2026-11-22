@@ -34,6 +34,33 @@ public sealed class ReportesTests
     private static ReporteUtilidad DelDia(BaseDatosPrueba bd) =>
         new ReporteUtilidadService(bd.Db).Obtener(DateTime.Today, DateTime.Today).Value;
 
+    private static void VenderEnFecha(BaseDatosPrueba bd, Producto producto,
+        DateTime fecha, int cantidad)
+    {
+        var venta = new Venta
+        {
+            Fecha = fecha,
+            Usuario = "Cajero",
+            MetodoPago = MetodoPagoVenta.Efectivo,
+            Total = producto.Precio * cantidad,
+            CostoTotal = producto.Costo * cantidad,
+            PagoEfectivo = producto.Precio * cantidad
+        };
+        var linea = new VentaLinea
+        {
+            ProductoId = producto.Id,
+            CodigoBarras = producto.CodigoBarras,
+            Nombre = producto.Nombre,
+            Cantidad = cantidad,
+            PrecioUnitario = producto.Precio,
+            CostoUnitario = producto.Costo,
+            Importe = producto.Precio * cantidad
+        };
+
+        var resultado = bd.Db.RegistrarVenta(venta, new[] { linea });
+        Assert.True(resultado.IsSuccess, resultado.Message);
+    }
+
     [Fact]
     public void Obtener_ConVentaEnEfectivo_UsaElCostoCongelado()
     {
@@ -175,6 +202,58 @@ public sealed class ReportesTests
 
         Assert.Empty(reporte.DesglosePagos);
         Assert.Equal(0, reporte.VentasTotal);
+    }
+
+    [Fact]
+    public void ObtenerComparacion_ContraElBloqueAnterior_CalculaDiferenciasYPorcentaje()
+    {
+        using var bd = new BaseDatosPrueba();
+        bd.ConfigurarTienda();
+        var producto = CrearProducto(bd, "A1", precio: 1_000, costo: 400, stock: 10);
+
+        VenderEnFecha(bd, producto, DateTime.Today.AddDays(-1), 1);
+        VenderEnFecha(bd, producto, DateTime.Today, 2);
+
+        var comparacion = new ReporteUtilidadService(bd.Db)
+            .ObtenerComparacion(DateTime.Today, DateTime.Today).Value;
+
+        Assert.Equal(2_000, comparacion.Actual.VentasTotal);
+        Assert.Equal(1_000, comparacion.Anterior.VentasTotal);
+        Assert.Equal(1_000, comparacion.DiferenciaMontoVentas);
+        Assert.Equal(100m, comparacion.VariacionVentas);
+        Assert.Equal(1_200, comparacion.Actual.UtilidadNeta);
+        Assert.Equal(600, comparacion.Anterior.UtilidadNeta);
+        Assert.Equal(600, comparacion.DiferenciaUtilidadNeta);
+        Assert.Equal(100m, comparacion.VariacionUtilidadNeta);
+    }
+
+    [Fact]
+    public void ObtenerComparacion_SinPeriodoAnterior_NoCalculaPorcentaje()
+    {
+        using var bd = new BaseDatosPrueba();
+        bd.ConfigurarTienda();
+        var producto = CrearProducto(bd, "A1", precio: 1_500, costo: 1_000, stock: 10);
+        Assert.True(Vender(bd, new PagoSolicitado { Efectivo = 1_500 }, (producto, 1)).IsSuccess);
+
+        var comparacion = new ReporteUtilidadService(bd.Db)
+            .ObtenerComparacion(DateTime.Today, DateTime.Today).Value;
+
+        Assert.Equal(0, comparacion.Anterior.VentasTotal);
+        Assert.Equal(1_500, comparacion.Actual.VentasTotal);
+        Assert.Null(comparacion.VariacionVentas);
+        Assert.Null(comparacion.VariacionUtilidadNeta);
+    }
+
+    [Fact]
+    public void ObtenerComparacion_ConRangoInvertido_Falla()
+    {
+        using var bd = new BaseDatosPrueba();
+        bd.ConfigurarTienda();
+
+        var resultado = new ReporteUtilidadService(bd.Db)
+            .ObtenerComparacion(DateTime.Today, DateTime.Today.AddDays(-1));
+
+        Assert.True(resultado.IsError);
     }
 
     [Fact]

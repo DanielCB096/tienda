@@ -511,6 +511,16 @@ Pendiente de T36: nada; el diálogo de compartir y la apertura del PDF se verifi
 | Los totales por método coinciden con caja y con el estado de cuenta del cliente | Pendiente |
 | CSV y PDF incluyen las líneas de cobro | Pendiente |
 
+## Verificación de T38, comparación entre periodos (pendiente)
+
+| Caso | Resultado |
+|------|-----------|
+| Comparar hoy contra ayer con ventas en ambos días | Pendiente |
+| Comparar un rango de 7 días contra los 7 anteriores | Pendiente |
+| Periodo anterior vacío: se muestra la diferencia sin porcentaje | Pendiente |
+| Gastos que suben se pintan como variación desfavorable | Pendiente |
+| Cambiar de Hoy a Este mes con la comparación abierta la recarga | Pendiente |
+
 ## Herramientas de Prueba
 
 - **Datos de prueba ficticios**: Un script o conjunto de datos iniciales que incluir:

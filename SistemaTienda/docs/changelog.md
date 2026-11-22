@@ -21,6 +21,13 @@ Cada entrada tiene formato:
 
 Próximamente después de completar los módulos críticos.
 
+### v0.0.40 - 2026-11-22: Comparación de reportes con el periodo anterior
+
+- *Agregado*: `PeriodoReporte.Anterior` calcula el bloque inmediatamente anterior de la misma duración (un día contra el día previo, un rango de 7 días contra los 7 anteriores).
+- *Agregado*: `ComparacionReporte` y `ReporteUtilidadService.ObtenerComparacion` devuelven ventas, utilidad neta y gastos del periodo actual y del anterior, con diferencia y variación porcentual; el porcentaje es nulo cuando el periodo anterior vale cero.
+- *Agregado*: botón **Comparar con periodo anterior** en Reportes con una tabla de actual, anterior y Δ; la consola pregunta al terminar el reporte y muestra el mismo comparativo.
+- *Pruebas*: 6 pruebas nuevas en `PeriodoReporteTests` y `ReportesTests`; la suite pasa **344 pruebas**. Solución y MAUI Windows compilan sin errores ni advertencias.
+
 ### v0.0.39 - 2026-11-22: Desglose de cobros por método en reportes
 
 - *Agregado*: `ReporteUtilidad.DesglosePagos` separa los cobros del periodo en Efectivo, Tarjeta y Fiado; una venta mixta suma su parte en efectivo y su parte con tarjeta, el fiado se reporta como cuenta por cobrar y las ventas anuladas quedan excluidas.

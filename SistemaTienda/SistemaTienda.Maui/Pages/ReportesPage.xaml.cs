@@ -51,14 +51,7 @@ public partial class ReportesPage : ContentPage
             ? $"Consultando como {_sesion.Usuario.Nombre} ({_sesion.Usuario.Rol})"
             : "Sesión no iniciada";
 
-        var periodo = _periodo switch
-        {
-            PeriodoSeleccionado.Mes => PeriodoReporte.MesActual(DateTime.Today),
-            PeriodoSeleccionado.Rango => PeriodoReporte.Entre(
-                DesdePicker.Date ?? DateTime.Today,
-                HastaPicker.Date ?? DateTime.Today),
-            _ => PeriodoReporte.Hoy(DateTime.Today)
-        };
+        var periodo = PeriodoActual();
 
         var resultado = _reportes.Obtener(periodo.Desde, periodo.Hasta);
         if (resultado.IsError)
@@ -68,7 +61,20 @@ public partial class ReportesPage : ContentPage
         }
 
         MostrarReporte(resultado.Value);
+
+        if (ComparacionPanel.IsVisible)
+            CargarComparacion(periodo);
     }
+
+    private PeriodoReporte PeriodoActual() =>
+        _periodo switch
+        {
+            PeriodoSeleccionado.Mes => PeriodoReporte.MesActual(DateTime.Today),
+            PeriodoSeleccionado.Rango => PeriodoReporte.Entre(
+                DesdePicker.Date ?? DateTime.Today,
+                HastaPicker.Date ?? DateTime.Today),
+            _ => PeriodoReporte.Hoy(DateTime.Today)
+        };
 
     private void MostrarReporte(ReporteUtilidad reporte)
     {
@@ -121,6 +127,61 @@ public partial class ReportesPage : ContentPage
 
     private static string TituloCobro(string nombre, int ventas) =>
         ventas == 1 ? $"{nombre} (1 venta)" : $"{nombre} ({ventas} ventas)";
+
+    private void CargarComparacion(PeriodoReporte periodo)
+    {
+        _sesion.Aplicar();
+        var resultado = _reportes.ObtenerComparacion(periodo.Desde, periodo.Hasta);
+        if (resultado.IsError)
+        {
+            MostrarMensaje(resultado.Message);
+            return;
+        }
+
+        MostrarComparacion(resultado.Value);
+    }
+
+    private void MostrarComparacion(ComparacionReporte comparacion)
+    {
+        var actual = comparacion.Actual;
+        var anterior = comparacion.Anterior;
+
+        ComparacionPeriodoLabel.Text =
+            $"Actual: {actual.Desde:dd/MM/yyyy} al {actual.Hasta:dd/MM/yyyy} · " +
+            $"Anterior: {anterior.Desde:dd/MM/yyyy} al {anterior.Hasta:dd/MM/yyyy}";
+
+        CompVentasActual.Text = Formato.Moneda(actual.VentasTotal);
+        CompVentasAnterior.Text = Formato.Moneda(anterior.VentasTotal);
+        CompVentasDelta.Text = TextoDelta(comparacion.DiferenciaMontoVentas, comparacion.VariacionVentas);
+        CompVentasDelta.TextColor = comparacion.DiferenciaMontoVentas >= 0 ? ColorPositivo : ColorNegativo;
+
+        CompUtilidadActual.Text = Formato.Moneda(actual.UtilidadNeta);
+        CompUtilidadAnterior.Text = Formato.Moneda(anterior.UtilidadNeta);
+        CompUtilidadDelta.Text = TextoDelta(comparacion.DiferenciaUtilidadNeta, comparacion.VariacionUtilidadNeta);
+        CompUtilidadDelta.TextColor = comparacion.DiferenciaUtilidadNeta >= 0 ? ColorPositivo : ColorNegativo;
+
+        CompGastosActual.Text = Formato.Moneda(actual.Gastos);
+        CompGastosAnterior.Text = Formato.Moneda(anterior.Gastos);
+        CompGastosDelta.Text = TextoDelta(comparacion.DiferenciaGastos, comparacion.VariacionGastos);
+        CompGastosDelta.TextColor = comparacion.DiferenciaGastos <= 0 ? ColorPositivo : ColorNegativo;
+    }
+
+    private static string TextoDelta(long diferencia, decimal? variacion)
+    {
+        var signo = diferencia > 0 ? "+" : diferencia < 0 ? "−" : string.Empty;
+        var texto = $"{signo}{Formato.Moneda(Math.Abs(diferencia))}";
+        if (variacion.HasValue)
+            texto += $" ({variacion.Value:+0.0;-0.0;0.0}%)";
+
+        return texto;
+    }
+
+    private void OnCompararClicked(object sender, EventArgs e)
+    {
+        ComparacionPanel.IsVisible = !ComparacionPanel.IsVisible;
+        if (ComparacionPanel.IsVisible)
+            CargarComparacion(PeriodoActual());
+    }
 
     private void MostrarMensaje(string mensaje)
     {

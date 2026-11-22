@@ -132,6 +132,7 @@ Acceso en la app: pestaña **Reportes** (disponible para todos los roles con per
 - **Periodo**: **Hoy**, **Este mes** o **Rango** con fecha desde y hasta; **Ver** consulta el rango y **Actualizar** recarga.
 - **Resumen**: utilidad neta, número de ventas y periodo.
 - **Desglose**: ventas cobradas, costo de ventas, comisión de tarjeta, utilidad bruta, mermas, gastos y utilidad neta.
+- **Cobros por método y comparación**: separa efectivo, tarjeta y fiado, y compara contra el bloque anterior de la misma duración.
 - **Cálculo**: utilidad bruta = ventas − costo − comisión; utilidad neta = bruta − mermas − gastos. Las ventas anuladas no se incluyen.
 - **Color**: verde cuando la utilidad es positiva o cero y rojo cuando es negativa.
 - **Exportar CSV / Exportar PDF**: generan el archivo del periodo y abren el diálogo del sistema para compartirlo, guardarlo o imprimirlo.
