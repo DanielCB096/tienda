@@ -1387,6 +1387,45 @@ public class DatabaseTools
         using (var cmd = conn.CreateCommand())
         {
             cmd.CommandText = @"
+                SELECT 'Efectivo' AS Metodo, COUNT(*), COALESCE(SUM(PagoEfectivo), 0)
+                FROM Ventas
+                WHERE date(Fecha) BETWEEN date(@desde) AND date(@hasta)
+                  AND NOT EXISTS (SELECT 1 FROM AnulacionesVenta a WHERE a.VentaId = Ventas.Id)
+                  AND PagoEfectivo > 0
+                UNION ALL
+                SELECT 'Tarjeta', COUNT(*), COALESCE(SUM(PagoTarjeta), 0)
+                FROM Ventas
+                WHERE date(Fecha) BETWEEN date(@desde) AND date(@hasta)
+                  AND NOT EXISTS (SELECT 1 FROM AnulacionesVenta a WHERE a.VentaId = Ventas.Id)
+                  AND PagoTarjeta > 0
+                UNION ALL
+                SELECT 'Fiado', COUNT(*), COALESCE(SUM(PagoFiado), 0)
+                FROM Ventas
+                WHERE date(Fecha) BETWEEN date(@desde) AND date(@hasta)
+                  AND NOT EXISTS (SELECT 1 FROM AnulacionesVenta a WHERE a.VentaId = Ventas.Id)
+                  AND PagoFiado > 0";
+            cmd.Parameters.AddWithValue("@desde", desde.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+            cmd.Parameters.AddWithValue("@hasta", hasta.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                var numeroVentas = Convert.ToInt32(reader.GetValue(1), CultureInfo.InvariantCulture);
+                if (numeroVentas == 0)
+                    continue;
+
+                reporte.DesglosePagos.Add(new DesgloseMetodoPago
+                {
+                    Metodo = reader.GetString(0),
+                    NumeroVentas = numeroVentas,
+                    Monto = Convert.ToInt64(reader.GetValue(2), CultureInfo.InvariantCulture)
+                });
+            }
+        }
+
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.CommandText = @"
                 SELECT COALESCE(SUM(-Cantidad * CostoUnitario), 0)
                 FROM MovimientoInventario
                 WHERE Tipo = @tipo AND Motivo LIKE 'Merma:%'

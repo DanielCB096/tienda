@@ -1186,6 +1186,13 @@ internal static class Program
         Console.WriteLine("=== VENTAS Y UTILIDAD ===");
         Console.WriteLine($"  Periodo: {reporte.Desde:dd/MM/yyyy} a {reporte.Hasta:dd/MM/yyyy}");
         Console.WriteLine($"  Ventas: {reporte.NumeroVentas} por ${Dinero.Formatear(reporte.VentasTotal)}");
+        foreach (var desglose in reporte.DesglosePagos)
+        {
+            var etiqueta = desglose.NumeroVentas == 1
+                ? $"{desglose.Metodo} (1 venta)"
+                : $"{desglose.Metodo} ({desglose.NumeroVentas} ventas)";
+            Console.WriteLine($"  Cobros {etiqueta}: ${Dinero.Formatear(desglose.Monto)}");
+        }
         Console.WriteLine($"  Costo de ventas: ${Dinero.Formatear(reporte.CostoVentas)}");
         Console.WriteLine($"  Comisión de tarjeta: ${Dinero.Formatear(reporte.ComisionTarjeta)}");
         Console.WriteLine($"  Utilidad bruta: ${Dinero.Formatear(reporte.UtilidadBruta)}");

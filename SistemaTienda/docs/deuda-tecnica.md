@@ -118,11 +118,11 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 - **Resuelto (T35)**: el alta y la edición de usuarios exigen nombre y PIN únicos, y el PIN se valida en el servicio. Los usuarios creados antes de T35 podrían conservar un PIN duplicado; en ese caso `VerificarAcceso` devuelve el primero que coincide y conviene cambiar el PIN desde Ajustes.
 - **Cierre**: validar existencia antes de ajustar, recortar el concepto al guardar y normalizar la búsqueda (mayúsculas/acentos).
 
-### Reportes sin comparación ni desglose
+### Reportes sin comparación ni desglose por producto
 
 - **Dónde**: `ReporteUtilidadService`, `PeriodoReporte`, `ExportadorCsv`, `ExportadorPdf` y la pestaña Reportes de la app MAUI.
-- **Impacto**: ya existe la utilidad por periodo (ventas, costo congelado, comisión, mermas y gastos), se consulta en la app con filtros hoy/mes/rango y se exporta a CSV y PDF desde T31/T36. Faltan ventas por día, comparativos entre periodos y utilidad por producto o método. La consulta de ventas de fechas anteriores sigue solo en la consola.
-- **Cierre**: consultas agregadas por producto, método y periodo con índices por fecha (ya existen en `Ventas(Fecha)`) y comparación entre periodos.
+- **Impacto**: ya existe la utilidad por periodo (ventas, costo congelado, comisión, mermas y gastos), se consulta en la app con filtros hoy/mes/rango, se desglosa por método de cobro (Efectivo, Tarjeta y Fiado) y se exporta a CSV y PDF desde T31/T36/T37. Faltan ventas por día, comparativos entre periodos y utilidad por producto o categoría. La consulta de ventas de fechas anteriores sigue solo en la consola.
+- **Cierre**: consultas agregadas por producto y periodo con índices por fecha (ya existen en `Ventas(Fecha)`) y comparación entre periodos.
 
 ## Baja prioridad
 

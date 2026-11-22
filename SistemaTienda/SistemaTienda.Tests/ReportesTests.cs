@@ -137,6 +137,47 @@ public sealed class ReportesTests
     }
 
     [Fact]
+    public void Obtener_ConVentaMixta_DesglosaEfectivoYTarjeta()
+    {
+        using var bd = new BaseDatosPrueba();
+        bd.ConfigurarTienda();
+        var producto = CrearProducto(bd, "A1", precio: 1_000, costo: 500, stock: 10);
+
+        var venta = Vender(bd,
+            new PagoSolicitado { Efectivo = 1_200, Tarjeta = 800 },
+            (producto, 2));
+        Assert.True(venta.IsSuccess, venta.Message);
+
+        var reporte = DelDia(bd);
+        var efectivo = Assert.Single(reporte.DesglosePagos, d => d.Metodo == MetodoPagoVenta.Efectivo);
+        var tarjeta = Assert.Single(reporte.DesglosePagos, d => d.Metodo == MetodoPagoVenta.Tarjeta);
+
+        Assert.Equal(1, efectivo.NumeroVentas);
+        Assert.Equal(1_200, efectivo.Monto);
+        Assert.Equal(1, tarjeta.NumeroVentas);
+        Assert.Equal(800, tarjeta.Monto);
+        Assert.DoesNotContain(reporte.DesglosePagos, d => d.Metodo == MetodoPagoVenta.Fiado);
+    }
+
+    [Fact]
+    public void Obtener_ConVentaAnulada_NoLaIncluyeEnElDesglose()
+    {
+        using var bd = new BaseDatosPrueba();
+        bd.ConfigurarTienda();
+        var producto = CrearProducto(bd, "A1", precio: 1_500, costo: 1_000, stock: 10);
+        var venta = Vender(bd, new PagoSolicitado { Efectivo = 1_500 }, (producto, 1));
+        Assert.True(venta.IsSuccess, venta.Message);
+
+        Assert.True(new VentaService(bd.Db)
+            .AnularVenta(venta.Value.Id, "Cliente devolvió", "Encargado").IsSuccess);
+
+        var reporte = DelDia(bd);
+
+        Assert.Empty(reporte.DesglosePagos);
+        Assert.Equal(0, reporte.VentasTotal);
+    }
+
+    [Fact]
     public void Obtener_ConRangoInvertido_Falla()
     {
         using var bd = new BaseDatosPrueba();

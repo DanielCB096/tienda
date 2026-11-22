@@ -87,6 +87,31 @@
 
             <Border Style="{StaticResource Tarjeta}" Padding="16">
                 <VerticalStackLayout Spacing="8">
+                    <Label Text="COBROS POR MÉTODO" Style="{StaticResource EtiquetaSeccion}" />
+
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                        <Label x:Name="EfectivoTituloLabel" Text="Efectivo" FontSize="15" />
+                        <Label x:Name="EfectivoMontoLabel" Grid.Column="1" Text="$0.00"
+                               FontSize="15" FontAttributes="Bold" HorizontalTextAlignment="End" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                        <Label x:Name="TarjetaTituloLabel" Text="Tarjeta" FontSize="15" />
+                        <Label x:Name="TarjetaMontoLabel" Grid.Column="1" Text="$0.00"
+                               FontSize="15" HorizontalTextAlignment="End" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                        <Label x:Name="FiadoTituloLabel" Text="Fiado" FontSize="15" />
+                        <Label x:Name="FiadoMontoLabel" Grid.Column="1" Text="$0.00"
+                               FontSize="15" HorizontalTextAlignment="End" />
+                    </Grid>
+
+                    <Label Text="Una venta mixta suma su parte en efectivo y su parte con tarjeta. El fiado se reporta como cuenta por cobrar."
+                           Style="{StaticResource TextoNota}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Style="{StaticResource Tarjeta}" Padding="16">
+                <VerticalStackLayout Spacing="8">
                     <Label Text="DESGLOSE DEL PERIODO" Style="{StaticResource EtiquetaSeccion}" />
 
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
