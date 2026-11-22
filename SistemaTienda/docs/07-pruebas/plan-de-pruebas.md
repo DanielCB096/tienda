@@ -493,12 +493,13 @@ Dispositivo: Redmi Note 13 (`2311DRK48G`), Android 16 / API 36. APK Debug con en
 | Reportes → Exportar PDF | Pasó: generó `reporte-utilidad-*.pdf` en la caché y abrió el diálogo de Windows |
 | Apertura del PDF | Pasó: `pypdf` leyó una página con tienda, periodo, ventas, costo, comisión, utilidad bruta, mermas, gastos y utilidad neta |
 | Render en visor | Pasó: Edge mostró el documento tamaño carta con el desglose |
+| Exportar PDF en Android 16 | Pasó: generó `reporte-utilidad-*.pdf`, abrió el diálogo con Quick Share, WhatsApp, Drive e **Imprimir**; `pypdf` leyó el archivo extraído del teléfono |
 | Estado de cuenta de cliente | Cubierto por `PdfExportTests`: datos, saldo, totales y movimientos con método |
 | Estado de cuenta de proveedor | Cubierto por `PdfExportTests`: datos, saldo, total pagado y pagos con método, usuario y saldo después |
 | Texto largo | Pasó en pruebas: 200 líneas generan varias páginas |
 | Acentos y paréntesis | Pasó en pruebas: conserva Latin-1 y escapa `(` `)` `\` |
 
-Pendiente de T36: repetir la exportación y el diálogo de compartir en Android.
+Pendiente de T36: nada; el diálogo de compartir y la apertura del PDF se verificaron en Windows y en Android 16 el 2026-11-21.
 
 ## Herramientas de Prueba
 

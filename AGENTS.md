@@ -405,6 +405,7 @@ El detalle vive en el tablero. Resumen y criterios de terminado:
 - La app MAUI agrega **Exportar PDF** en Reportes, Clientes y Proveedores; el archivo se escribe en la caché y se comparte, guarda o imprime con el diálogo del sistema. La consola ofrece PDF además de CSV al terminar el reporte.
 - 9 pruebas nuevas en `PdfExportTests` (estructura PDF, datos, acentos Latin-1, escape de paréntesis, varias páginas y parámetros nulos); la suite completa pasa **336 pruebas**. Solución y MAUI Windows compilan sin errores ni advertencias.
 - Verificado en Windows el 2026-11-21: el PDF del reporte se generó desde la app, se abrió con `pypdf` y se renderizó en Edge. Los estados de cuenta usan el mismo generador y quedan cubiertos por pruebas.
+- Verificado en Android 16 (Redmi Note 13) el 2026-11-21: **Exportar PDF** generó `reporte-utilidad-*.pdf` en la caché y abrió el diálogo de compartir con Quick Share, WhatsApp, Drive e **Imprimir**; el archivo se extrajo del dispositivo, se abrió con `pypdf` y conservó tienda, periodo y desglose.
 
 ### T7 — Pantallas de operación en MAUI
 
