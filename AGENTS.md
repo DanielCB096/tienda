@@ -412,7 +412,7 @@ El detalle vive en el tablero. Resumen y criterios de terminado:
 - Implementada en `feat/reportes-desglose-metodo` sobre `main`: `ReporteUtilidad.DesglosePagos` separa Efectivo, Tarjeta y Fiado con número de ventas e importe. Una venta mixta suma su parte en efectivo y su parte con tarjeta; el fiado cuenta como cuenta por cobrar y las anuladas quedan fuera.
 - La app MAUI muestra la tarjeta **Cobros por método** en Reportes; la consola imprime las mismas líneas y el CSV y el PDF las incluyen.
 - 2 pruebas nuevas en `ReportesTests` (venta mixta y anulada); la suite pasa **338 pruebas**. Solución y MAUI Windows compilan sin errores ni advertencias.
-- Verificado en Windows el 2026-11-22: con 4 ventas del día, la tarjeta mostró Efectivo (2 ventas) $30.00, Tarjeta (2 ventas) $60.00 y Fiado (1 venta) $10.00, con una venta mixta repartida entre efectivo y tarjeta. Android pendiente.
+- Verificado en Windows el 2026-11-22: con 4 ventas del día, la tarjeta mostró Efectivo (2 ventas) $30.00, Tarjeta (2 ventas) $60.00 y Fiado (1 venta) $10.00, con una venta mixta repartida entre efectivo y tarjeta. Verificado también en Android 16 (Redmi Note 13) el 2026-11-22 con los mismos importes.
 
 ### T38 — Comparación de reportes con el periodo anterior
 
@@ -420,7 +420,7 @@ El detalle vive en el tablero. Resumen y criterios de terminado:
 - `ReporteUtilidadService.ObtenerComparacion` valida el permiso `Consultar` y el rango; si el periodo anterior vale cero, la variación porcentual queda nula y la interfaz muestra solo la diferencia.
 - La app MAUI agrega **Comparar con periodo anterior** en Reportes con una tabla de actual, anterior y Δ; la consola pregunta al terminar y muestra el mismo comparativo.
 - 6 pruebas nuevas en `PeriodoReporteTests` y `ReportesTests`; la suite pasa **344 pruebas**. Solución y MAUI Windows compilan sin errores ni advertencias.
-- Verificado en Windows el 2026-11-22: hoy contra ayer mostró ventas $100.00 vs $10.00 (+$90.00, +900.0%), utilidad neta $47.90 vs $3.00 (+$44.90, +1496.7%) y gastos $0.00 vs $2.00 (-$2.00, -100.0%); al cambiar a **Este mes** comparó contra el bloque anterior vacío y mostró solo la diferencia, sin porcentaje. Android pendiente.
+- Verificado en Windows el 2026-11-22: hoy contra ayer mostró ventas $100.00 vs $10.00 (+$90.00, +900.0%), utilidad neta $47.90 vs $3.00 (+$44.90, +1496.7%) y gastos $0.00 vs $2.00 (-$2.00, -100.0%); al cambiar a **Este mes** comparó contra el bloque anterior vacío y mostró solo la diferencia, sin porcentaje. Verificado también en Android 16 (Redmi Note 13) el 2026-11-22.
 
 ### T39 — Compras a proveedores con detalle
 
@@ -428,7 +428,7 @@ El detalle vive en el tablero. Resumen y criterios de terminado:
 - `ConfiguracionService.RegistrarCompraProveedor` valida permiso `RegistrarCompra` (dueño y encargado), proveedor activo, productos activos y renglones sin duplicados; registra todo en una transacción: entrada de inventario, costo del catálogo al último costo y aumento del saldo del proveedor. El pago queda para el flujo de pagos.
 - La app MAUI agrega **Registrar compra** en el estado de cuenta con búsqueda de productos, renglones, total y observaciones; el estado muestra **Comprado** y mezcla compras y pagos. La consola agrega **[4] Registrar compra** y el CSV y PDF incluyen la sección de compras.
 - 10 pruebas nuevas en `ComprasProveedorTests` (stock, costo, saldo, dos productos, inactivos, cantidad inválida, duplicado, permisos, estado de cuenta, bitácora y migración v12 → v13); la suite pasa **354 pruebas**. Solución y MAUI Windows compilan sin errores ni advertencias.
-- Verificado en Windows el 2026-11-22: alta de proveedor y producto, **Registrar compra** con 8 unidades a $1,500, total $12,000; el estado mostró saldo y comprado en $12,000 y el movimiento `+$12,000`; la base confirmó stock 13, costo $1,500, movimiento `Compra proveedor #1` y bitácora. Android pendiente.
+- Verificado en Windows el 2026-11-22: alta de proveedor y producto, **Registrar compra** con 8 unidades a $1,500, total $12,000; el estado mostró saldo y comprado en $12,000 y el movimiento `+$12,000`; la base confirmó stock 13, costo $1,500, movimiento `Compra proveedor #1` y bitácora. Verificado también en Android 16 (Redmi Note 13) el 2026-11-22 con la misma compra y los mismos resultados.
 
 ### T7 — Pantallas de operación en MAUI
 
