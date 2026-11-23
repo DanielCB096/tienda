@@ -125,6 +125,31 @@ public sealed class TicketServiceTests
     }
 
     [Fact]
+    public void Generar_ConImpuestoIncluido_LoMuestraEnElTicketYEnElQr()
+    {
+        var venta = VentaBase();
+        var lineas = new List<VentaLinea>
+        {
+            new()
+            {
+                Nombre = "Producto gravado",
+                Cantidad = 1,
+                PrecioUnitario = 11_600,
+                Importe = 11_600,
+                ImpuestoPorcentaje = 16,
+                ImpuestoImporte = 1_600
+            }
+        };
+        venta.Total = 11_600;
+
+        var ticket = new TicketService().Generar(venta, lineas, Config());
+
+        Assert.Contains("TOTAL: $116.00", ticket.Texto);
+        Assert.Contains("IVA incluido: $16.00", ticket.Texto);
+        Assert.Contains("IVA incluido: $16.00", ticket.ContenidoQr);
+    }
+
+    [Fact]
     public void Generar_QrResumeDiezProductosYLosDemasSeCuentan()
     {
         var lineas = Enumerable.Range(1, 12)

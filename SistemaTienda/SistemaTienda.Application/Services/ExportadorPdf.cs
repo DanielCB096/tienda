@@ -17,6 +17,7 @@ public static class ExportadorPdf
 
         pdf.Fila("Ventas", reporte.NumeroVentas.ToString(CultureInfo.InvariantCulture));
         pdf.Fila("Ventas cobradas", Dinero.Formatear(reporte.VentasTotal));
+        pdf.Fila("IVA incluido (informativo)", Dinero.Formatear(reporte.ImpuestoIncluido));
 
         if (reporte.DesglosePagos.Count > 0)
         {

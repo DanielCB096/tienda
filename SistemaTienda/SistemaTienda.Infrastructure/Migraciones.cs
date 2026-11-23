@@ -42,7 +42,8 @@ public static class Migraciones
         new Migracion(10, "agrega el estado activo a clientes y proveedores", AplicarVersion10),
         new Migracion(11, "crea el desglose por denominaciones de los cortes de caja", AplicarVersion11),
         new Migracion(12, "guarda el efectivo recibido de las ventas en efectivo", AplicarVersion12),
-        new Migracion(13, "crea las compras a proveedores y sus renglones", AplicarVersion13)
+        new Migracion(13, "crea las compras a proveedores y sus renglones", AplicarVersion13),
+        new Migracion(14, "guarda el impuesto incluido congelado en las líneas de venta", AplicarVersion14)
     };
 
     private static void AplicarVersion2(SqliteConnection conn, SqliteTransaction tx)
@@ -708,6 +709,31 @@ public static class Migraciones
             BEGIN
                 SELECT RAISE(ABORT, 'Los renglones de compra son inmutables: no se pueden borrar');
             END;
+        ";
+        cmd.ExecuteNonQuery();
+    }
+
+    /// <summary>
+    /// Congela la tasa y el impuesto incluido de cada renglón. Los precios del
+    /// catálogo ya incluyen impuesto, así que el total de la venta no cambia.
+    /// Las ventas anteriores quedan con cero porque no se pueden reconstruir.
+    /// </summary>
+    private static void AplicarVersion14(SqliteConnection conn, SqliteTransaction tx)
+    {
+        using (var revision = conn.CreateCommand())
+        {
+            revision.Transaction = tx;
+            revision.CommandText =
+                "SELECT COUNT(*) FROM pragma_table_info('VentaLineas') WHERE name = 'ImpuestoPorcentaje'";
+            if (Convert.ToInt32(revision.ExecuteScalar()) > 0)
+                return;
+        }
+
+        using var cmd = conn.CreateCommand();
+        cmd.Transaction = tx;
+        cmd.CommandText = @"
+            ALTER TABLE VentaLineas ADD COLUMN ImpuestoPorcentaje DECIMAL NOT NULL DEFAULT 0;
+            ALTER TABLE VentaLineas ADD COLUMN ImpuestoImporte INTEGER NOT NULL DEFAULT 0;
         ";
         cmd.ExecuteNonQuery();
     }

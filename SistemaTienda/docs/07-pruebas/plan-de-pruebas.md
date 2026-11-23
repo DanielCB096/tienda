@@ -536,6 +536,17 @@ Pendiente de T36: nada; el diálogo de compartir y la apertura del PDF se verifi
 | El historial mezcla compras y pagos en orden y el CSV/PDF incluyen compras | Historial verificado en Windows; exportaciones cubiertas por pruebas |
 | Repetir en Android 16 | Pasó: compra de 8 × $1,500, saldo y comprado $12,000, stock 13 y costo $1,500 |
 
+## Verificación de T41, IVA incluido (Windows 2026-11-22)
+
+| Caso | Resultado |
+|------|-----------|
+| Venta de $116.00 con producto al 16 % | Pasó: reporte y ticket mostraron **IVA incluido $16.00** |
+| El total no cambia por el impuesto | Pasó: total $116.00 y utilidad $66.00 |
+| Producto exento (0 %) | Cubierto por `ImpuestoVentasTests` |
+| Venta anulada excluida del IVA del periodo | Cubierto por `ImpuestoVentasTests` |
+| Migración v13 → v14 con respaldo | Cubierto por `ImpuestoVentasTests` |
+| Repetir en Android 16 | Pasó: reporte y ticket mostraron IVA incluido $16.00 |
+
 ## Herramientas de Prueba
 
 - **Datos de prueba ficticios**: Un script o conjunto de datos iniciales que incluir:

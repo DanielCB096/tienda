@@ -16,6 +16,12 @@ public sealed class ReporteUtilidad
     public long Gastos { get; set; }
 
     /// <summary>
+    /// Impuesto contenido en las ventas del periodo. Es informativo: el precio
+    /// ya lo incluye y no se resta de la utilidad.
+    /// </summary>
+    public long ImpuestoIncluido { get; set; }
+
+    /// <summary>
     /// Cobros del periodo por método. Una venta mixta suma su parte en efectivo
     /// y su parte con tarjeta; el fiado se reporta como cuenta por cobrar.
     /// </summary>

@@ -633,6 +633,9 @@ internal static class Program
 
         Console.WriteLine("  " + new string('-', 52));
         Console.WriteLine($"  TOTAL: ${Dinero.Formatear(venta.Total)}");
+        var impuestoIncluido = _db.ObtenerLineasVenta(venta.Id).Sum(l => l.ImpuestoImporte);
+        if (impuestoIncluido > 0)
+            Console.WriteLine($"  IVA incluido: ${Dinero.Formatear(impuestoIncluido)}");
         Console.WriteLine($"  Pago: {venta.MetodoPago}");
 
         if (venta.PagoEfectivo > 0 && venta.PagoTarjeta > 0)
@@ -1278,6 +1281,7 @@ internal static class Program
         Console.WriteLine("=== VENTAS Y UTILIDAD ===");
         Console.WriteLine($"  Periodo: {reporte.Desde:dd/MM/yyyy} a {reporte.Hasta:dd/MM/yyyy}");
         Console.WriteLine($"  Ventas: {reporte.NumeroVentas} por ${Dinero.Formatear(reporte.VentasTotal)}");
+        Console.WriteLine($"  IVA incluido (informativo): ${Dinero.Formatear(reporte.ImpuestoIncluido)}");
         foreach (var desglose in reporte.DesglosePagos)
         {
             var etiqueta = desglose.NumeroVentas == 1

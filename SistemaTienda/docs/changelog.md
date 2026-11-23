@@ -21,6 +21,15 @@ Cada entrada tiene formato:
 
 Próximamente después de completar los módulos críticos.
 
+### v0.0.43 - 2026-11-22: IVA incluido en ticket y reportes
+
+- *Agregado*: los precios del catálogo se tratan como **con impuesto incluido**; el total de la venta no cambia.
+- *Agregado*: esquema **v14** con `VentaLineas.ImpuestoPorcentaje` e `ImpuestoImporte` congelados al vender. Las ventas anteriores quedan en cero porque no se pueden reconstruir.
+- *Agregado*: `Dinero.ImpuestoIncluido` y `BaseSinImpuesto`; `VentaService` calcula el impuesto de cada renglón con la tasa del producto (0 % exento).
+- *Agregado*: el ticket y el QR muestran **IVA incluido**, y el reporte de utilidad lo lista como dato informativo en la app, la consola, el CSV y el PDF. No se resta de la utilidad porque ya está dentro del precio.
+- *Pruebas*: 10 pruebas nuevas en `DineroTests`, `TicketServiceTests` e `ImpuestoVentasTests` (cálculo, exento, reporte, anuladas y migración v13 → v14); la suite pasa **367 pruebas**. Solución y MAUI Windows compilan sin errores ni advertencias.
+- *Verificado*: venta de $116.00 con IVA 16 % mostró **IVA incluido $16.00** en el reporte y en el ticket en Windows; también se verificó en Android 16 el 2026-11-22.
+
 ### v0.0.42 - 2026-11-22: Correcciones de validación y búsqueda
 
 - *Corregido*: `InventoryService.AjustarStock` rechaza un producto inexistente antes de tocar la base; antes podía reportar éxito sin ajustar o fallar por llave foránea.
