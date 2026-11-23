@@ -21,6 +21,12 @@ Cada entrada tiene formato:
 
 Próximamente después de completar los módulos críticos.
 
+### v0.0.46 - 2026-11-22: Historial de ventas por rango en la app
+
+- *Agregado*: la pestaña **Ventas** permite elegir **Desde** y **Hasta** y consultar cualquier periodo, con **Ver** y **Actualizar**; el resumen muestra el rango y las ventas anuladas.
+- *Agregado*: desde el historial se abre el detalle, se reimprime el ticket y se anula igual que en las ventas del día.
+- *Pruebas*: 1 prueba nueva en `ReportesTests`; la suite pasa **370 pruebas**. Solución y MAUI Windows compilan sin errores ni advertencias.
+
 ### v0.0.45 - 2026-11-22: Listar y restaurar respaldos desde Ajustes
 
 - *Agregado*: **Ajustes → Respaldo → Ver y restaurar respaldos** (solo dueño) lista los archivos con fecha y tamaño; cada uno se puede restaurar con confirmación.

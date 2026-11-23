@@ -567,6 +567,17 @@ Pendiente de T36: nada; el diálogo de compartir y la apertura del PDF se verifi
 | Encargado y empleado no ven la acción ni pueden restaurar | Cubierto por `MigracionesRespaldoTests` |
 | Repetir en Android 16 | Pendiente |
 
+## Verificación de T44, historial de ventas (pendiente)
+
+| Caso | Resultado |
+|------|-----------|
+| Consultar hoy (predeterminado) | Pendiente |
+| Elegir un rango con ventas de varios días | Pendiente |
+| Un rango sin ventas muestra el mensaje vacío | Pendiente |
+| Abrir detalle, reimprimir y anular desde el historial | Pendiente |
+| Rango invertido muestra error | Pendiente |
+| Repetir en Android 16 | Pendiente |
+
 ## Herramientas de Prueba
 
 - **Datos de prueba ficticios**: Un script o conjunto de datos iniciales que incluir:

@@ -257,6 +257,23 @@ public sealed class ReportesTests
     }
 
     [Fact]
+    public void ObtenerVentasPorRango_IncluyeSoloElPeriodo()
+    {
+        using var bd = new BaseDatosPrueba();
+        bd.ConfigurarTienda();
+        var producto = CrearProducto(bd, "A1", precio: 1_000, costo: 400, stock: 10);
+
+        VenderEnFecha(bd, producto, DateTime.Today.AddDays(-3), 1);
+        VenderEnFecha(bd, producto, DateTime.Today, 2);
+
+        var ventas = new VentaService(bd.Db).ObtenerVentas(DateTime.Today, DateTime.Today);
+
+        var venta = Assert.Single(ventas);
+        Assert.Equal(2_000, venta.Total);
+        Assert.Equal(DateTime.Today, venta.Fecha.Date);
+    }
+
+    [Fact]
     public void Obtener_ConRangoInvertido_Falla()
     {
         using var bd = new BaseDatosPrueba();

@@ -1,6 +1,6 @@
 # Roadmap
 
-Estado al 2026-11-22. T41 (IVA incluido) está integrado en `main` (`269c23d`); T42 (bitácora en Ajustes) está en PR y T43 (restaurar respaldos) en `feat/restaurar-respaldos`. La suite queda en 369 pruebas. Orden sugerido en [CLAUDE-tienda.md §13](../CLAUDE-tienda.md).
+Estado al 2026-11-22. T41 (IVA incluido) está integrado en `main`; T42 (bitácora), T43 (restaurar respaldos) y T44 (historial de ventas) están en PR. La suite queda en 370 pruebas. Orden sugerido en [CLAUDE-tienda.md §13](../CLAUDE-tienda.md).
 
 ## Avance por módulo
 
@@ -8,7 +8,7 @@ Estado al 2026-11-22. T41 (IVA incluido) está integrado en `main` (`269c23d`); 
 |---|--------|--------|-------|
 | 1 | Configuración y usuarios | ✅ Base implementada | Asistente, PIN hasheado, roles, gastos, bitácora inmutable y permisos en servicios; edición de la configuración global y gestión de usuarios/PIN desde Ajustes (solo dueño). El impuesto configurado se usa como predeterminado del producto y se desglosa como IVA incluido |
 | 2 | Catálogo e inventario | ✅ Base implementada | Alta/edición, movimientos, stock bajo, búsqueda, escaneo, historial, valorizado, desactivación (v7) e importación CSV/XLSX; operación desde la app MAUI. Falta filtro por categoría |
-| 3 | Ventas / POS | ✅ Base implementada | Venta multi-línea atómica, efectivo/tarjeta/mixto/fiado, costo y precio congelados, IVA incluido congelado por línea (v14), comisión, efectivo recibido guardado para reimprimir el cambio (v12), ticket de texto con QR informativo compartible como texto o imagen PNG y anulación completa con reverso; POS, detalle, reimpresión y anulación en MAUI. Descuentos quedan para Fase 2 |
+| 3 | Ventas / POS | ✅ Base implementada | Venta multi-línea atómica, efectivo/tarjeta/mixto/fiado, costo y precio congelados, IVA incluido congelado por línea (v14), comisión, efectivo recibido guardado para reimprimir el cambio (v12), ticket de texto con QR informativo compartible como texto o imagen PNG, historial por rango de fechas en la app y anulación completa con reverso; POS, detalle, reimpresión y anulación en MAUI. Descuentos quedan para Fase 2 |
 | 4 | Mermas | 🟡 Parcial | Descuenta stock y reporta costo; el historial sale de movimientos |
 | 5 | Gastos y pagos | 🟡 Parcial | Gastos simples con resumen por origen, historial y alta en la app; pagos al personal no existen |
 | 6 | Clientes y fiado | 🟡 Parcial | Cliente, saldo y abono con historial (`AbonosFiado`) y método (Efectivo/Tarjeta/Transferencia/Otro); directorio, búsqueda, alta, abono, edición, estado de cuenta con exportación CSV y PDF, detección de duplicados y baja/reactivación lógica solo del dueño (esquema v10); falta envío o recordatorio |

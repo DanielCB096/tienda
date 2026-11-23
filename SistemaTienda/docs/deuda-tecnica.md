@@ -71,12 +71,11 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 - **Impacto**: las compras se registran con productos y cantidades, pero no existe un catálogo de productos por proveedor ni órdenes de compra. Los pagos y compras anteriores a v8/v13 no se reconstruyen.
 - **Cierre**: catálogo por proveedor, órdenes de compra y términos de pago.
 
-### La app MAUI no cubre todas las operaciones
+### La app MAUI ya cubre la consulta histórica
 
 - **Dónde**: `SistemaTienda.Maui/Pages`.
-- **Por qué**: el punto de venta se entregó en T13, la caja operativa en T14, el inventario en T15, el detalle/anulación de ventas en T16, el conteo con historial de cortes en T17, la pantalla de clientes en T18, la de proveedores en T19, la de gastos en T21, la edición/estado de cuenta de clientes en T22, la edición/estado de cuenta de proveedores en T23 y los reportes de utilidad en T24.
-- **Impacto**: desde la app se vende, se opera el inventario, se cierra el corte con conteo, se registran ingresos, retiros y abonos de fiado, se anulan ventas, se reimprime el ticket, se consulta el historial de cortes, se gestiona el directorio de clientes con sus abonos, edición y estado de cuenta, se gestiona el directorio de proveedores con sus pagos, edición y estado de cuenta, se registran gastos, se consultan los reportes de utilidad del periodo y se crea respaldo. La consulta de ventas de fechas anteriores sigue solo en la consola.
-- **Cierre**: consulta histórica de ventas en la app.
+- **Resuelto (T44)**: la pestaña **Ventas** elige **Desde** y **Hasta** y consulta cualquier periodo, con detalle, reimpresión y anulación. Ya no depende de la consola para ver ventas anteriores.
+- **Impacto restante**: la app no tiene pruebas automatizadas de interfaz; la consulta se apoya en `VentaService.ObtenerVentas` y se verifica manualmente.
 
 ### Gastos sin edición, fecha retroactiva ni reporte en la app
 

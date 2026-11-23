@@ -78,7 +78,7 @@ Cada agente: su carpeta, su rama y su PR.
 - Las ramas `feat/*` se conservan como respaldo, sin borrar: `feat/base-compilable`, `feat/migraciones-respaldo`, `feat/ventas-pos`, `feat/corte-caja`, `feat/centavos-enteros`, `feat/integracion-t4-t9`, `feat/reportes-utilidad`, `feat/respaldo-automatico`, `feat/anulacion-ventas`, `feat/ui-maui` y las de la app MAUI hasta `feat/pago-proveedores-metodo`.
 - Trabajo nuevo: rama desde `main` actualizado; ya no hay que partir de `feat/base-compilable`.
 - T26 quedó implementada en `feat/duplicados-clientes-proveedores` (`e87ea40`): avisos no bloqueantes de posibles duplicados en altas y ediciones MAUI, y en altas desde la consola. T27 quedó implementada en `feat/baja-clientes-proveedores` (`a8f6876`). Ambas, junto con T28, se verificaron en vivo en Windows el 2026-11-19.
-- Build: 0 errores, 0 advertencias. La suite pasa **369 pruebas** en local el 2026-11-22 (incluye `DesgloseCajaTests`, `AbonosMetodoPagoTests`, `ExportadorCsvTests`, `PdfExportTests`, `QrImagenServiceTests`, `EfectivoRecibidoTests`, `ConfiguracionEdicionTests`, `UsuariosPinTests`, `ReportesTests`, `PeriodoReporteTests`, `ComprasProveedorTests` y `FechasLocalesTests`); la app MAUI compila para Windows en local y para Windows y Android en CI. Los CI anteriores de PR #8 a #18 se registran en sus entradas históricas.
+- Build: 0 errores, 0 advertencias. La suite pasa **370 pruebas** en local el 2026-11-22 (incluye `DesgloseCajaTests`, `AbonosMetodoPagoTests`, `ExportadorCsvTests`, `PdfExportTests`, `QrImagenServiceTests`, `EfectivoRecibidoTests`, `ConfiguracionEdicionTests`, `UsuariosPinTests`, `ReportesTests`, `PeriodoReporteTests`, `ComprasProveedorTests` y `FechasLocalesTests`); la app MAUI compila para Windows en local y para Windows y Android en CI. Los CI anteriores de PR #8 a #18 se registran en sus entradas históricas.
 - En T26, la solución compiló sin errores ni advertencias, pasaron **248 pruebas** y la app MAUI de Windows compiló sin errores ni advertencias; los avisos de duplicado de cliente y proveedor se verificaron en vivo el 2026-11-19.
 - En T27, la solución compiló sin errores ni advertencias y pasaron **252 pruebas**; MAUI Windows también compiló sin errores ni advertencias. La baja, reactivación, filtros de inactivos y distintivo se verificaron en vivo el 2026-11-19.
 - Verificación en vivo del 2026-11-19 encontró que el alta de clientes y proveedores guardaba `FechaRegistro` en UTC (`datetime('now')`). Se corrigió para guardar la hora local con la prueba `FechasLocalesTests`; los registros anteriores conservan su valor UTC y no se reescriben.
@@ -456,6 +456,13 @@ El detalle vive en el tablero. Resumen y criterios de terminado:
 - `RespaldoService.Restaurar` exige el permiso nuevo `RestaurarRespaldo`; encargado y empleado reciben error.
 - 1 prueba nueva en `MigracionesRespaldoTests`; la suite pasa **369 pruebas**. Solución y MAUI Windows compilan sin errores ni advertencias.
 - Pendiente: registrar la restauración en la bitácora y verificarla en Windows y Android.
+
+### T44 — Historial de ventas por rango en la app
+
+- Implementada en `feat/ventas-historial` sobre `main`: la pestaña **Ventas** agrega **Desde** y **Hasta** con **Ver** y consulta cualquier periodo; el resumen muestra el rango y las anuladas.
+- El detalle, la reimpresión y la anulación siguen funcionando desde el historial. `VentasPage` usa `VentaService.ObtenerVentas(desde, hasta)`.
+- 1 prueba nueva en `ReportesTests`; la suite pasa **370 pruebas**. Solución y MAUI Windows compilan sin errores ni advertencias.
+- Pendiente: verificación manual en Windows y Android.
 
 ### T7 — Pantallas de operación en MAUI
 

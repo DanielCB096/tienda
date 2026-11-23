@@ -9,22 +9,38 @@
         <Grid RowDefinitions="Auto,*" Padding="20,20,20,0" RowSpacing="12">
 
             <VerticalStackLayout Grid.Row="0" Spacing="4">
-                <Label Text="Ventas de hoy" Style="{StaticResource TituloPagina}" />
+                <Label Text="Ventas" Style="{StaticResource TituloPagina}" />
                 <Label x:Name="ResumenLabel" Style="{StaticResource TextoNota}" />
-                <Label Text="Toca una venta para ver el detalle, reimprimir el ticket o anularla."
+                <Label Text="Elige un rango de fechas y toca una venta para ver el detalle, reimprimir el ticket o anularla."
                        Style="{StaticResource TextoNota}"
                        FontSize="12" />
+                <Grid ColumnDefinitions="*,*,Auto" ColumnSpacing="8" Margin="0,8,0,0">
+                    <VerticalStackLayout Spacing="1">
+                        <Label Text="Desde" Style="{StaticResource EtiquetaSeccion}" />
+                        <DatePicker x:Name="DesdePicker" Format="dd/MM/yyyy" />
+                    </VerticalStackLayout>
+                    <VerticalStackLayout Grid.Column="1" Spacing="1">
+                        <Label Text="Hasta" Style="{StaticResource EtiquetaSeccion}" />
+                        <DatePicker x:Name="HastaPicker" Format="dd/MM/yyyy" />
+                    </VerticalStackLayout>
+                    <Button Grid.Column="2"
+                            Text="Ver"
+                            Style="{StaticResource BotonSecundario}"
+                            HeightRequest="40"
+                            VerticalOptions="End"
+                            Clicked="OnVerPeriodoClicked" />
+                </Grid>
                 <Button Text="Actualizar"
                         Style="{StaticResource BotonSecundario}"
                         Clicked="OnActualizarClicked"
                         HorizontalOptions="Start"
-                        Margin="0,8,0,0" />
+                        Margin="0,4,0,0" />
             </VerticalStackLayout>
 
             <RefreshView x:Name="Refresco" Grid.Row="1" Refreshing="OnRefrescando">
                 <CollectionView x:Name="ListaVentas" SelectionMode="None">
                     <CollectionView.EmptyView>
-                        <Label Text="Aún no hay ventas registradas hoy."
+                        <Label Text="No hay ventas en el periodo seleccionado."
                                Style="{StaticResource TextoNota}"
                                HorizontalTextAlignment="Center"
                                Margin="0,40,0,0" />

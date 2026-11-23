@@ -29,6 +29,8 @@ public partial class VentasPage : ContentPage
         _configuracion = configuracion;
         _tickets = tickets;
         _sesion = sesion;
+        DesdePicker.Date = DateTime.Today;
+        HastaPicker.Date = DateTime.Today;
     }
 
     protected override void OnAppearing()
@@ -41,6 +43,20 @@ public partial class VentasPage : ContentPage
     }
 
     private void OnActualizarClicked(object sender, EventArgs e) => Cargar();
+
+    private void OnVerPeriodoClicked(object sender, EventArgs e)
+    {
+        var desde = DesdePicker.Date ?? DateTime.Today;
+        var hasta = HastaPicker.Date ?? DateTime.Today;
+        if (hasta.Date < desde.Date)
+        {
+            _ = DisplayAlertAsync("Periodo inválido",
+                "La fecha final no puede ser anterior a la inicial.", "Continuar");
+            return;
+        }
+
+        Cargar();
+    }
 
     private void OnRefrescando(object sender, EventArgs e)
     {
@@ -58,8 +74,11 @@ public partial class VentasPage : ContentPage
         _config = _configuracion.ObtenerConfiguracion().Value;
         _puedeAnular = AutorizacionService.Puede(usuario, PermisoSistema.AnularVenta);
 
-        var ventas = _ventas.ObtenerVentasDelDia(DateTime.Now)
+        var desde = DesdePicker.Date ?? DateTime.Today;
+        var hasta = HastaPicker.Date ?? DateTime.Today;
+        var ventas = _ventas.ObtenerVentas(desde, hasta)
             .OrderByDescending(v => v.Fecha)
+            .ThenByDescending(v => v.Id)
             .ToList();
 
         ListaVentas.ItemsSource = ventas.Select(v => new VentaFila
@@ -75,6 +94,9 @@ public partial class VentasPage : ContentPage
         var vigentes = ventas.Where(v => !v.Anulada).ToList();
         var anuladas = ventas.Count - vigentes.Count;
         var resumen = $"{vigentes.Count} venta(s) · {Formato.Moneda(vigentes.Sum(v => v.Total))} cobrados";
+        resumen += desde.Date == hasta.Date
+            ? $" · {desde:dd/MM/yyyy}"
+            : $" · {desde:dd/MM/yyyy} al {hasta:dd/MM/yyyy}";
         if (anuladas > 0)
             resumen += $" · {anuladas} anulada(s)";
 
