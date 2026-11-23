@@ -50,6 +50,12 @@ public class VentaLinea
     public long PrecioUnitario { get; set; }
     public long CostoUnitario { get; set; }
     public long Importe { get; set; }
+
+    /// <summary>Tasa de impuesto congelada al vender; el precio ya la incluye.</summary>
+    public decimal ImpuestoPorcentaje { get; set; }
+
+    /// <summary>Impuesto contenido en <see cref="Importe"/>; informativo, no se suma al total.</summary>
+    public long ImpuestoImporte { get; set; }
 }
 
 public static class MetodoPagoVenta

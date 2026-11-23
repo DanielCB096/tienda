@@ -1,4 +1,4 @@
-# Modelo de Datos (esquema v13)
+# Modelo de Datos (esquema v14)
 
 Base local SQLite, un solo archivo. `PRAGMA user_version = 12`.
 
@@ -20,6 +20,7 @@ El acceso vive en `SistemaTienda.Infrastructure/Database.cs` (`DatabaseTools`). 
 - **v11** — crea `CorteCajaDesglose` con índice por corte, restricción única por denominación y disparadores que impiden `UPDATE` y `DELETE`. Los cortes anteriores solo tienen el total contado y no se reconstruyen.
 - **v12** - agrega `Ventas.EfectivoRecibido` (`INTEGER`, nullable) para reconstruir el cambio al reimprimir. Las ventas con tarjeta, fiado o mixto y las anteriores a la v12 quedan en `NULL`.
 - **v13** - crea `ComprasProveedor` y `CompraProveedorLineas`, inmutables, con índices por proveedor, fecha y producto. El encabezado guarda saldo antes/después y los renglones congelan cantidad, costo e importe. Una compra aumenta el stock, actualiza el costo del catálogo y suma al saldo del proveedor en una transacción; el pago se registra después.
+- **v14** - agrega `VentaLineas.ImpuestoPorcentaje` y `VentaLineas.ImpuestoImporte` para congelar el IVA incluido por renglón. Los precios ya incluyen impuesto, así que el total no cambia; las ventas anteriores quedan en cero.
 - Una base nueva se crea directamente en la versión máxima (`Migraciones.VersionMaxima`): no se crea respaldo previo porque aún no hay datos.
 - `MigradorEsquema.Migrar()` se ejecuta dentro de `InicializarBaseDeDatos()` al arrancar:
   1. Lee `user_version`; si la base es más nueva que la app, aborta sin tocar nada.
@@ -144,7 +145,11 @@ Detalle de productos vendidos con precio y costo congelados.
 | Cantidad | INTEGER | > 0 |
 | PrecioUnitario | INTEGER | Centavos; precio de catálogo al vender |
 | CostoUnitario | INTEGER | Centavos; costo al vender |
-| Importe | INTEGER | Centavos; `PrecioUnitario × Cantidad` |
+| Importe | INTEGER | Centavos; `PrecioUnitario × Cantidad`; ya incluye impuesto |
+| ImpuestoPorcentaje | DECIMAL | Tasa congelada al vender (migración v14); 0 = exento |
+| ImpuestoImporte | INTEGER | Centavos de IVA contenidos en `Importe` (migración v14); informativo, no se suma al total |
+
+El impuesto se calcula con `importe × tasa / (100 + tasa)` y se redondea al centavo. Las ventas anteriores a la v14 conservan cero porque no se pueden reconstruir.
 
 ### AnulacionesVenta
 

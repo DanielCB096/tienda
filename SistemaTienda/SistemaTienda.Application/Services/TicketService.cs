@@ -59,6 +59,9 @@ public sealed class TicketService
 
         sb.AppendLine(new string('-', 40));
         sb.AppendLine($"TOTAL: ${Dinero.Formatear(venta.Total)}");
+        var impuestoIncluido = lineas.Sum(l => l.ImpuestoImporte);
+        if (impuestoIncluido > 0)
+            sb.AppendLine($"IVA incluido: ${Dinero.Formatear(impuestoIncluido)}");
         sb.AppendLine($"Pago: {venta.MetodoPago}");
 
         if (venta.PagoEfectivo > 0 && venta.PagoTarjeta > 0)
@@ -112,6 +115,9 @@ public sealed class TicketService
         sb.AppendLine($"Fecha: {venta.Fecha.ToString("dd/MM/yyyy HH:mm", Cultura)}");
         sb.AppendLine($"Estado: {(venta.Anulada ? "Anulada" : "Vigente")}");
         sb.AppendLine($"Total: ${Dinero.Formatear(venta.Total)}");
+        var impuestoIncluido = lineas.Sum(l => l.ImpuestoImporte);
+        if (impuestoIncluido > 0)
+            sb.AppendLine($"IVA incluido: ${Dinero.Formatear(impuestoIncluido)}");
         sb.AppendLine($"Pago: {venta.MetodoPago}");
         sb.AppendLine("Productos:");
 

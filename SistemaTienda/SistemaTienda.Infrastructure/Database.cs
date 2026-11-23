@@ -1309,10 +1309,10 @@ public class DatabaseTools
                 cmd.CommandText = @"
                     INSERT INTO VentaLineas
                         (VentaId, ProductoId, CodigoBarras, Nombre, Cantidad,
-                         PrecioUnitario, CostoUnitario, Importe)
+                         PrecioUnitario, CostoUnitario, Importe, ImpuestoPorcentaje, ImpuestoImporte)
                     VALUES
                         (@venta, @producto, @codigo, @nombre, @cantidad,
-                         @precio, @costo, @importe)";
+                         @precio, @costo, @importe, @impuesto, @impuestoImporte)";
                 cmd.Parameters.AddWithValue("@venta", ventaId);
                 cmd.Parameters.AddWithValue("@producto", linea.ProductoId);
                 cmd.Parameters.AddWithValue("@codigo", linea.CodigoBarras);
@@ -1321,6 +1321,8 @@ public class DatabaseTools
                 cmd.Parameters.AddWithValue("@precio", linea.PrecioUnitario);
                 cmd.Parameters.AddWithValue("@costo", linea.CostoUnitario);
                 cmd.Parameters.AddWithValue("@importe", linea.Importe);
+                cmd.Parameters.AddWithValue("@impuesto", linea.ImpuestoPorcentaje);
+                cmd.Parameters.AddWithValue("@impuestoImporte", linea.ImpuestoImporte);
                 cmd.ExecuteNonQuery();
 
                 linea.VentaId = ventaId;
@@ -1591,6 +1593,20 @@ public class DatabaseTools
                 reporte.CostoVentas = Convert.ToInt64(reader.GetValue(2), CultureInfo.InvariantCulture);
                 reporte.ComisionTarjeta = Convert.ToInt64(reader.GetValue(3), CultureInfo.InvariantCulture);
             }
+        }
+
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.CommandText = @"
+                SELECT COALESCE(SUM(l.ImpuestoImporte), 0)
+                FROM VentaLineas l
+                INNER JOIN Ventas v ON v.Id = l.VentaId
+                WHERE date(v.Fecha) BETWEEN date(@desde) AND date(@hasta)
+                  AND NOT EXISTS (SELECT 1 FROM AnulacionesVenta a WHERE a.VentaId = v.Id)";
+            cmd.Parameters.AddWithValue("@desde", desde.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+            cmd.Parameters.AddWithValue("@hasta", hasta.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+
+            reporte.ImpuestoIncluido = Convert.ToInt64(cmd.ExecuteScalar() ?? 0L, CultureInfo.InvariantCulture);
         }
 
         using (var cmd = conn.CreateCommand())

@@ -90,6 +90,7 @@ public partial class ReportesPage : ContentPage
             : $"{reporte.NumeroVentas} ventas por {Formato.Moneda(reporte.VentasTotal)}";
 
         VentasLabel.Text = Formato.Moneda(reporte.VentasTotal);
+        ImpuestoLabel.Text = Formato.Moneda(reporte.ImpuestoIncluido);
         CostoLabel.Text = Formato.Moneda(reporte.CostoVentas);
         ComisionLabel.Text = Formato.Moneda(reporte.ComisionTarjeta);
         MermasLabel.Text = Formato.Moneda(reporte.Mermas);

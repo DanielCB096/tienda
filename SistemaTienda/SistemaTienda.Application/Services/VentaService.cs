@@ -84,6 +84,8 @@ public class VentaService
                 return ProcessResult<Venta>.Error(
                     $"El producto {producto.Nombre} está desactivado y no se puede vender");
 
+            var importe = Dinero.Multiplicar(producto.Precio, solicitada.Cantidad);
+            var tasaImpuesto = producto.Impuesto > 0 ? producto.Impuesto : 0m;
             lineasVenta.Add(new VentaLinea
             {
                 ProductoId = producto.Id,
@@ -92,7 +94,9 @@ public class VentaService
                 Cantidad = solicitada.Cantidad,
                 PrecioUnitario = producto.Precio,
                 CostoUnitario = producto.Costo,
-                Importe = Dinero.Multiplicar(producto.Precio, solicitada.Cantidad)
+                Importe = importe,
+                ImpuestoPorcentaje = tasaImpuesto,
+                ImpuestoImporte = Dinero.ImpuestoIncluido(importe, tasaImpuesto)
             });
         }
 

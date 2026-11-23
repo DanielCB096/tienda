@@ -16,6 +16,7 @@ Base implementada en consola y en la app MAUI. Los reportes ya existentes (valor
 | Exportación CSV | ✅ Reporte de utilidad desde la consola y la pestaña **Reportes** de la app |
 | Exportación PDF | ✅ Reporte de utilidad desde la consola y la pestaña **Reportes** de la app |
 | Desglose de cobros por método | ✅ Efectivo, tarjeta y fiado en consola, app, CSV y PDF |
+| IVA incluido | ✅ Informativo por venta y por periodo, con tasa congelada por línea |
 | Comparación con el periodo anterior | ✅ Bloque previo de la misma duración, con diferencia y porcentaje en consola y app |
 
 ## Reporte de utilidad
@@ -48,6 +49,14 @@ Utilidad neta  = Utilidad bruta − Mermas − Gastos
 - El fiado se muestra aparte porque es una cuenta por cobrar, no efectivo disponible en caja.
 - La comisión de tarjeta se resta en la utilidad y no se descuenta del monto cobrado con tarjeta.
 
+### IVA incluido
+
+Los precios del catálogo incluyen impuesto. Al vender se congela la tasa de cada producto y el impuesto contenido en el importe; el total no cambia. `ReporteUtilidad.ImpuestoIncluido` suma esas porciones de las ventas vigentes del periodo y se muestra como dato informativo en la app, la consola, el CSV y el PDF.
+
+- No se resta de la utilidad: el impuesto ya está dentro del precio, no es un costo del negocio.
+- Una tasa 0 % significa producto exento y aporta cero.
+- Las ventas anteriores a la migración v14 muestran cero porque su tasa no quedó guardada.
+
 ### Comparación con el periodo anterior
 
 `PeriodoReporte.Anterior` toma el bloque inmediatamente anterior de la misma duración: un día contra el día previo y un rango de 7 días contra los 7 anteriores. `ReporteUtilidadService.ObtenerComparacion` devuelve el reporte actual, el anterior y las diferencias de ventas, utilidad neta y gastos.
@@ -70,7 +79,7 @@ Pestaña **Reportes**, entre Caja y Ajustes:
 
 1. **Hoy**, **Este mes** o **Rango**; el rango usa dos `DatePicker` y el botón **Ver**.
 2. **Actualizar** vuelve a leer el periodo seleccionado.
-3. El resumen muestra la utilidad neta, el número de ventas y el periodo; el desglose lista ventas cobradas, costo de ventas, comisión de tarjeta, utilidad bruta, mermas, gastos y utilidad neta.
+3. El resumen muestra la utilidad neta, el número de ventas y el periodo; el desglose lista ventas cobradas, **IVA incluido**, costo de ventas, comisión de tarjeta, utilidad bruta, mermas, gastos y utilidad neta.
 4. La utilidad bruta y neta se colorean en verde cuando son ≥ 0 y en rojo cuando son negativas.
 5. `PeriodoReporte` (Core) calcula los límites de hoy y del mes en curso con fechas sin hora; el rango normaliza ambas fechas. La pantalla llama a `ReporteUtilidadService.Obtener` y el permiso `Consultar` se valida en el servicio.
 6. La pestaña está disponible para dueño, encargado y empleado porque los tres tienen `Consultar`; la pantalla solo lee.

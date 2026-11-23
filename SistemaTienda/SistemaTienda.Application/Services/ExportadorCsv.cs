@@ -25,6 +25,7 @@ public static class ExportadorCsv
             Fila("Periodo hasta", reporte.Hasta.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)),
             Fila("Ventas", reporte.NumeroVentas.ToString(CultureInfo.InvariantCulture)),
             Fila("Ventas cobradas", Importe(reporte.VentasTotal)),
+            Fila("IVA incluido (informativo)", Importe(reporte.ImpuestoIncluido)),
             Fila("Cobros en efectivo", Importe(MontoDe(reporte, MetodoPagoVenta.Efectivo))),
             Fila("Cobros con tarjeta", Importe(MontoDe(reporte, MetodoPagoVenta.Tarjeta))),
             Fila("Ventas a fiado", Importe(MontoDe(reporte, MetodoPagoVenta.Fiado))),

@@ -180,6 +180,11 @@
                                FontSize="15" FontAttributes="Bold" HorizontalTextAlignment="End" />
                     </Grid>
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                        <Label Text="IVA incluido" FontSize="15" />
+                        <Label x:Name="ImpuestoLabel" Grid.Column="1" Text="$0.00"
+                               FontSize="15" HorizontalTextAlignment="End" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
                         <Label Text="Costo de ventas" FontSize="15" />
                         <Label x:Name="CostoLabel" Grid.Column="1" Text="$0.00"
                                FontSize="15" HorizontalTextAlignment="End" />

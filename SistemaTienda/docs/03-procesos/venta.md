@@ -78,7 +78,7 @@ Las ventas anuladas se excluyen del corte pendiente y del reporte de utilidad, y
 | Decisión | Descripción |
 |----------|-------------|
 | **Sin ventas en espera** | Una venta a la vez por cajero. El sistema no permite iniciar una nueva venta mientras haya una en progreso. |
-| **Precio incluye impuesto** | El campo `Precio` en `Producto` ya considera el impuesto. Al vender, se muestra el total directamente sin cálculos adicionales: `Total = Precio × Cantidad`. |
+| **Precio incluye impuesto** | El campo `Precio` en `Producto` ya considera el impuesto. Al vender se congelan la tasa y el importe de IVA incluido por línea (esquema v14); el total sigue siendo `Precio × Cantidad`. |
 | **No hay descuentos en MVP** | El precio final es el precio de catálogo × cantidad. Los descuentos quedan para Fase 2. |
 | **QR en ticket** | El ticket de la app incluye un QR informativo offline con los datos esenciales de la venta (folio, fecha, estado, total, método y hasta diez productos). No es un enlace ni un comprobante fiscal. |
 
@@ -124,7 +124,7 @@ Las ventas anuladas se excluyen del corte pendiente y del reporte de utilidad, y
 ### Reglas de Negocio (NO Negociables)
 
 1. **Venta atómica**: Una venta nunca queda a medias. Si falla la validación de stock, se anula todo.
-2. **Precio incluye impuesto**: El precio de catálogo es el precio final. No se calcula impuesto adicional al momento de la venta.
+2. **Precio incluye impuesto**: El precio de catálogo es el precio final. No se suma impuesto al cobrar; el ticket y los reportes solo desglosan el IVA contenido.
 3. **Método de pago por venta**: Efectivo, Tarjeta, Mixto o Fiado. El sistema NO se integra con la terminal bancaria, solo registra el método.
 4. **Comisión de tarjeta**: Es configurable por tienda (en Configuración) y se resta automáticamente de la utilidad neta sobre las ventas con método tarjeta.
 5. **Historial inmodificable**: No se pueden editar ventas pasadas. Si hay error, se anula la venta completa (con motivo, permiso y bitácora) y se registra una nueva venta correcta.
@@ -170,4 +170,4 @@ Las ventas anuladas se excluyen del corte pendiente y del reporte de utilidad, y
 
 ---
 
-**Próximos pasos en código**: descuentos (Fase 2) y validación del QR, su imagen y el diálogo de compartir en Android. El ticket con QR, la reimpresión con cambio y la anulación ya están implementados en la app.
+**Próximos pasos en código**: descuentos (Fase 2). El ticket con QR, la reimpresión con cambio, la anulación y el desglose de IVA incluido ya están implementados en la app.

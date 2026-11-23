@@ -45,6 +45,18 @@ public sealed class DineroTests
     }
 
     [Theory]
+    [InlineData(11_600, 16, 1_600L)]
+    [InlineData(10_000, 16, 1_379L)]
+    [InlineData(5_800, 16, 800L)]
+    [InlineData(10_000, 0, 0L)]
+    [InlineData(10_000, -1, 0L)]
+    public void ImpuestoIncluido_ExtraeLaParteDelImpuesto(long importe, decimal tasa, long esperado)
+    {
+        Assert.Equal(esperado, Dinero.ImpuestoIncluido(importe, tasa));
+        Assert.Equal(importe, Dinero.BaseSinImpuesto(importe, tasa) + esperado);
+    }
+
+    [Theory]
     [InlineData(0L, "0.00")]
     [InlineData(5L, "0.05")]
     [InlineData(12_345L, "123.45")]
