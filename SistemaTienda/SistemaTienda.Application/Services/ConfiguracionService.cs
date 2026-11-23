@@ -766,14 +766,95 @@ public class ConfiguracionService
             return ProcessResult<EstadoCuentaProveedor>.Error("Proveedor no encontrado");
 
         var pagos = _db.ObtenerPagosDeProveedor(proveedorId);
+        var compras = _db.ObtenerComprasDeProveedor(proveedorId);
 
         return ProcessResult<EstadoCuentaProveedor>.OK(new EstadoCuentaProveedor
         {
             Proveedor = proveedor,
             Pagos = pagos,
+            Compras = compras,
             TotalPagado = pagos.Sum(p => p.Monto),
+            TotalComprado = compras.Sum(c => c.Total),
             SaldoPendiente = proveedor.SaldoPendiente
         });
+    }
+
+    /// <summary>
+    /// Registra una compra a crédito con detalle de productos: aumenta el stock,
+    /// actualiza el costo del catálogo al último costo y suma el total al saldo del
+    /// proveedor. El pago se hace después con <see cref="RegistrarPagoProveedor"/>.
+    /// </summary>
+    public ProcessResult<CompraProveedor> RegistrarCompraProveedor(int proveedorId,
+        IReadOnlyList<LineaCompraSolicitada> lineas, string observaciones = null)
+    {
+        var autorizacion = Autorizar(PermisoSistema.RegistrarCompra);
+        if (autorizacion.IsError)
+            return ProcessResult<CompraProveedor>.Error(autorizacion.Message);
+
+        if (lineas == null || lineas.Count == 0)
+            return ProcessResult<CompraProveedor>.Error("La compra debe tener al menos un producto");
+
+        var proveedor = _db.ObtenerProveedorPorId(proveedorId);
+        if (proveedor == null)
+            return ProcessResult<CompraProveedor>.Error("Proveedor no encontrado");
+
+        if (!proveedor.Activo)
+            return ProcessResult<CompraProveedor>.Error(
+                "El proveedor está inactivo; reactívalo para registrar compras");
+
+        var renglones = new List<CompraProveedorLinea>();
+        var vistos = new HashSet<int>();
+        foreach (var solicitada in lineas)
+        {
+            if (solicitada == null || solicitada.ProductoId <= 0)
+                return ProcessResult<CompraProveedor>.Error("Hay un producto inválido en la compra");
+
+            if (solicitada.Cantidad <= 0)
+                return ProcessResult<CompraProveedor>.Error(
+                    "La cantidad de cada producto debe ser mayor a cero");
+
+            if (solicitada.CostoUnitario < 0)
+                return ProcessResult<CompraProveedor>.Error(
+                    "El costo unitario no puede ser negativo");
+
+            if (!vistos.Add(solicitada.ProductoId))
+                return ProcessResult<CompraProveedor>.Error(
+                    "La compra tiene el mismo producto repetido; únelo en un solo renglón");
+
+            var producto = _db.ObtenerProductoPorId(solicitada.ProductoId);
+            if (producto == null)
+                return ProcessResult<CompraProveedor>.Error(
+                    $"No se encontró el producto #{solicitada.ProductoId}");
+
+            if (!producto.Activo)
+                return ProcessResult<CompraProveedor>.Error(
+                    $"El producto \"{producto.Nombre}\" está desactivado; reactívalo para comprarlo");
+
+            renglones.Add(new CompraProveedorLinea
+            {
+                ProductoId = producto.Id,
+                CodigoBarras = producto.CodigoBarras,
+                Nombre = producto.Nombre,
+                Cantidad = solicitada.Cantidad,
+                CostoUnitario = solicitada.CostoUnitario,
+                Importe = solicitada.Cantidad * solicitada.CostoUnitario
+            });
+        }
+
+        var resultado = _db.RegistrarCompraProveedor(proveedor.Id, renglones,
+            SesionActual.Usuario?.Nombre ?? string.Empty, observaciones);
+
+        if (resultado.IsError)
+            return resultado;
+
+        var compra = resultado.Value;
+        _bitacora.Registrar(AccionBitacora.CompraProveedor, "Proveedor", proveedor.Id.ToString(),
+            $"Saldo={Dinero.Formatear(compra.SaldoAnterior)}",
+            $"Compra={compra.Id};Saldo={Dinero.Formatear(compra.SaldoNuevo)};" +
+            $"Total={Dinero.Formatear(compra.Total)};Renglones={compra.Lineas.Count}",
+            string.IsNullOrWhiteSpace(compra.Observaciones) ? "Compra a proveedor" : compra.Observaciones);
+
+        return resultado;
     }
 
     public ProcessResult<RegistrarPagoProveedorResponse> RegistrarPagoProveedor(int proveedorId,

@@ -41,7 +41,8 @@ public static class Migraciones
         new Migracion(9, "agrega el método de pago y el retiro de caja a los pagos a proveedores", AplicarVersion9),
         new Migracion(10, "agrega el estado activo a clientes y proveedores", AplicarVersion10),
         new Migracion(11, "crea el desglose por denominaciones de los cortes de caja", AplicarVersion11),
-        new Migracion(12, "guarda el efectivo recibido de las ventas en efectivo", AplicarVersion12)
+        new Migracion(12, "guarda el efectivo recibido de las ventas en efectivo", AplicarVersion12),
+        new Migracion(13, "crea las compras a proveedores y sus renglones", AplicarVersion13)
     };
 
     private static void AplicarVersion2(SqliteConnection conn, SqliteTransaction tx)
@@ -635,6 +636,78 @@ public static class Migraciones
         cmd.Transaction = tx;
         cmd.CommandText = @"
             ALTER TABLE Ventas ADD COLUMN EfectivoRecibido INTEGER;
+        ";
+        cmd.ExecuteNonQuery();
+    }
+
+    /// <summary>
+    /// Crea las compras a proveedores con sus renglones. El encabezado guarda el
+    /// saldo antes y después para reconstruir la cuenta; los renglones congelan el
+    /// costo y el importe. Ambas tablas son inmutables.
+    /// </summary>
+    private static void AplicarVersion13(SqliteConnection conn, SqliteTransaction tx)
+    {
+        using var cmd = conn.CreateCommand();
+        cmd.Transaction = tx;
+        cmd.CommandText = @"
+            CREATE TABLE IF NOT EXISTS ComprasProveedor (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                ProveedorId INTEGER NOT NULL,
+                Fecha DATETIME NOT NULL,
+                Usuario TEXT NOT NULL DEFAULT '',
+                Total INTEGER NOT NULL,
+                Observaciones TEXT NOT NULL DEFAULT '',
+                SaldoAnterior INTEGER NOT NULL,
+                SaldoNuevo INTEGER NOT NULL,
+                FOREIGN KEY (ProveedorId) REFERENCES Proveedores(Id)
+            );
+
+            CREATE INDEX IF NOT EXISTS IX_ComprasProveedor_ProveedorId
+                ON ComprasProveedor(ProveedorId);
+            CREATE INDEX IF NOT EXISTS IX_ComprasProveedor_Fecha
+                ON ComprasProveedor(Fecha);
+
+            CREATE TABLE IF NOT EXISTS CompraProveedorLineas (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                CompraId INTEGER NOT NULL,
+                ProductoId INTEGER NOT NULL,
+                CodigoBarras TEXT NOT NULL DEFAULT '',
+                Nombre TEXT NOT NULL DEFAULT '',
+                Cantidad INTEGER NOT NULL,
+                CostoUnitario INTEGER NOT NULL,
+                Importe INTEGER NOT NULL,
+                FOREIGN KEY (CompraId) REFERENCES ComprasProveedor(Id),
+                FOREIGN KEY (ProductoId) REFERENCES Productos(Id)
+            );
+
+            CREATE INDEX IF NOT EXISTS IX_CompraProveedorLineas_CompraId
+                ON CompraProveedorLineas(CompraId);
+            CREATE INDEX IF NOT EXISTS IX_CompraProveedorLineas_ProductoId
+                ON CompraProveedorLineas(ProductoId);
+
+            CREATE TRIGGER IF NOT EXISTS TR_ComprasProveedor_NoUpdate
+            BEFORE UPDATE ON ComprasProveedor
+            BEGIN
+                SELECT RAISE(ABORT, 'Las compras a proveedores son inmutables: no se pueden modificar');
+            END;
+
+            CREATE TRIGGER IF NOT EXISTS TR_ComprasProveedor_NoDelete
+            BEFORE DELETE ON ComprasProveedor
+            BEGIN
+                SELECT RAISE(ABORT, 'Las compras a proveedores son inmutables: no se pueden borrar');
+            END;
+
+            CREATE TRIGGER IF NOT EXISTS TR_CompraProveedorLineas_NoUpdate
+            BEFORE UPDATE ON CompraProveedorLineas
+            BEGIN
+                SELECT RAISE(ABORT, 'Los renglones de compra son inmutables: no se pueden modificar');
+            END;
+
+            CREATE TRIGGER IF NOT EXISTS TR_CompraProveedorLineas_NoDelete
+            BEFORE DELETE ON CompraProveedorLineas
+            BEGIN
+                SELECT RAISE(ABORT, 'Los renglones de compra son inmutables: no se pueden borrar');
+            END;
         ";
         cmd.ExecuteNonQuery();
     }

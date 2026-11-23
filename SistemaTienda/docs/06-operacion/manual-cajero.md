@@ -82,9 +82,11 @@ El directorio muestra nombre, clave o RFC, teléfono, dirección, saldo y estado
 - **Estado** (todos los roles): abre el estado de cuenta con los datos del proveedor, el saldo pendiente, el total pagado y el historial de pagos del más reciente al más antiguo con el método, el usuario, el saldo antes y después y el retiro ligado si fue en efectivo. Los pagos anteriores a esta versión (esquema v8) no se pueden reconstruir y los previos a la v9 no tienen método.
 - **Editar datos** (dueño o encargado, desde el estado de cuenta): corrige nombre, clave o RFC, teléfono y dirección; queda en la bitácora y no toca el saldo.
 - **Importante**: el aviso del formulario cambia según el método; revisa que el efectivo esperado del corte sea el correcto después de un pago en efectivo.
+- **Registrar compra** (dueño o encargado): elige proveedor, busca productos activos, captura cantidad y costo unitario, revisa el total y guarda. La compra aumenta el stock, actualiza el costo del catálogo al último costo y suma el total al saldo del proveedor; el pago se registra después con **Pagar**.
+- **Estado** (todos los roles): muestra el saldo, lo comprado, lo pagado y el historial combinado de compras y pagos.
 - **Exportar CSV / Exportar PDF**: generan el estado de cuenta y abren el diálogo del sistema para compartirlo, guardarlo o imprimirlo.
 - **Baja y duplicados**: el dueño puede dar de baja o reactivar al proveedor; al darlo de alta se avisa si ya existe un nombre o clave parecidos. La verificación manual se completó en Windows y Android 16.
-- **Pendiente**: compras por proveedor.
+- **Pendiente**: catálogo de productos por proveedor y órdenes de compra.
 
 ### 4. Inventario (pestaña Inventario)
 

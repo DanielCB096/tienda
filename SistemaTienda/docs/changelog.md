@@ -21,6 +21,15 @@ Cada entrada tiene formato:
 
 Próximamente después de completar los módulos críticos.
 
+### v0.0.41 - 2026-11-22: Compras a proveedores con detalle
+
+- *Agregado*: esquema **v13** con `ComprasProveedor` y `CompraProveedorLineas`, inmutables, con saldo antes/después, costo e importe congelados e índices por proveedor, fecha y producto.
+- *Agregado*: `ConfiguracionService.RegistrarCompraProveedor` registra la compra en una transacción: aumenta el stock con movimientos de entrada, actualiza el costo del catálogo al último costo y suma el total al saldo del proveedor. El pago se hace después con el flujo existente.
+- *Agregado*: permiso `RegistrarCompra` para dueño y encargado, bitácora `CompraProveedor`, botón **Registrar compra** en el estado de cuenta de Proveedores con búsqueda de productos, renglones y total, y opción **[4] Registrar compra** en la consola.
+- *Agregado*: el estado de cuenta muestra **Comprado**, mezcla compras y pagos en el historial, y el CSV y el PDF incluyen la sección de compras.
+- *Pruebas*: 9 pruebas nuevas en `ComprasProveedorTests`; la suite pasa **353 pruebas**. Solución y MAUI Windows compilan sin errores ni advertencias.
+- *Verificado*: en Windows el 2026-11-22 se registró una compra de 8 unidades a $1,500 ($12,000); el estado mostró saldo y comprado en $12,000, el stock quedó en 13, el costo en $1,500 y la bitácora registró la compra. Android pendiente.
+
 ### v0.0.40 - 2026-11-22: Comparación de reportes con el periodo anterior
 
 - *Agregado*: `PeriodoReporte.Anterior` calcula el bloque inmediatamente anterior de la misma duración (un día contra el día previo, un rango de 7 días contra los 7 anteriores).

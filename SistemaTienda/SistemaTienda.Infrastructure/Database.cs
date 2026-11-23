@@ -1042,6 +1042,215 @@ public class DatabaseTools
         return new ResultadoPagoProveedor(true, movimientoCajaId);
     }
 
+    // ---------- Compras a proveedores ----------
+
+    public List<CompraProveedor> ObtenerComprasDeProveedor(int proveedorId)
+    {
+        var compras = ExecuteReportObjects<CompraProveedor>(@"
+            SELECT Id, ProveedorId, Fecha, Usuario, Total, Observaciones,
+                   SaldoAnterior, SaldoNuevo
+            FROM ComprasProveedor
+            WHERE ProveedorId = @id
+            ORDER BY Fecha DESC, Id DESC",
+            new SqliteParameter("@id", proveedorId));
+
+        foreach (var compra in compras)
+            compra.Lineas = ObtenerLineasCompraProveedor(compra.Id);
+
+        return compras;
+    }
+
+    public List<CompraProveedorLinea> ObtenerLineasCompraProveedor(int compraId) =>
+        ExecuteReportObjects<CompraProveedorLinea>(@"
+            SELECT Id, CompraId, ProductoId, CodigoBarras, Nombre, Cantidad,
+                   CostoUnitario, Importe
+            FROM CompraProveedorLineas
+            WHERE CompraId = @id
+            ORDER BY Id",
+            new SqliteParameter("@id", compraId));
+
+    /// <summary>
+    /// Registra una compra a crédito en una sola transacción: guarda el encabezado y
+    /// los renglones, aumenta el stock con movimientos de entrada, actualiza el costo
+    /// del catálogo al último costo y suma el total al saldo del proveedor.
+    /// </summary>
+    public ProcessResult<CompraProveedor> RegistrarCompraProveedor(int proveedorId,
+        IReadOnlyList<CompraProveedorLinea> lineas, string usuario, string observaciones)
+    {
+        if (lineas == null || lineas.Count == 0)
+            return ProcessResult<CompraProveedor>.Error("La compra debe tener al menos un producto");
+
+        using var conn = CreateConnection();
+        conn.Open();
+        using var tx = conn.BeginTransaction();
+
+        try
+        {
+            long saldoAnterior;
+            bool proveedorActivo;
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.Transaction = tx;
+                cmd.CommandText = "SELECT SaldoPendiente, Activo FROM Proveedores WHERE Id = @id";
+                cmd.Parameters.AddWithValue("@id", proveedorId);
+                using var reader = cmd.ExecuteReader();
+                if (!reader.Read())
+                {
+                    tx.Rollback();
+                    return ProcessResult<CompraProveedor>.Error("Proveedor no encontrado");
+                }
+
+                saldoAnterior = Convert.ToInt64(reader.GetValue(0), CultureInfo.InvariantCulture);
+                proveedorActivo = Convert.ToInt64(reader.GetValue(1), CultureInfo.InvariantCulture) != 0;
+            }
+
+            if (!proveedorActivo)
+            {
+                tx.Rollback();
+                return ProcessResult<CompraProveedor>.Error(
+                    "El proveedor está inactivo; reactívalo para registrar compras");
+            }
+
+            var productosVistos = new HashSet<int>();
+            long total = 0;
+            foreach (var linea in lineas)
+            {
+                if (linea.Cantidad <= 0)
+                {
+                    tx.Rollback();
+                    return ProcessResult<CompraProveedor>.Error(
+                        "La cantidad de cada producto debe ser mayor a cero");
+                }
+
+                if (linea.CostoUnitario < 0)
+                {
+                    tx.Rollback();
+                    return ProcessResult<CompraProveedor>.Error(
+                        "El costo unitario no puede ser negativo");
+                }
+
+                if (!productosVistos.Add(linea.ProductoId))
+                {
+                    tx.Rollback();
+                    return ProcessResult<CompraProveedor>.Error(
+                        "La compra tiene el mismo producto repetido; únelo en un solo renglón");
+                }
+
+                var producto = ObtenerProductoEnTransaccion(conn, tx, linea.ProductoId);
+                if (producto == null)
+                {
+                    tx.Rollback();
+                    return ProcessResult<CompraProveedor>.Error(
+                        $"No se encontró el producto #{linea.ProductoId}");
+                }
+
+                if (!producto.Activo)
+                {
+                    tx.Rollback();
+                    return ProcessResult<CompraProveedor>.Error(
+                        $"El producto \"{producto.Nombre}\" está desactivado; reactívalo para comprarlo");
+                }
+
+                linea.CodigoBarras = producto.CodigoBarras ?? string.Empty;
+                linea.Nombre = producto.Nombre ?? string.Empty;
+                linea.Importe = linea.Cantidad * linea.CostoUnitario;
+                total += linea.Importe;
+            }
+
+            var nuevoSaldo = saldoAnterior + total;
+            var compra = new CompraProveedor
+            {
+                ProveedorId = proveedorId,
+                Fecha = DateTime.Now,
+                Usuario = (usuario ?? string.Empty).Trim(),
+                Total = total,
+                Observaciones = (observaciones ?? string.Empty).Trim(),
+                SaldoAnterior = saldoAnterior,
+                SaldoNuevo = nuevoSaldo
+            };
+
+            using (var insert = conn.CreateCommand())
+            {
+                insert.Transaction = tx;
+                insert.CommandText = @"
+                    INSERT INTO ComprasProveedor
+                        (ProveedorId, Fecha, Usuario, Total, Observaciones,
+                         SaldoAnterior, SaldoNuevo)
+                    VALUES (@proveedor, @fecha, @usuario, @total, @observaciones,
+                            @anterior, @nuevo);
+                    SELECT last_insert_rowid();";
+                insert.Parameters.AddWithValue("@proveedor", proveedorId);
+                insert.Parameters.AddWithValue("@fecha", compra.Fecha);
+                insert.Parameters.AddWithValue("@usuario", compra.Usuario);
+                insert.Parameters.AddWithValue("@total", compra.Total);
+                insert.Parameters.AddWithValue("@observaciones", compra.Observaciones);
+                insert.Parameters.AddWithValue("@anterior", saldoAnterior);
+                insert.Parameters.AddWithValue("@nuevo", nuevoSaldo);
+                compra.Id = Convert.ToInt32(insert.ExecuteScalar(), CultureInfo.InvariantCulture);
+            }
+
+            foreach (var linea in lineas)
+            {
+                linea.CompraId = compra.Id;
+
+                using (var insert = conn.CreateCommand())
+                {
+                    insert.Transaction = tx;
+                    insert.CommandText = @"
+                        INSERT INTO CompraProveedorLineas
+                            (CompraId, ProductoId, CodigoBarras, Nombre, Cantidad,
+                             CostoUnitario, Importe)
+                        VALUES (@compra, @producto, @codigo, @nombre, @cantidad,
+                                @costo, @importe);
+                        SELECT last_insert_rowid();";
+                    insert.Parameters.AddWithValue("@compra", compra.Id);
+                    insert.Parameters.AddWithValue("@producto", linea.ProductoId);
+                    insert.Parameters.AddWithValue("@codigo", linea.CodigoBarras);
+                    insert.Parameters.AddWithValue("@nombre", linea.Nombre);
+                    insert.Parameters.AddWithValue("@cantidad", linea.Cantidad);
+                    insert.Parameters.AddWithValue("@costo", linea.CostoUnitario);
+                    insert.Parameters.AddWithValue("@importe", linea.Importe);
+                    linea.Id = Convert.ToInt32(insert.ExecuteScalar(), CultureInfo.InvariantCulture);
+                }
+
+                InsertarMovimiento(conn, tx, linea.ProductoId, MovimientoTipo.Entrada,
+                    linea.Cantidad, linea.CostoUnitario, $"Compra proveedor #{compra.Id}", compra.Usuario);
+
+                using var costo = conn.CreateCommand();
+                costo.Transaction = tx;
+                costo.CommandText = @"
+                    UPDATE Productos
+                    SET Costo = @costo, UltimaActualizacion = datetime('now')
+                    WHERE Id = @producto";
+                costo.Parameters.AddWithValue("@costo", linea.CostoUnitario);
+                costo.Parameters.AddWithValue("@producto", linea.ProductoId);
+                costo.ExecuteNonQuery();
+            }
+
+            using (var update = conn.CreateCommand())
+            {
+                update.Transaction = tx;
+                update.CommandText = @"
+                    UPDATE Proveedores
+                    SET SaldoPendiente = @saldo, UltimaActualizacion = datetime('now')
+                    WHERE Id = @id";
+                update.Parameters.AddWithValue("@saldo", nuevoSaldo);
+                update.Parameters.AddWithValue("@id", proveedorId);
+                update.ExecuteNonQuery();
+            }
+
+            compra.Lineas = lineas.ToList();
+            tx.Commit();
+            return ProcessResult<CompraProveedor>.OK(compra, $"Compra #{compra.Id} registrada");
+        }
+        catch (SqliteException ex)
+        {
+            try { tx.Rollback(); } catch (SqliteException) { }
+            return ProcessResult<CompraProveedor>.Error(
+                $"No se pudo registrar la compra: {ex.Message}");
+        }
+    }
+
     // ---------- Ventas ----------
 
     /// <summary>

@@ -33,6 +33,7 @@ public enum PermisoSistema
     PagarProveedor,
     EditarProveedor,
     CambiarEstadoProveedor,
+    RegistrarCompra,
     EditarProducto,
     DesactivarProducto,
     CambiarPrecios,
@@ -66,6 +67,7 @@ public static class AccionBitacora
     public const string EditarProveedor = "EditarProveedor";
     public const string CambiarEstadoProveedor = "CambiarEstadoProveedor";
     public const string PagoProveedor = "PagoProveedor";
+    public const string CompraProveedor = "CompraProveedor";
     public const string Usuario = "Usuario";
     public const string EditarUsuario = "EditarUsuario";
     public const string CambiarPin = "CambiarPin";

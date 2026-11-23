@@ -976,6 +976,7 @@ internal static class Program
             Console.WriteLine("  [1] Nuevo proveedor");
             Console.WriteLine("  [2] Ver proveedores");
             Console.WriteLine("  [3] Registrar pago");
+            Console.WriteLine("  [4] Registrar compra");
             Console.WriteLine("  [0] Regresar");
             Console.Write("\n  Opción: ");
 
@@ -984,6 +985,7 @@ internal static class Program
                 case "1": NuevoProveedor(); break;
                 case "2": VerProveedores(); break;
                 case "3": RegistrarPagoProveedor(); break;
+                case "4": RegistrarCompraProveedorConsola(); break;
                 case "0": return;
                 case null: return;
                 default: Aviso("Opción no válida."); break;
@@ -1039,6 +1041,96 @@ internal static class Program
                 Console.WriteLine($"  [{p.Id}] {p.Nombre,-25} ${Dinero.Formatear(p.SaldoPendiente),9}  {p.Telefono}");
         }
         Pausa();
+    }
+
+    private static void RegistrarCompraProveedorConsola()
+    {
+        LimpiarPantalla();
+        Console.WriteLine("=== REGISTRAR COMPRA A PROVEEDOR ===");
+        var proveedores = _config.ObtenerTodosLosProveedores().Value?
+            .Where(p => p.Activo).ToList() ?? new List<Proveedor>();
+
+        if (proveedores.Count == 0)
+        {
+            Aviso("No hay proveedores activos. Da de alta uno primero.");
+            return;
+        }
+
+        foreach (var p in proveedores.Take(100))
+            Console.WriteLine($"  [{p.Id}] {p.Nombre,-25} ${Dinero.Formatear(p.SaldoPendiente),9}");
+
+        var idTexto = LeerTexto("Id del proveedor");
+        if (!int.TryParse(idTexto, out var proveedorId))
+        {
+            Aviso("Id no válido.");
+            return;
+        }
+
+        var proveedor = proveedores.FirstOrDefault(p => p.Id == proveedorId);
+        if (proveedor == null)
+        {
+            Aviso("Proveedor no encontrado o inactivo.");
+            return;
+        }
+
+        var lineas = new List<LineaCompraSolicitada>();
+        while (true)
+        {
+            var codigo = LeerTextoConDefecto(
+                "Código del producto (Enter para terminar)", string.Empty);
+            if (string.IsNullOrWhiteSpace(codigo))
+                break;
+
+            var producto = _inventario.BuscarPorCodigo(codigo.Trim());
+            if (producto == null)
+            {
+                Aviso("Producto no encontrado.");
+                continue;
+            }
+
+            if (!producto.Activo)
+            {
+                Aviso("El producto está desactivado; reactívalo para comprarlo.");
+                continue;
+            }
+
+            if (lineas.Any(l => l.ProductoId == producto.Id))
+            {
+                Aviso("Ese producto ya está en la compra; usa un solo renglón.");
+                continue;
+            }
+
+            var cantidad = LeerEntero("Cantidad", 1, 1_000_000, 1);
+            var costo = LeerDinero("Costo unitario ($)", 0, producto.Costo);
+            lineas.Add(new LineaCompraSolicitada
+            {
+                ProductoId = producto.Id,
+                Cantidad = cantidad,
+                CostoUnitario = costo
+            });
+
+            Console.WriteLine($"  + {producto.Nombre} x{cantidad} a ${Dinero.Formatear(costo)}");
+        }
+
+        if (lineas.Count == 0)
+        {
+            Aviso("La compra quedó vacía; no se guardó nada.");
+            return;
+        }
+
+        var total = lineas.Sum(l => l.Cantidad * l.CostoUnitario);
+        Console.WriteLine($"\n  Total de la compra: ${Dinero.Formatear(total)}");
+        Console.WriteLine("  Se sumará al saldo del proveedor; el pago se registra aparte.");
+
+        if (!LeerSiNo("¿Guardar la compra?", false))
+        {
+            Aviso("Compra cancelada.");
+            return;
+        }
+
+        var observaciones = LeerTextoConDefecto("Observaciones", string.Empty);
+        var resultado = _config.RegistrarCompraProveedor(proveedor.Id, lineas, observaciones);
+        Aviso(resultado.Message, resultado.IsSuccess);
     }
 
     private static void RegistrarPagoProveedor()

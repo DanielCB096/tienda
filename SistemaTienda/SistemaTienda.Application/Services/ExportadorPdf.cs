@@ -121,7 +121,28 @@ public static class ExportadorPdf
 
         pdf.LineaHorizontal();
         pdf.Fila("Saldo pendiente", Dinero.Formatear(estado.SaldoPendiente), 11, true);
+        pdf.Fila("Total comprado", Dinero.Formatear(estado.TotalComprado));
         pdf.Fila("Total pagado", Dinero.Formatear(estado.TotalPagado));
+
+        pdf.Espacio(8);
+        pdf.Texto("Compras", 11, true);
+        pdf.LineaHorizontal();
+
+        if (estado.Compras.Count == 0)
+        {
+            pdf.Texto("Sin compras registradas.", 9);
+        }
+        else
+        {
+            foreach (var compra in estado.Compras.OrderByDescending(c => c.Fecha))
+            {
+                var detalle = compra.Lineas.Count == 1
+                    ? $"{compra.Lineas[0].Nombre} x{compra.Lineas[0].Cantidad}"
+                    : $"{compra.Lineas.Count} productos";
+                pdf.Fila($"{compra.Fecha:dd/MM/yyyy HH:mm}  Compra #{compra.Id} · {detalle}",
+                    $"+{Dinero.Formatear(compra.Total)}", 9);
+            }
+        }
 
         pdf.Espacio(8);
         pdf.Texto("Pagos", 11, true);
@@ -143,7 +164,7 @@ public static class ExportadorPdf
         }
 
         pdf.Espacio(6);
-        pdf.Texto("Los pagos anteriores al esquema v8 no aparecen en el historial.", 8);
+        pdf.Texto("Las compras se registran desde el esquema v13 y los pagos desde el v8.", 8);
         Pie(pdf);
         return pdf.Generar();
     }

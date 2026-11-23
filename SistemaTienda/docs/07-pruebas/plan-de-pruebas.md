@@ -521,6 +521,18 @@ Pendiente de T36: nada; el diálogo de compartir y la apertura del PDF se verifi
 | Gastos que suben se pintan como variación desfavorable | Pendiente |
 | Cambiar de Hoy a Este mes con la comparación abierta la recarga | Pendiente |
 
+## Verificación de T39, compras a proveedores (pendiente)
+
+| Caso | Resultado |
+|------|-----------|
+| Registrar compra de dos productos con cantidades y costos distintos | Cubierto por pruebas; falta verificación visual |
+| El stock aumenta y el costo del catálogo queda en el último costo | Pasó: stock 5 → 13 y costo $1,500 |
+| El saldo del proveedor aumenta por el total y el estado muestra **Comprado** | Pasó: saldo y comprado $12,000; movimiento `+$12,000` |
+| Compra con producto o proveedor inactivo rechazada sin cambios | Cubierto por pruebas |
+| Cantidad cero o producto repetido rechazados | Cubierto por pruebas |
+| El empleado no ve ni puede ejecutar la compra; el encargado sí | Cubierto por pruebas |
+| El historial mezcla compras y pagos en orden y el CSV/PDF incluyen compras | Historial verificado en Windows; exportaciones cubiertas por pruebas |
+
 ## Herramientas de Prueba
 
 - **Datos de prueba ficticios**: Un script o conjunto de datos iniciales que incluir:

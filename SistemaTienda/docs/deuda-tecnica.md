@@ -64,12 +64,12 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 - **Impacto**: el estado de cuenta se exporta a CSV y PDF, pero el PDF no se firma ni se envía automáticamente. La pantalla se verificó en vivo en Windows el 2026-11-19 y en Android 16 el 2026-11-21.
 - **Cierre**: firma o envío del estado de cuenta y recordatorios de pago.
 
-### Proveedores sin compras por proveedor
+### Proveedores sin catálogo propio
 
 - **Dónde**: `ConfiguracionService` y la pestaña Proveedores de la app MAUI.
-- **Por qué**: T27 agregó baja lógica exclusiva del dueño; las cuentas inactivas conservan saldo e historial y admiten pagos para liquidarlas. T31 agregó la exportación CSV y T36 el PDF.
-- **Impacto**: aún no se asocian compras a proveedores. El historial solo cubre pagos desde v8; los anteriores no se reconstruyen y los previos a v9 carecen de método y movimiento de caja. La pantalla se verificó en vivo en Windows el 2026-11-19 y en Android 16 el 2026-11-21.
-- **Cierre**: asociar entradas/compras a proveedores con su costo y saldo.
+- **Por qué**: T27 agregó baja lógica exclusiva del dueño; T31/T36 la exportación del estado de cuenta; T39 las compras con detalle, stock, último costo y saldo.
+- **Impacto**: las compras se registran con productos y cantidades, pero no existe un catálogo de productos por proveedor ni órdenes de compra. Los pagos y compras anteriores a v8/v13 no se reconstruyen.
+- **Cierre**: catálogo por proveedor, órdenes de compra y términos de pago.
 
 ### La app MAUI no cubre todas las operaciones
 
