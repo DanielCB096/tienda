@@ -505,21 +505,21 @@ Pendiente de T36: nada; el diálogo de compartir y la apertura del PDF se verifi
 
 | Caso | Resultado |
 |------|-----------|
-| Venta en efectivo, tarjeta, mixta y fiado en el mismo periodo | Pendiente |
-| La venta mixta aparece en Efectivo y Tarjeta con su parte correspondiente | Pendiente |
-| Una venta anulada desaparece del desglose | Pendiente |
-| Los totales por método coinciden con caja y con el estado de cuenta del cliente | Pendiente |
-| CSV y PDF incluyen las líneas de cobro | Pendiente |
+| Venta en efectivo, tarjeta, mixta y fiado en el mismo periodo | Pasó: 4 ventas por $100.00 |
+| La venta mixta aparece en Efectivo y Tarjeta con su parte correspondiente | Pasó: Efectivo $30.00 y Tarjeta $60.00 |
+| Una venta anulada desaparece del desglose | Cubierto por pruebas |
+| Los totales por método coinciden con caja y con el estado de cuenta del cliente | Pasó: la suma da los $100.00 cobrados |
+| CSV y PDF incluyen las líneas de cobro | Cubierto por pruebas |
 
 ## Verificación de T38, comparación entre periodos (pendiente)
 
 | Caso | Resultado |
 |------|-----------|
-| Comparar hoy contra ayer con ventas en ambos días | Pendiente |
-| Comparar un rango de 7 días contra los 7 anteriores | Pendiente |
-| Periodo anterior vacío: se muestra la diferencia sin porcentaje | Pendiente |
-| Gastos que suben se pintan como variación desfavorable | Pendiente |
-| Cambiar de Hoy a Este mes con la comparación abierta la recarga | Pendiente |
+| Comparar hoy contra ayer con ventas en ambos días | Pasó: ventas +$90.00 (+900.0%) y utilidad +$44.90 (+1496.7%) |
+| Comparar un rango de 7 días contra los 7 anteriores | Cubierto por `PeriodoReporteTests` |
+| Periodo anterior vacío: se muestra la diferencia sin porcentaje | Pasó con **Este mes**: +$110.00 sin porcentaje |
+| Gastos que suben se pintan como variación desfavorable | Pasó: gastos -$2.00 se mostraron como favorables |
+| Cambiar de Hoy a Este mes con la comparación abierta la recarga | Pasó |
 
 ## Verificación de T39, compras a proveedores (pendiente)
 

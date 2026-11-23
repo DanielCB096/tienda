@@ -36,12 +36,14 @@ Próximamente después de completar los módulos críticos.
 - *Agregado*: `ComparacionReporte` y `ReporteUtilidadService.ObtenerComparacion` devuelven ventas, utilidad neta y gastos del periodo actual y del anterior, con diferencia y variación porcentual; el porcentaje es nulo cuando el periodo anterior vale cero.
 - *Agregado*: botón **Comparar con periodo anterior** en Reportes con una tabla de actual, anterior y Δ; la consola pregunta al terminar el reporte y muestra el mismo comparativo.
 - *Pruebas*: 6 pruebas nuevas en `PeriodoReporteTests` y `ReportesTests`; la suite pasa **344 pruebas**. Solución y MAUI Windows compilan sin errores ni advertencias.
+- *Verificado*: en Windows el 2026-11-22 comparó hoy contra ayer con diferencias y porcentajes, y **Este mes** contra un bloque vacío sin porcentaje. Android pendiente.
 
 ### v0.0.39 - 2026-11-22: Desglose de cobros por método en reportes
 
 - *Agregado*: `ReporteUtilidad.DesglosePagos` separa los cobros del periodo en Efectivo, Tarjeta y Fiado; una venta mixta suma su parte en efectivo y su parte con tarjeta, el fiado se reporta como cuenta por cobrar y las ventas anuladas quedan excluidas.
 - *Agregado*: tarjeta **Cobros por método** en la pestaña Reportes, con número de ventas e importe por método; los mismos datos aparecen en la consola y en las exportaciones CSV y PDF.
 - *Pruebas*: 2 pruebas nuevas en `ReportesTests` (venta mixta y venta anulada); la suite pasa **338 pruebas**. Solución y MAUI Windows compilan sin errores ni advertencias.
+- *Verificado*: en Windows el 2026-11-22 mostró Efectivo $30.00, Tarjeta $60.00 y Fiado $10.00 con una venta mixta repartida. Android pendiente.
 
 ### v0.0.38 - 2026-11-21: PDF de reportes y estados de cuenta
 
