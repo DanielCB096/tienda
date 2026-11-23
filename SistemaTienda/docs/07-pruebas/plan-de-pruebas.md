@@ -510,6 +510,7 @@ Pendiente de T36: nada; el diálogo de compartir y la apertura del PDF se verifi
 | Una venta anulada desaparece del desglose | Cubierto por pruebas |
 | Los totales por método coinciden con caja y con el estado de cuenta del cliente | Pasó: la suma da los $100.00 cobrados |
 | CSV y PDF incluyen las líneas de cobro | Cubierto por pruebas |
+| Repetir en Android 16 | Pasó: mismos importes en el Redmi Note 13 |
 
 ## Verificación de T38, comparación entre periodos (pendiente)
 
@@ -520,6 +521,7 @@ Pendiente de T36: nada; el diálogo de compartir y la apertura del PDF se verifi
 | Periodo anterior vacío: se muestra la diferencia sin porcentaje | Pasó con **Este mes**: +$110.00 sin porcentaje |
 | Gastos que suben se pintan como variación desfavorable | Pasó: gastos -$2.00 se mostraron como favorables |
 | Cambiar de Hoy a Este mes con la comparación abierta la recarga | Pasó |
+| Repetir en Android 16 | Pasó: mismos importes, porcentajes y recarga |
 
 ## Verificación de T39, compras a proveedores (pendiente)
 
@@ -532,6 +534,7 @@ Pendiente de T36: nada; el diálogo de compartir y la apertura del PDF se verifi
 | Cantidad cero o producto repetido rechazados | Cubierto por pruebas |
 | El empleado no ve ni puede ejecutar la compra; el encargado sí | Cubierto por pruebas |
 | El historial mezcla compras y pagos en orden y el CSV/PDF incluyen compras | Historial verificado en Windows; exportaciones cubiertas por pruebas |
+| Repetir en Android 16 | Pasó: compra de 8 × $1,500, saldo y comprado $12,000, stock 13 y costo $1,500 |
 
 ## Herramientas de Prueba
 
