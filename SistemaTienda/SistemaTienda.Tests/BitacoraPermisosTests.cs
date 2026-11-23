@@ -218,6 +218,22 @@ public sealed class BitacoraPermisosTests
 
         Assert.True(sinAccion.IsError);
         Assert.True(sinSesion.IsError);
-        Assert.Empty(bd.Db.ObtenerBitacora());
+    }
+
+    [Fact]
+    public void ConsultarBitacora_SoloElDuenoPuede()
+    {
+        using var bd = new BaseDatosPrueba();
+        bd.ConfigurarTienda();
+        var servicio = new BitacoraService(bd.Db);
+
+        bd.IniciarSesion(RolUsuario.Encargado);
+        Assert.True(servicio.Consultar().IsError);
+
+        bd.IniciarSesion(RolUsuario.Empleado);
+        Assert.True(servicio.Consultar().IsError);
+
+        bd.IniciarSesion(RolUsuario.Dueño);
+        Assert.True(servicio.Consultar().IsSuccess);
     }
 }

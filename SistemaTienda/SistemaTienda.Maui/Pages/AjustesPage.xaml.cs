@@ -1,6 +1,7 @@
 using System.Globalization;
 using SistemaTienda.Application.Services;
 using SistemaTienda.Core;
+using SistemaTienda.Maui.Models;
 using SistemaTienda.Maui.Services;
 
 namespace SistemaTienda.Maui.Pages;
@@ -9,15 +10,17 @@ public partial class AjustesPage : ContentPage
 {
     private readonly ConfiguracionService _config;
     private readonly RespaldoService _respaldos;
+    private readonly BitacoraService _bitacora;
     private readonly SesionApp _sesion;
     private readonly NavegacionApp _navegacion;
 
     public AjustesPage(ConfiguracionService config, RespaldoService respaldos,
-        SesionApp sesion, NavegacionApp navegacion)
+        BitacoraService bitacora, SesionApp sesion, NavegacionApp navegacion)
     {
         InitializeComponent();
         _config = config;
         _respaldos = respaldos;
+        _bitacora = bitacora;
         _sesion = sesion;
         _navegacion = navegacion;
         UsuarioRolPicker.ItemsSource = new[] { "Dueño", "Encargado", "Empleado" };
@@ -55,6 +58,8 @@ public partial class AjustesPage : ContentPage
             AutorizacionService.Puede(_sesion.Usuario, PermisoSistema.Configurar);
         UsuariosButton.IsVisible = _sesion.Usuario != null &&
             AutorizacionService.Puede(_sesion.Usuario, PermisoSistema.GestionarUsuarios);
+        BitacoraButton.IsVisible = _sesion.Usuario != null &&
+            AutorizacionService.Puede(_sesion.Usuario, PermisoSistema.ConsultarBitacora);
 
         RutaBaseLabel.Text = _respaldos.RutaBaseDatos;
         RutaRespaldosLabel.Text = _respaldos.DirectorioRespaldos;
@@ -466,5 +471,63 @@ public partial class AjustesPage : ContentPage
 
         _sesion.Cerrar();
         _navegacion.MostrarLogin();
+    }
+
+    private void OnBitacoraClicked(object sender, EventArgs e)
+    {
+        _sesion.Aplicar();
+        BitacoraUsuarioEntry.Text = string.Empty;
+        BitacoraAccionEntry.Text = string.Empty;
+        BitacoraOverlay.IsVisible = true;
+        CargarBitacora();
+    }
+
+    private void OnBitacoraFiltrarClicked(object sender, EventArgs e) => CargarBitacora();
+
+    private void OnBitacoraRefrescando(object sender, EventArgs e)
+    {
+        CargarBitacora();
+        BitacoraRefresco.IsRefreshing = false;
+    }
+
+    private void OnCerrarBitacoraClicked(object sender, EventArgs e) =>
+        BitacoraOverlay.IsVisible = false;
+
+    private void CargarBitacora()
+    {
+        _sesion.Aplicar();
+        var resultado = _bitacora.Consultar(
+            200, BitacoraUsuarioEntry.Text, BitacoraAccionEntry.Text);
+
+        if (resultado.IsError)
+        {
+            _ = DisplayAlertAsync("No se pudo consultar", resultado.Message, "Continuar");
+            return;
+        }
+
+        ListaBitacora.ItemsSource = resultado.Value.Select(r => new BitacoraFila
+        {
+            Fecha = Formato.FechaHora(r.Fecha),
+            Usuario = r.Usuario,
+            Accion = r.Accion,
+            Entidad = string.IsNullOrWhiteSpace(r.EntidadId)
+                ? r.Entidad
+                : $"{r.Entidad} #{r.EntidadId}",
+            Detalle = DetalleBitacora(r),
+            Motivo = string.IsNullOrWhiteSpace(r.Motivo) ? string.Empty : $"Motivo: {r.Motivo}",
+            TieneMotivo = !string.IsNullOrWhiteSpace(r.Motivo)
+        }).ToList();
+    }
+
+    private static string DetalleBitacora(RegistroBitacora registro)
+    {
+        if (!string.IsNullOrWhiteSpace(registro.DatosAntes) &&
+            !string.IsNullOrWhiteSpace(registro.DatosDespues))
+            return $"Antes: {registro.DatosAntes} · Después: {registro.DatosDespues}";
+
+        if (!string.IsNullOrWhiteSpace(registro.DatosDespues))
+            return registro.DatosDespues;
+
+        return registro.DatosAntes;
     }
 }

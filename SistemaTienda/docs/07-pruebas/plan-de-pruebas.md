@@ -547,6 +547,16 @@ Pendiente de T36: nada; el diálogo de compartir y la apertura del PDF se verifi
 | Migración v13 → v14 con respaldo | Cubierto por `ImpuestoVentasTests` |
 | Repetir en Android 16 | Pasó: reporte y ticket mostraron IVA incluido $16.00 |
 
+## Verificación de T42, bitácora en Ajustes (pendiente)
+
+| Caso | Resultado |
+|------|-----------|
+| El dueño abre **Ajustes → Auditoría → Ver bitácora** | Pasó |
+| Se ven fecha, usuario, acción, entidad, antes/después y motivo | Pasó con un ajuste de stock |
+| Los filtros por usuario y acción reducen la lista | Pendiente de probar con varios registros |
+| Encargado y empleado no ven el botón ni pueden consultar | Cubierto por `BitacoraPermisosTests` |
+| Repetir en Android 16 | Pendiente |
+
 ## Herramientas de Prueba
 
 - **Datos de prueba ficticios**: Un script o conjunto de datos iniciales que incluir:

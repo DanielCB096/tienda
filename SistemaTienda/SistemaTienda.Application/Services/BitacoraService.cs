@@ -48,7 +48,14 @@ public class BitacoraService
     }
 
     public ProcessResult<List<RegistroBitacora>> Consultar(int limite = 100,
-        string usuario = null, string accion = null) =>
-        ProcessResult<List<RegistroBitacora>>.OK(
+        string usuario = null, string accion = null)
+    {
+        var autorizacion = AutorizacionService.Exigir(
+            SesionActual.Usuario, PermisoSistema.ConsultarBitacora);
+        if (autorizacion.IsError)
+            return ProcessResult<List<RegistroBitacora>>.Error(autorizacion.Message);
+
+        return ProcessResult<List<RegistroBitacora>>.OK(
             _db.ObtenerBitacora(limite, usuario, accion));
+    }
 }

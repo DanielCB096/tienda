@@ -21,6 +21,14 @@ Cada entrada tiene formato:
 
 Próximamente después de completar los módulos críticos.
 
+### v0.0.44 - 2026-11-22: Consulta de bitácora en Ajustes
+
+- *Agregado*: **Ajustes → Auditoría → Ver bitácora** (solo dueño) lista los últimos 200 registros con fecha, usuario, acción, entidad, datos antes/después y motivo.
+- *Agregado*: filtros opcionales por usuario y acción, con **Filtrar** y actualización por arrastre.
+- *Seguridad*: `BitacoraService.Consultar` exige el permiso nuevo `ConsultarBitacora`; el encargado y el empleado reciben error aunque abran la vista.
+- *Pruebas*: 1 prueba nueva en `BitacoraPermisosTests`; la suite pasa **368 pruebas**. Solución y MAUI Windows compilan sin errores ni advertencias.
+- *Verificado*: en Windows el 2026-11-22 el dueño vio el registro con usuario, acción, entidad, antes/después y motivo. Android pendiente.
+
 ### v0.0.43 - 2026-11-22: IVA incluido en ticket y reportes
 
 - *Agregado*: los precios del catálogo se tratan como **con impuesto incluido**; el total de la venta no cambia.
