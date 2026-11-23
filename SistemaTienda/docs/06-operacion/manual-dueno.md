@@ -131,8 +131,9 @@ Acceso en la app: pestaña **Proveedores**.
 - **Estado de cuenta**: toca **Estado** en el renglón del proveedor. Muestra clave o RFC, teléfono, dirección, la fecha en que se registró, el saldo pendiente, el total pagado y la lista de pagos del más reciente al más antiguo con el método, el usuario, el saldo antes y después y, si fue en efectivo, el retiro de caja ligado. Los pagos anteriores a esta versión (esquema v8) no se pueden reconstruir y los previos a la v9 no tienen método; la pantalla lo advierte.
 - **Editar datos**: dueño o encargado, desde el estado de cuenta. Corrige nombre, clave o RFC, teléfono y dirección; queda en la bitácora con los datos anteriores y nuevos. El saldo solo cambia con pagos.
 - **Dar de baja o reactivar**: solo el dueño, desde el renglón del proveedor y con confirmación. La cuenta y su historial se conservan; puedes seguir registrando pagos para liquidar el saldo.
+- **Registrar compra** (dueño o encargado): busca productos, captura cantidad y costo, revisa el total y guarda. La compra aumenta el stock, actualiza el costo al último costo y suma al saldo del proveedor; el pago se hace después.
 - **Exportar CSV / Exportar PDF**: generan el estado de cuenta y abren el diálogo del sistema para compartirlo, guardarlo o imprimirlo.
-- **Pendiente**: compras por proveedor.
+- **Pendiente**: catálogo de productos por proveedor y órdenes de compra.
 
 ### 9. Gastos (pestaña Gastos)
 

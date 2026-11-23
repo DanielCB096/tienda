@@ -1,4 +1,4 @@
-# Modelo de Datos (esquema v12)
+# Modelo de Datos (esquema v13)
 
 Base local SQLite, un solo archivo. `PRAGMA user_version = 12`.
 
@@ -18,7 +18,8 @@ El acceso vive en `SistemaTienda.Infrastructure/Database.cs` (`DatabaseTools`). 
 - **v9** - agrega `MetodoPago` (texto, vacío para los pagos anteriores) y `MovimientoCajaId` (nullable) a `PagosProveedor`. Los pagos en efectivo registrados desde esta versión generan un retiro en `MovimientosCaja` en la misma transacción; los demás métodos no tocan la caja.
 - **v10** — agrega `Activo INTEGER NOT NULL DEFAULT 1` a `ClientesFiado` y `Proveedores`; las cuentas existentes quedan activas y conservan saldos e historial.
 - **v11** — crea `CorteCajaDesglose` con índice por corte, restricción única por denominación y disparadores que impiden `UPDATE` y `DELETE`. Los cortes anteriores solo tienen el total contado y no se reconstruyen.
-- **v12** — agrega `Ventas.EfectivoRecibido` (`INTEGER`, nullable) para reconstruir el cambio al reimprimir. Las ventas con tarjeta, fiado o mixto y las anteriores a la v12 quedan en `NULL`.
+- **v12** - agrega `Ventas.EfectivoRecibido` (`INTEGER`, nullable) para reconstruir el cambio al reimprimir. Las ventas con tarjeta, fiado o mixto y las anteriores a la v12 quedan en `NULL`.
+- **v13** - crea `ComprasProveedor` y `CompraProveedorLineas`, inmutables, con índices por proveedor, fecha y producto. El encabezado guarda saldo antes/después y los renglones congelan cantidad, costo e importe. Una compra aumenta el stock, actualiza el costo del catálogo y suma al saldo del proveedor en una transacción; el pago se registra después.
 - Una base nueva se crea directamente en la versión máxima (`Migraciones.VersionMaxima`): no se crea respaldo previo porque aún no hay datos.
 - `MigradorEsquema.Migrar()` se ejecuta dentro de `InicializarBaseDeDatos()` al arrancar:
   1. Lee `user_version`; si la base es más nueva que la app, aborta sin tocar nada.
@@ -217,6 +218,40 @@ Historial inmutable de pagos a proveedores (migración v8, ampliado en v9). Se i
 
 El pago en efectivo inserta el retiro en `MovimientosCaja` antes de guardar el pago (la fila de `PagosProveedor` es inmutable) y ambos quedan en la misma transacción que actualiza el saldo. El estado de cuenta usa `Proveedores.SaldoPendiente` como fuente de verdad para el saldo y el historial solo para los pagos.
 
+### ComprasProveedor
+
+Cabecera inmutable de una compra a crédito (migración v13). Se inserta en la misma transacción que las entradas de inventario, el costo del catálogo y el aumento de `Proveedores.SaldoPendiente`.
+
+| Columna | Tipo | Notas |
+|---------|------|-------|
+| Id | INTEGER PK | Folio interno |
+| ProveedorId | INTEGER FK → Proveedores | |
+| Fecha | DATETIME | Hora local |
+| Usuario | TEXT | Quien registró la compra |
+| Total | INTEGER | Centavos; suma de los renglones |
+| Observaciones | TEXT | Opcional |
+| SaldoAnterior | INTEGER | Saldo del proveedor antes de la compra |
+| SaldoNuevo | INTEGER | `SaldoAnterior + Total` |
+
+Los disparadores `TR_ComprasProveedor_NoUpdate` y `TR_ComprasProveedor_NoDelete` impiden modificar o borrar la compra. El pago se registra después con `PagosProveedor`.
+
+### CompraProveedorLineas
+
+Renglones inmutables de una compra (migración v13), con cantidad, costo e importe congelados. `TR_CompraProveedorLineas_NoUpdate` y `TR_CompraProveedorLineas_NoDelete` rechazan cambios y borrados.
+
+| Columna | Tipo | Notas |
+|---------|------|-------|
+| Id | INTEGER PK | |
+| CompraId | INTEGER FK → ComprasProveedor | |
+| ProductoId | INTEGER FK → Productos | |
+| CodigoBarras | TEXT | Copia al momento de comprar |
+| Nombre | TEXT | Copia al momento de comprar |
+| Cantidad | INTEGER | Unidades recibidas; > 0 |
+| CostoUnitario | INTEGER | Centavos; último costo que se aplica al catálogo |
+| Importe | INTEGER | `Cantidad × CostoUnitario` |
+
+Cada renglón inserta un movimiento `Entrada` con el motivo `Compra proveedor #<folio>` y actualiza `Productos.Costo` al último costo. El stock es la suma de movimientos; la columna `Productos.Stock` se mantiene como caché en la misma transacción.
+
 ### AbonosFiado
 
 Historial inmutable de pagos de clientes con fiado (migración v3). Se inserta en la misma transacción que descuenta `ClientesFiado.SaldoActual`.
@@ -338,7 +373,7 @@ Si `Diferencia ≠ 0` y `Observaciones` está vacía, la operación se rechaza y
 
 ## Índices
 
-`Productos(CodigoBarras)`, `Productos(Nombre)`, `Productos(Stock)`, `MovimientoInventario(ProductoId)`, `MovimientoInventario(Fecha)`, `Gastos(Fecha)`, `ClientesFiado(Nombre)`, `Proveedores(Nombre)`, `PagosProveedor(ProveedorId)`, `PagosProveedor(Fecha)`, `Ventas(Fecha)`, `VentaLineas(VentaId)`, `VentaLineas(ProductoId)`, `CortesCaja(Hasta)`, `CorteCajaDesglose(CorteCajaId)`, `MovimientosCaja(Fecha)`, `AbonosFiado(Fecha)`, `AbonosFiado(ClienteId)`, `AnulacionesVenta(Fecha)` (además de los índices únicos implícitos en `VentaId`, `PagosProveedor` y la pareja `CorteCajaId, ValorCentavos`).
+`Productos(CodigoBarras)`, `Productos(Nombre)`, `Productos(Stock)`, `MovimientoInventario(ProductoId)`, `MovimientoInventario(Fecha)`, `Gastos(Fecha)`, `ClientesFiado(Nombre)`, `Proveedores(Nombre)`, `PagosProveedor(ProveedorId)`, `PagosProveedor(Fecha)`, `ComprasProveedor(ProveedorId)`, `ComprasProveedor(Fecha)`, `CompraProveedorLineas(CompraId)`, `CompraProveedorLineas(ProductoId)`, `Ventas(Fecha)`, `VentaLineas(VentaId)`, `VentaLineas(ProductoId)`, `CortesCaja(Hasta)`, `CorteCajaDesglose(CorteCajaId)`, `MovimientosCaja(Fecha)`, `AbonosFiado(Fecha)`, `AbonosFiado(ClienteId)`, `AnulacionesVenta(Fecha)` (además de los índices únicos implícitos en `VentaId`, `PagosProveedor` y la pareja `CorteCajaId, ValorCentavos`).
 
 ## Notas de tipado
 

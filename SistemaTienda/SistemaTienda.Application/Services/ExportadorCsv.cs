@@ -102,10 +102,30 @@ public static class ExportadorCsv
             Fila("Clave", proveedor.Clave),
             Fila("Telefono", proveedor.Telefono),
             Fila("Saldo pendiente", Importe(estado.SaldoPendiente)),
+            Fila("Total comprado", Importe(estado.TotalComprado)),
             Fila("Total pagado", Importe(estado.TotalPagado)),
             string.Empty,
-            "Fecha,Metodo,Usuario,Monto,Saldo despues"
+            "Compras",
+            "Fecha,Compra,Detalle,Usuario,Monto,Saldo despues"
         };
+
+        foreach (var compra in estado.Compras.OrderByDescending(c => c.Fecha))
+        {
+            var detalle = compra.Lineas.Count == 1
+                ? $"{compra.Lineas[0].Nombre} x{compra.Lineas[0].Cantidad}"
+                : $"{compra.Lineas.Count} productos";
+            lineas.Add(string.Join(",",
+                Campo(compra.Fecha.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)),
+                Campo($"Compra #{compra.Id}"),
+                Campo(detalle),
+                Campo(compra.Usuario),
+                Campo(Importe(compra.Total)),
+                Campo(Importe(compra.SaldoNuevo))));
+        }
+
+        lineas.Add(string.Empty);
+        lineas.Add("Pagos");
+        lineas.Add("Fecha,Metodo,Usuario,Monto,Saldo despues");
 
         foreach (var pago in estado.Pagos.OrderByDescending(p => p.Fecha))
         {

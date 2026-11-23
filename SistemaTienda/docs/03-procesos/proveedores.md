@@ -144,7 +144,6 @@ Opción 7 en el menú principal abre el submenú de Proveedores y Cuentas por Pa
 
 ### 7.5.4. Limitaciones del MVP
 - No hay catálogo de productos por proveedor (relación Many-to-Many pendiente)
-- No hay historial detallado de compras por proveedor (solo saldo actual)
 - No hay generación automática de órdenes de compra
 - No hay términos de pago automáticos (fechas de vencimiento)
 - Los saldos son informativos y no tienen consecuencias legales dentro del sistema
@@ -159,6 +158,12 @@ Registrar en BD: Nombre, Clave, Teléfono, Dirección, Saldo=0
 Proveedor aparece en lista disponible
     ↓
 Seleccionar proveedor al registrar compra/entrada
+    ↓
+Registrar compra con productos, cantidades y costos
+    ↓
+Stock aumentado y costo del catálogo actualizado al último costo
+    ↓
+Saldo pendiente aumentado: NuevoSaldo = SaldoActual + TotalCompra
     ↓
 Actualizar saldo pendiente al registrar pago
     ↓
@@ -175,19 +180,19 @@ Reporte de proveedores muestra saldos actualizados
 - No hay límites de crédito personalizados por proveedor
 - No hay cálculo de intereses automáticos
 - No hay recordatorios automáticos por correo/SMS
-- No hay historial detallado de compras por proveedor (solo saldo actual); el historial de pagos llegó con T23 y el método con retiro de caja en T25
+- El historial de compras llegó con T39 (esquema v13); el de pagos con T23 y el método con retiro de caja en T25
 - Los saldos son informativos y no tienen consecuencias legales dentro del sistema
 - No hay clasificación de proveedores (por categoría, confianza, etc.)
 
 ---
 
-**Estado actual (2026-11-12)**: base implementada en consola y app MAUI (T19 y T23).
+**Estado actual (2026-11-22)**: base implementada en consola y app MAUI (T19, T23, T25 y T39).
 
 - *Implementado*: alta con nombre obligatorio y saldo inicial opcional; directorio ordenado por nombre; en la app, búsqueda por nombre, clave o teléfono sin distinguir mayúsculas ni acentos y filtro **Con saldo**; pago que descuenta el saldo con el permiso `PagarProveedor` para dueño y encargado. El alta y el pago dejan registro en la bitácora (`Proveedor` y `PagoProveedor`). **T23** agregó el esquema v8 con `PagosProveedor` inmutable (monto, fecha, usuario y saldo antes/después) y guarda el pago y el saldo en una sola transacción; el estado de cuenta muestra saldo pendiente, total pagado e historial; **Editar datos** (nombre, clave, teléfono y dirección) solo para dueño y encargado con permiso `EditarProveedor`, bitácora y sin tocar el saldo. **T25** agregó el esquema v9 con `MetodoPago` y `MovimientoCajaId`: el pago pide método (Efectivo, Tarjeta, Transferencia u Otro), el efectivo genera un retiro de caja atómico con el motivo `Pago a proveedor: <nombre>` y el método aparece en el estado de cuenta. 12 pruebas nuevas en `PagoProveedorMetodoTests`; total del proyecto: 246.
 - *Desviaciones del diseño*: los métodos que no son efectivo no entran al corte porque no mueven efectivo. La consola pregunta el método, pero no muestra el estado de cuenta. Los pagos anteriores a la migración v8 no aparecen en el historial y los anteriores a v9 se muestran sin método ni movimiento de caja.
 - *Implementado*: `DetectarDuplicadosProveedor` compara nombre y clave sin distinguir mayúsculas, acentos ni espacios repetidos. En altas y ediciones, la app y la consola advierten coincidencias y permiten continuar explícitamente; la clave vacía no se considera coincidencia.
 - *Implementado (T27)*: migración v10 con `Proveedores.Activo`; el dueño puede dar de baja o reactivar desde MAUI, con confirmación, permiso y bitácora. Las cuentas inactivas conservan saldo e historial y permiten registrar pagos para liquidarlas.
-- *Pendiente*: compras por proveedor.
-- *Implementado (T31)*: el estado de cuenta se exporta a CSV desde la app con **Exportar CSV**; incluye datos del proveedor, saldo, total pagado e historial de pagos con método, usuario y saldo después. Ver [deuda-tecnica.md](../deuda-tecnica.md).
-- *Implementado (T36)*: el estado de cuenta también se genera como PDF con **Exportar PDF**, listo para abrir o imprimir con cualquier lector; conserva saldo, total pagado e historial de pagos.
-- *Verificación*: compilación y 252 pruebas en verde en local el 2026-11-12; la verificación manual de la pantalla en Windows y Android quedó pendiente porque el entorno de desarrollo no permitió abrir la GUI.
+- *Implementado (T39)*: esquema **v13** con `ComprasProveedor` y `CompraProveedorLineas` inmutables. Una compra a crédito con detalle aumenta el stock con movimientos de entrada, actualiza el costo del catálogo al último costo y suma el total al saldo del proveedor en una sola transacción; el pago se registra después. La app permite buscar productos, armar renglones y ver el total; el estado de cuenta muestra **Comprado** y mezcla compras y pagos. Permiso `RegistrarCompra` para dueño y encargado, bitácora `CompraProveedor`; no se permiten compras a proveedores o productos inactivos.
+- *Implementado (T31)*: el estado de cuenta se exporta a CSV desde la app con **Exportar CSV**; incluye datos del proveedor, saldo, total comprado, total pagado e historial de compras y pagos con método, usuario y saldo después. Ver [deuda-tecnica.md](../deuda-tecnica.md).
+- *Implementado (T36)*: el estado de cuenta también se genera como PDF con **Exportar PDF**, listo para abrir o imprimir con cualquier lector; conserva saldo, totales e historial de compras y pagos.
+- *Verificación*: compilación y 354 pruebas en verde en local el 2026-11-22; la compra se verificó en Windows el mismo día y queda pendiente en Android.

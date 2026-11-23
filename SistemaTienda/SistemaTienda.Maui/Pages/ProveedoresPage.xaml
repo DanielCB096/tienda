@@ -268,7 +268,7 @@
                     HorizontalOptions="Fill"
                     VerticalOptions="Fill"
                     MaximumWidthRequest="640">
-                <Grid RowDefinitions="Auto,Auto,Auto,*,Auto,Auto" RowSpacing="10">
+                <Grid RowDefinitions="Auto,Auto,Auto,*,Auto,Auto,Auto" RowSpacing="10">
                     <VerticalStackLayout Spacing="1">
                         <Label Text="Estado de cuenta" FontSize="22" FontAttributes="Bold" />
                         <Label x:Name="EstadoProveedorLabel" FontAttributes="Bold" FontSize="17" />
@@ -276,17 +276,21 @@
                     </VerticalStackLayout>
 
                     <Border Grid.Row="1" Style="{StaticResource Tarjeta}" Padding="14">
-                        <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
+                        <Grid ColumnDefinitions="*,*,*,*" ColumnSpacing="8">
                             <VerticalStackLayout Spacing="0">
-                                <Label Text="SALDO PENDIENTE" Style="{StaticResource EtiquetaSeccion}" />
-                                <Label x:Name="EstadoSaldoLabel" Text="$0.00" FontSize="22" FontAttributes="Bold" />
+                                <Label Text="SALDO" Style="{StaticResource EtiquetaSeccion}" />
+                                <Label x:Name="EstadoSaldoLabel" Text="$0.00" FontSize="18" FontAttributes="Bold" />
                             </VerticalStackLayout>
                             <VerticalStackLayout Grid.Column="1" Spacing="0">
                                 <Label Text="PAGADO" Style="{StaticResource EtiquetaSeccion}" />
-                                <Label x:Name="EstadoPagadoLabel" Text="$0.00" FontSize="18" FontAttributes="Bold"
+                                <Label x:Name="EstadoPagadoLabel" Text="$0.00" FontSize="16" FontAttributes="Bold"
                                        TextColor="#2E6B4F" />
                             </VerticalStackLayout>
                             <VerticalStackLayout Grid.Column="2" Spacing="0">
+                                <Label Text="COMPRADO" Style="{StaticResource EtiquetaSeccion}" />
+                                <Label x:Name="EstadoCompradoLabel" Text="$0.00" FontSize="16" FontAttributes="Bold" />
+                            </VerticalStackLayout>
+                            <VerticalStackLayout Grid.Column="3" Spacing="0">
                                 <Label Text="PAGOS" Style="{StaticResource EtiquetaSeccion}" />
                                 <Label x:Name="EstadoNumeroPagosLabel" Text="0" FontSize="18" FontAttributes="Bold" />
                             </VerticalStackLayout>
@@ -334,7 +338,7 @@
                         </RefreshView>
                     </Grid>
 
-                    <Grid Grid.Row="4" ColumnDefinitions="*,*,*" ColumnSpacing="10" Margin="0,4,0,0">
+                    <Grid Grid.Row="4" ColumnDefinitions="*,*" ColumnSpacing="10" Margin="0,4,0,0">
                         <Button x:Name="EditarProveedorButton"
                                 Text="Editar datos"
                                 Style="{StaticResource BotonSecundario}"
@@ -344,13 +348,20 @@
                                 Text="Pagar"
                                 Style="{StaticResource BotonSecundario}"
                                 Clicked="OnPagarDesdeEstadoClicked" />
-                        <Button Grid.Column="2"
+                    </Grid>
+
+                    <Grid Grid.Row="5" ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <Button x:Name="CompraDesdeEstadoButton"
+                                Text="Registrar compra"
+                                Style="{StaticResource BotonSecundario}"
+                                Clicked="OnCompraDesdeEstadoClicked" />
+                        <Button Grid.Column="1"
                                 Text="Cerrar"
                                 Style="{StaticResource BotonPrincipal}"
                                 Clicked="OnCerrarEstadoClicked" />
                     </Grid>
 
-                    <Grid Grid.Row="5" ColumnDefinitions="*,*" ColumnSpacing="10">
+                    <Grid Grid.Row="6" ColumnDefinitions="*,*" ColumnSpacing="10">
                         <Button Text="Exportar CSV"
                                 Style="{StaticResource BotonSecundario}"
                                 Clicked="OnExportarEstadoClicked" />
@@ -420,6 +431,176 @@
                         </Grid>
                     </VerticalStackLayout>
                 </ScrollView>
+            </Border>
+        </Grid>
+
+        <Grid x:Name="CompraOverlay"
+              IsVisible="False"
+              BackgroundColor="#99000000"
+              Padding="16"
+              ZIndex="12">
+            <Border Style="{StaticResource Tarjeta}"
+                    Padding="18"
+                    HorizontalOptions="Fill"
+                    VerticalOptions="Fill"
+                    MaximumWidthRequest="640">
+                <Grid RowDefinitions="Auto,Auto,Auto,Auto,*,Auto,Auto,Auto,Auto" RowSpacing="8">
+                    <VerticalStackLayout Spacing="1">
+                        <Label Text="Registrar compra" FontSize="22" FontAttributes="Bold" />
+                        <Label x:Name="CompraProveedorLabel" FontAttributes="Bold" FontSize="16" />
+                        <Label Text="La compra aumenta el stock, actualiza el costo del catálogo y se suma al saldo del proveedor."
+                               Style="{StaticResource TextoNota}" />
+                    </VerticalStackLayout>
+
+                    <Grid Grid.Row="1" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <Entry x:Name="CompraBuscarEntry"
+                               Style="{StaticResource CampoTexto}"
+                               Placeholder="Código o nombre del producto"
+                               Completed="OnCompraBuscarCompleted" />
+                        <Button Grid.Column="1"
+                                Text="Buscar"
+                                Style="{StaticResource BotonSecundario}"
+                                Clicked="OnBuscarProductosCompraClicked" />
+                    </Grid>
+
+                    <Border x:Name="CompraResultadosBorder"
+                            Grid.Row="2"
+                            IsVisible="False"
+                            Style="{StaticResource Tarjeta}"
+                            Padding="8"
+                            MaximumHeightRequest="190">
+                        <CollectionView x:Name="ListaProductosCompra" SelectionMode="None">
+                            <CollectionView.EmptyView>
+                                <Label Text="Sin productos activos que coincidan."
+                                       Style="{StaticResource TextoNota}"
+                                       HorizontalTextAlignment="Center"
+                                       Margin="0,12" />
+                            </CollectionView.EmptyView>
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate x:DataType="models:ProductoCompraFila">
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Padding="0,6">
+                                        <VerticalStackLayout Spacing="0">
+                                            <Label Text="{Binding Nombre}" FontAttributes="Bold" FontSize="14" />
+                                            <Label Text="{Binding Codigo}" Style="{StaticResource TextoNota}" />
+                                            <Label Text="{Binding Stock}" Style="{StaticResource TextoNota}" />
+                                        </VerticalStackLayout>
+                                        <Button Grid.Column="1"
+                                                Text="Agregar"
+                                                Style="{StaticResource BotonSecundario}"
+                                                HeightRequest="36"
+                                                CommandParameter="{Binding Id}"
+                                                Clicked="OnAgregarProductoCompraClicked" />
+                                    </Grid>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </Border>
+
+                    <Border x:Name="CompraLineaPanel"
+                            Grid.Row="3"
+                            IsVisible="False"
+                            Style="{StaticResource Aviso}"
+                            Padding="12">
+                        <VerticalStackLayout Spacing="6">
+                            <Label x:Name="CompraProductoLabel" FontAttributes="Bold" FontSize="14" />
+                            <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                                <VerticalStackLayout Spacing="1">
+                                    <Label Text="Cantidad" Style="{StaticResource EtiquetaSeccion}" />
+                                    <Entry x:Name="CompraCantidadEntry"
+                                           Style="{StaticResource CampoTexto}"
+                                           Keyboard="Numeric"
+                                           Text="1" />
+                                </VerticalStackLayout>
+                                <VerticalStackLayout Grid.Column="1" Spacing="1">
+                                    <Label Text="Costo unitario ($)" Style="{StaticResource EtiquetaSeccion}" />
+                                    <Entry x:Name="CompraCostoEntry"
+                                           Style="{StaticResource CampoTexto}"
+                                           Keyboard="Numeric" />
+                                </VerticalStackLayout>
+                            </Grid>
+                            <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                                <Button Text="Añadir renglón"
+                                        Style="{StaticResource BotonPrincipal}"
+                                        HeightRequest="38"
+                                        Clicked="OnConfirmarLineaCompraClicked" />
+                                <Button Grid.Column="1"
+                                        Text="Cancelar"
+                                        Style="{StaticResource BotonSecundario}"
+                                        HeightRequest="38"
+                                        Clicked="OnCancelarLineaCompraClicked" />
+                            </Grid>
+                        </VerticalStackLayout>
+                    </Border>
+
+                    <Grid Grid.Row="4" RowDefinitions="Auto,*" RowSpacing="4">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <Label Text="RENGLONES DE LA COMPRA" Style="{StaticResource EtiquetaSeccion}" />
+                            <Label x:Name="CompraRenglonesLabel"
+                                   Grid.Column="1"
+                                   Style="{StaticResource TextoNota}"
+                                   HorizontalTextAlignment="End" />
+                        </Grid>
+                        <CollectionView x:Name="ListaLineasCompra" Grid.Row="1" SelectionMode="None">
+                            <CollectionView.EmptyView>
+                                <Label Text="Busca un producto y usa Agregar para armar la compra."
+                                       Style="{StaticResource TextoNota}"
+                                       HorizontalTextAlignment="Center"
+                                       Margin="0,20" />
+                            </CollectionView.EmptyView>
+                            <CollectionView.ItemTemplate>
+                                <DataTemplate x:DataType="models:LineaCompraFila">
+                                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8" Padding="0,6">
+                                        <VerticalStackLayout Spacing="1">
+                                            <Label Text="{Binding Nombre}" FontAttributes="Bold" FontSize="14" />
+                                            <Label Text="{Binding Detalle}" Style="{StaticResource TextoNota}" />
+                                        </VerticalStackLayout>
+                                        <Label Grid.Column="1"
+                                               Text="{Binding Importe}"
+                                               FontAttributes="Bold"
+                                               FontSize="14"
+                                               VerticalOptions="Center" />
+                                        <Button Grid.Column="2"
+                                                Text="Quitar"
+                                                Style="{StaticResource BotonSecundario}"
+                                                HeightRequest="34"
+                                                CommandParameter="{Binding ProductoId}"
+                                                Clicked="OnQuitarLineaCompraClicked" />
+                                    </Grid>
+                                </DataTemplate>
+                            </CollectionView.ItemTemplate>
+                        </CollectionView>
+                    </Grid>
+
+                    <Grid Grid.Row="5" ColumnDefinitions="*,Auto">
+                        <Label Text="Total de la compra" FontAttributes="Bold" FontSize="16" />
+                        <Label x:Name="CompraTotalLabel"
+                               Grid.Column="1"
+                               Text="$0.00"
+                               FontAttributes="Bold"
+                               FontSize="18" />
+                    </Grid>
+
+                    <Entry x:Name="CompraObservacionesEntry"
+                           Grid.Row="6"
+                           Style="{StaticResource CampoTexto}"
+                           Placeholder="Observaciones (opcional)" />
+
+                    <Label x:Name="CompraErrorLabel"
+                           Grid.Row="7"
+                           Style="{StaticResource Error}"
+                           IsVisible="False" />
+
+                    <Grid Grid.Row="8" ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <Button x:Name="GuardarCompraButton"
+                                Text="Guardar compra"
+                                Style="{StaticResource BotonPrincipal}"
+                                Clicked="OnGuardarCompraClicked" />
+                        <Button Grid.Column="1"
+                                Text="Cancelar"
+                                Style="{StaticResource BotonSecundario}"
+                                Clicked="OnCancelarCompraClicked" />
+                    </Grid>
+                </Grid>
             </Border>
         </Grid>
     </Grid>

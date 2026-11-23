@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.Globalization;
 using SistemaTienda.Application.Services;
 using SistemaTienda.Core;
@@ -20,20 +21,26 @@ public partial class ProveedoresPage : ContentPage
     private static readonly Color ColorPrimario = Color.FromArgb("#2E6B4F");
 
     private readonly ConfiguracionService _config;
+    private readonly InventoryService _inventario;
     private readonly SesionApp _sesion;
     private static readonly List<string> MetodosPago = new(MetodoPagoProveedor.Todos);
+    private readonly ObservableCollection<LineaCompraFila> _lineasCompra = new();
     private FiltroProveedores _filtro;
     private ProveedorFila? _proveedorPago;
     private ProveedorFila? _proveedorEstado;
     private EstadoCuentaProveedor? _estadoActual;
+    private Producto? _productoCompra;
 
-    public ProveedoresPage(ConfiguracionService config, SesionApp sesion)
+    public ProveedoresPage(ConfiguracionService config, InventoryService inventario,
+        SesionApp sesion)
     {
         InitializeComponent();
         _config = config;
+        _inventario = inventario;
         _sesion = sesion;
         PagoMetodoPicker.ItemsSource = MetodosPago;
         PagoMetodoPicker.SelectedIndex = 0;
+        ListaLineasCompra.ItemsSource = _lineasCompra;
     }
 
     protected override void OnAppearing()
@@ -310,11 +317,31 @@ public partial class ProveedoresPage : ContentPage
         EstadoSaldoLabel.Text = Formato.Moneda(estado.SaldoPendiente);
         EstadoSaldoLabel.TextColor = estado.SaldoPendiente > 0 ? ColorSaldo : ColorAlDia;
         EstadoPagadoLabel.Text = Formato.Moneda(estado.TotalPagado);
+        EstadoCompradoLabel.Text = Formato.Moneda(estado.TotalComprado);
         EstadoNumeroPagosLabel.Text = estado.Pagos.Count == 1
             ? "1"
             : estado.Pagos.Count.ToString(CultureInfo.InvariantCulture);
 
-        var movimientos = estado.Pagos.Select(p => new EstadoCuentaProveedorFila
+        var movimientos = new List<EstadoCuentaProveedorFila>();
+
+        foreach (var compra in estado.Compras)
+        {
+            var detalle = compra.Lineas.Count == 1
+                ? $"{compra.Lineas[0].Nombre}: {compra.Lineas[0].Cantidad} x {Formato.Moneda(compra.Lineas[0].CostoUnitario)}"
+                : $"{compra.Lineas.Count} productos" +
+                  (string.IsNullOrWhiteSpace(compra.Observaciones) ? string.Empty : $" · {compra.Observaciones}");
+            movimientos.Add(new EstadoCuentaProveedorFila
+            {
+                FechaOrden = compra.Fecha,
+                Fecha = Formato.FechaHora(compra.Fecha),
+                Tipo = $"Compra #{compra.Id}",
+                Detalle = detalle,
+                Monto = Formato.MonedaConSigno(compra.Total),
+                MontoColor = ColorSaldo
+            });
+        }
+
+        movimientos.AddRange(estado.Pagos.Select(p => new EstadoCuentaProveedorFila
         {
             FechaOrden = p.Fecha,
             Fecha = Formato.FechaHora(p.Fecha),
@@ -322,7 +349,9 @@ public partial class ProveedoresPage : ContentPage
             Detalle = DetallePago(p),
             Monto = Formato.MonedaConSigno(-p.Monto),
             MontoColor = ColorAlDia
-        }).ToList();
+        }));
+
+        movimientos = movimientos.OrderByDescending(m => m.FechaOrden).ToList();
 
         ListaMovimientos.ItemsSource = movimientos;
         EstadoMovimientosLabel.Text = movimientos.Count == 1
@@ -335,6 +364,9 @@ public partial class ProveedoresPage : ContentPage
         PagarDesdeEstadoButton.IsVisible = _sesion.Usuario != null &&
             AutorizacionService.Puede(_sesion.Usuario, PermisoSistema.PagarProveedor) &&
             estado.SaldoPendiente > 0;
+        CompraDesdeEstadoButton.IsVisible = _sesion.Usuario != null &&
+            AutorizacionService.Puede(_sesion.Usuario, PermisoSistema.RegistrarCompra) &&
+            estado.Proveedor.Activo;
 
         EstadoOverlay.IsVisible = true;
     }
@@ -385,6 +417,226 @@ public partial class ProveedoresPage : ContentPage
         {
             await DisplayAlertAsync("No se pudo exportar", ex.Message, "Continuar");
         }
+    }
+
+    private void OnCompraDesdeEstadoClicked(object sender, EventArgs e)
+    {
+        if (_estadoActual == null)
+            return;
+
+        if (_sesion.Usuario == null ||
+            !AutorizacionService.Puede(_sesion.Usuario, PermisoSistema.RegistrarCompra))
+        {
+            _ = DisplayAlertAsync("Sin permiso", "Tu rol no permite registrar compras.", "Continuar");
+            return;
+        }
+
+        _sesion.Aplicar();
+        _lineasCompra.Clear();
+        _productoCompra = null;
+        CompraProveedorLabel.Text = _estadoActual.Proveedor.Nombre;
+        CompraBuscarEntry.Text = string.Empty;
+        CompraObservacionesEntry.Text = string.Empty;
+        CompraErrorLabel.IsVisible = false;
+        CompraLineaPanel.IsVisible = false;
+        ActualizarTotalCompra();
+        CompraOverlay.IsVisible = true;
+        BuscarProductosCompra();
+    }
+
+    private void OnCompraBuscarCompleted(object sender, EventArgs e) =>
+        BuscarProductosCompra();
+
+    private void OnBuscarProductosCompraClicked(object sender, EventArgs e) =>
+        BuscarProductosCompra();
+
+    private void BuscarProductosCompra()
+    {
+        _sesion.Aplicar();
+        var texto = CompraBuscarEntry.Text?.Trim() ?? string.Empty;
+        var productos = string.IsNullOrWhiteSpace(texto)
+            ? _inventario.ObtenerProductos()
+                .Where(p => p.Activo)
+                .OrderBy(p => p.Nombre)
+                .Take(40)
+                .ToList()
+            : _inventario.BuscarPorNombre(texto, soloActivos: true);
+
+        ListaProductosCompra.ItemsSource = productos.Select(p => new ProductoCompraFila
+        {
+            Id = p.Id,
+            Nombre = p.Nombre,
+            Codigo = string.IsNullOrWhiteSpace(p.CodigoBarras) ? "Sin código" : p.CodigoBarras,
+            Stock = $"Stock actual: {p.Stock} · Costo: {Formato.Moneda(p.Costo)}",
+            Costo = Formato.Moneda(p.Costo)
+        }).ToList();
+
+        CompraResultadosBorder.IsVisible = true;
+    }
+
+    private void OnAgregarProductoCompraClicked(object sender, EventArgs e)
+    {
+        if (sender is not Button { CommandParameter: not null } boton)
+            return;
+
+        int productoId;
+        try
+        {
+            productoId = Convert.ToInt32(boton.CommandParameter, CultureInfo.InvariantCulture);
+        }
+        catch (Exception)
+        {
+            return;
+        }
+
+        if (_lineasCompra.Any(l => l.ProductoId == productoId))
+        {
+            MostrarErrorCompra("Ese producto ya está en la compra; quítalo antes de volver a agregarlo.");
+            return;
+        }
+
+        var producto = _inventario.BuscarPorId(productoId);
+        if (producto == null || !producto.Activo)
+        {
+            MostrarErrorCompra("El producto no está disponible para comprar.");
+            return;
+        }
+
+        _productoCompra = producto;
+        CompraProductoLabel.Text = $"{producto.Nombre} · stock {producto.Stock}";
+        CompraCantidadEntry.Text = "1";
+        CompraCostoEntry.Text = (producto.Costo / 100m).ToString("0.00", CultureInfo.InvariantCulture);
+        CompraErrorLabel.IsVisible = false;
+        CompraResultadosBorder.IsVisible = false;
+        CompraLineaPanel.IsVisible = true;
+    }
+
+    private void OnConfirmarLineaCompraClicked(object sender, EventArgs e)
+    {
+        if (_productoCompra == null)
+            return;
+
+        if (!int.TryParse(CompraCantidadEntry.Text, NumberStyles.Integer,
+                CultureInfo.InvariantCulture, out var cantidad) || cantidad <= 0)
+        {
+            MostrarErrorCompra("La cantidad debe ser un entero mayor a cero.");
+            return;
+        }
+
+        var costo = LeerCentavos(CompraCostoEntry.Text);
+        if (!costo.HasValue)
+        {
+            MostrarErrorCompra("El costo unitario debe ser un monto válido.");
+            return;
+        }
+
+        var importe = cantidad * costo.Value;
+        _lineasCompra.Add(new LineaCompraFila
+        {
+            ProductoId = _productoCompra.Id,
+            Nombre = _productoCompra.Nombre,
+            Detalle = $"{cantidad} x {Formato.Moneda(costo.Value)}",
+            Importe = Formato.Moneda(importe),
+            ImporteCentavos = importe,
+            Cantidad = cantidad,
+            CostoUnitario = costo.Value
+        });
+
+        _productoCompra = null;
+        CompraLineaPanel.IsVisible = false;
+        CompraErrorLabel.IsVisible = false;
+        ActualizarTotalCompra();
+    }
+
+    private void OnCancelarLineaCompraClicked(object sender, EventArgs e)
+    {
+        _productoCompra = null;
+        CompraLineaPanel.IsVisible = false;
+        CompraErrorLabel.IsVisible = false;
+    }
+
+    private void OnQuitarLineaCompraClicked(object sender, EventArgs e)
+    {
+        if (sender is not Button { CommandParameter: not null } boton)
+            return;
+
+        if (!int.TryParse(boton.CommandParameter.ToString(), out var productoId))
+            return;
+
+        var linea = _lineasCompra.FirstOrDefault(l => l.ProductoId == productoId);
+        if (linea != null)
+            _lineasCompra.Remove(linea);
+
+        ActualizarTotalCompra();
+    }
+
+    private void ActualizarTotalCompra()
+    {
+        var total = _lineasCompra.Sum(l => l.ImporteCentavos);
+        CompraTotalLabel.Text = Formato.Moneda(total);
+        CompraRenglonesLabel.Text = _lineasCompra.Count == 1
+            ? "1 renglón"
+            : $"{_lineasCompra.Count} renglones";
+    }
+
+    private async void OnGuardarCompraClicked(object sender, EventArgs e)
+    {
+        if (_proveedorEstado == null)
+            return;
+
+        if (_lineasCompra.Count == 0)
+        {
+            MostrarErrorCompra("Agrega al menos un producto a la compra.");
+            return;
+        }
+
+        GuardarCompraButton.IsEnabled = false;
+        try
+        {
+            _sesion.Aplicar();
+            var lineas = _lineasCompra.Select(l => new LineaCompraSolicitada
+            {
+                ProductoId = l.ProductoId,
+                Cantidad = l.Cantidad,
+                CostoUnitario = l.CostoUnitario
+            }).ToList();
+
+            var resultado = _config.RegistrarCompraProveedor(
+                _proveedorEstado.Id, lineas, CompraObservacionesEntry.Text);
+
+            if (resultado.IsError)
+            {
+                MostrarErrorCompra(resultado.Message);
+                return;
+            }
+
+            CompraOverlay.IsVisible = false;
+            _lineasCompra.Clear();
+            ActualizarTotalCompra();
+            AbrirEstadoCuenta();
+            Cargar();
+            await DisplayAlertAsync("Compra registrada",
+                $"{resultado.Message}. Stock y saldo actualizados.", "Continuar");
+        }
+        finally
+        {
+            GuardarCompraButton.IsEnabled = true;
+        }
+    }
+
+    private void OnCancelarCompraClicked(object sender, EventArgs e)
+    {
+        CompraOverlay.IsVisible = false;
+        CompraLineaPanel.IsVisible = false;
+        _productoCompra = null;
+        _lineasCompra.Clear();
+        ActualizarTotalCompra();
+    }
+
+    private void MostrarErrorCompra(string mensaje)
+    {
+        CompraErrorLabel.Text = mensaje;
+        CompraErrorLabel.IsVisible = true;
     }
 
     private void OnEditarProveedorClicked(object sender, EventArgs e)

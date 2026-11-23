@@ -67,6 +67,8 @@ public class EstadoCuentaProveedor
 {
     public Proveedor Proveedor { get; set; } = new();
     public List<PagoProveedor> Pagos { get; set; } = new();
+    public List<CompraProveedor> Compras { get; set; } = new();
     public long TotalPagado { get; set; }
+    public long TotalComprado { get; set; }
     public long SaldoPendiente { get; set; }
 }
