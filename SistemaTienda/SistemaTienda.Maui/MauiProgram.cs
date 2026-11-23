@@ -32,7 +32,7 @@ public static class MauiProgram
 		builder.Services.AddSingleton<CorteCajaService>();
 		builder.Services.AddSingleton<ReporteUtilidadService>();
 		builder.Services.AddSingleton<RespaldoService>();
-		builder.Services.AddSingleton<SesionApp>();
+		builder.Services.AddSingleton<BitacoraService>();		builder.Services.AddSingleton<SesionApp>();
 		builder.Services.AddSingleton<NavegacionApp>();
 		builder.Services.AddSingleton<ArranqueApp>();
 

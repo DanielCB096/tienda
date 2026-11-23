@@ -92,6 +92,10 @@ Acceso en la app: pestaña **Reportes** (visible para dueño, encargado y emplea
 
 ### 6. Configuración
 
+- **Editar configuración**: solo el dueño; nombre, giro, impuesto, comisión, fondo, fiado, límite y días de respaldo.
+- **Usuarios y PIN**: solo el dueño; alta, nombre, rol y PIN con bitácora.
+- **Auditoría → Ver bitácora**: solo el dueño; últimos 200 movimientos sensibles con usuario, acción, entidad, datos antes/después y motivo; filtros por usuario y acción.
+
 Acceso restringido (PIN de admin). Opciones:
 
 En la app, el dueño entra a **Ajustes → Editar configuración** para cambiar estos datos después del asistente inicial; los cambios quedan en la bitácora.

@@ -1,6 +1,6 @@
 # Roadmap
 
-Estado al 2026-11-22. T1–T40 están integradas en `main` (`725830d`); T41 (IVA incluido) está en `feat/impuesto-incluido`. La suite queda en 367 pruebas. Orden sugerido en [CLAUDE-tienda.md §13](../CLAUDE-tienda.md).
+Estado al 2026-11-22. T1–T41 están integradas o en PR; T41 (IVA incluido) está en `feat/impuesto-incluido` y T42 (bitácora en Ajustes) en `feat/bitacora-ajustes`. La suite queda en 368 pruebas. Orden sugerido en [CLAUDE-tienda.md §13](../CLAUDE-tienda.md).
 
 ## Avance por módulo
 

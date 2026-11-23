@@ -89,6 +89,7 @@ public static class AutorizacionService
         PermisoSistema.RetiroCaja => "registrar retiros de caja",
         PermisoSistema.Configurar => "cambiar la configuración",
         PermisoSistema.GestionarUsuarios => "gestionar usuarios",
+        PermisoSistema.ConsultarBitacora => "consultar la bitácora",
         _ => permiso.ToString()
     };
 }
