@@ -545,7 +545,7 @@ Pendiente de T36: nada; el diálogo de compartir y la apertura del PDF se verifi
 | Producto exento (0 %) | Cubierto por `ImpuestoVentasTests` |
 | Venta anulada excluida del IVA del periodo | Cubierto por `ImpuestoVentasTests` |
 | Migración v13 → v14 con respaldo | Cubierto por `ImpuestoVentasTests` |
-| Repetir en Android 16 | Pendiente |
+| Repetir en Android 16 | Pasó: reporte y ticket mostraron IVA incluido $16.00 |
 
 ## Herramientas de Prueba
 

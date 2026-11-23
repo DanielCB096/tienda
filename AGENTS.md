@@ -441,7 +441,7 @@ El detalle vive en el tablero. Resumen y criterios de terminado:
 - Implementada en `feat/impuesto-incluido` sobre `main`: los precios incluyen impuesto. La venta congela `ImpuestoPorcentaje` e `ImpuestoImporte` por línea (esquema v14) y el total no cambia.
 - `Dinero.ImpuestoIncluido` usa `importe × tasa / (100 + tasa)`; una tasa 0 % queda exenta. El impuesto se muestra en el ticket y el QR, y como dato informativo en Reportes, consola, CSV y PDF; no se resta de la utilidad.
 - 10 pruebas nuevas en `DineroTests`, `TicketServiceTests` e `ImpuestoVentasTests`; la suite pasa **367 pruebas**. Solución y MAUI Windows compilan sin errores ni advertencias.
-- Verificado en Windows el 2026-11-22: venta de $116.00 al 16 % mostró **IVA incluido $16.00** en el reporte y en el ticket. Android pendiente.
+- Verificado en Windows el 2026-11-22: venta de $116.00 al 16 % mostró **IVA incluido $16.00** en el reporte y en el ticket. Verificado también en Android 16 (Redmi Note 13) el 2026-11-22.
 
 ### T7 — Pantallas de operación en MAUI
 

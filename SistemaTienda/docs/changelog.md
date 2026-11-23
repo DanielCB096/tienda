@@ -28,7 +28,7 @@ Próximamente después de completar los módulos críticos.
 - *Agregado*: `Dinero.ImpuestoIncluido` y `BaseSinImpuesto`; `VentaService` calcula el impuesto de cada renglón con la tasa del producto (0 % exento).
 - *Agregado*: el ticket y el QR muestran **IVA incluido**, y el reporte de utilidad lo lista como dato informativo en la app, la consola, el CSV y el PDF. No se resta de la utilidad porque ya está dentro del precio.
 - *Pruebas*: 10 pruebas nuevas en `DineroTests`, `TicketServiceTests` e `ImpuestoVentasTests` (cálculo, exento, reporte, anuladas y migración v13 → v14); la suite pasa **367 pruebas**. Solución y MAUI Windows compilan sin errores ni advertencias.
-- *Verificado*: venta de $116.00 con IVA 16 % mostró **IVA incluido $16.00** en el reporte y en el ticket en Windows.
+- *Verificado*: venta de $116.00 con IVA 16 % mostró **IVA incluido $16.00** en el reporte y en el ticket en Windows; también se verificó en Android 16 el 2026-11-22.
 
 ### v0.0.42 - 2026-11-22: Correcciones de validación y búsqueda
 
