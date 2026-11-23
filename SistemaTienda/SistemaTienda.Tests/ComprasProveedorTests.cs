@@ -1,6 +1,7 @@
 using System.Text;
 using SistemaTienda.Application.Services;
 using SistemaTienda.Core;
+using SistemaTienda.Infrastructure;
 
 namespace SistemaTienda.Tests;
 
@@ -208,5 +209,27 @@ public sealed class ComprasProveedorTests
         Assert.Equal("Proveedor", registro.Entidad);
         Assert.Equal(proveedorId.ToString(), registro.EntidadId);
         Assert.Contains("Total=22.00", registro.DatosDespues);
+    }
+
+    [Fact]
+    public void Migracion_DesdeV12_CreaLasTablasDeCompras()
+    {
+        using var bd = new BaseDatosPrueba();
+        bd.ConfigurarTienda();
+
+        bd.Db.ExecuteCommand("DROP TABLE CompraProveedorLineas");
+        bd.Db.ExecuteCommand("DROP TABLE ComprasProveedor");
+        bd.Db.ExecuteCommand("PRAGMA user_version = 12");
+
+        bd.Db.InicializarBaseDeDatos();
+
+        Assert.Equal(Migraciones.VersionMaxima(Migraciones.ObtenerTodas()),
+            bd.Db.ExecuteScalar<int>("PRAGMA user_version"));
+        Assert.Equal(1, bd.Db.ExecuteScalar<int>(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='ComprasProveedor'"));
+        Assert.Equal(1, bd.Db.ExecuteScalar<int>(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='CompraProveedorLineas'"));
+        Assert.Contains(RespaldoLocal.Listar(bd.Db.DirectorioRespaldos),
+            r => r.Nombre.Contains("antes-migrar"));
     }
 }
