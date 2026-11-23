@@ -21,6 +21,13 @@ Cada entrada tiene formato:
 
 Próximamente después de completar los módulos críticos.
 
+### v0.0.42 - 2026-11-22: Correcciones de validación y búsqueda
+
+- *Corregido*: `InventoryService.AjustarStock` rechaza un producto inexistente antes de tocar la base; antes podía reportar éxito sin ajustar o fallar por llave foránea.
+- *Corregido*: `ConfiguracionService.AgregarGasto` recorta el concepto y las observaciones antes de validar y guardar, y rechaza un gasto nulo.
+- *Corregido*: la búsqueda de productos por nombre ignora acentos y mayúsculas mediante `Texto.SinAcentos` (Core), compartido con la búsqueda de clientes y proveedores.
+- *Pruebas*: 3 pruebas nuevas en `GastosTests`, `InventarioTests` e `InventarioBordeTests`; la suite pasa **357 pruebas**. Solución y MAUI Windows compilan sin errores ni advertencias.
+
 ### v0.0.41 - 2026-11-22: Compras a proveedores con detalle
 
 - *Agregado*: esquema **v13** con `ComprasProveedor` y `CompraProveedorLineas`, inmutables, con saldo antes/después, costo e importe congelados e índices por proveedor, fecha y producto.

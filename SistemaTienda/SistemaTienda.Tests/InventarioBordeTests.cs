@@ -98,6 +98,18 @@ public sealed class InventarioBordeTests
     }
 
     [Fact]
+    public void AjustarStock_ProductoInexistente_Falla()
+    {
+        using var bd = new BaseDatosPrueba();
+        bd.ConfigurarTienda();
+
+        var resultado = bd.Inventario.AjustarStock(999, 0, "Conteo físico", "Dueño");
+
+        Assert.True(resultado.IsError);
+        Assert.Contains("No se encontró", resultado.Message);
+    }
+
+    [Fact]
     public void BuscarPorNombre_ConComodinesLiterales_DevuelveSoloCoincidenciasExactas()
     {
         using var bd = new BaseDatosPrueba();
