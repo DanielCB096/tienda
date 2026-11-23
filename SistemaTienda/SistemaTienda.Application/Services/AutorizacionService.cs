@@ -90,6 +90,7 @@ public static class AutorizacionService
         PermisoSistema.Configurar => "cambiar la configuración",
         PermisoSistema.GestionarUsuarios => "gestionar usuarios",
         PermisoSistema.ConsultarBitacora => "consultar la bitácora",
+        PermisoSistema.RestaurarRespaldo => "restaurar respaldos",
         _ => permiso.ToString()
     };
 }

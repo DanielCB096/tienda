@@ -1,6 +1,6 @@
 # Roadmap
 
-Estado al 2026-11-22. T1–T41 están integradas o en PR; T41 (IVA incluido) está en `feat/impuesto-incluido` y T42 (bitácora en Ajustes) en `feat/bitacora-ajustes`. La suite queda en 368 pruebas. Orden sugerido en [CLAUDE-tienda.md §13](../CLAUDE-tienda.md).
+Estado al 2026-11-22. T41 (IVA incluido) está integrado en `main` (`269c23d`); T42 (bitácora en Ajustes) está en PR y T43 (restaurar respaldos) en `feat/restaurar-respaldos`. La suite queda en 369 pruebas. Orden sugerido en [CLAUDE-tienda.md §13](../CLAUDE-tienda.md).
 
 ## Avance por módulo
 
@@ -15,7 +15,7 @@ Estado al 2026-11-22. T1–T41 están integradas o en PR; T41 (IVA incluido) est
 | 7 | Proveedores y cuentas por pagar | 🟡 Parcial | Proveedor, saldo, compras con detalle (esquema v13) y pagos con método e historial inmutable; la compra aumenta stock, actualiza el costo al último costo y suma al saldo; el efectivo del pago genera retiro atómico. Directorio, búsqueda, alta, compra, pago, edición, estado de cuenta con exportación CSV y PDF, detección de duplicados y baja/reactivación lógica solo del dueño (esquema v10) |
 | 8 | Corte de caja | 🟡 Base implementada | Periodo desde el corte anterior, efectivo esperado, diferencia con motivo obligatorio, ingresos/retiros e historial; retiros autorizados y auditados; cierre, conteo por denominaciones con desglose persistido (v11), historial de cortes e ingresos/retiros/abonos desde Caja en MAUI; verificado en Windows y Android 16 |
 | 9 | Reportes y utilidad | 🟡 Base implementada | Utilidad por periodo (ventas − costo − comisión − mermas − gastos) más valorizado y stock bajo; pestaña Reportes en la app con filtros hoy/mes/rango, desglose de cobros por método, IVA incluido informativo, comparación con el bloque anterior y exportación CSV y PDF. Faltan ventas por día y desglose por producto o categoría |
-| 10 | Respaldo y restauración | 🟡 Base implementada | Manual y automático por intervalo (al iniciar/cerrar), antes de migrar y antes de restaurar, con verificación y bitácora; falta USB/nube y respaldo durante sesiones largas |
+| 10 | Respaldo y restauración | 🟡 Base implementada | Manual y automático por intervalo (al iniciar/cerrar), antes de migrar y antes de restaurar, con verificación y bitácora; la app lista y restaura respaldos con permiso del dueño. Falta USB/nube, auditoría de la restauración y respaldo durante sesiones largas |
 | — | Interfaz definitiva | 🟡 Base implementada | App MAUI para Windows y Android con asistente, login, tablero, punto de venta con QR, inventario, ventas con anulación, clientes con abonos y proveedores con pagos, ambos con edición, estado de cuenta exportable y baja lógica, gastos, caja, reportes y respaldo. Ver [interfaz-maui.md](02-modulos/interfaz-maui.md) |
 | - | Migraciones versionadas | ✅ Base implementada | Runner con `PRAGMA user_version`, respaldo previo y rollback; v14 aplicada (ventas, corte de caja, centavos, bitácora, anulaciones, estados activos de productos/clientes/proveedores, pagos a proveedores, desglose de caja, compras a proveedores e IVA incluido por línea) |
 | — | Dinero en centavos | ✅ Implementado | Importes `long`/`INTEGER` en todas las tablas; porcentajes en `decimal`; `Dinero` centraliza conversión y formato |

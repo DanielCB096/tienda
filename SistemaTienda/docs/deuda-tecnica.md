@@ -53,9 +53,9 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 
 ### Restauración sin registro en bitácora
 
-- **Dónde**: `RespaldoService.Restaurar`.
-- **Impacto**: la restauración reemplaza toda la base y no deja registro de quién la ejecutó ni de qué archivo se usó. El respaldo `antes-restaurar` evita la pérdida de datos, pero la acción no queda auditada.
-- **Cierre**: registrar `AccionBitacora.Respaldo` con motivo `Restauracion` y la ruta usada inmediatamente después de restaurar.
+- **Dónde**: `RespaldoService.Restaurar` y **Ajustes → Ver y restaurar respaldos**.
+- **Impacto**: la restauración ya se puede hacer desde la app, exige el permiso `RestaurarRespaldo` (solo dueño) y crea un respaldo `antes-restaurar`, pero no deja registro de quién la ejecutó ni qué archivo usó: la base se reemplaza y el registro se perdería con ella.
+- **Cierre**: guardar la auditoría en un archivo aparte o en el respaldo de seguridad antes de reemplazar la base.
 
 ### Clientes sin estado de cuenta firmado ni envío
 

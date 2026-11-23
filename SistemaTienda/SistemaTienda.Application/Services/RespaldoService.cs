@@ -116,6 +116,11 @@ public class RespaldoService
     /// </summary>
     public ProcessResult Restaurar(string rutaRespaldo, bool confirmado)
     {
+        var autorizacion = AutorizacionService.Exigir(
+            SesionActual.Usuario, PermisoSistema.RestaurarRespaldo);
+        if (autorizacion.IsError)
+            return autorizacion;
+
         if (!confirmado)
             return ProcessResult.Error("La restauración requiere confirmación explícita");
 

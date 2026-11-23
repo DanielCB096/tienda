@@ -65,6 +65,11 @@
                             Style="{StaticResource BotonSecundario}"
                             Clicked="OnCrearRespaldoClicked"
                             Margin="0,8,0,0" />
+                    <Button x:Name="VerRespaldosButton"
+                            Text="Ver y restaurar respaldos"
+                            Style="{StaticResource BotonSecundario}"
+                            Clicked="OnVerRespaldosClicked"
+                            IsVisible="False" />
                 </VerticalStackLayout>
             </Border>
 
@@ -304,6 +309,66 @@
                         Text="Cerrar"
                         Style="{StaticResource BotonPrincipal}"
                         Clicked="OnCerrarBitacoraClicked" />
+            </Grid>
+        </Border>
+    </Grid>
+
+    <Grid x:Name="RespaldosOverlay"
+          IsVisible="False"
+          BackgroundColor="#99000000"
+          Padding="16"
+          ZIndex="21">
+        <Border Style="{StaticResource Tarjeta}"
+                Padding="18"
+                HorizontalOptions="Fill"
+                VerticalOptions="Fill"
+                MaximumWidthRequest="720">
+            <Grid RowDefinitions="Auto,Auto,*,Auto" RowSpacing="10">
+                <VerticalStackLayout Spacing="1">
+                    <Label Text="Respaldos" FontSize="22" FontAttributes="Bold" />
+                    <Label Text="Restaurar reemplaza todos los datos actuales; antes se crea un respaldo de seguridad. Solo el dueño."
+                           Style="{StaticResource TextoNota}" />
+                </VerticalStackLayout>
+
+                <Button Grid.Row="1"
+                        Text="Actualizar lista"
+                        Style="{StaticResource BotonSecundario}"
+                        Clicked="OnRefrescarRespaldosClicked" />
+
+                <RefreshView x:Name="RespaldosRefresco"
+                             Grid.Row="2"
+                             Refreshing="OnRespaldosRefrescando">
+                    <CollectionView x:Name="ListaRespaldos" SelectionMode="None">
+                        <CollectionView.EmptyView>
+                            <Label Text="Todavía no hay respaldos."
+                                   Style="{StaticResource TextoNota}"
+                                   HorizontalTextAlignment="Center"
+                                   Margin="0,24" />
+                        </CollectionView.EmptyView>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="models:RespaldoFila">
+                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" Padding="0,8">
+                                    <VerticalStackLayout Spacing="1">
+                                        <Label Text="{Binding Nombre}" FontAttributes="Bold" FontSize="14" />
+                                        <Label Text="{Binding Fecha}" Style="{StaticResource TextoNota}" />
+                                        <Label Text="{Binding Tamano}" Style="{StaticResource TextoNota}" />
+                                    </VerticalStackLayout>
+                                    <Button Grid.Column="1"
+                                            Text="Restaurar"
+                                            Style="{StaticResource BotonSecundario}"
+                                            HeightRequest="38"
+                                            CommandParameter="{Binding Ruta}"
+                                            Clicked="OnRestaurarRespaldoClicked" />
+                                </Grid>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </RefreshView>
+
+                <Button Grid.Row="3"
+                        Text="Cerrar"
+                        Style="{StaticResource BotonPrincipal}"
+                        Clicked="OnCerrarRespaldosClicked" />
             </Grid>
         </Border>
     </Grid>

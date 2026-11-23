@@ -557,6 +557,16 @@ Pendiente de T36: nada; el diálogo de compartir y la apertura del PDF se verifi
 | Encargado y empleado no ven el botón ni pueden consultar | Cubierto por `BitacoraPermisosTests` |
 | Repetir en Android 16 | Pendiente |
 
+## Verificación de T43, restaurar respaldos (pendiente)
+
+| Caso | Resultado |
+|------|-----------|
+| El dueño ve la lista de respaldos con fecha y tamaño | Pendiente |
+| Restaurar pide confirmación y crea `antes-restaurar` | Cubierto por pruebas de `RespaldoLocal`; falta UI |
+| Al restaurar se cierra la sesión y se entra con los datos restaurados | Pendiente |
+| Encargado y empleado no ven la acción ni pueden restaurar | Cubierto por `MigracionesRespaldoTests` |
+| Repetir en Android 16 | Pendiente |
+
 ## Herramientas de Prueba
 
 - **Datos de prueba ficticios**: Un script o conjunto de datos iniciales que incluir:

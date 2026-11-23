@@ -95,6 +95,7 @@ Acceso en la app: pestaña **Reportes** (visible para dueño, encargado y emplea
 - **Editar configuración**: solo el dueño; nombre, giro, impuesto, comisión, fondo, fiado, límite y días de respaldo.
 - **Usuarios y PIN**: solo el dueño; alta, nombre, rol y PIN con bitácora.
 - **Auditoría → Ver bitácora**: solo el dueño; últimos 200 movimientos sensibles con usuario, acción, entidad, datos antes/después y motivo; filtros por usuario y acción.
+- **Respaldo → Ver y restaurar respaldos**: solo el dueño; lista fecha y tamaño, y restaura con confirmación. Antes crea un respaldo `antes-restaurar` y al terminar pide volver a iniciar sesión.
 
 Acceso restringido (PIN de admin). Opciones:
 

@@ -21,6 +21,13 @@ Cada entrada tiene formato:
 
 Próximamente después de completar los módulos críticos.
 
+### v0.0.45 - 2026-11-22: Listar y restaurar respaldos desde Ajustes
+
+- *Agregado*: **Ajustes → Respaldo → Ver y restaurar respaldos** (solo dueño) lista los archivos con fecha y tamaño; cada uno se puede restaurar con confirmación.
+- *Seguridad*: la restauración exige el permiso nuevo `RestaurarRespaldo` y crea un respaldo `antes-restaurar` antes de reemplazar la base. Al terminar, la app cierra la sesión para volver a entrar con los datos restaurados.
+- *Pruebas*: 1 prueba nueva en `MigracionesRespaldoTests`; la suite pasa **369 pruebas**. Solución y MAUI Windows compilan sin errores ni advertencias.
+- *Pendiente*: registrar la restauración en la bitácora (la base se reemplaza) y verificarla en Windows y Android.
+
 ### v0.0.44 - 2026-11-22: Consulta de bitácora en Ajustes
 
 - *Agregado*: **Ajustes → Auditoría → Ver bitácora** (solo dueño) lista los últimos 200 registros con fecha, usuario, acción, entidad, datos antes/después y motivo.

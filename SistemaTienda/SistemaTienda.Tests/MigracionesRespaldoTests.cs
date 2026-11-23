@@ -159,6 +159,22 @@ public sealed class MigracionesRespaldoTests
     }
 
     [Fact]
+    public void Restaurar_EmpleadoSinPermiso_Falla()
+    {
+        using var bd = new BaseDatosPrueba();
+        var servicio = new RespaldoService(bd.Db);
+        var respaldo = servicio.CrearRespaldo("prueba");
+        Assert.True(respaldo.IsSuccess, respaldo.Message);
+
+        bd.IniciarSesion(RolUsuario.Empleado);
+
+        var restauracion = servicio.Restaurar(respaldo.Value, confirmado: true);
+
+        Assert.True(restauracion.IsError);
+        Assert.Contains("permiso", restauracion.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void Restaurar_SinConfirmacionOFueraDeRuta_Falla()
     {
         using var bd = new BaseDatosPrueba();

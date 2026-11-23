@@ -44,7 +44,8 @@ public enum PermisoSistema
     RetiroCaja,
     Configurar,
     GestionarUsuarios,
-    ConsultarBitacora
+    ConsultarBitacora,
+    RestaurarRespaldo
 }
 
 public static class AccionBitacora

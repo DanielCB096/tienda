@@ -60,6 +60,8 @@ public partial class AjustesPage : ContentPage
             AutorizacionService.Puede(_sesion.Usuario, PermisoSistema.GestionarUsuarios);
         BitacoraButton.IsVisible = _sesion.Usuario != null &&
             AutorizacionService.Puede(_sesion.Usuario, PermisoSistema.ConsultarBitacora);
+        VerRespaldosButton.IsVisible = _sesion.Usuario != null &&
+            AutorizacionService.Puede(_sesion.Usuario, PermisoSistema.RestaurarRespaldo);
 
         RutaBaseLabel.Text = _respaldos.RutaBaseDatos;
         RutaRespaldosLabel.Text = _respaldos.DirectorioRespaldos;
@@ -529,5 +531,75 @@ public partial class AjustesPage : ContentPage
             return registro.DatosDespues;
 
         return registro.DatosAntes;
+    }
+
+    private void OnVerRespaldosClicked(object sender, EventArgs e)
+    {
+        _sesion.Aplicar();
+        RespaldosOverlay.IsVisible = true;
+        CargarRespaldos();
+    }
+
+    private void OnRefrescarRespaldosClicked(object sender, EventArgs e) => CargarRespaldos();
+
+    private void OnRespaldosRefrescando(object sender, EventArgs e)
+    {
+        CargarRespaldos();
+        RespaldosRefresco.IsRefreshing = false;
+    }
+
+    private void OnCerrarRespaldosClicked(object sender, EventArgs e) =>
+        RespaldosOverlay.IsVisible = false;
+
+    private void CargarRespaldos()
+    {
+        _sesion.Aplicar();
+        var resultado = _respaldos.ListarRespaldos();
+        if (resultado.IsError)
+        {
+            _ = DisplayAlertAsync("No se pudieron listar", resultado.Message, "Continuar");
+            return;
+        }
+
+        ListaRespaldos.ItemsSource = resultado.Value.Select(r => new RespaldoFila
+        {
+            Ruta = r.Ruta,
+            Nombre = r.Nombre,
+            Fecha = Formato.FechaHora(r.Fecha),
+            Tamano = FormatearTamano(r.TamanoBytes)
+        }).ToList();
+    }
+
+    private static string FormatearTamano(long bytes) =>
+        bytes >= 1_048_576
+            ? $"{bytes / 1_048_576m:0.0} MB"
+            : $"{Math.Max(1, bytes / 1024m):0} KB";
+
+    private async void OnRestaurarRespaldoClicked(object sender, EventArgs e)
+    {
+        if (sender is not Button { CommandParameter: string ruta } || string.IsNullOrWhiteSpace(ruta))
+            return;
+
+        var confirmar = await DisplayAlertAsync(
+            "Restaurar respaldo",
+            "Se reemplazarán todos los datos actuales por los de este respaldo. " +
+            "Antes se crea una copia de seguridad. ¿Continuar?",
+            "Restaurar", "Cancelar");
+
+        if (!confirmar)
+            return;
+
+        _sesion.Aplicar();
+        var resultado = _respaldos.Restaurar(ruta, confirmado: true);
+        await DisplayAlertAsync(
+            resultado.IsSuccess ? "Respaldo restaurado" : "No se pudo restaurar",
+            resultado.Message, "Continuar");
+
+        if (resultado.IsSuccess)
+        {
+            RespaldosOverlay.IsVisible = false;
+            _sesion.Cerrar();
+            _navegacion.MostrarLogin();
+        }
     }
 }
