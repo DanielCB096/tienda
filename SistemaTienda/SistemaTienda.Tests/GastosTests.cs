@@ -52,6 +52,25 @@ public sealed class GastosTests
     }
 
     [Fact]
+    public void AgregarGasto_RecortaConceptoYObservaciones()
+    {
+        using var bd = new BaseDatosPrueba();
+        bd.ConfigurarTienda();
+
+        var alta = bd.Config.AgregarGasto(new Gasto
+        {
+            Concepto = "   Luz   ",
+            Monto = 1_000,
+            Observaciones = "   Recibo 12   "
+        });
+
+        Assert.True(alta.IsSuccess);
+        var gasto = Assert.Single(bd.Config.ObtenerTodosLosGastos().Value);
+        Assert.Equal("Luz", gasto.Concepto);
+        Assert.Equal("Recibo 12", gasto.Observaciones);
+    }
+
+    [Fact]
     public void AgregarGasto_GuardaMetodoOrigenObservacionesYFecha()
     {
         using var bd = new BaseDatosPrueba();

@@ -412,10 +412,18 @@ public class InventoryService
 
     public Producto BuscarPorId(int productoId) => _db.ObtenerProductoPorId(productoId);
 
-    public List<Producto> BuscarPorNombre(string texto, bool soloActivos = false) =>
-        string.IsNullOrWhiteSpace(texto)
-            ? new List<Producto>()
-            : _db.BuscarProductosPorNombre(texto.Trim(), soloActivos);
+    public List<Producto> BuscarPorNombre(string texto, bool soloActivos = false)
+    {
+        if (string.IsNullOrWhiteSpace(texto))
+            return new List<Producto>();
+
+        var filtro = Texto.SinAcentos(texto.Trim());
+        return _db.ObtenerProductos()
+            .Where(p => (!soloActivos || p.Activo) &&
+                        Texto.SinAcentos(p.Nombre ?? string.Empty)
+                            .Contains(filtro, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+    }
 
     public ProcessResult ActualizarProducto(Producto producto)
     {
@@ -550,7 +558,10 @@ public class InventoryService
             return ProcessResult.Error("El motivo del ajuste es obligatorio");
 
         var producto = _db.ObtenerProductoPorId(productoId);
-        if (producto is { Activo: false })
+        if (producto == null)
+            return ProcessResult.Error("No se encontró el producto");
+
+        if (!producto.Activo)
             return ProcessResult.Error(
                 "El producto está desactivado; reactívalo para ajustar su stock");
 

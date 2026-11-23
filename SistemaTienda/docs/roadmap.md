@@ -1,6 +1,6 @@
 # Roadmap
 
-Estado al 2026-11-21. T1–T36 están integradas o implementadas sobre `main`: T1–T25 en `main` (`86cbf67`), T26–T28 verificadas e integradas el 2026-11-19, T29–T35 fusionadas en `main` (`66f7120`) y T36 (PDF de reportes y estados de cuenta) en `feat/pdf-reportes-estados`. La suite queda en 336 pruebas. Orden sugerido en [CLAUDE-tienda.md §13](../CLAUDE-tienda.md).
+Estado al 2026-11-22. T1–T39 están integradas en `main` (`ed03788`); T40 (correcciones de validación y búsqueda) está en `fix/validaciones-busqueda`. La suite queda en 357 pruebas. Orden sugerido en [CLAUDE-tienda.md §13](../CLAUDE-tienda.md).
 
 ## Avance por módulo
 

@@ -111,12 +111,11 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 - **Impacto**: el costo perdido se calcula al momento y se muestra en el mensaje; no queda guardado como merma con su costo. Los reportes no pueden sumar pérdidas por merma sin recalcular.
 - **Cierre**: tabla `Mermas` o columnas de costo en el movimiento que permitan reportes directos.
 
-### Validaciones de borde sin corregir (hallazgos de T9)
+### Validaciones de borde (resueltas en T40)
 
 - **Dónde**: `InventoryService.AjustarStock`, `ConfiguracionService.AgregarGasto`, `InventoryService.BuscarPorNombre`.
-- **Impacto**: `AjustarStock` no valida que el producto exista (con stock mayor a cero falla por llave foránea; con stock cero reporta éxito sin haber ajustado). `AgregarGasto` no recorta el concepto, así que agrupa distinguiendo mayúsculas y espacios. La búsqueda por nombre no ignora acentos.
+- **Resuelto (T40)**: `AjustarStock` rechaza un producto inexistente antes de abrir la transacción. `AgregarGasto` recorta concepto y observaciones y rechaza un gasto nulo. La búsqueda de productos ignora acentos mediante `Texto.SinAcentos`, compartido con clientes y proveedores.
 - **Resuelto (T35)**: el alta y la edición de usuarios exigen nombre y PIN únicos, y el PIN se valida en el servicio. Los usuarios creados antes de T35 podrían conservar un PIN duplicado; en ese caso `VerificarAcceso` devuelve el primero que coincide y conviene cambiar el PIN desde Ajustes.
-- **Cierre**: validar existencia antes de ajustar, recortar el concepto al guardar y normalizar la búsqueda (mayúsculas/acentos).
 
 ### Reportes sin desglose por producto
 

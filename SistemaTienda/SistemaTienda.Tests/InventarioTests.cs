@@ -248,6 +248,18 @@ public sealed class InventarioTests
     }
 
     [Fact]
+    public void BuscarPorNombre_IgnoraAcentos()
+    {
+        using var bd = new BaseDatosPrueba();
+        bd.Inventario.AgregarProducto(Producto(codigo: "A1", nombre: "Café Molido"));
+
+        var encontrados = bd.Inventario.BuscarPorNombre("cafe");
+
+        var producto = Assert.Single(encontrados);
+        Assert.Equal("Café Molido", producto.Nombre);
+    }
+
+    [Fact]
     public void BuscarPorNombre_EscapaComodinesDelLike()
     {
         using var bd = new BaseDatosPrueba();

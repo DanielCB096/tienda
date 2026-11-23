@@ -324,7 +324,13 @@ public class ConfiguracionService
         if (autorizacion.IsError)
             return ProcessResult<AgregarGastoResponse>.Error(autorizacion.Message);
 
-        if (string.IsNullOrWhiteSpace(nuevoGasto.Concepto))
+        if (nuevoGasto == null)
+            return ProcessResult<AgregarGastoResponse>.Error("El gasto es obligatorio");
+
+        nuevoGasto.Concepto = (nuevoGasto.Concepto ?? string.Empty).Trim();
+        nuevoGasto.Observaciones = (nuevoGasto.Observaciones ?? string.Empty).Trim();
+
+        if (nuevoGasto.Concepto.Length == 0)
             return ProcessResult<AgregarGastoResponse>.Error("El concepto del gasto es obligatorio");
 
         if (nuevoGasto.Monto <= 0)
@@ -481,18 +487,7 @@ public class ConfiguracionService
         return ProcessResult<List<ClienteFiado>>.OK(coincidencias);
     }
 
-    private static string SinAcentos(string texto)
-    {
-        var normalizado = texto.Normalize(NormalizationForm.FormD);
-        var constructor = new StringBuilder(normalizado.Length);
-        foreach (var caracter in normalizado)
-        {
-            if (CharUnicodeInfo.GetUnicodeCategory(caracter) != UnicodeCategory.NonSpacingMark)
-                constructor.Append(caracter);
-        }
-
-        return constructor.ToString().Normalize(NormalizationForm.FormC);
-    }
+    private static string SinAcentos(string texto) => Texto.SinAcentos(texto);
 
     private static string NormalizarTextoDuplicado(string texto)
     {
