@@ -1,4 +1,5 @@
 // Capa de acceso a datos local con SQLite
+using System.Data;
 using System.Globalization;
 using Microsoft.Data.Sqlite;
 using SistemaTienda.Core;
@@ -30,7 +31,21 @@ public class DatabaseTools
         }.ToString();
     }
 
-    public SqliteConnection CreateConnection() => new(_connectionString);
+    public SqliteConnection CreateConnection()
+    {
+        var conn = new SqliteConnection(_connectionString);
+
+        // busy_timeout y synchronous son por conexión. Se aplican al abrir para que
+        // cualquier operación respete el mismo comportamiento incluso si otra
+        // conexión mantiene la base ocupada.
+        conn.StateChange += (_, e) =>
+        {
+            if (e.CurrentState == ConnectionState.Open)
+                AplicarPragmasConexion(conn);
+        };
+
+        return conn;
+    }
 
     /// <summary>
     /// Crea el esquema base si no existe y aplica las migraciones pendientes.
@@ -43,6 +58,7 @@ public class DatabaseTools
         using (var conn = CreateConnection())
         {
             conn.Open();
+            ConfigurarModoWal(conn);
 
             if (!ExisteTabla(conn, "ConfiguracionTienda"))
             {
@@ -209,6 +225,27 @@ public class DatabaseTools
         cmd.Transaction = tx;
         cmd.CommandText = $"PRAGMA user_version = {version}";
         cmd.ExecuteNonQuery();
+    }
+
+    private static void AplicarPragmasConexion(SqliteConnection conn)
+    {
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "PRAGMA busy_timeout=30000; PRAGMA synchronous=NORMAL;";
+        cmd.ExecuteNonQuery();
+    }
+
+    private static void ConfigurarModoWal(SqliteConnection conn)
+    {
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "PRAGMA journal_mode=WAL;";
+        cmd.ExecuteScalar();
+    }
+
+    public int ObtenerVersionEsquema()
+    {
+        using var conn = CreateConnection();
+        conn.Open();
+        return LeerVersion(conn);
     }
 
     private bool IntegridadOk()

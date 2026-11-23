@@ -9,6 +9,8 @@ namespace SistemaTienda.Maui;
 
 public static class MauiProgram
 {
+	public static bool InstanciaDuplicada { get; private set; }
+
 	public static MauiApp CreateMauiApp()
 	{
 		var builder = MauiApp.CreateBuilder();
@@ -23,6 +25,7 @@ public static class MauiProgram
 		// En Android y Windows los datos de la app viven en el directorio privado
 		// del usuario; nunca se comparten con otras aplicaciones.
 		var rutaBaseDatos = Path.Combine(FileSystem.AppDataDirectory, "tienda.db");
+		InstanciaDuplicada = !InstanciaUnica.Adquirir(rutaBaseDatos);
 
 		builder.Services.AddSingleton(new DatabaseTools(rutaBaseDatos));
 		builder.Services.AddSingleton<ConfiguracionService>();
@@ -32,6 +35,7 @@ public static class MauiProgram
 		builder.Services.AddSingleton<CorteCajaService>();
 		builder.Services.AddSingleton<ReporteUtilidadService>();
 		builder.Services.AddSingleton<RespaldoService>();
+		builder.Services.AddSingleton<PaqueteSoporteService>();
 		builder.Services.AddSingleton<BitacoraService>();		builder.Services.AddSingleton<SesionApp>();
 		builder.Services.AddSingleton<NavegacionApp>();
 		builder.Services.AddSingleton<ArranqueApp>();
