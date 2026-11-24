@@ -17,9 +17,7 @@ public sealed class TicketGenerado
 /// </summary>
 public sealed class TicketService
 {
-    private const int MaximoProductosQr = 10;
-    private const int LargoMaximoNombreQr = 40;
-    private const int LargoMaximoTiendaQr = 60;
+    private const int LargoMaximoTiendaQr = 40;
     private static readonly CultureInfo Cultura = CultureInfo.GetCultureInfo("es-MX");
 
     public TicketGenerado Generar(Venta venta, IReadOnlyList<VentaLinea> lineas,
@@ -37,7 +35,7 @@ public sealed class TicketService
         return new TicketGenerado
         {
             Texto = ConstruirTexto(venta, productos, tienda, nombreCliente, recibido, anulacion),
-            ContenidoQr = ConstruirContenidoQr(venta, productos, tienda)
+            ContenidoQr = ConstruirContenidoQr(venta, tienda)
         };
     }
 
@@ -105,33 +103,20 @@ public sealed class TicketService
         return sb.ToString();
     }
 
-    private static string ConstruirContenidoQr(Venta venta, IReadOnlyList<VentaLinea> lineas,
-        string tienda)
+    /// <summary>
+    /// El QR es informativo y debe caber en un módulo grande para poder escanearse
+    /// desde la pantalla. Por eso solo lleva el resumen: folio, fecha, estado,
+    /// total y método de pago. Los productos están en el ticket de texto.
+    /// </summary>
+    private static string ConstruirContenidoQr(Venta venta, string tienda)
     {
         var sb = new StringBuilder();
-        sb.AppendLine("SistemaTienda · Ticket interno");
+        sb.AppendLine("SistemaTienda");
         sb.AppendLine($"Tienda: {Recortar(tienda, LargoMaximoTiendaQr)}");
-        sb.AppendLine($"Venta: #{venta.Id}");
-        sb.AppendLine($"Fecha: {venta.Fecha.ToString("dd/MM/yyyy HH:mm", Cultura)}");
-        sb.AppendLine($"Estado: {(venta.Anulada ? "Anulada" : "Vigente")}");
-        sb.AppendLine($"Total: ${Dinero.Formatear(venta.Total)}");
-        var impuestoIncluido = lineas.Sum(l => l.ImpuestoImporte);
-        if (impuestoIncluido > 0)
-            sb.AppendLine($"IVA incluido: ${Dinero.Formatear(impuestoIncluido)}");
-        sb.AppendLine($"Pago: {venta.MetodoPago}");
-        sb.AppendLine("Productos:");
-
-        var incluidos = Math.Min(lineas.Count, MaximoProductosQr);
-        for (var i = 0; i < incluidos; i++)
-        {
-            var linea = lineas[i];
-            sb.AppendLine(
-                $"- {linea.Cantidad} x {Recortar(linea.Nombre, LargoMaximoNombreQr)}: ${Dinero.Formatear(linea.Importe)}");
-        }
-
-        if (lineas.Count > incluidos)
-            sb.AppendLine($"- ... y {lineas.Count - incluidos} producto(s) más");
-
+        sb.AppendLine($"Venta: #{venta.Id} - {venta.Fecha.ToString("dd/MM/yyyy HH:mm", Cultura)}");
+        if (venta.Anulada)
+            sb.AppendLine("Estado: Anulada");
+        sb.AppendLine($"Total: ${Dinero.Formatear(venta.Total)} - {venta.MetodoPago}");
         sb.Append("No es un comprobante fiscal.");
         return sb.ToString();
     }

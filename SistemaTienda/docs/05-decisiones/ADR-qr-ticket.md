@@ -28,7 +28,7 @@ El contenido del ticket y del QR se construye en `Application/Services/TicketSer
 ## Consecuencias
 
 - El QR se muestra en pantalla y, desde T32, también se genera como PNG y se comparte con el diálogo del sistema.
-- El QR resume hasta diez productos; si hay más, indica cuántos quedaron fuera. El ticket en pantalla y el texto compartido conservan todas las líneas.
+- Desde el 2026-11-24 el QR **no incluye productos**: solo tienda, folio, fecha, total, método de pago, el estado cuando está anulada y la leyenda de que no es un comprobante fiscal. El ticket en pantalla y el texto compartido conservan todas las líneas.
 - El QR no es un comprobante fiscal ni un mecanismo de validación; un cliente no puede usarlo para reclamar una devolución sin el ticket y la revisión del negocio.
 - La generación es local y no requiere permisos de red.
 - La app Android sigue compilándose en CI; la visualización del QR y el compartir la imagen en un dispositivo físico quedan pendientes de validar.
@@ -39,10 +39,18 @@ El contenido del ticket y del QR se construye en `Application/Services/TicketSer
 - **Consecuencias**: el PNG es en escala de grises, sin pérdida, con zona de silencio y módulos de tamaño entero. `TicketPage` agrega **Compartir QR como imagen** y usa la caché de la app; el texto sigue disponible para compartir o copiar. La imagen no se adjunta al texto ni se guarda en la galería por sí sola: eso lo decide el diálogo del sistema.
 - **Pruebas**: `QrImagenServiceTests` valida firma, dimensiones, chunks, CRC implícito en la estructura, píxeles contra la matriz y parámetros inválidos.
 
+## Actualización 2026-11-24 (P7) — el QR no se podía escanear
+
+- **Contexto**: en la prueba de usabilidad P3 el cliente no pudo escanear el QR al cerrar la venta. El contenido incluía hasta diez productos y llegaba a ~500 caracteres; con corrección `M` el código subía a 89×89 módulos. En un control de 220 px cada módulo quedaba en 2 px, demasiado pequeño para la cámara.
+- **Decisión**: el QR lleva solo el resumen (tienda, folio, fecha, total, método y, si aplica, `Estado: Anulada`). Se eliminaron los productos y el IVA, que siguen en el ticket de texto y en el PNG. El control pasa a 240 dp y se muestra como **imagen** rasterizada con `QrImagenService`: dibujar rectángulos dependía del escalado de la ventana y recortaba la última fila del patrón.
+- **Resultado medido**: el contenido baja a ~130 caracteres y 49×49 módulos. El QR se muestra en 258×258 px, cuadrado y completo, y se decodificó con `pyzbar` directamente desde una captura de pantalla; antes medía 89×89 módulos y 2 px por módulo.
+- **Pruebas**: `TicketServiceTests` verifica que el QR no crece con los productos y que no excede 53 módulos. La decodificación de la captura y del PNG se hizo con `pyzbar` como evidencia manual.
+- **Pendiente**: confirmar el escaneo desde un teléfono físico, en pantalla y con el PNG compartido.
+
 ## Implementación
 
 - `SistemaTienda.Maui.csproj`: referencia al paquete.
-- `Services/QrTicketView.cs`: dibuja módulos de tamaño entero con zona de silencio y sin red.
+- `Services/QrTicketView.cs`: muestra el QR como imagen de 240 dp con zona de silencio.
 - `Application/Services/TicketService.cs`: genera el texto completo y el resumen del QR.
 - `Application/Services/QrImagenService.cs`: genera el PNG del QR.
 - `Pages/TicketPage.cs`: muestra el QR y permite compartirlo como texto, como imagen, copiarlo o cerrarlo.
@@ -52,4 +60,6 @@ El contenido del ticket y del QR se construye en `Application/Services/TicketSer
 
 El 2026-10-25 se probó en Windows con una venta ficticia de tres productos: el QR se decodificó sin conexión con ZXing.Net y contenía tienda, folio, fecha, estado `Vigente`, total, método de pago, tres productos y la leyenda de que no es un comprobante fiscal. Tras anular la venta, el QR pasó a `Estado: Anulada`. Los botones del ticket se mantuvieron visibles al agregar el QR. El detalle está en [plan-de-pruebas.md](../07-pruebas/plan-de-pruebas.md).
 
-Las reglas del texto y del resumen del QR están cubiertas por `TicketServiceTests` (6 casos) y el PNG por `QrImagenServiceTests` (8 casos). Queda pendiente validar el compartir la imagen en Windows y Android.
+Las reglas del texto y del resumen del QR están cubiertas por `TicketServiceTests` (8 casos) y el PNG por `QrImagenServiceTests` (8 casos). Queda pendiente validar el compartir la imagen en Windows y Android.
+
+El 2026-11-24 se decodificó el QR del ticket con `pyzbar` desde una captura de pantalla en Windows: 258×258 px, cuadrado, con tienda, folio, fecha, total, método y la leyenda. El QR anterior, con productos, medía 89×89 módulos y no se pudo escanear en la prueba P3.

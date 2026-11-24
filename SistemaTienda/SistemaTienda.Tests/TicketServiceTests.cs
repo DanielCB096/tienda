@@ -1,3 +1,4 @@
+using Net.Codecrete.QrCodeGenerator;
 using SistemaTienda.Application.Services;
 using SistemaTienda.Core;
 
@@ -53,11 +54,14 @@ public sealed class TicketServiceTests
         Assert.Contains("Gracias por su compra.", ticket.Texto);
 
         Assert.Contains("Venta: #7", ticket.ContenidoQr);
-        Assert.Contains("Fecha: 25/10/2026 14:30", ticket.ContenidoQr);
-        Assert.Contains("Estado: Vigente", ticket.ContenidoQr);
-        Assert.Contains("Total: $75.00", ticket.ContenidoQr);
-        Assert.Contains("3 x Refresco: $75.00", ticket.ContenidoQr);
+        Assert.Contains("Venta: #7 - 25/10/2026 14:30", ticket.ContenidoQr);
+        Assert.DoesNotContain("Estado:", ticket.ContenidoQr);
+        Assert.Contains("Total: $75.00 - Efectivo", ticket.ContenidoQr);
+        Assert.DoesNotContain("Refresco", ticket.ContenidoQr);
+        Assert.DoesNotContain("Productos:", ticket.ContenidoQr);
         Assert.Contains("No es un comprobante fiscal.", ticket.ContenidoQr);
+        Assert.True(ticket.ContenidoQr.Length <= 200,
+            $"El QR debe ser corto para escanearse; mide {ticket.ContenidoQr.Length}");
     }
 
     [Fact]
@@ -80,7 +84,7 @@ public sealed class TicketServiceTests
         Assert.Contains("Tarjeta: $20.00", ticket.Texto);
         Assert.Contains("Comisión tarjeta: $0.58", ticket.Texto);
         Assert.DoesNotContain("Recibido:", ticket.Texto);
-        Assert.Contains("Pago: Mixto", ticket.ContenidoQr);
+        Assert.Contains("- Mixto", ticket.ContenidoQr);
     }
 
     [Fact]
@@ -146,11 +150,11 @@ public sealed class TicketServiceTests
 
         Assert.Contains("TOTAL: $116.00", ticket.Texto);
         Assert.Contains("IVA incluido: $16.00", ticket.Texto);
-        Assert.Contains("IVA incluido: $16.00", ticket.ContenidoQr);
+        Assert.DoesNotContain("IVA incluido", ticket.ContenidoQr);
     }
 
     [Fact]
-    public void Generar_QrResumeDiezProductosYLosDemasSeCuentan()
+    public void Generar_QrNoCreceConLosProductos()
     {
         var lineas = Enumerable.Range(1, 12)
             .Select(i => new VentaLinea
@@ -166,10 +170,29 @@ public sealed class TicketServiceTests
 
         var ticket = new TicketService().Generar(venta, lineas, Config());
 
-        Assert.Contains("Producto 10: $1.00", ticket.ContenidoQr);
-        Assert.DoesNotContain("Producto 11:", ticket.ContenidoQr);
-        Assert.Contains("... y 2 producto(s) más", ticket.ContenidoQr);
+        Assert.DoesNotContain("Producto 10", ticket.ContenidoQr);
+        Assert.DoesNotContain("Productos:", ticket.ContenidoQr);
+        Assert.DoesNotContain("producto(s) más", ticket.ContenidoQr);
+        Assert.Contains("Total: $12.00", ticket.ContenidoQr);
         Assert.Contains("1 x Producto 12", ticket.Texto);
+    }
+
+    [Fact]
+    public void Generar_QrUsaPocosModulosParaEscanearseDesdeLaPantalla()
+    {
+        var venta = VentaBase();
+
+        var ticket = new TicketService().Generar(venta, Lineas(), Config());
+
+        var codigo = QrCode.EncodeText(ticket.ContenidoQr, QrCode.Ecc.Medium);
+        const int tamanoVista = 240;
+        const int modulosQuietos = 4;
+        var moduloEnPantalla = tamanoVista / (codigo.Size + modulosQuietos * 2);
+
+        Assert.True(codigo.Size <= 53,
+            $"El QR mide {codigo.Size} módulos; demasiados para escanearse cómodo");
+        Assert.True(moduloEnPantalla >= 3,
+            $"Cada módulo mide {moduloEnPantalla} dp; se necesitan al menos 3");
     }
 
     [Fact]

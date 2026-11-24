@@ -17,6 +17,15 @@ Cada entrada tiene formato:
 
 ---
 
+## 2026-11-24 — QR del ticket legible (P7)
+
+- **Corregido**: el QR del ticket incluía hasta diez productos y llegaba a 89×89 módulos; en un control de 220 px cada módulo quedaba en 2 px y el cliente no podía escanearlo.
+- **Modificado**: el QR ahora lleva solo tienda, folio, fecha, total, método de pago y el estado cuando está anulada. Baja a 49×49 módulos.
+- **Modificado**: `QrTicketView` muestra el QR como imagen de 240 dp, rasterizada por `QrImagenService`; dibujar rectángulos recortaba la última fila del patrón con algunas escalas de pantalla.
+- **Sin cambios**: el ticket de texto, el total, el IVA y el PNG compartido conservan todos los datos.
+- **Pruebas**: `TicketServiceTests` verifica que el QR no crece con los productos y que no excede 53 módulos. El QR en pantalla (258×258 px) y el PNG se decodificaron con `pyzbar`.
+- **Pendiente**: confirmar el escaneo con un teléfono físico, en pantalla y con el PNG.
+
 ## 2026-11-24 — Búsqueda dinámica en el punto de venta
 
 - **Agregado**: el buscador de **Vender** sugiere productos mientras se escribe, con espera de 250 ms y hasta ocho coincidencias.
