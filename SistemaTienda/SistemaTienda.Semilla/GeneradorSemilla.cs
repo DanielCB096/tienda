@@ -165,11 +165,14 @@ public static class GeneradorSemilla
         if (opciones.Escenario == OpcionesSemilla.EscenarioConfigurado)
         {
             Resumen(db, opciones, productos.Count);
+            Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
             return 0;
         }
 
         GenerarDemo(db, config, productos);
         Resumen(db, opciones, productos.Count);
+        // Cierra las conexiones en colchón para que la app pueda abrir la base al instante.
+        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
         return 0;
     }
 
@@ -426,6 +429,9 @@ public static class GeneradorSemilla
 
     private static void Limpiar(string ruta)
     {
+        // El pooling de SQLite puede mantener el archivo abierto y bloquear el borrado.
+        Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
+
         var carpeta = Path.GetDirectoryName(ruta);
         if (string.IsNullOrWhiteSpace(carpeta))
             return;
