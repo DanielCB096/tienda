@@ -1,8 +1,8 @@
 # Estado de H1 — respaldo, restauración y WAL
 
-**Actualizado:** 2026-11-23, antes de apagar el equipo.  
+**Actualizado:** 2026-11-23, después de corregir la compilación MAUI.  
 **Rama:** `feat/h1-respaldo-restauracion`  
-**Commit:** `4e89fe0`  
+**Commit:** `10fb923` (corrección de CI); implementación en `4e89fe0`  
 **Repositorio:** <https://github.com/DanielCB096/tienda>
 
 ## Hecho y subido
@@ -18,18 +18,27 @@
 
 - `dotnet build SistemaTienda.sln -c Release`: OK, 0 errores, 0 advertencias.
 - `dotnet test SistemaTienda.sln -c Release`: **373/373** en verde.
-- La app MAUI no se pudo compilar en este equipo por cargas de trabajo faltantes.
+- Compilación MAUI Windows: **OK, 0 errores**, 2 advertencias XAML preexistentes (`CajaPage` y `PosPage`).
+- La compilación Android sigue pendiente en este equipo por cargas de trabajo faltantes.
+
+## Corrección de CI MAUI (`10fb923`)
+
+- Error: `CS0234` en `AjustesPage.xaml.cs`: `Application.Current` se resolvía contra el espacio de nombres `SistemaTienda.Application` por el `using SistemaTienda.Application.Services`.
+- Corrección: usar `Microsoft.Maui.Controls.Application` con alias local y envolver el cierre de ventana en `#if WINDOWS`.
+- Verificado con:
+  - `dotnet build SistemaTienda/SistemaTienda.Maui/SistemaTienda.Maui.csproj -f net10.0-windows10.0.19041.0 -c Release`
+  - `dotnet test SistemaTienda/SistemaTienda.sln -c Release` → 373/373.
 
 ## CI en GitHub
 
-- Run: <https://github.com/DanielCB096/tienda/actions/runs/45292691228>
-- Job “Compilar y probar”: **exitoso**.
-- Job “Compilar app MAUI (Windows y Android)”: **en progreso** al apagar el equipo.
-- Revisar el resultado antes de mergear. Si falla, corregir el error de compilación de MAUI y volver a ejecutar.
+- Run anterior: <https://github.com/DanielCB096/tienda/actions/runs/45292691228>
+  - Job “Compilar y probar”: **exitoso**.
+  - Job “Compilar app MAUI (Windows y Android)”: **falló** en “Compilar para Windows” (`CS0234`).
+- Corrección subida en `10fb923`; el nuevo run debe confirmar Windows y Android.
 
 ## Pendiente
 
-1. Revisar el job MAUI y corregir cualquier error de compilación.
+1. Confirmar el nuevo run de CI (Windows y Android) después de `10fb923`.
 2. Probar en Windows: exportar respaldo, restaurar en otro equipo, abrir dos instancias y confirmar que la segunda muestra el aviso.
 3. Probar en Android: exportar por el diálogo de compartir, restaurar desde un archivo y abrir la app.
 4. Confirmar que el paquete de soporte no se comparte sin consentimiento.
