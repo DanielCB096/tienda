@@ -9,8 +9,10 @@ namespace SistemaTienda.Maui.Services;
 /// </summary>
 public static class InstanciaUnica
 {
+#if WINDOWS
     private static Mutex? _mutex;
     private static bool _creada;
+#endif
 
     public static bool Adquirir(string rutaBaseDatos)
     {
