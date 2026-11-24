@@ -1,8 +1,8 @@
 # Estado de H1 — respaldo, restauración y WAL
 
-**Actualizado:** 2026-11-23, después de confirmar CI en verde.  
+**Actualizado:** 2026-11-23, después de la verificación manual en Windows.  
 **Rama:** `feat/h1-respaldo-restauracion`  
-**Commit:** `10fb923` (corrección de CI); implementación en `4e89fe0`  
+**Commit:** `546900f` (fallback de exportación); corrección de CI en `10fb923`; implementación en `4e89fe0`  
 **Repositorio:** <https://github.com/DanielCB096/tienda>
 
 ## Hecho y subido
@@ -17,7 +17,7 @@
 ## Verificación local
 
 - `dotnet build SistemaTienda.sln -c Release`: OK, 0 errores, 0 advertencias.
-- `dotnet test SistemaTienda.sln -c Release`: **373/373** en verde.
+- `dotnet test SistemaTienda.sln -c Release`: **376/376** en verde (3 pruebas nuevas de carpeta de exportación).
 - Compilación MAUI Windows: **OK, 0 errores**, 2 advertencias XAML preexistentes (`CajaPage` y `PosPage`).
 - La compilación Android sigue pendiente en este equipo por cargas de trabajo faltantes.
 
@@ -38,14 +38,39 @@
   - Job “Compilar y probar”: exitoso.
   - Job MAUI: falló en “Compilar para Windows” (`CS0234`), corregido en `10fb923`.
 
+## Verificación manual — Windows (2026-11-23)
+
+Entorno: Windows 11, build Release, base de prueba aislada en `%TEMP%\opencode\h1-manual`. Tienda de prueba con 1 usuario dueño, 1 producto (`H1TEST`) y fondo de caja de $200.
+
+| Escenario | Resultado | Evidencia |
+|---|---|---|
+| Exportar respaldo | **PASA** con fallback | `Documentos` no permite crear archivos en este equipo; se usó `Escritorio\SistemaTienda\tienda-20261123-212648-exportacion.db` |
+| Restaurar respaldo | **PASA** | Producto `H1TEST`, usuario y configuración conservados |
+| Respaldo previo a restaurar | **PASA** | `respaldos\tienda-20261123-212806-antes-restaurar.db` |
+| Restaurar archivo corrupto | **PASA** | Rechazado: “no pasó la verificación de integridad”; base actual intacta |
+| Dos instancias | **PASA** | La segunda muestra “SistemaTienda ya está abierto” y no deja operar |
+| Paquete sin base | **PASA** | ZIP con `LEEME.txt` y `resumen.txt`; sin `datos.db` |
+| Paquete con base | **PASA** | Confirmación explícita; ZIP con `datos.db`; producto y usuario presentes |
+| Android | **PENDIENTE** | Sin `adb` ni dispositivo/emulador disponible |
+| Otro equipo físico | **PENDIENTE** | Restauración probada en base aislada, no en hardware distinto |
+| Corte de energía | **PENDIENTE** | Cubierto parcialmente por pruebas de WAL, no manual |
+| Dueño no técnico | **PENDIENTE** | La ejecución fue automatizada; falta prueba con una persona real |
+
+### Hallazgo y corrección (`546900f`)
+
+- En este equipo `C:\Users\PC\Documents` no permite crear archivos (`FileNotFoundException` incluso con permisos de escritura); es un problema de la carpeta conocida, no de la app.
+- Se agregó `CarpetaExportacion`, que elige la primera carpeta escribible: `Documentos\SistemaTienda` → `Escritorio\SistemaTienda` → `Descargas\SistemaTienda`.
+- Se agregaron 3 pruebas: primera carpeta, salto de ruta inválida y fallo cuando ninguna sirve.
+- La app informa la ruta final en el diálogo de exportación.
+
 ## Pendiente
 
-1. Probar en Windows: exportar respaldo, restaurar en otro equipo, abrir dos instancias y confirmar que la segunda muestra el aviso.
-2. Probar en Android: exportar por el diálogo de compartir, restaurar desde un archivo y abrir la app.
-3. Confirmar que el paquete de soporte no se comparte sin consentimiento.
-4. Abrir la PR desde una cuenta colaboradora; la cuenta usada en Edge no tiene permiso:
-   <https://github.com/DanielCB096/tienda/pull/new/feat/h1-respaldo-restauracion>
-5. Actualizar `docs/changelog.md`, `docs/roadmap.md` y `docs/deuda-tecnica.md` cuando pase la verificación manual.
+1. Probar en Android: exportar por el diálogo de compartir, restaurar desde un archivo y abrir la app.
+2. Restaurar en otro equipo físico, no solo en una base aislada.
+3. Simular corte de energía o cierre forzado durante una venta y durante un respaldo.
+4. Probar el ciclo completo con un dueño no técnico, sin ayuda verbal.
+5. Confirmar el nuevo CI de `546900f` y hacer el merge de la PR #40.
+6. Actualizar `docs/changelog.md`, `docs/roadmap.md` y `docs/deuda-tecnica.md` cuando pase la verificación manual completa.
 
 ## Cómo continuar desde otro dispositivo
 
