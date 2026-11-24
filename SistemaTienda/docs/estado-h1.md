@@ -31,9 +31,11 @@
 
 ## CI en GitHub
 
-- Run corregido: <https://github.com/DanielCB096/tienda/actions/runs/45301168757> (commit `7e09cb7`)
+- Run final: <https://github.com/DanielCB096/tienda/actions/runs/45320190550> (commit `f748af8`)
   - Job “Compilar y probar”: **exitoso**.
   - Job “Compilar app MAUI (Windows y Android)”: **exitoso**; Windows y Android compilan.
+- Run de la corrección: <https://github.com/DanielCB096/tienda/actions/runs/45301168757> (commit `7e09cb7`)
+  - Ambos jobs exitosos.
 - Run anterior: <https://github.com/DanielCB096/tienda/actions/runs/45292691228>
   - Job “Compilar y probar”: exitoso.
   - Job MAUI: falló en “Compilar para Windows” (`CS0234`), corregido en `10fb923`.
@@ -69,7 +71,7 @@ Entorno: Windows 11, build Release, base de prueba aislada en `%TEMP%\opencode\h
 2. Restaurar en otro equipo físico, no solo en una base aislada.
 3. Simular corte de energía o cierre forzado durante una venta y durante un respaldo.
 4. Probar el ciclo completo con un dueño no técnico, sin ayuda verbal.
-5. Confirmar el nuevo CI de `546900f` y hacer el merge de la PR #40.
+5. Hacer el merge de la PR #40 cuando se decida aceptar la deuda de Android y las pruebas pendientes.
 6. Actualizar `docs/changelog.md`, `docs/roadmap.md` y `docs/deuda-tecnica.md` cuando pase la verificación manual completa.
 
 ## Cómo continuar desde otro dispositivo
