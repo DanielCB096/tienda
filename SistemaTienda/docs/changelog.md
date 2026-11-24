@@ -24,7 +24,7 @@ Cada entrada tiene formato:
 - **Modificado**: `QrTicketView` muestra el QR como imagen de 240 dp, rasterizada por `QrImagenService`; dibujar rectángulos recortaba la última fila del patrón con algunas escalas de pantalla.
 - **Sin cambios**: el ticket de texto, el total, el IVA y el PNG compartido conservan todos los datos.
 - **Pruebas**: `TicketServiceTests` verifica que el QR no crece con los productos y que no excede 53 módulos. El QR en pantalla (258×258 px) y el PNG se decodificaron con `pyzbar`.
-- **Pendiente**: confirmar el escaneo con un teléfono físico, en pantalla y con el PNG.
+- **Validado**: un teléfono real escaneó el QR desde la pantalla y devolvió tienda, folio, fecha, total y método.
 
 ## 2026-11-24 — Búsqueda dinámica en el punto de venta
 

@@ -45,7 +45,7 @@ El contenido del ticket y del QR se construye en `Application/Services/TicketSer
 - **Decisión**: el QR lleva solo el resumen (tienda, folio, fecha, total, método y, si aplica, `Estado: Anulada`). Se eliminaron los productos y el IVA, que siguen en el ticket de texto y en el PNG. El control pasa a 240 dp y se muestra como **imagen** rasterizada con `QrImagenService`: dibujar rectángulos dependía del escalado de la ventana y recortaba la última fila del patrón.
 - **Resultado medido**: el contenido baja a ~130 caracteres y 49×49 módulos. El QR se muestra en 258×258 px, cuadrado y completo, y se decodificó con `pyzbar` directamente desde una captura de pantalla; antes medía 89×89 módulos y 2 px por módulo.
 - **Pruebas**: `TicketServiceTests` verifica que el QR no crece con los productos y que no excede 53 módulos. La decodificación de la captura y del PNG se hizo con `pyzbar` como evidencia manual.
-- **Pendiente**: confirmar el escaneo desde un teléfono físico, en pantalla y con el PNG compartido.
+- **Pendiente**: ~~confirmar el escaneo desde un teléfono físico, en pantalla y con el PNG compartido~~. **Validado el 2026-11-24** con un teléfono real desde la pantalla: el lector devolvió el resumen esperado. Queda opcional probarlo con un segundo teléfono de otra marca.
 
 ## Implementación
 
