@@ -546,8 +546,11 @@ public partial class AjustesPage : ContentPage
 
             await DisplayAlertAsync("Restauración completada", resultado.Message, "Cerrar");
 
-            if (OperatingSystem.IsWindows() && Application.Current?.Windows.Count > 0)
-                Application.Current.CloseWindow(Application.Current.Windows[0]);
+#if WINDOWS
+            var app = Microsoft.Maui.Controls.Application.Current;
+            if (app?.Windows.Count > 0)
+                app.CloseWindow(app.Windows[0]);
+#endif
         }
         catch (Exception ex)
         {
