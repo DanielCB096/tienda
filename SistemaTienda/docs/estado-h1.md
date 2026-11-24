@@ -1,9 +1,10 @@
 # Estado de H1 — respaldo, restauración y WAL
 
-**Actualizado:** 2026-11-23, después de la verificación manual en Windows.  
-**Rama:** `feat/h1-respaldo-restauracion`  
-**Commit:** `546900f` (fallback de exportación); corrección de CI en `10fb923`; implementación en `4e89fe0`  
-**Repositorio:** <https://github.com/DanielCB096/tienda>
+**Actualizado:** 2026-11-24, H1 mergeado a `main`.  
+**Rama:** `main` (merge de `feat/h1-respaldo-restauracion`)  
+**Commit:** `41c5983` (merge de PR #40); fallback de exportación en `546900f`; implementación en `4e89fe0`  
+**Repositorio:** <https://github.com/DanielCB096/tienda>  
+**PR:** <https://github.com/DanielCB096/tienda/pull/40> (merged)
 
 ## Hecho y subido
 
@@ -65,14 +66,13 @@ Entorno: Windows 11, build Release, base de prueba aislada en `%TEMP%\opencode\h
 - Se agregaron 3 pruebas: primera carpeta, salto de ruta inválida y fallo cuando ninguna sirve.
 - La app informa la ruta final en el diálogo de exportación.
 
-## Pendiente
+## Pendiente después del merge
 
-1. Probar en Android: exportar por el diálogo de compartir, restaurar desde un archivo y abrir la app.
+1. Probar en Android: exportar por el diálogo de compartir, restaurar desde un archivo y abrir la app. **Android no se ofrece a clientes hasta completar esta prueba.**
 2. Restaurar en otro equipo físico, no solo en una base aislada.
 3. Simular corte de energía o cierre forzado durante una venta y durante un respaldo.
 4. Probar el ciclo completo con un dueño no técnico, sin ayuda verbal.
-5. Hacer el merge de la PR #40 cuando se decida aceptar la deuda de Android y las pruebas pendientes.
-6. Actualizar `docs/changelog.md`, `docs/roadmap.md` y `docs/deuda-tecnica.md` cuando pase la verificación manual completa.
+5. Actualizar `docs/changelog.md`, `docs/roadmap.md` y `docs/deuda-tecnica.md` cuando pase la verificación manual completa.
 
 ## Cómo continuar desde otro dispositivo
 
