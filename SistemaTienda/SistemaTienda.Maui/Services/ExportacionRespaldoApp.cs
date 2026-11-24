@@ -1,5 +1,6 @@
 using Microsoft.Maui.ApplicationModel.DataTransfer;
 using Microsoft.Maui.Storage;
+using SistemaTienda.Application.Services;
 
 namespace SistemaTienda.Maui.Services;
 
@@ -18,10 +19,17 @@ public static class ExportacionRespaldoApp
         var nombre = Path.GetFileName(ruta);
 
 #if WINDOWS
-        var carpeta = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-            "SistemaTienda");
-        Directory.CreateDirectory(carpeta);
+        var perfil = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        var carpeta = CarpetaExportacion.Elegir(new[]
+        {
+            Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                "SistemaTienda"),
+            Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
+                "SistemaTienda"),
+            Path.Combine(perfil, "Downloads", "SistemaTienda")
+        });
 
         var destino = Path.Combine(carpeta, nombre);
         File.Copy(ruta, destino, overwrite: true);
