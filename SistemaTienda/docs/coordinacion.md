@@ -29,8 +29,8 @@ Para cambios de esquema, T1 (migraciones) va primero. T2 (ventas) y T3 (centavos
 | Tarea | Agente | Rama | Archivos | Fecha | Estado |
 |-------|--------|------|-----------|-------|--------|
 | H1 | DeepSeek (OpenCode) | feat/h1-respaldo-restauracion | `Infrastructure/Database.cs`, `Infrastructure/RespaldoLocal.cs`, `Application/Services/RespaldoService.cs`, `Application/Services/PaqueteSoporteService.cs`, `Maui/MauiProgram.cs`, `Maui/App.xaml.cs`, `Maui/Services/ExportacionRespaldoApp.cs`, `Maui/Services/InstanciaUnica.cs`, `Maui/Pages/AjustesPage.xaml(.cs)`, `Tests/RespaldoWalTests.cs`, documentación | 2026-11-23 | Hecho (merge `82aa23e`) |
-| P3-respaldo | DeepSeek (OpenCode) | fix/p3-respaldo-ruta | `Maui/Pages/AjustesPage.xaml(.cs)`, `Maui/Services/AperturaCarpetaApp.cs` | 2026-11-24 | En revisión (CI) |
-| Semilla | DeepSeek (OpenCode) | feat/datos-semilla | `SistemaTienda.Semilla/**`, `SistemaTienda.sln`, `Tests/SemillaTests.cs`, documentación | 2026-11-24 | Hecho (pendiente CI) |
+| P3-respaldo | DeepSeek (OpenCode) | fix/p3-respaldo-ruta | `Maui/Pages/AjustesPage.xaml(.cs)`, `Maui/Services/AperturaCarpetaApp.cs` | 2026-11-24 | Hecho (`53a35fe`, CI `45460872004`) |
+| Semilla | DeepSeek (OpenCode) | feat/datos-semilla | `SistemaTienda.Semilla/**`, `SistemaTienda.sln`, `Tests/SemillaTests.cs`, documentación | 2026-11-24 | Hecho (`290cde6`, CI `45464387127`) |
 | T35 | DeepSeek (OpenCode) | feat/usuarios-pin-ajustes | `Application/Services/ConfiguracionService.cs`, `Infrastructure/Database.cs`, `Core/Bitacora.cs`, `Maui/Pages/AjustesPage.xaml(.cs)`, `Tests/UsuariosPinTests.cs`, documentación | 2026-11-21 | Tomada |
 
 ## Hecho
