@@ -16,6 +16,8 @@ public partial class PosPage : ContentPage
 
     private readonly List<CarritoFila> _carrito = new();
     private ConfiguracionTienda? _config;
+    private CancellationTokenSource? _sugerenciasCts;
+    private bool _limpiandoBuscador;
 
     public PosPage(VentaService ventas, InventoryService inventario,
         ConfiguracionService configuracion, TicketService ticketService, SesionApp sesion)
@@ -60,15 +62,100 @@ public partial class PosPage : ContentPage
     private long Total() =>
         _carrito.Sum(c => Dinero.Multiplicar(c.Producto.Precio, c.Cantidad));
 
+    protected override void OnDisappearing()
+    {
+        base.OnDisappearing();
+        CancelarSugerencias();
+    }
+
     private void OnBuscarCompleted(object sender, EventArgs e) => Buscar();
 
     private void OnBuscarClicked(object sender, EventArgs e) => Buscar();
+
+    private void OnBuscarTextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (_limpiandoBuscador)
+            return;
+
+        CancelarSugerencias();
+
+        var texto = e.NewTextValue?.Trim() ?? string.Empty;
+        if (texto.Length < 2)
+        {
+            OcultarResultados();
+            return;
+        }
+
+        // Espera a que la persona deje de escribir antes de consultar el catálogo.
+        var cts = new CancellationTokenSource();
+        _sugerenciasCts = cts;
+        _ = MostrarSugerenciasConRetrasoAsync(texto, cts);
+    }
+
+    private async Task MostrarSugerenciasConRetrasoAsync(string texto, CancellationTokenSource cts)
+    {
+        try
+        {
+            await Task.Delay(250, cts.Token);
+        }
+        catch (TaskCanceledException)
+        {
+            return;
+        }
+
+        if (cts.IsCancellationRequested || _sesion.Usuario == null)
+            return;
+
+        try
+        {
+            _sesion.Aplicar();
+            var sugerencias = _inventario.SugerirProductos(texto, 8);
+            if (sugerencias.Count == 0)
+            {
+                OcultarResultados();
+                return;
+            }
+
+            ListaResultados.ItemsSource = sugerencias
+                .Select(p => new ProductoFila { Producto = p })
+                .ToList();
+            PanelResultados.IsVisible = true;
+            MostrarMensaje(null);
+        }
+        catch (Exception ex)
+        {
+            OcultarResultados();
+            MostrarMensaje($"No se pudo buscar: {ex.Message}");
+        }
+    }
+
+    private void CancelarSugerencias()
+    {
+        _sugerenciasCts?.Cancel();
+        _sugerenciasCts?.Dispose();
+        _sugerenciasCts = null;
+    }
+
+    private void LimpiarBuscador()
+    {
+        CancelarSugerencias();
+        _limpiandoBuscador = true;
+        try
+        {
+            BuscarEntry.Text = string.Empty;
+        }
+        finally
+        {
+            _limpiandoBuscador = false;
+        }
+    }
 
     private void Buscar()
     {
         if (_sesion.Usuario == null)
             return;
 
+        CancelarSugerencias();
         _sesion.Aplicar();
 
         var texto = BuscarEntry.Text?.Trim() ?? string.Empty;
@@ -81,7 +168,7 @@ public partial class PosPage : ContentPage
         var producto = _inventario.BuscarPorCodigo(texto);
         if (producto != null)
         {
-            BuscarEntry.Text = string.Empty;
+            LimpiarBuscador();
             OcultarResultados();
             if (!producto.Activo)
             {
@@ -109,7 +196,7 @@ public partial class PosPage : ContentPage
             .ToList();
         PanelResultados.IsVisible = true;
         MostrarMensaje(null);
-        BuscarEntry.Text = string.Empty;
+        LimpiarBuscador();
     }
 
     private void OnAgregarResultadoClicked(object sender, EventArgs e)
@@ -117,16 +204,19 @@ public partial class PosPage : ContentPage
         if ((sender as Button)?.CommandParameter is not ProductoFila fila)
             return;
 
+        if (!AgregarAlCarrito(fila.Producto))
+            return;
+
         OcultarResultados();
-        AgregarAlCarrito(fila.Producto);
+        LimpiarBuscador();
     }
 
-    private void AgregarAlCarrito(Producto producto)
+    private bool AgregarAlCarrito(Producto producto)
     {
         if (!producto.Activo)
         {
             MostrarMensaje($"{producto.Nombre} está desactivado y no se puede vender.");
-            return;
+            return false;
         }
 
         var enCarrito = _carrito
@@ -136,7 +226,7 @@ public partial class PosPage : ContentPage
         if (enCarrito >= producto.Stock)
         {
             MostrarMensaje($"No hay stock disponible de {producto.Nombre} (stock {producto.Stock}).");
-            return;
+            return false;
         }
 
         var fila = _carrito.FirstOrDefault(c => c.Producto.Id == producto.Id);
@@ -148,6 +238,7 @@ public partial class PosPage : ContentPage
         MostrarMensaje(null);
         ActualizarCarrito();
         BuscarEntry.Focus();
+        return true;
     }
 
     private void OnMasClicked(object sender, EventArgs e)
@@ -445,7 +536,7 @@ public partial class PosPage : ContentPage
         _carrito.Clear();
         ActualizarCarrito();
         PanelCobro.IsVisible = false;
-        BuscarEntry.Text = string.Empty;
+        LimpiarBuscador();
         ConfirmarCobroButton.IsEnabled = true;
         MostrarMensaje($"Venta #{resultado.Value.Id} registrada y stock actualizado.");
 

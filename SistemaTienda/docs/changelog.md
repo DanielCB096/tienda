@@ -17,6 +17,14 @@ Cada entrada tiene formato:
 
 ---
 
+## 2026-11-24 — Búsqueda dinámica en el punto de venta
+
+- **Agregado**: el buscador de **Vender** sugiere productos mientras se escribe, con espera de 250 ms y hasta ocho coincidencias.
+- **Agregado**: `InventoryService.SugerirProductos` ordena por código exacto, prefijo de código, prefijo de nombre, inicio de palabra y coincidencia interna; ignora acentos y mayúsculas.
+- **Modificado**: al agregar desde la lista se limpia el buscador; si el producto no tiene stock, el texto y la lista se conservan.
+- **Sin cambios**: escaneo por código, Enter, botón **Buscar**, cobro y carrito.
+- 7 pruebas nuevas en `SugerenciasProductosTests` (389 en total).
+
 ## 2026-11-24 — Acciones sobre la ruta de respaldo y datos de prueba
 
 - **Agregado**: **Copiar ruta de respaldos** y **Abrir carpeta de respaldos** en Ajustes, solo en Windows.

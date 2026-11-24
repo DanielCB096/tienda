@@ -425,6 +425,53 @@ public class InventoryService
             .ToList();
     }
 
+    /// <summary>
+    /// Sugerencias para el punto de venta mientras se escribe. Solo productos
+    /// activos y ordenados por cercanía: código exacto, prefijo de código,
+    /// prefijo de nombre, inicio de palabra y coincidencia interna.
+    /// </summary>
+    public List<Producto> SugerirProductos(string texto, int maximo = 8)
+    {
+        if (string.IsNullOrWhiteSpace(texto) || maximo <= 0)
+            return new List<Producto>();
+
+        var filtro = Texto.SinAcentos(texto.Trim());
+        if (filtro.Length == 0)
+            return new List<Producto>();
+
+        return _db.ObtenerProductos()
+            .Where(p => p.Activo)
+            .Select(p => (Producto: p, Rango: RangoSugerencia(p, filtro)))
+            .Where(x => x.Rango < int.MaxValue)
+            .OrderBy(x => x.Rango)
+            .ThenBy(x => Texto.SinAcentos(x.Producto.Nombre ?? string.Empty),
+                StringComparer.OrdinalIgnoreCase)
+            .Take(maximo)
+            .Select(x => x.Producto)
+            .ToList();
+    }
+
+    private static int RangoSugerencia(Producto producto, string filtro)
+    {
+        var nombre = Texto.SinAcentos(producto.Nombre ?? string.Empty);
+        var codigo = Texto.SinAcentos(producto.CodigoBarras ?? string.Empty);
+
+        if (codigo.Equals(filtro, StringComparison.OrdinalIgnoreCase))
+            return 0;
+        if (codigo.StartsWith(filtro, StringComparison.OrdinalIgnoreCase))
+            return 1;
+        if (nombre.StartsWith(filtro, StringComparison.OrdinalIgnoreCase))
+            return 2;
+        if (nombre.Contains(" " + filtro, StringComparison.OrdinalIgnoreCase))
+            return 3;
+        if (nombre.Contains(filtro, StringComparison.OrdinalIgnoreCase))
+            return 4;
+        if (codigo.Contains(filtro, StringComparison.OrdinalIgnoreCase))
+            return 5;
+
+        return int.MaxValue;
+    }
+
     public ProcessResult ActualizarProducto(Producto producto)
     {
         if (producto == null || producto.Id <= 0)
