@@ -43,7 +43,8 @@ public static class Migraciones
         new Migracion(11, "crea el desglose por denominaciones de los cortes de caja", AplicarVersion11),
         new Migracion(12, "guarda el efectivo recibido de las ventas en efectivo", AplicarVersion12),
         new Migracion(13, "crea las compras a proveedores y sus renglones", AplicarVersion13),
-        new Migracion(14, "guarda el impuesto incluido congelado en las líneas de venta", AplicarVersion14)
+        new Migracion(14, "guarda el impuesto incluido congelado en las líneas de venta", AplicarVersion14),
+        new Migracion(15, "agrega el bloqueo por inactividad y el estado de acceso", AplicarVersion15)
     };
 
     private static void AplicarVersion2(SqliteConnection conn, SqliteTransaction tx)
@@ -734,6 +735,37 @@ public static class Migraciones
         cmd.CommandText = @"
             ALTER TABLE VentaLineas ADD COLUMN ImpuestoPorcentaje DECIMAL NOT NULL DEFAULT 0;
             ALTER TABLE VentaLineas ADD COLUMN ImpuestoImporte INTEGER NOT NULL DEFAULT 0;
+        ";
+        cmd.ExecuteNonQuery();
+    }
+
+    private static void AplicarVersion15(SqliteConnection conn, SqliteTransaction tx)
+    {
+        using (var revision = conn.CreateCommand())
+        {
+            revision.Transaction = tx;
+            revision.CommandText =
+                "SELECT COUNT(*) FROM pragma_table_info('ConfiguracionTienda') WHERE name = 'MinutosInactividad'";
+            if (Convert.ToInt32(revision.ExecuteScalar()) == 0)
+            {
+                using var alter = conn.CreateCommand();
+                alter.Transaction = tx;
+                alter.CommandText =
+                    "ALTER TABLE ConfiguracionTienda ADD COLUMN MinutosInactividad INTEGER NOT NULL DEFAULT 5;";
+                alter.ExecuteNonQuery();
+            }
+        }
+
+        using var cmd = conn.CreateCommand();
+        cmd.Transaction = tx;
+        cmd.CommandText = @"
+            CREATE TABLE IF NOT EXISTS EstadoAcceso (
+                Id INTEGER PRIMARY KEY CHECK (Id = 1),
+                Fallos INTEGER NOT NULL DEFAULT 0,
+                BloqueadoHasta TEXT,
+                UltimoIntento TEXT
+            );
+            INSERT OR IGNORE INTO EstadoAcceso (Id, Fallos) VALUES (1, 0);
         ";
         cmd.ExecuteNonQuery();
     }

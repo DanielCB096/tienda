@@ -17,11 +17,12 @@ public partial class AjustesPage : ContentPage
     private readonly BitacoraService _bitacora;
     private readonly SesionApp _sesion;
     private readonly NavegacionApp _navegacion;
+    private readonly BloqueoSesion _bloqueo;
     private List<ArchivoRespaldo> _respaldosRecientes = new();
 
     public AjustesPage(ConfiguracionService config, RespaldoService respaldos,
         PaqueteSoporteService soporte, BitacoraService bitacora,
-        SesionApp sesion, NavegacionApp navegacion)
+        SesionApp sesion, NavegacionApp navegacion, BloqueoSesion bloqueo)
     {
         InitializeComponent();
         _config = config;
@@ -30,6 +31,7 @@ public partial class AjustesPage : ContentPage
         _bitacora = bitacora;
         _sesion = sesion;
         _navegacion = navegacion;
+        _bloqueo = bloqueo;
         UsuarioRolPicker.ItemsSource = new[] { "Dueño", "Encargado", "Empleado" };
         UsuarioRolPicker.SelectedIndex = 2;
         UsuarioRolPicker.SelectedIndexChanged += (_, _) => ActualizarVisibilidadVerCostos();
@@ -381,6 +383,8 @@ public partial class AjustesPage : ContentPage
         ConfigLimiteEntry.Text = Pesos(config.LimiCreditoCliente);
         ConfigRespaldoEntry.Text =
             config.RespaldoIntervaloDias.ToString(CultureInfo.InvariantCulture);
+        ConfigInactividadEntry.Text =
+            config.MinutosInactividad.ToString(CultureInfo.InvariantCulture);
         ConfigErrorLabel.IsVisible = false;
         ConfigOverlay.IsVisible = true;
     }
@@ -409,10 +413,11 @@ public partial class AjustesPage : ContentPage
         var fiado = ConfigFiadoSwitch.IsToggled;
         var limite = fiado ? LeerCentavos(ConfigLimiteEntry.Text) : 0L;
         var respaldo = LeerDias(ConfigRespaldoEntry.Text);
+        var inactividad = LeerEntero(ConfigInactividadEntry.Text);
 
         if (nombre.Length == 0 || giro.Length == 0 ||
             !impuesto.HasValue || !comision.HasValue || !fondo.HasValue ||
-            !limite.HasValue || !respaldo.HasValue)
+            !limite.HasValue || !respaldo.HasValue || !inactividad.HasValue)
         {
             MostrarErrorConfig(
                 "Revisa los datos: nombre y giro son obligatorios; los importes y días no pueden ser negativos.");
@@ -428,7 +433,8 @@ public partial class AjustesPage : ContentPage
             FondoCajaInicial = fondo.Value,
             FiadoActivado = fiado,
             LimiCreditoCliente = limite.Value,
-            RespaldoIntervaloDias = respaldo.Value
+            RespaldoIntervaloDias = respaldo.Value,
+            MinutosInactividad = inactividad.Value
         };
 
         GuardarConfiguracionButton.IsEnabled = false;
@@ -478,6 +484,18 @@ public partial class AjustesPage : ContentPage
 
         if (!int.TryParse(texto.Trim(), NumberStyles.None, CultureInfo.InvariantCulture,
                 out var valor) || valor is < 0 or > 365)
+            return null;
+
+        return valor;
+    }
+
+    private static int? LeerEntero(string? texto)
+    {
+        if (string.IsNullOrWhiteSpace(texto))
+            return null;
+
+        if (!int.TryParse(texto.Trim(), NumberStyles.None, CultureInfo.InvariantCulture,
+                out var valor) || valor is < 2 or > 15)
             return null;
 
         return valor;
@@ -753,6 +771,7 @@ public partial class AjustesPage : ContentPage
             await DisplayAlertAsync("Respaldo pendiente", respaldo.Message, "Continuar");
 
         _sesion.Cerrar();
+        _bloqueo.Detener();
         _navegacion.MostrarLogin();
     }
 

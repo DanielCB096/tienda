@@ -17,6 +17,15 @@ Cada entrada tiene formato:
 
 ---
 
+## 2026-11-24 — Bloqueo de sesión y manejo de errores (H2.2)
+
+- **Esquema v15**: `ConfiguracionTienda.MinutosInactividad` (2–15, por defecto 5) y tabla `EstadoAcceso` para intentos fallidos y bloqueo persistente.
+- **Agregado**: tras **5 intentos fallidos** el acceso se bloquea **3 minutos**; el estado se guarda en SQLite y sobrevive al reinicio. Cada fallo va a la bitácora (`AccesoFallido`).
+- **Agregado**: **bloqueo por inactividad** configurable; la pantalla de bloqueo aparece como modal, conserva el carrito y la venta en curso, y se desbloquea con PIN del mismo usuario o de otro.
+- **Agregado**: manejador global de errores (`AppDomain`, tareas en segundo plano y WinUI) con registro en `logs/errores.log`.
+- **Modificado**: el login ya no bloquea con un contador en memoria de 3 intentos; usa el bloqueo persistente del servicio.
+- **Pruebas**: 5 nuevas en `BloqueoAccesoTests` (408 en total).
+
 ## 2026-11-24 — Permisos por acción (H2.1)
 
 - **Agregado**: permisos `CrearCliente`, `CrearProveedor`, `ExportarDatos` y `VerCostos`; `AgregarClienteFiado` y `AgregarProveedor` ahora los exigen en el servicio.

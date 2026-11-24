@@ -16,6 +16,8 @@ public class ConfiguracionTienda
     /// <summary>Límite de crédito por cliente en centavos; 0 = sin límite.</summary>
     public long LimiCreditoCliente { get; set; }
     public int RespaldoIntervaloDias { get; set; }
+    /// <summary>Minutos sin actividad antes de bloquear la pantalla (2 a 15).</summary>
+    public int MinutosInactividad { get; set; } = 5;
     public string UsuarioDueñoPINHash { get; set; } = string.Empty;
     public DateTime FechaCreacion { get; set; } = DateTime.Now;
     public string VersionApp { get; set; } = string.Empty;

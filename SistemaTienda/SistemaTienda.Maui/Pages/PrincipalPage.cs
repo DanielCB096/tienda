@@ -13,11 +13,14 @@ namespace SistemaTienda.Maui.Pages;
 /// </summary>
 public sealed class PrincipalPage : Microsoft.Maui.Controls.TabbedPage
 {
+    private readonly BloqueoSesion _bloqueo;
+
     public PrincipalPage(InicioPage inicio, PosPage pos, InventarioPage inventario,
         VentasPage ventas, ClientesPage clientes, ProveedoresPage proveedores,
         GastosPage gastos, CajaPage caja, ReportesPage reportes, AjustesPage ajustes,
-        SesionApp sesion)
+        SesionApp sesion, BloqueoSesion bloqueo)
     {
+        _bloqueo = bloqueo;
         BarBackgroundColor = Color.FromArgb("#2E6B4F");
         BarTextColor = Colors.White;
         UnselectedTabColor = Color.FromArgb("#BFD9CB");
@@ -48,7 +51,32 @@ public sealed class PrincipalPage : Microsoft.Maui.Controls.TabbedPage
 
         Children.Add(ajustes);
 
+        // Cualquier cambio de pestaña cuenta como actividad.
+        CurrentPageChanged += (_, _) => bloqueo.Reiniciar();
+        foreach (var pagina in Children.OfType<ContentPage>())
+            ConectarActividad(pagina, bloqueo);
+
         On<Microsoft.Maui.Controls.PlatformConfiguration.Android>()
             .SetToolbarPlacement(ToolbarPlacement.Bottom);
+    }
+
+    protected override void OnAppearing()
+    {
+        base.OnAppearing();
+        _bloqueo.Iniciar();
+    }
+
+    private static void ConectarActividad(ContentPage pagina, BloqueoSesion bloqueo)
+    {
+        if (pagina.Content is not View vista)
+            return;
+
+        var toque = new TapGestureRecognizer();
+        toque.Tapped += (_, _) => bloqueo.Reiniciar();
+        vista.GestureRecognizers.Add(toque);
+
+        var puntero = new PointerGestureRecognizer();
+        puntero.PointerMoved += (_, _) => bloqueo.Reiniciar();
+        vista.GestureRecognizers.Add(puntero);
     }
 }

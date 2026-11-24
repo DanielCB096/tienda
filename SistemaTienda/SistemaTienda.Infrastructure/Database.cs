@@ -380,6 +380,7 @@ public class DatabaseTools
             SET NombreTienda = @nom, Giro = @giro, ImpuestoPredeterminado = @imp,
                 ComisionTarjeta = @comis, FondoCajaInicial = @fondo, FiadoActivado = @fiado,
                 LimiCreditoCliente = @limite, RespaldoIntervaloDias = @intervalo,
+                MinutosInactividad = @inactividad,
                 VersionApp = @ver
             WHERE Id = @id",
             new SqliteParameter("@id", config.Id),
@@ -391,9 +392,76 @@ public class DatabaseTools
             new SqliteParameter("@fiado", config.FiadoActivado ? 1 : 0),
             new SqliteParameter("@limite", config.LimiCreditoCliente),
             new SqliteParameter("@intervalo", config.RespaldoIntervaloDias),
+            new SqliteParameter("@inactividad", config.MinutosInactividad),
             new SqliteParameter("@ver", config.VersionApp));
 
         return filas > 0;
+    }
+
+    // ---------- Estado de acceso ----------
+
+    public (int Fallos, DateTime? BloqueadoHasta) ObtenerEstadoAcceso()
+    {
+        using var conn = CreateConnection();
+        conn.Open();
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT Fallos, BloqueadoHasta FROM EstadoAcceso WHERE Id = 1";
+        using var reader = cmd.ExecuteReader();
+        if (!reader.Read())
+            return (0, null);
+
+        var fallos = reader.IsDBNull(0) ? 0 : reader.GetInt32(0);
+        DateTime? hasta = null;
+        if (!reader.IsDBNull(1) &&
+            DateTime.TryParse(reader.GetString(1), CultureInfo.InvariantCulture,
+                DateTimeStyles.RoundtripKind, out var fecha))
+            hasta = fecha;
+
+        return (fallos, hasta);
+    }
+
+    public int RegistrarFalloAcceso(int maximo, DateTime bloquearHasta)
+    {
+        using var conn = CreateConnection();
+        conn.Open();
+        using var tx = conn.BeginTransaction();
+
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.Transaction = tx;
+            cmd.CommandText =
+                "UPDATE EstadoAcceso SET Fallos = Fallos + 1, UltimoIntento = @ahora WHERE Id = 1";
+            cmd.Parameters.AddWithValue("@ahora",
+                DateTime.Now.ToString("o", CultureInfo.InvariantCulture));
+            cmd.ExecuteNonQuery();
+        }
+
+        int fallos;
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.Transaction = tx;
+            cmd.CommandText = "SELECT Fallos FROM EstadoAcceso WHERE Id = 1";
+            fallos = Convert.ToInt32(cmd.ExecuteScalar(), CultureInfo.InvariantCulture);
+        }
+
+        if (fallos >= maximo)
+        {
+            using var cmd = conn.CreateCommand();
+            cmd.Transaction = tx;
+            cmd.CommandText =
+                "UPDATE EstadoAcceso SET Fallos = 0, BloqueadoHasta = @hasta WHERE Id = 1";
+            cmd.Parameters.AddWithValue("@hasta",
+                bloquearHasta.ToString("o", CultureInfo.InvariantCulture));
+            cmd.ExecuteNonQuery();
+        }
+
+        tx.Commit();
+        return fallos;
+    }
+
+    public void LimpiarEstadoAcceso()
+    {
+        ExecuteCommand("UPDATE EstadoAcceso SET Fallos = 0, BloqueadoHasta = NULL WHERE Id = 1");
     }
 
     // ---------- Usuarios ----------

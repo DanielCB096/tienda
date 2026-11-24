@@ -13,6 +13,8 @@ public static class MauiProgram
 
 	public static MauiApp CreateMauiApp()
 	{
+		ManejadorErrores.Instalar();
+
 		var builder = MauiApp.CreateBuilder();
 		builder
 			.UseMauiApp<App>()
@@ -38,6 +40,7 @@ public static class MauiProgram
 		builder.Services.AddSingleton<PaqueteSoporteService>();
 		builder.Services.AddSingleton<BitacoraService>();		builder.Services.AddSingleton<SesionApp>();
 		builder.Services.AddSingleton<NavegacionApp>();
+		builder.Services.AddSingleton<BloqueoSesion>();
 		builder.Services.AddSingleton<ArranqueApp>();
 
 		builder.Services.AddTransient<ConfiguracionInicialPage>();
@@ -53,6 +56,7 @@ public static class MauiProgram
 		builder.Services.AddTransient<CajaPage>();
 		builder.Services.AddTransient<ReportesPage>();
 		builder.Services.AddTransient<AjustesPage>();
+		builder.Services.AddTransient<BloqueoPage>();
 
 #if DEBUG
 		builder.Logging.AddDebug();

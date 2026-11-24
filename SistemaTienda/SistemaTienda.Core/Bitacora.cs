@@ -110,4 +110,5 @@ public static class AccionBitacora
     public const string CambiarPin = "CambiarPin";
     public const string Configuracion = "Configuracion";
     public const string Respaldo = "Respaldo";
+    public const string AccesoFallido = "AccesoFallido";
 }

@@ -5,13 +5,10 @@ namespace SistemaTienda.Maui.Pages;
 
 public partial class LoginPage : ContentPage
 {
-    private const int IntentosPermitidos = 3;
-
     private readonly ConfiguracionService _config;
     private readonly RespaldoService _respaldos;
     private readonly SesionApp _sesion;
     private readonly NavegacionApp _navegacion;
-    private int _intentos;
 
     public LoginPage(ConfiguracionService config, RespaldoService respaldos,
         SesionApp sesion, NavegacionApp navegacion)
@@ -47,17 +44,8 @@ public partial class LoginPage : ContentPage
         var resultado = _config.VerificarAcceso(pin);
         if (resultado.IsError)
         {
-            _intentos++;
             PinEntry.Text = string.Empty;
-            MostrarError($"PIN incorrecto. Intento {_intentos} de {IntentosPermitidos}.");
-
-            if (_intentos >= IntentosPermitidos)
-            {
-                PinEntry.IsEnabled = false;
-                EntrarButton.IsEnabled = false;
-                MostrarError("Demasiados intentos. Cierra y abre la aplicación para volver a intentarlo.");
-            }
-
+            MostrarError(resultado.Message);
             PinEntry.Focus();
             return;
         }

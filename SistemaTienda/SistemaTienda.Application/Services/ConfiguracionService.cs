@@ -11,6 +11,8 @@ public class ConfiguracionService
 {
     private const int Pbkdf2Iteraciones = 100_000;
     private const int Pbkdf2LongitudHash = 32;
+    private const int IntentosMaximos = 5;
+    private const int MinutosBloqueo = 3;
     private readonly DatabaseTools _db;
     private readonly BitacoraService _bitacora;
 
@@ -109,6 +111,9 @@ public class ConfiguracionService
             nuevaConfig.FondoCajaInicial < 0 || nuevaConfig.LimiCreditoCliente < 0 ||
             nuevaConfig.RespaldoIntervaloDias < 0)
             return ProcessResult.Error("Los importes y el intervalo no pueden ser negativos");
+
+        if (nuevaConfig.MinutosInactividad < 2 || nuevaConfig.MinutosInactividad > 15)
+            return ProcessResult.Error("El bloqueo por inactividad debe estar entre 2 y 15 minutos");
 
         nuevaConfig.Id = configActual.Id;
         nuevaConfig.VersionApp = configActual.VersionApp;
@@ -303,6 +308,17 @@ public class ConfiguracionService
 
     public ProcessResult<UsuarioSistema> VerificarAcceso(string pinIngresado)
     {
+        var (fallos, bloqueadoHasta) = _db.ObtenerEstadoAcceso();
+        var ahora = DateTime.Now;
+
+        if (bloqueadoHasta.HasValue && bloqueadoHasta.Value > ahora)
+        {
+            var restante = Math.Max(1,
+                (int)Math.Ceiling((bloqueadoHasta.Value - ahora).TotalMinutes));
+            return ProcessResult<UsuarioSistema>.Error(
+                $"Acceso bloqueado por intentos fallidos. Espera {restante} minuto(s).");
+        }
+
         foreach (var usuario in _db.ObtenerUsuarios())
         {
             bool coincide;
@@ -316,10 +332,24 @@ public class ConfiguracionService
             }
 
             if (coincide)
+            {
+                _db.LimpiarEstadoAcceso();
                 return ProcessResult<UsuarioSistema>.OK(usuario);
+            }
         }
 
-        return ProcessResult<UsuarioSistema>.Error("PIN incorrecto");
+        var intentos = _db.RegistrarFalloAcceso(IntentosMaximos,
+            ahora.AddMinutes(MinutosBloqueo));
+
+        _bitacora.Registrar(AccionBitacora.AccesoFallido, "Acceso", string.Empty,
+            string.Empty, $"Intento={intentos}",
+            $"PIN incorrecto; intentos máximos={IntentosMaximos}");
+
+        return intentos >= IntentosMaximos
+            ? ProcessResult<UsuarioSistema>.Error(
+                $"Demasiados intentos. El acceso queda bloqueado {MinutosBloqueo} minutos.")
+            : ProcessResult<UsuarioSistema>.Error(
+                $"PIN incorrecto. Intento {intentos} de {IntentosMaximos}.");
     }
 
     public bool UsuarioTieneRol(int usuarioId, RolUsuario rolRequerido)

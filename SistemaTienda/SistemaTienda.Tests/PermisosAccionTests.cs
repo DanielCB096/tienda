@@ -215,11 +215,21 @@ public sealed class PermisosAccionTests
     {
         using var bd = new BaseDatosPrueba();
         bd.ConfigurarTienda();
-        SesionActual.Cerrar();
+        var anterior = SesionActual.Usuario;
 
-        Assert.False(AutorizacionService.Puede(null, PermisoSistema.Vender));
-        Assert.True(bd.Config.AgregarClienteFiado(NuevoCliente()).IsError);
-        Assert.True(new ReporteUtilidadService(bd.Db)
-            .Obtener(DateTime.Today, DateTime.Today).IsError);
+        try
+        {
+            SesionActual.Cerrar();
+
+            Assert.False(AutorizacionService.Puede(null, PermisoSistema.Vender));
+            Assert.True(bd.Config.AgregarClienteFiado(NuevoCliente()).IsError);
+            Assert.True(new ReporteUtilidadService(bd.Db)
+                .Obtener(DateTime.Today, DateTime.Today).IsError);
+        }
+        finally
+        {
+            if (anterior != null)
+                SesionActual.Iniciar(anterior);
+        }
     }
 }

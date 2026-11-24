@@ -19,6 +19,20 @@ public sealed class NavegacionApp
 
     public void MostrarPrincipal() => Cambiar(_services.GetRequiredService<PrincipalPage>());
 
+    /// <summary>
+    /// Muestra la pantalla de bloqueo por inactividad como modal, sin desmontar
+    /// las pestañas ni perder el carrito.
+    /// </summary>
+    public void MostrarBloqueo()
+    {
+        var ventana = Microsoft.Maui.Controls.Application.Current?.Windows.FirstOrDefault();
+        if (ventana?.Page is not Page raiz)
+            return;
+
+        var bloqueo = _services.GetRequiredService<BloqueoPage>();
+        _ = raiz.Navigation.PushModalAsync(bloqueo);
+    }
+
     public void Cambiar(Page pagina)
     {
         var ventana = Microsoft.Maui.Controls.Application.Current?.Windows.FirstOrDefault();
