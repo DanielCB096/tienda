@@ -22,24 +22,48 @@ public class RespaldoService
     /// Respaldo manual con permiso de configuración. El respaldo automático
     /// usa <see cref="CrearRespaldo"/> porque se ejecuta antes de iniciar sesión.
     /// </summary>
-    public ProcessResult<string> CrearRespaldoManual(string etiqueta = "manual")
+    public ProcessResult<string> CrearRespaldoManual(string etiqueta = "manual",
+        string claveRespaldo = null)
     {
         var autorizacion = AutorizacionService.Exigir(SesionActual.Usuario, PermisoSistema.Configurar);
         if (autorizacion.IsError)
             return ProcessResult<string>.Error(autorizacion.Message);
 
-        return CrearRespaldo(etiqueta);
+        return CrearRespaldo(etiqueta, claveRespaldo);
     }
 
-    public ProcessResult<string> CrearRespaldo(string etiqueta = "manual")
+    public ProcessResult<string> CrearRespaldo(string etiqueta = "manual",
+        string claveRespaldo = null)
     {
         try
         {
             var ruta = RespaldoLocal.Crear(_db.RutaBaseDatos, _db.DirectorioRespaldos, etiqueta);
+            var cifrado = false;
+
+            if (!string.IsNullOrWhiteSpace(claveRespaldo))
+            {
+                var datos = File.ReadAllBytes(ruta);
+                var archivoCifrado = CifradoRespaldo.Cifrar(datos, claveRespaldo);
+                var destino = ruta + CifradoRespaldo.Extension;
+                File.WriteAllBytes(destino, archivoCifrado);
+
+                // Verificar el archivo cifrado antes de borrar la copia en claro.
+                var comprobacion = CifradoRespaldo.Descifrar(
+                    File.ReadAllBytes(destino), claveRespaldo);
+                if (!comprobacion.SequenceEqual(datos))
+                    throw new InvalidDataException("El respaldo cifrado no coincide con el original");
+
+                File.Delete(ruta);
+                ruta = destino;
+                cifrado = true;
+            }
+
             _bitacora.Registrar(AccionBitacora.Respaldo, "Respaldo", Path.GetFileName(ruta),
-                datosDespues: $"Ruta={ruta};Etiqueta={etiqueta}",
+                datosDespues: $"Ruta={ruta};Etiqueta={etiqueta};Cifrado={cifrado}",
                 motivo: $"Respaldo {etiqueta}");
-            return ProcessResult<string>.OK(ruta, "Respaldo creado y verificado");
+            return ProcessResult<string>.OK(ruta, cifrado
+                ? "Respaldo cifrado creado y verificado"
+                : "Respaldo creado y verificado");
         }
         catch (Exception ex)
         {
@@ -52,7 +76,7 @@ public class RespaldoService
     /// Se ejecuta al iniciar y al cerrar la aplicación; cualquier respaldo previo cuenta.
     /// </summary>
     public ProcessResult<ResultadoRespaldoAutomatico> EjecutarAutomaticoSiCorresponde(
-        DateTime? ahora = null)
+        DateTime? ahora = null, string claveRespaldo = null)
     {
         try
         {
@@ -80,7 +104,7 @@ public class RespaldoService
                     UltimoRespaldo = ultimo
                 });
 
-            var creado = CrearRespaldo("automatico");
+            var creado = CrearRespaldo("automatico", claveRespaldo);
             if (creado.IsError)
                 return ProcessResult<ResultadoRespaldoAutomatico>.Error(
                     $"El respaldo automático está vencido y no se pudo crear: {creado.Message}");
@@ -127,7 +151,8 @@ public class RespaldoService
     /// <summary>
     /// Reemplaza la base actual. Requiere confirmación explícita y reiniciar la aplicación.
     /// </summary>
-    public ProcessResult Restaurar(string rutaRespaldo, bool confirmado)
+    public ProcessResult Restaurar(string rutaRespaldo, bool confirmado,
+        string claveRespaldo = null)
     {
         if (!confirmado)
             return ProcessResult.Error("La restauración requiere confirmación explícita");
@@ -139,18 +164,48 @@ public class RespaldoService
         if (autorizacion.IsError)
             return ProcessResult.Error(autorizacion.Message);
 
+        string temporal = null;
         try
         {
+            var ruta = rutaRespaldo;
+
+            if (rutaRespaldo.EndsWith(CifradoRespaldo.Extension, StringComparison.OrdinalIgnoreCase))
+            {
+                if (!CifradoRespaldo.ClaveValida(claveRespaldo))
+                    return ProcessResult.Error(
+                        "Este respaldo está cifrado. Escribe la clave de respaldo de 24 caracteres.");
+
+                var datos = CifradoRespaldo.Descifrar(
+                    File.ReadAllBytes(rutaRespaldo), claveRespaldo);
+
+                temporal = Path.Combine(Path.GetTempPath(),
+                    $"restaurar-{Guid.NewGuid():N}.db");
+                File.WriteAllBytes(temporal, datos);
+                ruta = temporal;
+            }
+
             var respaldoSeguridad = RespaldoLocal.Restaurar(
-                rutaRespaldo, _db.RutaBaseDatos, _db.DirectorioRespaldos);
+                ruta, _db.RutaBaseDatos, _db.DirectorioRespaldos);
 
             return ProcessResult.Success(string.IsNullOrEmpty(respaldoSeguridad)
                 ? "Respaldo restaurado. Reinicie la aplicación."
                 : $"Respaldo restaurado. Respaldo previo guardado en: {respaldoSeguridad}. Reinicie la aplicación.");
         }
+        catch (System.Security.Cryptography.CryptographicException)
+        {
+            return ProcessResult.Error(
+                "La clave no coincide con el respaldo o el archivo fue alterado");
+        }
         catch (Exception ex)
         {
             return ProcessResult.Error($"No se pudo restaurar el respaldo: {ex.Message}");
+        }
+        finally
+        {
+            if (temporal != null)
+            {
+                try { File.Delete(temporal); } catch { }
+            }
         }
     }
 }

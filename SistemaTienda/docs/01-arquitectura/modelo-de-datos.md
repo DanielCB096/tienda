@@ -1,6 +1,6 @@
-# Modelo de Datos (esquema v15)
+# Modelo de Datos (esquema v16)
 
-Base local SQLite, un solo archivo. `PRAGMA user_version = 15`.
+Base local SQLite, un solo archivo. `PRAGMA user_version = 16`.
 
 El acceso vive en `SistemaTienda.Infrastructure/Database.cs` (`DatabaseTools`). Todas las consultas son parametrizadas.
 
@@ -21,6 +21,7 @@ El acceso vive en `SistemaTienda.Infrastructure/Database.cs` (`DatabaseTools`). 
 - **v12** - agrega `Ventas.EfectivoRecibido` (`INTEGER`, nullable) para reconstruir el cambio al reimprimir. Las ventas con tarjeta, fiado o mixto y las anteriores a la v12 quedan en `NULL`.
 - **v13** - crea `ComprasProveedor` y `CompraProveedorLineas`, inmutables, con índices por proveedor, fecha y producto. El encabezado guarda saldo antes/después y los renglones congelan cantidad, costo e importe. Una compra aumenta el stock, actualiza el costo del catálogo y suma al saldo del proveedor en una transacción; el pago se registra después.
 - **v14** - agrega `VentaLineas.ImpuestoPorcentaje` y `VentaLineas.ImpuestoImporte` para congelar el IVA incluido por renglón. Los precios ya incluyen impuesto, así que el total no cambia; las ventas anteriores quedan en cero.
+- **v16** - agrega `ConfiguracionTienda.RespaldoCifradoActivado` para saber si los respaldos nuevos se cifran.
 - **v15** - agrega `ConfiguracionTienda.MinutosInactividad` (2 a 15, por defecto 5) y la tabla `EstadoAcceso` (una fila) con `Fallos`, `BloqueadoHasta` y `UltimoIntento` para el bloqueo persistente del login.
 - Una base nueva se crea directamente en la versión máxima (`Migraciones.VersionMaxima`): no se crea respaldo previo porque aún no hay datos.
 - `MigradorEsquema.Migrar()` se ejecuta dentro de `InicializarBaseDeDatos()` al arrancar:
@@ -68,6 +69,7 @@ Fila única (Id = 1) creada al inicializar la base.
 | RespaldoIntervaloDias | INTEGER | 0 = deshabilitado |
 | UsuarioDueñoPINHash | TEXT | Sin uso; el hash vive en UsuariosSistema |
 | MinutosInactividad | INTEGER | Minutos sin actividad antes de bloquear la pantalla (migración v15; 2 a 15, por defecto 5) |
+| RespaldoCifradoActivado | INTEGER | 1 = los respaldos nuevos se cifran con la clave del equipo (migración v16) |
 | FechaCreacion | DATETIME | `datetime('now')` |
 | VersionApp | TEXT | Se conserva al actualizar |
 

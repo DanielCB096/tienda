@@ -9,6 +9,7 @@ public sealed class ArchivoRespaldo
     public string Nombre { get; init; } = string.Empty;
     public DateTime Fecha { get; init; }
     public long TamanoBytes { get; init; }
+    public bool Cifrado { get; init; }
 }
 
 /// <summary>
@@ -93,14 +94,17 @@ public static class RespaldoLocal
             return Array.Empty<ArchivoRespaldo>();
 
         return new DirectoryInfo(directorioRespaldos)
-            .GetFiles("tienda-*.db")
+            .GetFiles("tienda-*")
+            .Where(f => f.Name.EndsWith(".db", StringComparison.OrdinalIgnoreCase) ||
+                        f.Name.EndsWith(".db.stb", StringComparison.OrdinalIgnoreCase))
             .OrderByDescending(f => f.LastWriteTimeUtc)
             .Select(f => new ArchivoRespaldo
             {
                 Ruta = f.FullName,
                 Nombre = f.Name,
                 Fecha = f.LastWriteTime,
-                TamanoBytes = f.Length
+                TamanoBytes = f.Length,
+                Cifrado = f.Name.EndsWith(".stb", StringComparison.OrdinalIgnoreCase)
             })
             .ToList();
     }

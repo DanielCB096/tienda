@@ -44,7 +44,8 @@ public static class Migraciones
         new Migracion(12, "guarda el efectivo recibido de las ventas en efectivo", AplicarVersion12),
         new Migracion(13, "crea las compras a proveedores y sus renglones", AplicarVersion13),
         new Migracion(14, "guarda el impuesto incluido congelado en las líneas de venta", AplicarVersion14),
-        new Migracion(15, "agrega el bloqueo por inactividad y el estado de acceso", AplicarVersion15)
+        new Migracion(15, "agrega el bloqueo por inactividad y el estado de acceso", AplicarVersion15),
+        new Migracion(16, "agrega el indicador de respaldos cifrados", AplicarVersion16)
     };
 
     private static void AplicarVersion2(SqliteConnection conn, SqliteTransaction tx)
@@ -767,6 +768,24 @@ public static class Migraciones
             );
             INSERT OR IGNORE INTO EstadoAcceso (Id, Fallos) VALUES (1, 0);
         ";
+        cmd.ExecuteNonQuery();
+    }
+
+    private static void AplicarVersion16(SqliteConnection conn, SqliteTransaction tx)
+    {
+        using (var revision = conn.CreateCommand())
+        {
+            revision.Transaction = tx;
+            revision.CommandText =
+                "SELECT COUNT(*) FROM pragma_table_info('ConfiguracionTienda') WHERE name = 'RespaldoCifradoActivado'";
+            if (Convert.ToInt32(revision.ExecuteScalar()) > 0)
+                return;
+        }
+
+        using var cmd = conn.CreateCommand();
+        cmd.Transaction = tx;
+        cmd.CommandText =
+            "ALTER TABLE ConfiguracionTienda ADD COLUMN RespaldoCifradoActivado INTEGER NOT NULL DEFAULT 0;";
         cmd.ExecuteNonQuery();
     }
 

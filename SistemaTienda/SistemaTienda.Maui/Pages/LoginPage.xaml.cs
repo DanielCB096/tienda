@@ -52,7 +52,11 @@ public partial class LoginPage : ContentPage
 
         _sesion.Iniciar(resultado.Value);
 
-        var respaldo = _respaldos.EjecutarAutomaticoSiCorresponde();
+        var config = _config.ObtenerConfiguracion().Value;
+        var clave = config?.RespaldoCifradoActivado == true
+            ? await AlmacenClaveRespaldo.LeerAsync()
+            : null;
+        var respaldo = _respaldos.EjecutarAutomaticoSiCorresponde(claveRespaldo: clave);
         if (respaldo.IsError)
             await DisplayAlertAsync("Respaldo pendiente", respaldo.Message, "Continuar");
 

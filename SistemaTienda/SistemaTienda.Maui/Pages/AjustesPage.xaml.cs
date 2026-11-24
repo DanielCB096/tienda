@@ -49,6 +49,134 @@ public partial class AjustesPage : ContentPage
     {
         base.OnAppearing();
         Cargar();
+        _ = ActualizarCifradoAsync();
+    }
+
+    private bool PuedeConfigurar() =>
+        _sesion.Usuario != null &&
+        AutorizacionService.Puede(_sesion.Usuario, PermisoSistema.Configurar);
+
+    private async Task<string?> ClaveRespaldoAsync()
+    {
+        var config = _config.ObtenerConfiguracion().Value;
+        if (config?.RespaldoCifradoActivado != true)
+            return null;
+
+        return await AlmacenClaveRespaldo.LeerAsync();
+    }
+
+    private async Task ActualizarCifradoAsync()
+    {
+        var config = _config.ObtenerConfiguracion().Value;
+        var activo = config?.RespaldoCifradoActivado == true;
+        var clave = activo ? await AlmacenClaveRespaldo.LeerAsync() : null;
+
+        if (activo && clave == null)
+            EstadoCifradoLabel.Text =
+                "Cifrado activado, pero la clave no está en este equipo. Restaura con la tarjeta o desactiva el cifrado.";
+        else if (activo)
+            EstadoCifradoLabel.Text =
+                "Activado: los respaldos nuevos se cifran con la clave de este equipo.";
+        else
+            EstadoCifradoLabel.Text =
+                "Desactivado: los respaldos se guardan sin contraseña.";
+
+        var puede = PuedeConfigurar();
+        ActivarCifradoButton.IsVisible = puede && !activo;
+        VerTarjetaCifradoButton.IsVisible = puede && activo && clave != null;
+        DesactivarCifradoButton.IsVisible = puede && activo;
+    }
+
+    private async void OnActivarCifradoClicked(object sender, EventArgs e)
+    {
+        if (!PuedeConfigurar())
+            return;
+
+        var confirmar = await DisplayAlertAsync("Activar respaldo cifrado",
+            "Se generará una clave de recuperación. Si la pierdes, no podrás abrir los respaldos cifrados. " +
+            "Guárdala fuera de este equipo. ¿Continuar?", "Activar", "Cancelar");
+        if (!confirmar)
+            return;
+
+        var clave = CifradoRespaldo.GenerarClave();
+        await AlmacenClaveRespaldo.GuardarAsync(clave);
+
+        var config = _config.ObtenerConfiguracion().Value;
+        if (config == null)
+            return;
+
+        config.RespaldoCifradoActivado = true;
+        _sesion.Aplicar();
+        var guardado = _config.ActualizarConfiguracion(config);
+        if (guardado.IsError)
+        {
+            await DisplayAlertAsync("No se pudo activar", guardado.Message, "Continuar");
+            return;
+        }
+
+        await MostrarTarjetaAsync(clave);
+        await ActualizarCifradoAsync();
+        Cargar();
+    }
+
+    private async Task MostrarTarjetaAsync(string clave)
+    {
+        var entrada = await DisplayPromptAsync("Tarjeta de recuperación",
+            "Guarda esta clave fuera del equipo. La necesitarás para restaurar en otro equipo.",
+            accept: "Ya la guardé", cancel: "Copiar clave",
+            initialValue: clave, maxLength: 40);
+
+        if (entrada == null)
+        {
+            await Clipboard.Default.SetTextAsync(clave);
+            await DisplayAlertAsync("Clave copiada",
+                "Pega la clave en un lugar seguro fuera de este equipo.", "Continuar");
+        }
+    }
+
+    private async void OnVerTarjetaCifradoClicked(object sender, EventArgs e)
+    {
+        if (!PuedeConfigurar())
+            return;
+
+        var clave = await AlmacenClaveRespaldo.LeerAsync();
+        if (clave == null)
+        {
+            await DisplayAlertAsync("Sin clave", "La clave no está en este equipo.", "Continuar");
+            return;
+        }
+
+        await MostrarTarjetaAsync(clave);
+    }
+
+    private async void OnDesactivarCifradoClicked(object sender, EventArgs e)
+    {
+        if (!PuedeConfigurar())
+            return;
+
+        var confirmar = await DisplayAlertAsync("Desactivar cifrado",
+            "Los respaldos nuevos se guardarán sin contraseña. Los cifrados existentes seguirán pidiendo su clave. " +
+            "¿Continuar?", "Desactivar", "Cancelar");
+        if (!confirmar)
+            return;
+
+        await AlmacenClaveRespaldo.BorrarAsync();
+
+        var config = _config.ObtenerConfiguracion().Value;
+        if (config == null)
+            return;
+
+        config.RespaldoCifradoActivado = false;
+        _sesion.Aplicar();
+        var guardado = _config.ActualizarConfiguracion(config);
+        if (guardado.IsError)
+        {
+            await DisplayAlertAsync("No se pudo desactivar", guardado.Message, "Continuar");
+            return;
+        }
+
+        await ActualizarCifradoAsync();
+        Cargar();
     }
 
     private void Cargar()
@@ -525,7 +653,16 @@ public partial class AjustesPage : ContentPage
         try
         {
             _sesion.Aplicar();
-            var resultado = _respaldos.CrearRespaldo("manual");
+            var clave = await ClaveRespaldoAsync();
+            if (_config.ObtenerConfiguracion().Value?.RespaldoCifradoActivado == true && clave == null)
+            {
+                await DisplayAlertAsync("Falta la clave",
+                    "El cifrado está activado, pero la clave no está en este equipo. Restaura la tarjeta de recuperación.",
+                    "Continuar");
+                return;
+            }
+
+            var resultado = _respaldos.CrearRespaldo("manual", clave);
             await DisplayAlertAsync(
                 resultado.IsError ? "No se pudo respaldar" : "Respaldo creado",
                 resultado.IsError ? resultado.Message : $"{resultado.Message}\n\n{resultado.Value}",
@@ -541,7 +678,7 @@ public partial class AjustesPage : ContentPage
     private static readonly FilePickerFileType TiposRespaldo = new(
         new Dictionary<DevicePlatform, IEnumerable<string>>
         {
-            [DevicePlatform.WinUI] = new[] { ".db" },
+            [DevicePlatform.WinUI] = new[] { ".db", ".stb" },
             [DevicePlatform.Android] = new[]
             {
                 "application/octet-stream",
@@ -657,8 +794,21 @@ public partial class AjustesPage : ContentPage
         if (!confirmar)
             return;
 
+        var clave = await ClaveRespaldoAsync();
+        if (ruta.EndsWith(CifradoRespaldo.Extension, StringComparison.OrdinalIgnoreCase))
+        {
+            var entrada = await DisplayPromptAsync("Respaldo cifrado",
+                "Escribe la clave de respaldo de 24 caracteres.",
+                accept: "Restaurar", cancel: "Cancelar",
+                initialValue: clave ?? string.Empty, maxLength: 40);
+            if (entrada == null)
+                return;
+
+            clave = entrada;
+        }
+
         _sesion.Aplicar();
-        var resultado = _respaldos.Restaurar(ruta, confirmado: true);
+        var resultado = _respaldos.Restaurar(ruta, confirmado: true, claveRespaldo: clave);
         if (resultado.IsError)
         {
             await DisplayAlertAsync("No se pudo restaurar", resultado.Message, "Continuar");
@@ -766,7 +916,8 @@ public partial class AjustesPage : ContentPage
             return;
 
         _sesion.Aplicar();
-        var respaldo = _respaldos.EjecutarAutomaticoSiCorresponde();
+        var claveRespaldo = await ClaveRespaldoAsync();
+        var respaldo = _respaldos.EjecutarAutomaticoSiCorresponde(claveRespaldo: claveRespaldo);
         if (respaldo.IsError)
             await DisplayAlertAsync("Respaldo pendiente", respaldo.Message, "Continuar");
 

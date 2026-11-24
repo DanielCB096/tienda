@@ -49,6 +49,8 @@
 		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
 		<PackageReference Include="Net.Codecrete.QrCodeGenerator" Version="3.2.1" />
+		<PackageReference Include="System.Security.Cryptography.ProtectedData" Version="9.0.0"
+		                  Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'" />
 	</ItemGroup>
 
 	<ItemGroup>

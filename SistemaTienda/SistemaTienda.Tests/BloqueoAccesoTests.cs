@@ -77,13 +77,15 @@ public sealed class BloqueoAccesoTests
     }
 
     [Fact]
-    public void MigracionQuince_DejaInactividadYEstadoDeAccesoListos()
+    public void MigracionActual_DejaInactividadYEstadoDeAccesoListos()
     {
         using var bd = new BaseDatosPrueba();
         bd.ConfigurarTienda();
 
-        Assert.Equal(15, bd.Db.ExecuteScalar<long>("PRAGMA user_version"));
-        Assert.Equal(5, bd.Config.ObtenerConfiguracion().Value.MinutosInactividad);
+        Assert.Equal(16, bd.Db.ExecuteScalar<long>("PRAGMA user_version"));
+        var config = bd.Config.ObtenerConfiguracion().Value;
+        Assert.Equal(5, config.MinutosInactividad);
+        Assert.False(config.RespaldoCifradoActivado);
 
         var estado = bd.Db.ObtenerEstadoAcceso();
         Assert.Equal(0, estado.Fallos);

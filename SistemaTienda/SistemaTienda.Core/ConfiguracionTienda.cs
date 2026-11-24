@@ -18,6 +18,8 @@ public class ConfiguracionTienda
     public int RespaldoIntervaloDias { get; set; }
     /// <summary>Minutos sin actividad antes de bloquear la pantalla (2 a 15).</summary>
     public int MinutosInactividad { get; set; } = 5;
+    /// <summary>Los respaldos nuevos se cifran con la clave guardada en el equipo.</summary>
+    public bool RespaldoCifradoActivado { get; set; }
     public string UsuarioDueñoPINHash { get; set; } = string.Empty;
     public DateTime FechaCreacion { get; set; } = DateTime.Now;
     public string VersionApp { get; set; } = string.Empty;

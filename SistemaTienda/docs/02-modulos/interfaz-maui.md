@@ -97,6 +97,8 @@ SistemaTienda.Maui/
 | Reportes | Utilidad del periodo con filtros Hoy, Este mes y Rango: ventas cobradas, costo de ventas, comisión de tarjeta, utilidad bruta, mermas, gastos y utilidad neta, con número de ventas y periodo | Solo lectura (permiso `Consultar`) |
 | Ajustes | Datos de la tienda, reglas configuradas, rutas de base y respaldos, último respaldo, crear respaldo, usuarios y cierre de sesión | Editar configuración y gestionar usuarios/PIN (solo dueño), respaldo manual y cierre de sesión |
 
+**Respaldo cifrado.** En **Ajustes → Respaldo cifrado** el dueño activa el cifrado: la app genera una clave de 120 bits, la guarda con DPAPI/SecureStorage y muestra la tarjeta de recuperación. Desde ese momento los respaldos manuales y automáticos se guardan como `.db.stb`; restaurarlos pide la clave. Si la clave falta en el equipo, la pantalla lo advierte y no permite crear respaldos cifrados hasta recuperarla.
+
 **Bloqueo por inactividad.** Tras los minutos configurados (5 por defecto, 2 a 15) la app muestra una pantalla de bloqueo como modal. No cierra la sesión ni pierde el carrito: se desbloquea con el PIN del mismo usuario o de otro, y la operación siguiente queda a nombre de quien entró. Cualquier toque, cambio de pestaña o PIN válido reinicia el conteo. El login comparte el bloqueo persistente: 5 fallos bloquean el acceso 3 minutos.
 
 **Errores no controlados.** `ManejadorErrores` registra el fallo en `logs/errores.log` dentro de los datos de la app. En Windows también captura la excepción de la interfaz para evitar que un fallo cierre la caja sin rastro.

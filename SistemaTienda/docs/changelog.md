@@ -17,6 +17,16 @@ Cada entrada tiene formato:
 
 ---
 
+## 2026-11-24 — Respaldos cifrados (H2.3)
+
+- **Agregado**: respaldos con AES-256-GCM y clave derivada por PBKDF2-SHA256 (600,000 iteraciones, sal y nonce por archivo). Formato `STB1` en archivos `.db.stb`.
+- **Agregado**: clave de respaldo aleatoria de 120 bits (24 caracteres Base32) guardada con DPAPI en Windows y SecureStorage/Keystore en Android; **tarjeta de recuperación** para restaurar en otro equipo.
+- **Modificado**: al activar el cifrado, los respaldos manuales y automáticos se cifran; el archivo se descifra y compara antes de borrar la copia en claro.
+- **Modificado**: restaurar un `.stb` pide la clave; sin ella o con una incorrecta no se toca la base. Los respaldos viejos sin cifrar siguen disponibles con aviso.
+- **Esquema v16**: `ConfiguracionTienda.RespaldoCifradoActivado`.
+- **Pruebas**: 9 de cifrado y 5 del servicio (422 en total).
+- **Pendiente**: activación guiada en el asistente inicial, cifrar el paquete de soporte y verificar en Android.
+
 ## 2026-11-24 — Bloqueo de sesión y manejo de errores (H2.2)
 
 - **Esquema v15**: `ConfiguracionTienda.MinutosInactividad` (2–15, por defecto 5) y tabla `EstadoAcceso` para intentos fallidos y bloqueo persistente.

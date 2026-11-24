@@ -381,6 +381,7 @@ public class DatabaseTools
                 ComisionTarjeta = @comis, FondoCajaInicial = @fondo, FiadoActivado = @fiado,
                 LimiCreditoCliente = @limite, RespaldoIntervaloDias = @intervalo,
                 MinutosInactividad = @inactividad,
+                RespaldoCifradoActivado = @cifrado,
                 VersionApp = @ver
             WHERE Id = @id",
             new SqliteParameter("@id", config.Id),
@@ -393,6 +394,7 @@ public class DatabaseTools
             new SqliteParameter("@limite", config.LimiCreditoCliente),
             new SqliteParameter("@intervalo", config.RespaldoIntervaloDias),
             new SqliteParameter("@inactividad", config.MinutosInactividad),
+            new SqliteParameter("@cifrado", config.RespaldoCifradoActivado ? 1 : 0),
             new SqliteParameter("@ver", config.VersionApp));
 
         return filas > 0;

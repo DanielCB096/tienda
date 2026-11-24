@@ -93,6 +93,23 @@
                                Style="{StaticResource TextoNota}"
                                VerticalOptions="Center" />
                     </HorizontalStackLayout>
+                    <Label Text="RESPALDO CIFRADO" Style="{StaticResource EtiquetaSeccion}" Margin="0,12,0,0" />
+                    <Label x:Name="EstadoCifradoLabel" Style="{StaticResource TextoNota}" />
+                    <Button x:Name="ActivarCifradoButton"
+                            Text="Activar respaldo cifrado"
+                            Style="{StaticResource BotonSecundario}"
+                            Clicked="OnActivarCifradoClicked"
+                            IsVisible="False" />
+                    <Button x:Name="VerTarjetaCifradoButton"
+                            Text="Ver tarjeta de recuperación"
+                            Style="{StaticResource BotonSecundario}"
+                            Clicked="OnVerTarjetaCifradoClicked"
+                            IsVisible="False" />
+                    <Button x:Name="DesactivarCifradoButton"
+                            Text="Desactivar respaldo cifrado"
+                            Style="{StaticResource BotonSecundario}"
+                            Clicked="OnDesactivarCifradoClicked"
+                            IsVisible="False" />
                     <Button x:Name="SoporteButton"
                             Text="Exportar paquete de soporte"
                             Style="{StaticResource BotonSecundario}"
