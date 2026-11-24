@@ -37,7 +37,12 @@ public static class RespaldoLocal
             destino = Path.Combine(directorioRespaldos, $"tienda-{marca}{sufijo}-{indice++}.db");
 
         using (var conn = new SqliteConnection(
-            new SqliteConnectionStringBuilder { DataSource = origen, DefaultTimeout = 30 }.ToString()))
+            new SqliteConnectionStringBuilder
+            {
+                DataSource = origen,
+                DefaultTimeout = 30,
+                Pooling = false
+            }.ToString()))
         {
             conn.Open();
             using var cmd = conn.CreateCommand();
@@ -62,7 +67,8 @@ public static class RespaldoLocal
             {
                 DataSource = Path.GetFullPath(rutaRespaldo),
                 Mode = SqliteOpenMode.ReadOnly,
-                DefaultTimeout = 30
+                DefaultTimeout = 30,
+                Pooling = false
             }.ToString();
 
             using var conn = new SqliteConnection(connectionString);

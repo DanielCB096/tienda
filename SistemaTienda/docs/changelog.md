@@ -17,6 +17,18 @@ Cada entrada tiene formato:
 
 ---
 
+## 2026-11-23 — H1: respaldo, restauración y confiabilidad local
+
+- **Agregado**: exportación del respaldo fuera del almacenamiento privado; restauración desde la app con confirmación y respaldo previo; paquete de soporte con resumen y base opcional; instancia única en Windows.
+- **Agregado**: `PaqueteSoporteService` y `ExportacionRespaldoApp`; botones de exportar/restaurar y soporte en Ajustes, visibles solo para el dueño.
+- **Modificado**: SQLite en modo WAL con `busy_timeout=30000` y `synchronous=NORMAL` en cada conexión.
+- **Modificado**: `RespaldoLocal` usa conexiones sin pooling para poder mover el archivo verificado.
+- **Corregido**: la restauración elimina archivos `-wal`/`-shm` y conserva el respaldo de seguridad.
+- **Pruebas**: 5 nuevas en `RespaldoWalTests`; suite total 373 en verde.
+- **Pendiente**: verificar la app MAUI en Windows/Android; la compilación MAUI local requiere cargas de trabajo no instaladas en este equipo.
+
+---
+
 ## Próxima Versión Planificada: v0.1.0-MVP
 
 Próximamente después de completar los módulos críticos.

@@ -18,6 +18,19 @@ public class RespaldoService
     public string DirectorioRespaldos => _db.DirectorioRespaldos;
     public string RutaBaseDatos => _db.RutaBaseDatos;
 
+    /// <summary>
+    /// Respaldo manual con permiso de configuración. El respaldo automático
+    /// usa <see cref="CrearRespaldo"/> porque se ejecuta antes de iniciar sesión.
+    /// </summary>
+    public ProcessResult<string> CrearRespaldoManual(string etiqueta = "manual")
+    {
+        var autorizacion = AutorizacionService.Exigir(SesionActual.Usuario, PermisoSistema.Configurar);
+        if (autorizacion.IsError)
+            return ProcessResult<string>.Error(autorizacion.Message);
+
+        return CrearRespaldo(etiqueta);
+    }
+
     public ProcessResult<string> CrearRespaldo(string etiqueta = "manual")
     {
         try
@@ -121,6 +134,10 @@ public class RespaldoService
 
         if (string.IsNullOrWhiteSpace(rutaRespaldo))
             return ProcessResult.Error("Indique la ruta del respaldo a restaurar");
+
+        var autorizacion = AutorizacionService.Exigir(SesionActual.Usuario, PermisoSistema.Configurar);
+        if (autorizacion.IsError)
+            return ProcessResult.Error(autorizacion.Message);
 
         try
         {

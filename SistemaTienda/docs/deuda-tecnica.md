@@ -2,6 +2,12 @@
 
 Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qué la cerraría.
 
+## Resuelto en H1 (2026-11-23)
+
+- **Respaldo/restauración en la app**: se agregó exportación a Documentos (Windows) o diálogo de compartir (Android), restauración con confirmación y respaldo de seguridad, y un paquete de soporte con base opcional.
+- **WAL, `busy_timeout` e instancia única**: SQLite usa WAL, cada conexión fija `busy_timeout=30000` y `synchronous=NORMAL`, y Windows evita dos instancias sobre la misma base.
+- **Pendiente de cierre**: falta probar la exportación/restauración en un dispositivo real y verificar que el paquete de soporte no se comparta sin consentimiento. La app MAUI aún no tiene pruebas de interfaz.
+
 ## Alta prioridad
 
 ### Bitácora no atómica con la operación

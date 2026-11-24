@@ -65,6 +65,31 @@
                             Style="{StaticResource BotonSecundario}"
                             Clicked="OnCrearRespaldoClicked"
                             Margin="0,8,0,0" />
+                    <Button x:Name="ExportarRespaldoButton"
+                            Text="Exportar respaldo a otro lugar"
+                            Style="{StaticResource BotonSecundario}"
+                            Clicked="OnExportarRespaldoClicked"
+                            IsVisible="False" />
+                    <Button x:Name="RestaurarRespaldoButton"
+                            Text="Restaurar respaldo"
+                            Style="{StaticResource BotonSecundario}"
+                            Clicked="OnRestaurarRespaldoClicked"
+                            IsVisible="False" />
+                    <Label Text="Restaurar reemplaza la base actual y cierra la app. Se guarda un respaldo previo. Solo el dueño."
+                           Style="{StaticResource TextoNota}" />
+                    <HorizontalStackLayout Spacing="8" Margin="0,8,0,0">
+                        <Switch x:Name="SoporteIncluirBaseSwitch" IsToggled="False" IsVisible="False" />
+                        <Label Text="Incluir la base de datos en el paquete de soporte"
+                               Style="{StaticResource TextoNota}"
+                               VerticalOptions="Center" />
+                    </HorizontalStackLayout>
+                    <Button x:Name="SoporteButton"
+                            Text="Exportar paquete de soporte"
+                            Style="{StaticResource BotonSecundario}"
+                            Clicked="OnSoporteClicked"
+                            IsVisible="False" />
+                    <Label Text="El paquete de soporte puede contener datos del negocio. Compártelo solo por un canal seguro."
+                           Style="{StaticResource TextoNota}" />
                 </VerticalStackLayout>
             </Border>
 

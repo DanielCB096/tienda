@@ -1,4 +1,5 @@
 using System.Globalization;
+using Microsoft.Maui.Storage;
 using SistemaTienda.Application.Services;
 using SistemaTienda.Core;
 using SistemaTienda.Maui.Models;
@@ -10,16 +11,19 @@ public partial class AjustesPage : ContentPage
 {
     private readonly ConfiguracionService _config;
     private readonly RespaldoService _respaldos;
+    private readonly PaqueteSoporteService _soporte;
     private readonly BitacoraService _bitacora;
     private readonly SesionApp _sesion;
     private readonly NavegacionApp _navegacion;
 
     public AjustesPage(ConfiguracionService config, RespaldoService respaldos,
-        BitacoraService bitacora, SesionApp sesion, NavegacionApp navegacion)
+        PaqueteSoporteService soporte, BitacoraService bitacora,
+        SesionApp sesion, NavegacionApp navegacion)
     {
         InitializeComponent();
         _config = config;
         _respaldos = respaldos;
+        _soporte = soporte;
         _bitacora = bitacora;
         _sesion = sesion;
         _navegacion = navegacion;
@@ -74,6 +78,13 @@ public partial class AjustesPage : ContentPage
         RespaldoDetalleLabel.Text = cantidad == 1
             ? "1 copia local verificada."
             : $"{cantidad} copias locales verificadas.";
+
+        var puedeConfigurar = _sesion.Usuario != null &&
+            AutorizacionService.Puede(_sesion.Usuario, PermisoSistema.Configurar);
+        ExportarRespaldoButton.IsVisible = puedeConfigurar;
+        RestaurarRespaldoButton.IsVisible = puedeConfigurar;
+        SoporteButton.IsVisible = puedeConfigurar;
+        SoporteIncluirBaseSwitch.IsVisible = puedeConfigurar;
     }
 
     private UsuarioSistema? _usuarioEditando;
@@ -455,6 +466,144 @@ public partial class AjustesPage : ContentPage
         finally
         {
             CrearRespaldoButton.IsEnabled = true;
+        }
+    }
+
+    private static readonly FilePickerFileType TiposRespaldo = new(
+        new Dictionary<DevicePlatform, IEnumerable<string>>
+        {
+            [DevicePlatform.WinUI] = new[] { ".db" },
+            [DevicePlatform.Android] = new[]
+            {
+                "application/octet-stream",
+                "application/x-sqlite3",
+                "application/vnd.sqlite3",
+                "*/*"
+            },
+            [DevicePlatform.iOS] = new[] { "public.database" },
+            [DevicePlatform.MacCatalyst] = new[] { "public.database" }
+        });
+
+    private async void OnExportarRespaldoClicked(object sender, EventArgs e)
+    {
+        ExportarRespaldoButton.IsEnabled = false;
+        try
+        {
+            _sesion.Aplicar();
+            var creado = _respaldos.CrearRespaldoManual("exportacion");
+            if (creado.IsError)
+            {
+                await DisplayAlertAsync("No se pudo exportar", creado.Message, "Continuar");
+                return;
+            }
+
+            var destino = await ExportacionRespaldoApp.ExportarAsync(
+                creado.Value, "Exportar respaldo", "application/x-sqlite3");
+
+            await DisplayAlertAsync("Respaldo exportado",
+                $"Copia disponible en:\n{destino}", "Continuar");
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlertAsync("No se pudo exportar", ex.Message, "Continuar");
+        }
+        finally
+        {
+            ExportarRespaldoButton.IsEnabled = true;
+        }
+    }
+
+    private async void OnRestaurarRespaldoClicked(object sender, EventArgs e)
+    {
+        RestaurarRespaldoButton.IsEnabled = false;
+        try
+        {
+            var archivo = await FilePicker.Default.PickAsync(new PickOptions
+            {
+                PickerTitle = "Selecciona un respaldo de SistemaTienda",
+                FileTypes = TiposRespaldo
+            });
+
+            if (archivo == null)
+                return;
+
+            var confirmar = await DisplayAlertAsync(
+                "Restaurar respaldo",
+                $"Se reemplazará la base actual por:\n{archivo.FileName}\n\n" +
+                "Se guardará un respaldo previo y la aplicación se cerrará. ¿Continuar?",
+                "Restaurar", "Cancelar");
+
+            if (!confirmar)
+                return;
+
+            _sesion.Aplicar();
+            var resultado = _respaldos.Restaurar(archivo.FullPath, confirmado: true);
+            if (resultado.IsError)
+            {
+                await DisplayAlertAsync("No se pudo restaurar", resultado.Message, "Continuar");
+                return;
+            }
+
+            await DisplayAlertAsync("Restauración completada", resultado.Message, "Cerrar");
+
+#if WINDOWS
+            var app = Microsoft.Maui.Controls.Application.Current;
+            if (app?.Windows.Count > 0)
+                app.CloseWindow(app.Windows[0]);
+#endif
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlertAsync("No se pudo restaurar", ex.Message, "Continuar");
+        }
+        finally
+        {
+            RestaurarRespaldoButton.IsEnabled = true;
+        }
+    }
+
+    private async void OnSoporteClicked(object sender, EventArgs e)
+    {
+        SoporteButton.IsEnabled = false;
+        try
+        {
+            var incluirBase = SoporteIncluirBaseSwitch.IsToggled;
+            if (incluirBase)
+            {
+                var confirmar = await DisplayAlertAsync(
+                    "Incluir base de datos",
+                    "El paquete incluirá ventas, clientes, fiados y movimientos. " +
+                    "Compártelo solo con soporte y por un canal seguro. ¿Continuar?",
+                    "Sí, incluir", "Cancelar");
+
+                if (!confirmar)
+                    return;
+            }
+
+            _sesion.Aplicar();
+            var nombre = $"soporte-{DateTime.Now:yyyyMMdd-HHmmss}.zip";
+            var rutaZip = Path.Combine(FileSystem.CacheDirectory, nombre);
+
+            var creado = _soporte.Crear(rutaZip, incluirBase);
+            if (creado.IsError)
+            {
+                await DisplayAlertAsync("No se pudo crear el paquete", creado.Message, "Continuar");
+                return;
+            }
+
+            var destino = await ExportacionRespaldoApp.ExportarAsync(
+                creado.Value, "Exportar paquete de soporte", "application/zip");
+
+            await DisplayAlertAsync("Paquete de soporte creado",
+                $"Archivo disponible en:\n{destino}", "Continuar");
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlertAsync("No se pudo crear el paquete", ex.Message, "Continuar");
+        }
+        finally
+        {
+            SoporteButton.IsEnabled = true;
         }
     }
 

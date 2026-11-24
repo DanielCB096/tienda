@@ -21,6 +21,14 @@ Estado al 2026-11-22. T1–T41 están integradas o en PR; T41 (IVA incluido) est
 | — | Dinero en centavos | ✅ Implementado | Importes `long`/`INTEGER` en todas las tablas; porcentajes en `decimal`; `Dinero` centraliza conversión y formato |
 | — | Bitácora / auditoría | ✅ Base implementada | Tabla inmutable con disparadores y permisos validados en `Application` |
 
+## H1 — Respaldo, restauración y confiabilidad local (2026-11-23)
+
+- Respaldo exportable y restauración desde la app, con respaldo previo.
+- Paquete de soporte con resumen y base opcional.
+- SQLite en WAL, `busy_timeout=30000`, `synchronous=NORMAL` e instancia única en Windows.
+- 5 pruebas nuevas; suite total 373.
+- Pendiente: verificación manual en Windows/Android y compilación MAUI en CI.
+
 ## Siguiente trabajo recomendado
 
 1. **Plantillas por giro para importar catálogos**, si se requieren; CSV y XLSX de productos ya están implementados en T6/T28.

@@ -12,6 +12,11 @@ public partial class App : Microsoft.Maui.Controls.Application
 		_arranque = arranque;
 	}
 
-	protected override Window CreateWindow(IActivationState? activationState) =>
-		new(_arranque.CrearPaginaInicial()) { Title = "SistemaTienda" };
+	protected override Window CreateWindow(IActivationState? activationState)
+	{
+		if (MauiProgram.InstanciaDuplicada)
+			return new Window(new Pages.InstanciaDuplicadaPage()) { Title = "SistemaTienda" };
+
+		return new Window(_arranque.CrearPaginaInicial()) { Title = "SistemaTienda" };
+	}
 }
