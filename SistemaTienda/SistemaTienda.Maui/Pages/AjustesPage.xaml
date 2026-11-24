@@ -71,12 +71,22 @@
                             Clicked="OnExportarRespaldoClicked"
                             IsVisible="False" />
                     <Button x:Name="RestaurarRespaldoButton"
-                            Text="Restaurar respaldo"
+                            Text="Restaurar desde un archivo"
                             Style="{StaticResource BotonSecundario}"
                             Clicked="OnRestaurarRespaldoClicked"
                             IsVisible="False" />
                     <Label Text="Restaurar reemplaza la base actual y cierra la app. Se guarda un respaldo previo. Solo el dueño."
                            Style="{StaticResource TextoNota}" />
+                    <Label Text="Respaldos recientes" Style="{StaticResource TextoNota}" Margin="0,8,0,0" />
+                    <Picker x:Name="RespaldosRecientesPicker"
+                            Title="Selecciona un respaldo reciente"
+                            ItemDisplayBinding="{Binding Nombre}"
+                            IsVisible="False" />
+                    <Button x:Name="RestaurarSeleccionadoButton"
+                            Text="Restaurar el respaldo seleccionado"
+                            Style="{StaticResource BotonSecundario}"
+                            Clicked="OnRestaurarSeleccionadoClicked"
+                            IsVisible="False" />
                     <HorizontalStackLayout Spacing="8" Margin="0,8,0,0">
                         <Switch x:Name="SoporteIncluirBaseSwitch" IsToggled="False" IsVisible="False" />
                         <Label Text="Incluir la base de datos en el paquete de soporte"
@@ -100,6 +110,16 @@
                     <Label x:Name="RutaBaseLabel" FontSize="12" LineBreakMode="WordWrap" />
                     <Label Text="Respaldos" Style="{StaticResource TextoNota}" Margin="0,8,0,0" />
                     <Label x:Name="RutaRespaldosLabel" FontSize="12" LineBreakMode="WordWrap" />
+                    <Button x:Name="CopiarRutaRespaldosButton"
+                            Text="Copiar ruta de respaldos"
+                            Style="{StaticResource BotonSecundario}"
+                            Clicked="OnCopiarRutaRespaldosClicked"
+                            IsVisible="False" />
+                    <Button x:Name="AbrirCarpetaRespaldosButton"
+                            Text="Abrir carpeta de respaldos"
+                            Style="{StaticResource BotonSecundario}"
+                            Clicked="OnAbrirCarpetaRespaldosClicked"
+                            IsVisible="False" />
                 </VerticalStackLayout>
             </Border>
 

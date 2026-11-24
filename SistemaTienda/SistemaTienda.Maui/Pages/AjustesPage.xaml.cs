@@ -1,7 +1,9 @@
 using System.Globalization;
+using Microsoft.Maui.ApplicationModel.DataTransfer;
 using Microsoft.Maui.Storage;
 using SistemaTienda.Application.Services;
 using SistemaTienda.Core;
+using SistemaTienda.Infrastructure;
 using SistemaTienda.Maui.Models;
 using SistemaTienda.Maui.Services;
 
@@ -15,6 +17,7 @@ public partial class AjustesPage : ContentPage
     private readonly BitacoraService _bitacora;
     private readonly SesionApp _sesion;
     private readonly NavegacionApp _navegacion;
+    private List<ArchivoRespaldo> _respaldosRecientes = new();
 
     public AjustesPage(ConfiguracionService config, RespaldoService respaldos,
         PaqueteSoporteService soporte, BitacoraService bitacora,
@@ -71,6 +74,9 @@ public partial class AjustesPage : ContentPage
         var ultimo = _respaldos.ObtenerUltimoRespaldo();
         var lista = _respaldos.ListarRespaldos();
         var cantidad = lista.IsSuccess ? lista.Value.Count : 0;
+        _respaldosRecientes = lista.IsSuccess
+            ? lista.Value.Take(10).ToList()
+            : new List<ArchivoRespaldo>();
 
         UltimoRespaldoLabel.Text = ultimo.IsSuccess && ultimo.Value.HasValue
             ? Formato.FechaHora(ultimo.Value.Value)
@@ -79,10 +85,20 @@ public partial class AjustesPage : ContentPage
             ? "1 copia local verificada."
             : $"{cantidad} copias locales verificadas.";
 
+        RespaldosRecientesPicker.ItemsSource = _respaldosRecientes;
+        RespaldosRecientesPicker.SelectedIndex = -1;
+
         var puedeConfigurar = _sesion.Usuario != null &&
             AutorizacionService.Puede(_sesion.Usuario, PermisoSistema.Configurar);
         ExportarRespaldoButton.IsVisible = puedeConfigurar;
         RestaurarRespaldoButton.IsVisible = puedeConfigurar;
+        RestaurarSeleccionadoButton.IsVisible = puedeConfigurar && _respaldosRecientes.Count > 0;
+        RespaldosRecientesPicker.IsVisible = puedeConfigurar && _respaldosRecientes.Count > 0;
+        // En Android/iOS la carpeta de respaldos es privada de la app: exponer la ruta
+        // solo confunde. El paquete exportado es el camino para sacar el archivo.
+        var mostrarRutaLocal = puedeConfigurar && OperatingSystem.IsWindows();
+        CopiarRutaRespaldosButton.IsVisible = mostrarRutaLocal;
+        AbrirCarpetaRespaldosButton.IsVisible = mostrarRutaLocal;
         SoporteButton.IsVisible = puedeConfigurar;
         SoporteIncluirBaseSwitch.IsVisible = puedeConfigurar;
     }
@@ -500,8 +516,22 @@ public partial class AjustesPage : ContentPage
             var destino = await ExportacionRespaldoApp.ExportarAsync(
                 creado.Value, "Exportar respaldo", "application/x-sqlite3");
 
-            await DisplayAlertAsync("Respaldo exportado",
-                $"Copia disponible en:\n{destino}", "Continuar");
+            if (OperatingSystem.IsWindows())
+            {
+                var abrir = await DisplayAlertAsync("Respaldo exportado",
+                    $"Copia disponible en:\n{destino}", "Abrir carpeta", "Cerrar");
+                if (abrir)
+                {
+                    var carpeta = Path.GetDirectoryName(destino);
+                    if (!string.IsNullOrWhiteSpace(carpeta))
+                        await AperturaCarpetaApp.AbrirAsync(carpeta);
+                }
+            }
+            else
+            {
+                await DisplayAlertAsync("Respaldo exportado",
+                    $"Copia disponible en:\n{destino}", "Continuar");
+            }
         }
         catch (Exception ex)
         {
@@ -527,30 +557,7 @@ public partial class AjustesPage : ContentPage
             if (archivo == null)
                 return;
 
-            var confirmar = await DisplayAlertAsync(
-                "Restaurar respaldo",
-                $"Se reemplazará la base actual por:\n{archivo.FileName}\n\n" +
-                "Se guardará un respaldo previo y la aplicación se cerrará. ¿Continuar?",
-                "Restaurar", "Cancelar");
-
-            if (!confirmar)
-                return;
-
-            _sesion.Aplicar();
-            var resultado = _respaldos.Restaurar(archivo.FullPath, confirmado: true);
-            if (resultado.IsError)
-            {
-                await DisplayAlertAsync("No se pudo restaurar", resultado.Message, "Continuar");
-                return;
-            }
-
-            await DisplayAlertAsync("Restauración completada", resultado.Message, "Cerrar");
-
-#if WINDOWS
-            var app = Microsoft.Maui.Controls.Application.Current;
-            if (app?.Windows.Count > 0)
-                app.CloseWindow(app.Windows[0]);
-#endif
+            await RestaurarDesdeRutaAsync(archivo.FullPath, archivo.FileName);
         }
         catch (Exception ex)
         {
@@ -559,6 +566,84 @@ public partial class AjustesPage : ContentPage
         finally
         {
             RestaurarRespaldoButton.IsEnabled = true;
+        }
+    }
+
+    private async void OnRestaurarSeleccionadoClicked(object sender, EventArgs e)
+    {
+        RestaurarSeleccionadoButton.IsEnabled = false;
+        try
+        {
+            if (RespaldosRecientesPicker.SelectedItem is not ArchivoRespaldo archivo)
+            {
+                await DisplayAlertAsync("Selecciona un respaldo",
+                    "Elige un respaldo de la lista antes de continuar.", "Continuar");
+                return;
+            }
+
+            await RestaurarDesdeRutaAsync(archivo.Ruta, archivo.Nombre);
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlertAsync("No se pudo restaurar", ex.Message, "Continuar");
+        }
+        finally
+        {
+            RestaurarSeleccionadoButton.IsEnabled = true;
+        }
+    }
+
+    private async Task RestaurarDesdeRutaAsync(string ruta, string nombre)
+    {
+        var confirmar = await DisplayAlertAsync(
+            "Restaurar respaldo",
+            $"Se reemplazará la base actual por:\n{nombre}\n\n" +
+            "Se guardará un respaldo previo y la aplicación se cerrará. ¿Continuar?",
+            "Restaurar", "Cancelar");
+
+        if (!confirmar)
+            return;
+
+        _sesion.Aplicar();
+        var resultado = _respaldos.Restaurar(ruta, confirmado: true);
+        if (resultado.IsError)
+        {
+            await DisplayAlertAsync("No se pudo restaurar", resultado.Message, "Continuar");
+            return;
+        }
+
+        await DisplayAlertAsync("Restauración completada", resultado.Message, "Cerrar");
+
+#if WINDOWS
+        var app = Microsoft.Maui.Controls.Application.Current;
+        if (app?.Windows.Count > 0)
+            app.CloseWindow(app.Windows[0]);
+#endif
+    }
+
+    private async void OnCopiarRutaRespaldosClicked(object sender, EventArgs e)
+    {
+        try
+        {
+            await Clipboard.Default.SetTextAsync(_respaldos.DirectorioRespaldos);
+            await DisplayAlertAsync("Ruta copiada", _respaldos.DirectorioRespaldos, "Continuar");
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlertAsync("No se pudo copiar la ruta", ex.Message, "Continuar");
+        }
+    }
+
+    private async void OnAbrirCarpetaRespaldosClicked(object sender, EventArgs e)
+    {
+        try
+        {
+            Directory.CreateDirectory(_respaldos.DirectorioRespaldos);
+            await AperturaCarpetaApp.AbrirAsync(_respaldos.DirectorioRespaldos);
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlertAsync("No se pudo abrir la carpeta", ex.Message, "Continuar");
         }
     }
 
@@ -594,8 +679,22 @@ public partial class AjustesPage : ContentPage
             var destino = await ExportacionRespaldoApp.ExportarAsync(
                 creado.Value, "Exportar paquete de soporte", "application/zip");
 
-            await DisplayAlertAsync("Paquete de soporte creado",
-                $"Archivo disponible en:\n{destino}", "Continuar");
+            if (OperatingSystem.IsWindows())
+            {
+                var abrir = await DisplayAlertAsync("Paquete de soporte creado",
+                    $"Archivo disponible en:\n{destino}", "Abrir carpeta", "Cerrar");
+                if (abrir)
+                {
+                    var carpeta = Path.GetDirectoryName(destino);
+                    if (!string.IsNullOrWhiteSpace(carpeta))
+                        await AperturaCarpetaApp.AbrirAsync(carpeta);
+                }
+            }
+            else
+            {
+                await DisplayAlertAsync("Paquete de soporte creado",
+                    $"Archivo disponible en:\n{destino}", "Continuar");
+            }
         }
         catch (Exception ex)
         {
