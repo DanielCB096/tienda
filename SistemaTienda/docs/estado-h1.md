@@ -20,7 +20,7 @@
 - `dotnet build SistemaTienda.sln -c Release`: OK, 0 errores, 0 advertencias.
 - `dotnet test SistemaTienda.sln -c Release`: **376/376** en verde (3 pruebas nuevas de carpeta de exportación).
 - Compilación MAUI Windows: **OK, 0 errores**, 2 advertencias XAML preexistentes (`CajaPage` y `PosPage`).
-- La compilación Android sigue pendiente en este equipo por cargas de trabajo faltantes.
+- Compilación Android: **OK** con SDK .NET 10.0.100 local y workload `maui-android`; APK Debug con ensamblados embebidos.
 
 ## Corrección de CI MAUI (`10fb923`)
 
@@ -65,6 +65,28 @@ Entorno: Windows 11, build Release, base de prueba aislada en `%TEMP%\opencode\h
 - Se agregó `CarpetaExportacion`, que elige la primera carpeta escribible: `Documentos\SistemaTienda` → `Escritorio\SistemaTienda` → `Descargas\SistemaTienda`.
 - Se agregaron 3 pruebas: primera carpeta, salto de ruta inválida y fallo cuando ninguna sirve.
 - La app informa la ruta final en el diálogo de exportación.
+
+## Verificación manual - Android (2026-11-24)
+
+Dispositivo: POCO X6 Pro 5G, Android 16 / HyperOS 3.0, arm64-v8a.  
+APK: Debug con ensamblados embebidos, `ApplicationId=com.sistematienda.verificacionh1`.  
+Instalación: `adb install` bloqueado por `INSTALL_FAILED_USER_RESTRICTED`; se instaló desde el archivo APK con el instalador del sistema.
+
+| Escenario | Resultado | Evidencia |
+|---|---|---|
+| Exportar respaldo | **PASA** | Share sheet con `tienda-20261124-090919-exportacion.db`; 221,184 B en caché |
+| Restaurar respaldo | **PASA** | Respaldo previo `tienda-20261124-091237-antes-restaurar.db`; la app reabre y conserva configuración y usuario |
+| Paquete sin base | **FALLA en esta prueba** | `The process cannot access the file ... because it is being used by another process` |
+| Paquete con base | **PENDIENTE** | Depende del mismo flujo |
+
+### Hallazgo y corrección (rama `fix/android-soporte-cache`)
+
+En Android, `ExportacionRespaldoApp` copiaba el ZIP a `CacheDirectory` cuando el archivo ya estaba en esa misma carpeta. `File.Copy` sobre sí mismo lanza “archivo en uso”.
+
+- Se agregó `CarpetaExportacion.EsMismaRuta` y se omite la copia cuando origen y destino coinciden.
+- Se agregaron 2 pruebas de rutas.
+- Total: **378/378** en verde.
+- Pendiente reconstruir el APK y retestar el paquete de soporte con el dispositivo conectado.
 
 ## Pendiente después del merge
 

@@ -67,6 +67,40 @@ public class CarpetaExportacionTests
         }
     }
 
+    [Fact]
+    public void EsMismaRuta_DetectaLaMismaRutaNormalizada()
+    {
+        var raiz = CrearRaiz();
+        try
+        {
+            var archivo = Path.Combine(raiz, "cache", "soporte.zip");
+            var conRetorno = Path.Combine(raiz, "cache", "..", "cache", "soporte.zip");
+
+            Assert.True(CarpetaExportacion.EsMismaRuta(archivo, conRetorno));
+        }
+        finally
+        {
+            Limpiar(raiz);
+        }
+    }
+
+    [Fact]
+    public void EsMismaRuta_DetectaRutasDistintas()
+    {
+        var raiz = CrearRaiz();
+        try
+        {
+            var origen = Path.Combine(raiz, "respaldos", "soporte.zip");
+            var destino = Path.Combine(raiz, "cache", "soporte.zip");
+
+            Assert.False(CarpetaExportacion.EsMismaRuta(origen, destino));
+        }
+        finally
+        {
+            Limpiar(raiz);
+        }
+    }
+
     private static string CrearRaiz()
     {
         var raiz = Path.Combine(Path.GetTempPath(),

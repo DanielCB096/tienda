@@ -44,4 +44,23 @@ public static class CarpetaExportacion
             "No se encontró una carpeta escribible para exportar. Rutas probadas: " +
             string.Join(", ", probadas));
     }
+
+    /// <summary>
+    /// En Android el paquete de soporte ya vive en la caché y se comparte desde ahí.
+    /// Copiarlo sobre sí mismo lanza una excepción de archivo en uso.
+    /// </summary>
+    public static bool EsMismaRuta(string origen, string destino)
+    {
+        if (string.IsNullOrWhiteSpace(origen) || string.IsNullOrWhiteSpace(destino))
+            return false;
+
+        var comparacion = OperatingSystem.IsWindows()
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
+
+        return string.Equals(
+            Path.GetFullPath(origen),
+            Path.GetFullPath(destino),
+            comparacion);
+    }
 }

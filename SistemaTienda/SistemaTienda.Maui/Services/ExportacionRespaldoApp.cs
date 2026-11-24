@@ -51,7 +51,8 @@ public static class ExportacionRespaldoApp
         return await Task.FromResult(destino);
 #else
         var destino = Path.Combine(FileSystem.CacheDirectory, nombre);
-        File.Copy(ruta, destino, overwrite: true);
+        if (!CarpetaExportacion.EsMismaRuta(ruta, destino))
+            File.Copy(ruta, destino, overwrite: true);
 
         await Share.Default.RequestAsync(new ShareFileRequest
         {
