@@ -17,6 +17,15 @@ Cada entrada tiene formato:
 
 ---
 
+## 2026-11-24 — Permisos por acción (H2.1)
+
+- **Agregado**: permisos `CrearCliente`, `CrearProveedor`, `ExportarDatos` y `VerCostos`; `AgregarClienteFiado` y `AgregarProveedor` ahora los exigen en el servicio.
+- **Agregado**: `VerCostos` se concede por usuario desde **Ajustes → Usuarios y PIN**; se guarda en `PermisosEspeciales`. Por defecto ningún encargado lo tiene.
+- **Modificado**: `ReporteUtilidadService` exige `VerCostos`; el encargado ve ventas, clientes, proveedores, gastos y caja, pero no costos ni utilidad.
+- **Modificado**: las pestañas se arman por permisos; el empleado solo ve Inicio, Vender, Inventario, Ventas y Ajustes. **Reportes** solo aparece con `VerCostos`.
+- **Modificado**: exportar CSV/PDF exige `ExportarDatos`; los reportes con costo exigen además `VerCostos`.
+- **Pruebas**: 11 de matriz rol × acción y 1 de manifiesto de métodos públicos (402 en total). La de manifiesto falla si aparece un método sin revisar.
+
 ## 2026-11-24 — QR del ticket legible (P7)
 
 - **Corregido**: el QR del ticket incluía hasta diez productos y llegaba a 89×89 módulos; en un control de 220 px cada módulo quedaba en 2 px y el cliente no podía escanearlo.

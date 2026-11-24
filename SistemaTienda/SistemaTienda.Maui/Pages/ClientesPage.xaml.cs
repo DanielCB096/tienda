@@ -379,6 +379,14 @@ public partial class ClientesPage : ContentPage
 
     private async void OnExportarEstadoClicked(object sender, EventArgs e)
     {
+        if (_sesion.Usuario == null ||
+            !AutorizacionService.Puede(_sesion.Usuario, PermisoSistema.ExportarDatos))
+        {
+            await DisplayAlertAsync("Sin permiso",
+                "Exportar requiere autorización del dueño o encargado.", "Continuar");
+            return;
+        }
+
         if (_estadoActual == null)
             return;
 
@@ -396,6 +404,14 @@ public partial class ClientesPage : ContentPage
 
     private async void OnExportarEstadoPdfClicked(object sender, EventArgs e)
     {
+        if (_sesion.Usuario == null ||
+            !AutorizacionService.Puede(_sesion.Usuario, PermisoSistema.ExportarDatos))
+        {
+            await DisplayAlertAsync("Sin permiso",
+                "Exportar requiere autorización del dueño o encargado.", "Continuar");
+            return;
+        }
+
         if (_estadoActual == null)
             return;
 

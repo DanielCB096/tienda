@@ -253,6 +253,12 @@
                     <Label Text="Rol" Style="{StaticResource EtiquetaSeccion}" Margin="0,8,0,0" />
                     <Picker x:Name="UsuarioRolPicker" Title="Selecciona el rol" />
 
+                    <HorizontalStackLayout x:Name="UsuarioVerCostosPanel" Spacing="10" IsVisible="False">
+                        <Switch x:Name="UsuarioVerCostosSwitch" />
+                        <Label Text="Puede ver costos y utilidad"
+                               VerticalOptions="Center" />
+                    </HorizontalStackLayout>
+
                     <Label Text="PIN (4 a 6 dígitos)" Style="{StaticResource EtiquetaSeccion}" Margin="0,8,0,0" />
                     <Entry x:Name="UsuarioPinEntry"
                            Style="{StaticResource CampoTexto}"

@@ -195,6 +195,15 @@ public partial class ReportesPage : ContentPage
 
     private async void OnExportarCsvClicked(object sender, EventArgs e)
     {
+        if (_sesion.Usuario == null ||
+            !AutorizacionService.Puede(_sesion.Usuario, PermisoSistema.ExportarDatos) ||
+            !AutorizacionService.Puede(_sesion.Usuario, PermisoSistema.VerCostos))
+        {
+            await DisplayAlertAsync("Sin permiso",
+                "Los reportes con costo y utilidad requieren autorización del dueño.", "Continuar");
+            return;
+        }
+
         if (_reporteActual == null)
             return;
 
@@ -212,6 +221,15 @@ public partial class ReportesPage : ContentPage
 
     private async void OnExportarPdfClicked(object sender, EventArgs e)
     {
+        if (_sesion.Usuario == null ||
+            !AutorizacionService.Puede(_sesion.Usuario, PermisoSistema.ExportarDatos) ||
+            !AutorizacionService.Puede(_sesion.Usuario, PermisoSistema.VerCostos))
+        {
+            await DisplayAlertAsync("Sin permiso",
+                "Los reportes con costo y utilidad requieren autorización del dueño.", "Continuar");
+            return;
+        }
+
         if (_reporteActual == null)
             return;
 

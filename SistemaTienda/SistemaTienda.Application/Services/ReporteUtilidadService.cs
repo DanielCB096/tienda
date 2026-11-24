@@ -15,7 +15,7 @@ public class ReporteUtilidadService
 
     public ProcessResult<ReporteUtilidad> Obtener(DateTime desde, DateTime hasta)
     {
-        var autorizacion = AutorizacionService.Exigir(SesionActual.Usuario, PermisoSistema.Consultar);
+        var autorizacion = AutorizacionService.Exigir(SesionActual.Usuario, PermisoSistema.VerCostos);
         if (autorizacion.IsError)
             return ProcessResult<ReporteUtilidad>.Error(autorizacion.Message);
 
@@ -31,7 +31,7 @@ public class ReporteUtilidadService
     /// </summary>
     public ProcessResult<ComparacionReporte> ObtenerComparacion(DateTime desde, DateTime hasta)
     {
-        var autorizacion = AutorizacionService.Exigir(SesionActual.Usuario, PermisoSistema.Consultar);
+        var autorizacion = AutorizacionService.Exigir(SesionActual.Usuario, PermisoSistema.VerCostos);
         if (autorizacion.IsError)
             return ProcessResult<ComparacionReporte>.Error(autorizacion.Message);
 

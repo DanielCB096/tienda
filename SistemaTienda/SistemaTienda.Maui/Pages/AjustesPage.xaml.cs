@@ -32,6 +32,15 @@ public partial class AjustesPage : ContentPage
         _navegacion = navegacion;
         UsuarioRolPicker.ItemsSource = new[] { "Dueño", "Encargado", "Empleado" };
         UsuarioRolPicker.SelectedIndex = 2;
+        UsuarioRolPicker.SelectedIndexChanged += (_, _) => ActualizarVisibilidadVerCostos();
+    }
+
+    private void ActualizarVisibilidadVerCostos()
+    {
+        var esEncargado = UsuarioRolPicker.SelectedIndex == 1;
+        UsuarioVerCostosPanel.IsVisible = esEncargado;
+        if (!esEncargado)
+            UsuarioVerCostosSwitch.IsToggled = false;
     }
 
     protected override void OnAppearing()
@@ -189,6 +198,9 @@ public partial class AjustesPage : ContentPage
         UsuarioFormTitulo.Text = usuario == null ? "Nuevo usuario" : "Editar usuario";
         UsuarioNombreEntry.Text = usuario?.Nombre ?? string.Empty;
         UsuarioRolPicker.SelectedIndex = usuario == null ? 2 : (int)usuario.Rol;
+        UsuarioVerCostosSwitch.IsToggled = usuario != null &&
+            PermisoEspecial.Tiene(usuario.PermisosEspeciales, PermisoEspecial.VerCostos);
+        ActualizarVisibilidadVerCostos();
         UsuarioPinEntry.Text = string.Empty;
         UsuarioPinEntry.Placeholder = usuario == null
             ? "PIN de 4 a 6 dígitos"
@@ -204,6 +216,9 @@ public partial class AjustesPage : ContentPage
         UsuarioFormTitulo.Text = "Cambiar PIN";
         UsuarioNombreEntry.Text = usuario.Nombre;
         UsuarioRolPicker.SelectedIndex = (int)usuario.Rol;
+        UsuarioVerCostosSwitch.IsToggled =
+            PermisoEspecial.Tiene(usuario.PermisosEspeciales, PermisoEspecial.VerCostos);
+        ActualizarVisibilidadVerCostos();
         UsuarioPinEntry.Text = string.Empty;
         UsuarioPinEntry.Placeholder = "Nuevo PIN de 4 a 6 dígitos";
         UsuarioFormAyuda.IsVisible = false;
@@ -257,6 +272,17 @@ public partial class AjustesPage : ContentPage
                     return;
                 }
 
+                if (UsuarioVerCostosPanel.IsVisible && UsuarioVerCostosSwitch.IsToggled)
+                {
+                    var permisoNuevo = _config.ActualizarPermisoEspecial(
+                        alta.Value.UsuarioId, PermisoEspecial.VerCostos, activo: true);
+                    if (permisoNuevo.IsError)
+                    {
+                        MostrarErrorUsuario(permisoNuevo.Message);
+                        return;
+                    }
+                }
+
                 CerrarFormularioUsuario();
                 CargarUsuarios();
                 await DisplayAlertAsync("Usuario agregado", alta.Value.Mensaje, "Continuar");
@@ -267,6 +293,15 @@ public partial class AjustesPage : ContentPage
             if (edicion.IsError)
             {
                 MostrarErrorUsuario(edicion.Message);
+                return;
+            }
+
+            var permiso = _config.ActualizarPermisoEspecial(_usuarioEditando.Id,
+                PermisoEspecial.VerCostos,
+                UsuarioVerCostosPanel.IsVisible && UsuarioVerCostosSwitch.IsToggled);
+            if (permiso.IsError)
+            {
+                MostrarErrorUsuario(permiso.Message);
                 return;
             }
 

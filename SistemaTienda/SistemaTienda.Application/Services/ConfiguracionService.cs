@@ -194,6 +194,10 @@ public class ConfiguracionService
         if (!_db.ActualizarUsuario(usuarioId, nombreLimpio, rol))
             return ProcessResult.Error("No se pudo actualizar el usuario");
 
+        // Un permiso especial no sobrevive a un cambio de rol que ya no lo admite.
+        if (rol != RolUsuario.Encargado && !string.IsNullOrWhiteSpace(usuario.PermisosEspeciales))
+            _db.ActualizarPermisosUsuario(usuarioId, string.Empty);
+
         _bitacora.Registrar(AccionBitacora.EditarUsuario, "Usuario", usuarioId.ToString(),
             $"Nombre={usuario.Nombre};Rol={usuario.Rol}",
             $"Nombre={nombreLimpio};Rol={rol}");
@@ -223,6 +227,47 @@ public class ConfiguracionService
         _bitacora.Registrar(AccionBitacora.CambiarPin, "Usuario", usuarioId.ToString(),
             string.Empty, $"PIN actualizado para {usuario.Nombre}");
         return ProcessResult.Success("PIN actualizado");
+    }
+
+    /// <summary>
+    /// Concede o revoca un permiso especial a un encargado. El dueño ya tiene
+    /// todos los permisos y un empleado no puede recibirlos.
+    /// </summary>
+    public ProcessResult ActualizarPermisoEspecial(int usuarioId, string permiso, bool activo)
+    {
+        var autorizacion = Autorizar(PermisoSistema.GestionarUsuarios);
+        if (autorizacion.IsError)
+            return autorizacion;
+
+        if (!string.Equals(permiso, PermisoEspecial.VerCostos, StringComparison.OrdinalIgnoreCase))
+            return ProcessResult.Error("El permiso indicado no existe");
+
+        var usuario = _db.ObtenerUsuarioPorId(usuarioId);
+        if (usuario == null)
+            return ProcessResult.Error("Usuario no encontrado");
+
+        if (usuario.Rol == RolUsuario.Dueño)
+            return ProcessResult.Error("El dueño ya tiene todos los permisos");
+
+        if (usuario.Rol != RolUsuario.Encargado)
+            return ProcessResult.Error("Solo se puede conceder a un encargado");
+
+        var nuevos = PermisoEspecial.Establecer(
+            usuario.PermisosEspeciales, PermisoEspecial.VerCostos, activo);
+
+        if (string.Equals(nuevos, usuario.PermisosEspeciales ?? string.Empty, StringComparison.Ordinal))
+            return ProcessResult.Success("Sin cambios");
+
+        if (!_db.ActualizarPermisosUsuario(usuarioId, nuevos))
+            return ProcessResult.Error("No se pudo actualizar el permiso");
+
+        _bitacora.Registrar(AccionBitacora.EditarUsuario, "Usuario", usuarioId.ToString(),
+            $"Permisos={usuario.PermisosEspeciales}", $"Permisos={nuevos}",
+            activo ? "Concede ver costos" : "Revoca ver costos");
+
+        return ProcessResult.Success(activo
+            ? "Ahora puede ver costos y utilidad"
+            : "Ya no puede ver costos y utilidad");
     }
 
     public ProcessResult<List<UsuarioSistema>> ObtenerUsuarios() =>
@@ -380,6 +425,10 @@ public class ConfiguracionService
 
     public ProcessResult<AgregarClienteFiadoResponse> AgregarClienteFiado(ClienteFiado nuevoCliente)
     {
+        var autorizacion = Autorizar(PermisoSistema.CrearCliente);
+        if (autorizacion.IsError)
+            return ProcessResult<AgregarClienteFiadoResponse>.Error(autorizacion.Message);
+
         if (string.IsNullOrWhiteSpace(nuevoCliente.Nombre))
             return ProcessResult<AgregarClienteFiadoResponse>.Error("El nombre del cliente es obligatorio");
 
@@ -600,6 +649,10 @@ public class ConfiguracionService
 
     public ProcessResult<AgregarProveedorResponse> AgregarProveedor(Proveedor nuevoProveedor)
     {
+        var autorizacion = Autorizar(PermisoSistema.CrearProveedor);
+        if (autorizacion.IsError)
+            return ProcessResult<AgregarProveedorResponse>.Error(autorizacion.Message);
+
         if (string.IsNullOrWhiteSpace(nuevoProveedor.Nombre))
             return ProcessResult<AgregarProveedorResponse>.Error("El nombre del proveedor es obligatorio");
 

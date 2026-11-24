@@ -440,6 +440,14 @@ public class DatabaseTools
             new SqliteParameter("@id", usuarioId),
             new SqliteParameter("@pin", pinHash)) > 0;
 
+    public bool ActualizarPermisosUsuario(int usuarioId, string permisos) =>
+        ExecuteCommand(@"
+            UPDATE UsuariosSistema
+            SET PermisosEspeciales = @permisos
+            WHERE Id = @id",
+            new SqliteParameter("@id", usuarioId),
+            new SqliteParameter("@permisos", permisos ?? string.Empty)) > 0;
+
     public int ContarUsuarios() =>
         ExecuteScalar<int>("SELECT COUNT(*) FROM UsuariosSistema");
 

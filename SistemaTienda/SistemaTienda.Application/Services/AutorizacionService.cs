@@ -30,6 +30,11 @@ public static class AutorizacionService
         if (usuario.Rol == RolUsuario.Dueño)
             return true;
 
+        // VerCostos no se hereda por rol: el dueño lo concede a un encargado concreto.
+        if (permiso == PermisoSistema.VerCostos)
+            return usuario.Rol == RolUsuario.Encargado &&
+                   PermisoEspecial.Tiene(usuario.PermisosEspeciales, PermisoEspecial.VerCostos);
+
         return usuario.Rol switch
         {
             RolUsuario.Encargado => permiso is
@@ -40,6 +45,9 @@ public static class AutorizacionService
                 PermisoSistema.RegistrarGasto or
                 PermisoSistema.RegistrarAbono or
                 PermisoSistema.EditarCliente or
+                PermisoSistema.CrearCliente or
+                PermisoSistema.CrearProveedor or
+                PermisoSistema.ExportarDatos or
                 PermisoSistema.PagarProveedor or
                 PermisoSistema.EditarProveedor or
                 PermisoSistema.RegistrarCompra or
@@ -90,6 +98,10 @@ public static class AutorizacionService
         PermisoSistema.Configurar => "cambiar la configuración",
         PermisoSistema.GestionarUsuarios => "gestionar usuarios",
         PermisoSistema.ConsultarBitacora => "consultar la bitácora",
+        PermisoSistema.CrearCliente => "crear clientes",
+        PermisoSistema.CrearProveedor => "crear proveedores",
+        PermisoSistema.ExportarDatos => "exportar datos",
+        PermisoSistema.VerCostos => "ver costos y utilidad",
         _ => permiso.ToString()
     };
 }

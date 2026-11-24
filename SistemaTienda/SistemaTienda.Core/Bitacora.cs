@@ -44,7 +44,43 @@ public enum PermisoSistema
     RetiroCaja,
     Configurar,
     GestionarUsuarios,
-    ConsultarBitacora
+    ConsultarBitacora,
+    CrearCliente,
+    CrearProveedor,
+    ExportarDatos,
+    VerCostos
+}
+
+/// <summary>
+/// Permisos que el dueño puede conceder a un usuario concreto además de los de
+/// su rol. Se guardan separados por comas en <c>UsuariosSistema.PermisosEspeciales</c>.
+/// </summary>
+public static class PermisoEspecial
+{
+    public const string VerCostos = "VerCostos";
+
+    public static bool Tiene(string permisos, string permiso)
+    {
+        if (string.IsNullOrWhiteSpace(permisos) || string.IsNullOrWhiteSpace(permiso))
+            return false;
+
+        return permisos
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Any(p => string.Equals(p, permiso, StringComparison.OrdinalIgnoreCase));
+    }
+
+    public static string Establecer(string permisos, string permiso, bool activo)
+    {
+        var actuales = (permisos ?? string.Empty)
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(p => !string.Equals(p, permiso, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        if (activo)
+            actuales.Add(permiso);
+
+        return string.Join(",", actuales);
+    }
 }
 
 public static class AccionBitacora

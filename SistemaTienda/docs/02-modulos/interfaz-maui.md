@@ -8,7 +8,7 @@ Alcance de esta entrega:
 
 - Asistente de primera configuración.
 - Inicio de sesión con PIN.
-- Tablero con diez pestañas: Inicio, Vender, Inventario, Ventas, Clientes, Proveedores, Gastos, Caja, Reportes y Ajustes.
+- Tablero con pestañas armadas por permiso: Inicio, Vender, Inventario y Ventas para todos; Clientes, Proveedores, Gastos y Caja para dueño y encargado; **Reportes** solo con `VerCostos`; Ajustes para todos con las acciones que permita el rol. El empleado no ve clientes, proveedores, gastos, caja ni reportes.
 - Punto de venta: búsqueda con sugerencias mientras se escribe, escaneo por código, carrito, cobro en efectivo, tarjeta, mixto o fiado, y ticket interno con QR que se puede compartir como texto o imagen, o copiar.
 - Ventas: detalle de la venta con líneas, pagos y estado, reimpresión del ticket y anulación completa con motivo y confirmación.
 - Clientes: directorio con búsqueda, filtros de saldo e inactivos, alta, abono con método, estado de cuenta, edición y baja/reactivación lógica (solo dueño).
