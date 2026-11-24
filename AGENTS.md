@@ -78,7 +78,8 @@ Cada agente: su carpeta, su rama y su PR.
 - Las ramas `feat/*` se conservan como respaldo, sin borrar: `feat/base-compilable`, `feat/migraciones-respaldo`, `feat/ventas-pos`, `feat/corte-caja`, `feat/centavos-enteros`, `feat/integracion-t4-t9`, `feat/reportes-utilidad`, `feat/respaldo-automatico`, `feat/anulacion-ventas`, `feat/ui-maui` y las de la app MAUI hasta `feat/pago-proveedores-metodo`.
 - Trabajo nuevo: rama desde `main` actualizado; ya no hay que partir de `feat/base-compilable`.
 - T26 quedó implementada en `feat/duplicados-clientes-proveedores` (`e87ea40`): avisos no bloqueantes de posibles duplicados en altas y ediciones MAUI, y en altas desde la consola. T27 quedó implementada en `feat/baja-clientes-proveedores` (`a8f6876`). Ambas, junto con T28, se verificaron en vivo en Windows el 2026-11-19.
-- Build: 0 errores, 0 advertencias. La suite pasa **368 pruebas** en local el 2026-11-22 (incluye `DesgloseCajaTests`, `AbonosMetodoPagoTests`, `ExportadorCsvTests`, `PdfExportTests`, `QrImagenServiceTests`, `EfectivoRecibidoTests`, `ConfiguracionEdicionTests`, `UsuariosPinTests`, `ReportesTests`, `PeriodoReporteTests`, `ComprasProveedorTests` y `FechasLocalesTests`); la app MAUI compila para Windows en local y para Windows y Android en CI. Los CI anteriores de PR #8 a #18 se registran en sus entradas históricas.
+- Build: 0 errores, 0 advertencias. La suite pasa **382 pruebas** en local el 2026-11-24 (incluye `DesgloseCajaTests`, `AbonosMetodoPagoTests`, `ExportadorCsvTests`, `PdfExportTests`, `QrImagenServiceTests`, `EfectivoRecibidoTests`, `ConfiguracionEdicionTests`, `UsuariosPinTests`, `ReportesTests`, `PeriodoReporteTests`, `ComprasProveedorTests`, `FechasLocalesTests` y `SemillaTests`); la app MAUI compila para Windows en local y para Windows y Android en CI. Los CI anteriores de PR #8 a #18 se registran en sus entradas históricas.
+- Datos de prueba: `SistemaTienda/SistemaTienda.Semilla` genera escenarios `limpio` (base vacía para el asistente), `configurado` (tienda y catálogo) y `demo` (ventas, caja, corte y respaldo). Ver `SistemaTienda/docs/07-pruebas/datos-de-prueba.md`.
 - En T26, la solución compiló sin errores ni advertencias, pasaron **248 pruebas** y la app MAUI de Windows compiló sin errores ni advertencias; los avisos de duplicado de cliente y proveedor se verificaron en vivo el 2026-11-19.
 - En T27, la solución compiló sin errores ni advertencias y pasaron **252 pruebas**; MAUI Windows también compiló sin errores ni advertencias. La baja, reactivación, filtros de inactivos y distintivo se verificaron en vivo el 2026-11-19.
 - Verificación en vivo del 2026-11-19 encontró que el alta de clientes y proveedores guardaba `FechaRegistro` en UTC (`datetime('now')`). Se corrigió para guardar la hora local con la prueba `FechasLocalesTests`; los registros anteriores conservan su valor UTC y no se reescriben.
@@ -477,6 +478,11 @@ dotnet test SistemaTienda/SistemaTienda.sln
 # Ejecutar la consola
 dotnet run --project SistemaTienda/SistemaTienda.Presentation/Presentation.csproj
 
+# Generar datos de prueba (limpio | configurado | demo)
+dotnet run --project SistemaTienda/SistemaTienda.Semilla -- --escenario demo --reset
+dotnet run --project SistemaTienda/SistemaTienda.Semilla -- --p3 --escenario limpio --reset
+# Detalle: SistemaTienda/docs/07-pruebas/datos-de-prueba.md
+
 # Usar otra base de datos
 SISTEMATIENDA_DB=/ruta/a/tienda.db dotnet run --project SistemaTienda/SistemaTienda.Presentation/Presentation.csproj
 
@@ -494,7 +500,7 @@ adb install -r SistemaTienda/SistemaTienda.Maui/bin/Debug/net10.0-android/<Appli
 
 Entorno conocido: el equipo tiene runtime **.NET 10** y SDK 10; los proyectos `net8.0` usan `RollForward=Major` para ejecutarse. Si creas un nuevo ejecutable o proyecto de pruebas, agrega la misma propiedad o fallará al arrancar. La app MAUI usa los frameworks `net10.0-android` y `net10.0-windows10.0.19041.0` y requiere las cargas de trabajo `maui-windows` y `maui-android` instaladas.
 
-**Compilación Android local (2026-11-21)**: el instalador MSI de `dotnet workload install maui-android` falla en este equipo con `Object reference not set to an instance of an object`, incluso elevado. Se usó un SDK .NET 10 basado en archivos en `%LOCALAPPDATA%\dotnet10` (instalado con `dotnet-install.ps1`), donde `maui-android` sí se instala. Requiere JDK 17 (`C:\Program Files\Microsoft\jdk-17.0.21.102-hotspot`), `JAVA_HOME`, `ANDROID_HOME=%LOCALAPPDATA%\Android\Sdk`, `cmdline-tools`, `platforms;android-36` y `build-tools;36.0.0`/`36.1.0`. Compilar con ese `dotnet.exe` y `-p:EmbedAssembliesIntoApk=true`; instalar el APK `*-Signed.apk` por `adb`.
+**Compilación Android local (2026-11-21)**: el instalador MSI de `dotnet workload install maui-android` falla en este equipo con `Object reference not set to an instance of an object`, incluso elevado. Se usó un SDK .NET 10 basado en archivos en `%LOCALAPPDATA%\dotnet10` (instalado con `dotnet-install.ps1`), donde `maui-android` sí se instala. Requiere JDK 17 (`%LOCALAPPDATA%\jdk17`, Temurin 17.0.21.1), `JAVA_HOME`, `ANDROID_HOME=%LOCALAPPDATA%\Android\Sdk`, `cmdline-tools`, `platforms;android-36` y `build-tools;36.0.0`/`36.1.0`. Compilar con ese `dotnet.exe` y `-p:EmbedAssembliesIntoApk=true`; instalar el APK `*-Signed.apk` por `adb`. En una sesión nueva hay que exportar `JAVA_HOME` y `ANDROID_HOME` antes de compilar; sin ellos el build falla con `XA5300`.
 
 **Nota local (2026-11-12)**: el bloqueo `0x800711C7` de Control de aplicaciones es intermitente. Corrió 230 pruebas en verde el 2026-11-11, pero volvió a bloquear el `SistemaTienda.Tests.dll` recién compilado el 2026-11-12 (también al compilar a una carpeta temporal). La compilación de la solución y de la app MAUI funciona. Mientras el bloqueo esté activo, la verificación de pruebas se hace con el CI de GitHub Actions, que es la referencia para cada PR; revisa Seguridad de Windows → Control de aplicaciones y navegador (o Smart App Control) si necesitas correrlas en local.
 

@@ -44,6 +44,7 @@ Pendiente para el MVP: verificar en más fabricantes, versiones y tabletas Andro
 | [05-decisiones/ADR-importacion-xlsx.md](05-decisiones/ADR-importacion-xlsx.md) | Lectura local de libros XLSX |
 | [06-operacion/instalacion-y-actualizacion.md](06-operacion/instalacion-y-actualizacion.md) | Instalación |
 | [07-pruebas/plan-de-pruebas.md](07-pruebas/plan-de-pruebas.md) | Estrategia y cobertura de pruebas |
+| [07-pruebas/datos-de-prueba.md](07-pruebas/datos-de-prueba.md) | Generador de bases de demostración |
 | [changelog.md](changelog.md) | Cambios por versión |
 | [roadmap.md](roadmap.md) | Avance y siguiente trabajo |
 | [deuda-tecnica.md](deuda-tecnica.md) | Atajos y pendientes técnicos |

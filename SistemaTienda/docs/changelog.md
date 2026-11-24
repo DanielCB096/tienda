@@ -17,6 +17,14 @@ Cada entrada tiene formato:
 
 ---
 
+## 2026-11-24 — Acciones sobre la ruta de respaldo y datos de prueba
+
+- **Agregado**: **Copiar ruta de respaldos** y **Abrir carpeta de respaldos** en Ajustes, solo en Windows.
+- **Agregado**: lista de **respaldos recientes** con restauración directa, sin navegar a la carpeta.
+- **Modificado**: al exportar un respaldo o un paquete de soporte en Windows, el aviso ofrece **Abrir carpeta**.
+- **Corregido**: el usuario ya no tiene que transcribir ni navegar a mano la ruta del respaldo (hallazgo P6 de la prueba de usabilidad).
+- **Agregado**: `SistemaTienda.Semilla` genera bases `limpio`, `configurado` y `demo` con datos ficticios coherentes, sin tocar la app real; 4 pruebas nuevas en `SemillaTests` (382 en total).
+
 ## 2026-11-23 — H1: respaldo, restauración y confiabilidad local
 
 - **Agregado**: exportación del respaldo fuera del almacenamiento privado; restauración desde la app con confirmación y respaldo previo; paquete de soporte con resumen y base opcional; instancia única en Windows.
