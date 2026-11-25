@@ -18,19 +18,19 @@ de 3000.
 | Ticket #2 descartado | `Descartado` y bitácora `DescartarTicketEspera` con piezas y total |
 | Lista **En espera** tras cobrar/descartar | Vacía |
 | Bitácora | `DejarTicketEspera` x2, `RetomarTicketEspera` x1, `DescartarTicketEspera` x1 |
+| Totales de **En espera** con `$` | Correcto tras la corrección (`$32.00`) |
+| Vista previa `h61-android.csv` | 3 leídas, 2 válidas, 1 omitida con el error de costo |
+| Importar lote #2 desde la vista previa | Correcto; 2 productos y 1 fila omitida |
+| Revertir lote #2 | `Revertida`, 2 productos inactivos con stock 0, ajustes compensatorios y bitácora `ReversionImportacion` |
+| Inventario tras revertir | 3055 productos (3052 activos, 3 inactivos), stock coherente |
 
 ## Hallazgo corregido
 
 Los totales de **En espera** se mostraban como `32.00` sin signo de pesos. Se
-cambió a `Formato.Moneda` (`$32.00`). Pendiente reverificar visualmente tras
-reinstalar.
+cambió a `Formato.Moneda` (`$32.00`) y se verificó en el teléfono.
 
 ## Pendiente de esta verificación
 
-- Vista previa de importación en Android con un CSV real (la lista de lotes sí se
-  verificó).
-- Revertir un lote desde la interfaz (no se ejecutó para no desactivar los 3000
-  productos de prueba).
 - Medición instrumentada de milisegundos en Android; la prueba de escritorio da
   33.52 ms y en el teléfono no se percibió retraso.
 - Escáner físico de 13 dígitos; la entrada por `adb` del código completo funcionó.

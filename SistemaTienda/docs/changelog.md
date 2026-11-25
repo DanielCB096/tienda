@@ -25,7 +25,8 @@ Cada entrada tiene formato:
 - **Agregado**: 5 pruebas en `BusquedaRendimientoTests` (3000 productos, prefijos del escáner, código antes que nombre, acentos y tope).
 - **Verificado en Android** (POCO X6 Pro 5G, Android 16, 2026-11-25): `cafe` encuentra “Café molido”, el código completo agrega el producto, tickets guardados sobreviven reinicio, se cobran y descartan con bitácora; ver [verificacion-h6-android.md](07-pruebas/verificacion-h6-android.md).
 - **Corregido**: los totales de **En espera** ahora se muestran con `$`.
-- **Pendiente**: medición instrumentada en Android, vista previa/reversión de lote desde la interfaz; protocolo en [medicion-busqueda.md](07-pruebas/medicion-busqueda.md).
+- **Verificado además**: vista previa con 3 filas (2 válidas, 1 con error), importación del lote #2 y reversión desde **Lotes** (productos inactivos, stock 0, ajustes y bitácora); ver [verificacion-h6-android.md](07-pruebas/verificacion-h6-android.md).
+- **Pendiente**: medición instrumentada en Android y escáner físico; protocolo en [medicion-busqueda.md](07-pruebas/medicion-busqueda.md).
 - **Pruebas**: suite completa: 483.
 - Ver [ADR-009](../../SistemaMaestro/docs/07-decisiones/ADR-009-onboarding-tickets-busqueda.md).
 
