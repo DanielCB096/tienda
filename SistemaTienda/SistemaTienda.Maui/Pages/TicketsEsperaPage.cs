@@ -110,7 +110,7 @@ public sealed class TicketsEsperaPage : ContentPage
         });
         tarjeta.Add(new Label
         {
-            Text = $"{ticket.Piezas} pieza(s) · {Dinero.Formatear(ticket.TotalEstimado)}",
+            Text = $"{ticket.Piezas} pieza(s) · {Formato.Moneda(ticket.TotalEstimado)}",
             FontSize = 13,
             FontAttributes = FontAttributes.Bold
         });
@@ -175,7 +175,7 @@ public sealed class TicketsEsperaPage : ContentPage
     {
         var confirmar = await DisplayAlertAsync("Descartar ticket",
             $"Se descartará \"{(string.IsNullOrWhiteSpace(ticket.Nombre) ? $"Ticket #{ticket.Id}" : ticket.Nombre)}\" " +
-            $"con {ticket.Piezas} pieza(s) y {Dinero.Formatear(ticket.TotalEstimado)}. " +
+            $"con {ticket.Piezas} pieza(s) y {Formato.Moneda(ticket.TotalEstimado)}. " +
             "Quedará en la bitácora.",
             "Descartar", "Cancelar");
         if (!confirmar)

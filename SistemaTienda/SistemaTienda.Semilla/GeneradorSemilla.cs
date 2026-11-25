@@ -162,6 +162,31 @@ public static class GeneradorSemilla
         var descontinuado = productos[^1];
         Exigir(inventario.DesactivarProducto(descontinuado.Id), "desactivar producto de temporada");
 
+        if (opciones.ProductosExtra > 0)
+        {
+            var extras = new List<Producto>();
+            for (var i = 0; i < opciones.ProductosExtra; i++)
+            {
+                extras.Add(new Producto
+                {
+                    CodigoBarras = $"MED-{i:D5}",
+                    Nombre = i % 10 == 0
+                        ? $"Café molido {i:D5}"
+                        : $"Producto medido {i:D5}",
+                    Categoria = "Medición",
+                    Costo = 1_000,
+                    Precio = 2_000,
+                    Stock = 1,
+                    StockMinimo = 0,
+                    Impuesto = 16m
+                });
+            }
+
+            Exigir(db.ImportarProductos(extras, "medicion.csv", "medicion", "Semilla",
+                extras.Count, 0), "productos de medición");
+            productos.AddRange(extras);
+        }
+
         if (opciones.Escenario == OpcionesSemilla.EscenarioConfigurado)
         {
             Resumen(db, opciones, productos.Count);

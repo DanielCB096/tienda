@@ -23,7 +23,9 @@ Cada entrada tiene formato:
 - **Optimizado**: `Texto.SinAcentos` evita normalizar texto ASCII y `SugerirProductos` normaliza una sola vez por producto.
 - **Modificado**: `BuscarPorNombre` limita a 200 resultados para no saturar la lista.
 - **Agregado**: 5 pruebas en `BusquedaRendimientoTests` (3000 productos, prefijos del escáner, código antes que nombre, acentos y tope).
-- **Pendiente**: medición en el Android del piloto; protocolo en [medicion-busqueda.md](07-pruebas/medicion-busqueda.md).
+- **Verificado en Android** (POCO X6 Pro 5G, Android 16, 2026-11-25): `cafe` encuentra “Café molido”, el código completo agrega el producto, tickets guardados sobreviven reinicio, se cobran y descartan con bitácora; ver [verificacion-h6-android.md](07-pruebas/verificacion-h6-android.md).
+- **Corregido**: los totales de **En espera** ahora se muestran con `$`.
+- **Pendiente**: medición instrumentada en Android, vista previa/reversión de lote desde la interfaz; protocolo en [medicion-busqueda.md](07-pruebas/medicion-busqueda.md).
 - **Pruebas**: suite completa: 483.
 - Ver [ADR-009](../../SistemaMaestro/docs/07-decisiones/ADR-009-onboarding-tickets-busqueda.md).
 

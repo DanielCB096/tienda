@@ -1,6 +1,6 @@
 # Roadmap
 
-Estado al 2026-11-25. T1–T42 y H1–H5 están integrados en `main`; H6.1 (importación con lotes), H6.2 (tickets en espera) y H6.3 (búsqueda medida) están implementados; falta medir la búsqueda en el Android del piloto. La suite queda en 483 pruebas. Orden sugerido en [CLAUDE-tienda.md §13](../CLAUDE-tienda.md).
+Estado al 2026-11-25. T1–T42 y H1–H5 están integrados en `main`; H6.1 (importación con lotes), H6.2 (tickets en espera) y H6.3 (búsqueda medida) están implementados; la búsqueda y los tickets se verificaron en Android el 2026-11-25; falta la medición instrumentada y el escáner físico. La suite queda en 483 pruebas. Orden sugerido en [CLAUDE-tienda.md §13](../CLAUDE-tienda.md).
 
 ## Avance por módulo
 

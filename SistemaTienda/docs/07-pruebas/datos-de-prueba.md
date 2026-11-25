@@ -69,6 +69,9 @@ dotnet run --project SistemaTienda/SistemaTienda.Semilla -- --p3 --escenario dem
 
 # Una ruta concreta
 dotnet run --project SistemaTienda/SistemaTienda.Semilla -- --db C:\ruta\tienda.db --escenario demo --reset
+
+# Catálogo grande para medir búsqueda (53 del catálogo + 3000 de medición)
+dotnet run --project SistemaTienda/SistemaTienda.Semilla -- --db C:\ruta\tienda.db --escenario configurado --productos 3000 --reset
 ```
 
 `--p3` apunta a

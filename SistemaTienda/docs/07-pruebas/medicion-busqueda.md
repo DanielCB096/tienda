@@ -47,6 +47,13 @@ ASCII y una sola normalización por producto y consulta.
 Criterio: sin bloqueo visible de la interfaz y menos de 300 ms entre la última
 tecla y los resultados. Si falla, medir antes de cambiar a FTS5 o caché global.
 
+### Resultado Android (POCO X6 Pro 5G, Android 16, 2026-11-25)
+
+Con 3053 productos, `cafe` encontró “Café molido” y el código completo agregó el
+producto equivalente sin retraso perceptible. La medición instrumentada en
+milisegundos queda pendiente; el detalle está en
+[verificacion-h6-android.md](verificacion-h6-android.md).
+
 ## Lo que no se mide aquí
 
 - Lectores Bluetooth con su propio buffer: se prueban en el equipo del cliente.

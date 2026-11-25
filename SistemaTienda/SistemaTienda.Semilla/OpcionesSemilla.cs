@@ -19,6 +19,7 @@ public sealed class OpcionesSemilla
     public bool Silencioso { get; init; }
     public bool MostrarAyuda { get; init; }
     public bool UsarRutaP3 { get; init; }
+    public int ProductosExtra { get; init; }
 
     public static string CarpetaAppP3 =>
         Path.Combine(CarpetaDatosLocales, "SistemaTienda", "com.sistematienda.p3", "Data");
@@ -44,6 +45,7 @@ public sealed class OpcionesSemilla
         var silencioso = false;
         var ayuda = false;
         var p3 = false;
+        var productosExtra = 0;
 
         for (var i = 0; i < args.Length; i++)
         {
@@ -62,6 +64,14 @@ public sealed class OpcionesSemilla
                     if (i + 1 >= args.Length)
                         throw new ArgumentException("Falta el nombre después de --escenario");
                     escenario = args[++i].ToLower(CultureInfo.InvariantCulture);
+                    break;
+                case "--productos":
+                    if (i + 1 >= args.Length)
+                        throw new ArgumentException("Falta la cantidad después de --productos");
+                    if (!int.TryParse(args[++i], out productosExtra) ||
+                        productosExtra < 0 || productosExtra > 10_000)
+                        throw new ArgumentException(
+                            "--productos debe ser un entero entre 0 y 10,000");
                     break;
                 case "--reset":
                     reiniciar = true;
@@ -96,7 +106,8 @@ public sealed class OpcionesSemilla
             Forzar = forzar,
             Silencioso = silencioso,
             MostrarAyuda = ayuda,
-            UsarRutaP3 = p3
+            UsarRutaP3 = p3,
+            ProductosExtra = productosExtra
         };
     }
 
@@ -122,6 +133,7 @@ public sealed class OpcionesSemilla
                              %LOCALAPPDATA%\SistemaTienda\semilla\tienda.db
               --p3           Atajo a la app aislada de la prueba de usabilidad:
                              %LOCALAPPDATA%\SistemaTienda\com.sistematienda.p3\Data\tienda.db
+              --productos N  Agrega N productos de medición al final (0 a 10,000).
               --reset        Borra la base, sus -wal/-shm, respaldos y exportaciones.
                              Obligatorio si la base ya existe.
               --forzar       Permite escribir en la carpeta de la app real
