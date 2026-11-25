@@ -18,7 +18,7 @@ El paquete de Windows (H5) se arma con `SistemaMaestro/scripts/h5-empaquetar.ps1
    powershell -ExecutionPolicy Bypass -File SistemaMaestro\scripts\h5-empaquetar.ps1 -Version 1.1.0
    ```
 
-   Genera `dist/SistemaTienda-1.1.0-win-x64.zip` con la app, el manifiesto y un `LEEME.txt`.
+   Genera `dist/SistemaTienda-1.1.0-win-x64.zip` con la app autocontenida (no requiere instalar .NET), el manifiesto y un `LEEME.txt`. El empaquetador verifica que el paquete incluya el runtime antes de comprimirlo.
 2. **Instalar** (en el equipo de la tienda, sin internet):
 
    ```powershell
@@ -76,6 +76,7 @@ El sistema soporta actualizaciones **offline**: el nuevo archivo de la aplicaci�
 - El paquete se copia primero a `versiones\<versión>.tmp` y se renombra al final. Si la copia se corta, la versión anterior sigue siendo la activa.
 - Si la luz se corta durante la migración, SQLite aplica su diario y el siguiente arranque vuelve a entrar por el actualizador; el respaldo `antes-migrar` permite restaurar.
 - El manifiesto declara el esquema esperado. Si la base quedó más nueva que la app, la app se niega a abrirla y pide instalar la versión correspondiente; no la degrada.
+- Verificado el 2026-11-25: el ZIP real 1.1.0 se instaló en una carpeta temporal, la app autocontenida arrancó y creó su base, se actualizó a un 1.1.1 y se revirtió a 1.1.0 con ambas carpetas conservadas.
 
 ### Migraciones de Base de Datos en Actualizaciones
 
