@@ -17,6 +17,14 @@ Cada entrada tiene formato:
 
 ---
 
+## 2026-11-25 — Cierre de respaldos cifrados (H2.3b)
+
+- **Agregado**: el asistente inicial ofrece activar el cifrado, muestra la tarjeta de recuperación y deja la tienda nueva protegida; si el dueño dice «ahora no», se avisa que los respaldos quedan sin cifrar.
+- **Modificado**: el paquete de soporte se cifra con la misma clave cuando está disponible; sin clave sigue siendo un ZIP normal.
+- **Modificado**: el resumen del paquete indica si va cifrado y si incluye la base.
+- **Pruebas**: 2 nuevas del paquete de soporte (424 en total).
+- **Pendiente**: verificar DPAPI/Keystore y la restauración en un Android físico.
+
 ## 2026-11-24 — Respaldos cifrados (H2.3)
 
 - **Agregado**: respaldos con AES-256-GCM y clave derivada por PBKDF2-SHA256 (600,000 iteraciones, sal y nonce por archivo). Formato `STB1` en archivos `.db.stb`.

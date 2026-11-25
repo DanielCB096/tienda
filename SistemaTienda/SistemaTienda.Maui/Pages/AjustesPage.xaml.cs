@@ -869,10 +869,11 @@ public partial class AjustesPage : ContentPage
             }
 
             _sesion.Aplicar();
+            var claveSoporte = await ClaveRespaldoAsync();
             var nombre = $"soporte-{DateTime.Now:yyyyMMdd-HHmmss}.zip";
             var rutaZip = Path.Combine(FileSystem.CacheDirectory, nombre);
 
-            var creado = _soporte.Crear(rutaZip, incluirBase);
+            var creado = _soporte.Crear(rutaZip, incluirBase, claveRespaldo: claveSoporte);
             if (creado.IsError)
             {
                 await DisplayAlertAsync("No se pudo crear el paquete", creado.Message, "Continuar");

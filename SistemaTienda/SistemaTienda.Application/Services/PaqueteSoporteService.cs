@@ -21,7 +21,7 @@ public sealed class PaqueteSoporteService
     }
 
     public ProcessResult<string> Crear(string rutaSalida, bool incluirBaseDatos = false,
-        DateTime? ahora = null)
+        DateTime? ahora = null, string claveRespaldo = null)
     {
         if (string.IsNullOrWhiteSpace(rutaSalida))
             return ProcessResult<string>.Error("Indique la ruta del paquete de soporte");
@@ -51,6 +51,7 @@ public sealed class PaqueteSoporteService
             resumen.AppendLine($"Directorio de respaldos: {_db.DirectorioRespaldos}");
             resumen.AppendLine($"Último respaldo: {RespaldoLocal.Ultimo(_db.DirectorioRespaldos)?.ToString("yyyy-MM-dd HH:mm:ss") ?? "Sin respaldos"}");
             resumen.AppendLine($"Base incluida: {(incluirBaseDatos ? "Sí" : "No")}");
+            resumen.AppendLine($"Cifrado: {(string.IsNullOrWhiteSpace(claveRespaldo) ? "No" : "Sí")}");
             resumen.AppendLine();
             resumen.AppendLine("Este paquete puede contener información del negocio. Compártelo solo por un canal seguro.");
 
@@ -71,7 +72,25 @@ public sealed class PaqueteSoporteService
 
             ZipFile.CreateFromDirectory(temporal, rutaZip, CompressionLevel.Optimal, false);
 
-            return ProcessResult<string>.OK(rutaZip, "Paquete de soporte creado");
+            if (!string.IsNullOrWhiteSpace(claveRespaldo))
+            {
+                var datos = File.ReadAllBytes(rutaZip);
+                var archivoCifrado = CifradoRespaldo.Cifrar(datos, claveRespaldo);
+                var destino = rutaZip + CifradoRespaldo.Extension;
+                File.WriteAllBytes(destino, archivoCifrado);
+
+                var comprobacion = CifradoRespaldo.Descifrar(
+                    File.ReadAllBytes(destino), claveRespaldo);
+                if (!comprobacion.SequenceEqual(datos))
+                    throw new InvalidDataException("El paquete cifrado no coincide con el original");
+
+                File.Delete(rutaZip);
+                rutaZip = destino;
+            }
+
+            return ProcessResult<string>.OK(rutaZip, string.IsNullOrWhiteSpace(claveRespaldo)
+                ? "Paquete de soporte creado"
+                : "Paquete de soporte cifrado creado");
         }
         catch (Exception ex)
         {

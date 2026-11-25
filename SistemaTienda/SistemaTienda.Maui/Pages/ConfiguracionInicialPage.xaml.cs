@@ -1,4 +1,5 @@
 using System.Globalization;
+using Microsoft.Maui.ApplicationModel.DataTransfer;
 using SistemaTienda.Application.Services;
 using SistemaTienda.Core;
 using SistemaTienda.Maui.Services;
@@ -84,11 +85,77 @@ public partial class ConfiguracionInicialPage : ContentPage
             }
 
             await DisplayAlertAsync("Tienda configurada", resultado.Message, "Continuar");
+            await OfrecerCifradoAsync();
             _navegacion.MostrarLogin();
         }
         finally
         {
             CrearButton.IsEnabled = true;
+        }
+    }
+
+    /// <summary>
+    /// Ofrece activar el cifrado en la tienda nueva. Los expertos pidieron que
+    /// la instalación nazca protegida, pero sin bloquear la operación: si el
+    /// dueño dice "ahora no", se le advierte que los respaldos quedan sin cifrar.
+    /// </summary>
+    private async Task OfrecerCifradoAsync()
+    {
+        var activar = await DisplayAlertAsync("Protege tus respaldos",
+            "Puedes cifrar los respaldos con una clave que solo tú tengas. " +
+            "Si la pierdes, no se podrán abrir. ¿Activar ahora?",
+            "Activar", "Ahora no");
+
+        if (!activar)
+        {
+            await DisplayAlertAsync("Respaldos sin cifrado",
+                "Los respaldos se guardarán sin contraseña. Puedes activar el cifrado después en Ajustes → Respaldo cifrado.",
+                "Continuar");
+            return;
+        }
+
+        try
+        {
+            var clave = CifradoRespaldo.GenerarClave();
+            await AlmacenClaveRespaldo.GuardarAsync(clave);
+
+            var config = _config.ObtenerConfiguracion().Value;
+            var dueno = _config.ObtenerUsuarios().Value?
+                .FirstOrDefault(u => u.Rol == RolUsuario.Dueño);
+
+            if (config == null || dueno == null)
+            {
+                await DisplayAlertAsync("Cifrado",
+                    "La tienda quedó creada, pero no se pudo activar el cifrado. Hazlo desde Ajustes.",
+                    "Continuar");
+                return;
+            }
+
+            SesionActual.Iniciar(dueno);
+            config.RespaldoCifradoActivado = true;
+            var guardado = _config.ActualizarConfiguracion(config);
+            if (guardado.IsError)
+            {
+                await DisplayAlertAsync("Cifrado", guardado.Message, "Continuar");
+                return;
+            }
+
+            var entrada = await DisplayPromptAsync("Tarjeta de recuperación",
+                "Guarda esta clave fuera del equipo. La necesitarás para restaurar en otro equipo.",
+                accept: "Ya la guardé", cancel: "Copiar clave",
+                initialValue: clave, maxLength: 40);
+
+            if (entrada == null)
+            {
+                await Clipboard.Default.SetTextAsync(clave);
+                await DisplayAlertAsync("Clave copiada",
+                    "Pega la clave en un lugar seguro fuera de este equipo.", "Continuar");
+            }
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlertAsync("Cifrado",
+                $"No se pudo activar el cifrado: {ex.Message}. Puedes hacerlo desde Ajustes.", "Continuar");
         }
     }
 

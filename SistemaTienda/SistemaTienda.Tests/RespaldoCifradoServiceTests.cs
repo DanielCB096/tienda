@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using SistemaTienda.Application.Services;
 using SistemaTienda.Core;
 
@@ -118,5 +119,40 @@ public sealed class RespaldoCifradoServiceTests
         Assert.Contains("clave", resultado.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Contains(bd.Inventario.ObtenerProductos(),
             p => p.CodigoBarras == "ORIGINAL");
+    }
+
+    [Fact]
+    public void PaqueteDeSoporteConClave_SeCifraYConservaLaBase()
+    {
+        using var bd = new BaseDatosPrueba();
+        bd.ConfigurarTienda();
+        var clave = CifradoRespaldo.GenerarClave();
+        var ruta = Path.Combine(Path.GetDirectoryName(bd.Ruta)!, "soporte.zip");
+
+        var creado = new PaqueteSoporteService(bd.Db)
+            .Crear(ruta, incluirBaseDatos: true, claveRespaldo: clave);
+
+        Assert.True(creado.IsSuccess, creado.Message);
+        Assert.EndsWith(".zip.stb", creado.Value);
+        Assert.False(File.Exists(ruta));
+
+        var datos = CifradoRespaldo.Descifrar(File.ReadAllBytes(creado.Value), clave);
+        using var zip = new ZipArchive(new MemoryStream(datos), ZipArchiveMode.Read);
+        Assert.Contains(zip.Entries, e => e.FullName == "datos.db");
+        Assert.Contains(zip.Entries, e => e.FullName == "resumen.txt");
+    }
+
+    [Fact]
+    public void PaqueteDeSoporteSinClave_SigueSiendoUnZipPlano()
+    {
+        using var bd = new BaseDatosPrueba();
+        bd.ConfigurarTienda();
+        var ruta = Path.Combine(Path.GetDirectoryName(bd.Ruta)!, "soporte-plano.zip");
+
+        var creado = new PaqueteSoporteService(bd.Db).Crear(ruta, incluirBaseDatos: false);
+
+        Assert.True(creado.IsSuccess, creado.Message);
+        Assert.EndsWith(".zip", creado.Value);
+        Assert.False(CifradoRespaldo.EsCifrado(File.ReadAllBytes(creado.Value)));
     }
 }
