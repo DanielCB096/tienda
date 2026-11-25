@@ -14,6 +14,21 @@ public static class Texto
         if (string.IsNullOrEmpty(texto))
             return string.Empty;
 
+        // Camino rápido: códigos de barras y nombres sin acentos no necesitan
+        // normalizar ni recorrer la cadena. Es la mayoría del catálogo.
+        var esAscii = true;
+        foreach (var caracter in texto)
+        {
+            if (caracter > 127)
+            {
+                esAscii = false;
+                break;
+            }
+        }
+
+        if (esAscii)
+            return texto;
+
         var normalizado = texto.Normalize(NormalizationForm.FormD);
         var constructor = new StringBuilder(normalizado.Length);
         foreach (var caracter in normalizado)

@@ -17,6 +17,16 @@ Cada entrada tiene formato:
 
 ---
 
+## 2026-11-25 — Búsqueda medida y escaneo sin pérdida (H6.3)
+
+- **Medido**: 3000 productos en Windows Release: 33.52 ms para sugerencias, 28.08 ms para búsqueda por nombre y 0.07 ms para código exacto.
+- **Optimizado**: `Texto.SinAcentos` evita normalizar texto ASCII y `SugerirProductos` normaliza una sola vez por producto.
+- **Modificado**: `BuscarPorNombre` limita a 200 resultados para no saturar la lista.
+- **Agregado**: 5 pruebas en `BusquedaRendimientoTests` (3000 productos, prefijos del escáner, código antes que nombre, acentos y tope).
+- **Pendiente**: medición en el Android del piloto; protocolo en [medicion-busqueda.md](07-pruebas/medicion-busqueda.md).
+- **Pruebas**: suite completa: 483.
+- Ver [ADR-009](../../SistemaMaestro/docs/07-decisiones/ADR-009-onboarding-tickets-busqueda.md).
+
 ## 2026-11-25 — Tickets en espera (H6.2)
 
 - **Agregado**: carritos guardados en SQLite (`TicketsEspera` y `TicketEsperaLineas`, esquema v19) con nombre o nota opcional, usuario, fecha y estado.

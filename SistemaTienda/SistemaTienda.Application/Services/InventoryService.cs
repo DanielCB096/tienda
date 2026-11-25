@@ -565,9 +565,15 @@ public class InventoryService
 
     public Producto BuscarPorId(int productoId) => _db.ObtenerProductoPorId(productoId);
 
-    public List<Producto> BuscarPorNombre(string texto, bool soloActivos = false)
+    /// <summary>
+    /// Búsqueda por nombre sin acentos ni mayúsculas. Devuelve como máximo
+    /// <paramref name="maximo"/> coincidencias para no saturar la lista; el POS
+    /// usa las sugerencias cortas mientras se escribe.
+    /// </summary>
+    public List<Producto> BuscarPorNombre(string texto, bool soloActivos = false,
+        int maximo = 200)
     {
-        if (string.IsNullOrWhiteSpace(texto))
+        if (string.IsNullOrWhiteSpace(texto) || maximo <= 0)
             return new List<Producto>();
 
         var filtro = Texto.SinAcentos(texto.Trim());
@@ -575,6 +581,7 @@ public class InventoryService
             .Where(p => (!soloActivos || p.Activo) &&
                         Texto.SinAcentos(p.Nombre ?? string.Empty)
                             .Contains(filtro, StringComparison.OrdinalIgnoreCase))
+            .Take(maximo)
             .ToList();
     }
 
@@ -594,21 +601,22 @@ public class InventoryService
 
         return _db.ObtenerProductos()
             .Where(p => p.Activo)
-            .Select(p => (Producto: p, Rango: RangoSugerencia(p, filtro)))
+            .Select(p =>
+            {
+                var nombre = Texto.SinAcentos(p.Nombre ?? string.Empty);
+                var codigo = Texto.SinAcentos(p.CodigoBarras ?? string.Empty);
+                return (Producto: p, Rango: RangoSugerencia(nombre, codigo, filtro), nombre);
+            })
             .Where(x => x.Rango < int.MaxValue)
             .OrderBy(x => x.Rango)
-            .ThenBy(x => Texto.SinAcentos(x.Producto.Nombre ?? string.Empty),
-                StringComparer.OrdinalIgnoreCase)
+            .ThenBy(x => x.nombre, StringComparer.OrdinalIgnoreCase)
             .Take(maximo)
             .Select(x => x.Producto)
             .ToList();
     }
 
-    private static int RangoSugerencia(Producto producto, string filtro)
+    private static int RangoSugerencia(string nombre, string codigo, string filtro)
     {
-        var nombre = Texto.SinAcentos(producto.Nombre ?? string.Empty);
-        var codigo = Texto.SinAcentos(producto.CodigoBarras ?? string.Empty);
-
         if (codigo.Equals(filtro, StringComparison.OrdinalIgnoreCase))
             return 0;
         if (codigo.StartsWith(filtro, StringComparison.OrdinalIgnoreCase))

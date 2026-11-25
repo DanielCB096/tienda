@@ -111,6 +111,7 @@ dotnet test SistemaTienda/SistemaTienda.sln
 | `FiadoProveedoresTests` | Cliente, abono, saldo, proveedor y pago; búsqueda de clientes por nombre o teléfono y de proveedores por nombre, clave o teléfono sin mayúsculas ni acentos; filtro con saldo; recorte de datos y bitácora de alta de ambos |
 | `BaseDatosTests` | Inicialización idempotente, tablas, mapeo de tipos |
 | `DineroTests` | Conversión pesos ↔ centavos con redondeo `AwayFromZero`, multiplicación con desbordamiento, porcentaje a centavos y formato invariante |
+| `BusquedaRendimientoTests` | 3000 productos con umbrales anti-regresión, tope de 200 resultados, cada prefijo del escáner encuentra el producto, código antes que nombre y acentos/mayúsculas |
 | `TicketsEsperaTests` | Guardar sin mover stock/caja, máximo 10, precio actual y cambio, retomar, bloqueo de otro cajero, descarte auditado, venta que cierra el ticket, doble cobro rechazado, liberación por vencimiento y migración v18 → v19 |
 | `ImportacionLotesTests` | Vista previa sin escritura, lote y vínculos con productos/movimientos, 3000 filas en una transacción, reversión compensatoria, bloqueo por venta posterior, fallo de inserción sin residuos, permiso de empleado, plantilla oficial y migración v17 → v18 |
 | `MigracionesRespaldoTests` | Runner de migraciones con respaldo previo, idempotencia, fallo con rollback, rechazo de base más nueva, respaldo verificado, restauración exacta con respaldo de seguridad, confirmación obligatoria, migración v3 → v4 a centavos con integridad de FKs |
