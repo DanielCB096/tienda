@@ -119,12 +119,20 @@ public class ConfiguracionService
         nuevaConfig.VersionApp = configActual.VersionApp;
         nuevaConfig.FechaCreacion = configActual.FechaCreacion;
 
-        if (!_db.ActualizarConfiguracion(nuevaConfig))
+        var auditoria = new RegistroBitacora
+        {
+            Fecha = DateTime.Now,
+            Usuario = SesionActual.Usuario?.Nombre ?? string.Empty,
+            Accion = AccionBitacora.Configuracion,
+            Entidad = "Configuracion",
+            EntidadId = nuevaConfig.Id.ToString(),
+            DatosAntes = $"Nombre={configActual.NombreTienda};Comision={configActual.ComisionTarjeta:F2}",
+            DatosDespues = $"Nombre={nuevaConfig.NombreTienda};Comision={nuevaConfig.ComisionTarjeta:F2}"
+        };
+
+        if (!_db.ActualizarConfiguracion(nuevaConfig, auditoria))
             return ProcessResult.Error("No se pudo actualizar la configuración");
 
-        _bitacora.Registrar(AccionBitacora.Configuracion, "Configuracion", nuevaConfig.Id.ToString(),
-            $"Nombre={configActual.NombreTienda};Comision={configActual.ComisionTarjeta:F2}",
-            $"Nombre={nuevaConfig.NombreTienda};Comision={nuevaConfig.ComisionTarjeta:F2}");
         return ProcessResult.Success("Configuración actualizada");
     }
 
@@ -159,9 +167,16 @@ public class ConfiguracionService
                 Rol = rol
             };
 
-            _db.AgregarUsuario(usuario);
-            _bitacora.Registrar(AccionBitacora.Usuario, "Usuario", usuario.Id.ToString(),
-                string.Empty, $"Alta: {usuario.Nombre};Rol={usuario.Rol}");
+            var auditoria = new RegistroBitacora
+            {
+                Fecha = DateTime.Now,
+                Usuario = SesionActual.Usuario?.Nombre ?? string.Empty,
+                Accion = AccionBitacora.Usuario,
+                Entidad = "Usuario",
+                DatosDespues = $"Alta: {usuario.Nombre};Rol={usuario.Rol}"
+            };
+
+            _db.AgregarUsuario(usuario, auditoria);
             return ProcessResult<AgregarUsuarioResponse>.OK(new AgregarUsuarioResponse
             {
                 UsuarioId = usuario.Id,
@@ -196,16 +211,24 @@ public class ConfiguracionService
             !usuarios.Any(u => u.Id != usuarioId && u.Rol == RolUsuario.Dueño))
             return ProcessResult.Error("Debe quedar al menos un usuario con rol Dueño");
 
-        if (!_db.ActualizarUsuario(usuarioId, nombreLimpio, rol))
+        var auditoria = new RegistroBitacora
+        {
+            Fecha = DateTime.Now,
+            Usuario = SesionActual.Usuario?.Nombre ?? string.Empty,
+            Accion = AccionBitacora.EditarUsuario,
+            Entidad = "Usuario",
+            EntidadId = usuarioId.ToString(),
+            DatosAntes = $"Nombre={usuario.Nombre};Rol={usuario.Rol}",
+            DatosDespues = $"Nombre={nombreLimpio};Rol={rol}"
+        };
+
+        if (!_db.ActualizarUsuario(usuarioId, nombreLimpio, rol, auditoria))
             return ProcessResult.Error("No se pudo actualizar el usuario");
 
         // Un permiso especial no sobrevive a un cambio de rol que ya no lo admite.
         if (rol != RolUsuario.Encargado && !string.IsNullOrWhiteSpace(usuario.PermisosEspeciales))
             _db.ActualizarPermisosUsuario(usuarioId, string.Empty);
 
-        _bitacora.Registrar(AccionBitacora.EditarUsuario, "Usuario", usuarioId.ToString(),
-            $"Nombre={usuario.Nombre};Rol={usuario.Rol}",
-            $"Nombre={nombreLimpio};Rol={rol}");
         return ProcessResult.Success("Usuario actualizado");
     }
 
@@ -226,11 +249,19 @@ public class ConfiguracionService
         if (PinYaUsado(nuevoPin, usuarios, usuarioId))
             return ProcessResult.Error("Ese PIN ya está en uso por otro usuario; elige uno distinto");
 
-        if (!_db.ActualizarPinUsuario(usuarioId, HashPin(nuevoPin)))
+        var auditoria = new RegistroBitacora
+        {
+            Fecha = DateTime.Now,
+            Usuario = SesionActual.Usuario?.Nombre ?? string.Empty,
+            Accion = AccionBitacora.CambiarPin,
+            Entidad = "Usuario",
+            EntidadId = usuarioId.ToString(),
+            DatosDespues = $"PIN actualizado para {usuario.Nombre}"
+        };
+
+        if (!_db.ActualizarPinUsuario(usuarioId, HashPin(nuevoPin), auditoria))
             return ProcessResult.Error("No se pudo cambiar el PIN");
 
-        _bitacora.Registrar(AccionBitacora.CambiarPin, "Usuario", usuarioId.ToString(),
-            string.Empty, $"PIN actualizado para {usuario.Nombre}");
         return ProcessResult.Success("PIN actualizado");
     }
 
@@ -263,12 +294,20 @@ public class ConfiguracionService
         if (string.Equals(nuevos, usuario.PermisosEspeciales ?? string.Empty, StringComparison.Ordinal))
             return ProcessResult.Success("Sin cambios");
 
-        if (!_db.ActualizarPermisosUsuario(usuarioId, nuevos))
-            return ProcessResult.Error("No se pudo actualizar el permiso");
+        var auditoria = new RegistroBitacora
+        {
+            Fecha = DateTime.Now,
+            Usuario = SesionActual.Usuario?.Nombre ?? string.Empty,
+            Accion = AccionBitacora.EditarUsuario,
+            Entidad = "Usuario",
+            EntidadId = usuarioId.ToString(),
+            DatosAntes = $"Permisos={usuario.PermisosEspeciales}",
+            DatosDespues = $"Permisos={nuevos}",
+            Motivo = activo ? "Concede ver costos" : "Revoca ver costos"
+        };
 
-        _bitacora.Registrar(AccionBitacora.EditarUsuario, "Usuario", usuarioId.ToString(),
-            $"Permisos={usuario.PermisosEspeciales}", $"Permisos={nuevos}",
-            activo ? "Concede ver costos" : "Revoca ver costos");
+        if (!_db.ActualizarPermisosUsuario(usuarioId, nuevos, auditoria))
+            return ProcessResult.Error("No se pudo actualizar el permiso");
 
         return ProcessResult.Success(activo
             ? "Ahora puede ver costos y utilidad"
@@ -488,10 +527,16 @@ public class ConfiguracionService
 
         try
         {
-            _db.AgregarClienteFiado(nuevoCliente);
-            _bitacora.Registrar(AccionBitacora.Cliente, "ClienteFiado", nuevoCliente.Id.ToString(),
-                string.Empty,
-                $"Alta: {nuevoCliente.Nombre};Saldo={Dinero.Formatear(nuevoCliente.SaldoActual)}");
+            var auditoria = new RegistroBitacora
+            {
+                Fecha = DateTime.Now,
+                Usuario = SesionActual.Usuario?.Nombre ?? string.Empty,
+                Accion = AccionBitacora.Cliente,
+                Entidad = "ClienteFiado",
+                DatosDespues = $"Alta: {nuevoCliente.Nombre};Saldo={Dinero.Formatear(nuevoCliente.SaldoActual)}"
+            };
+
+            _db.AgregarClienteFiado(nuevoCliente, auditoria);
             return ProcessResult<AgregarClienteFiadoResponse>.OK(new AgregarClienteFiadoResponse
             {
                 ClienteId = nuevoCliente.Id,
@@ -531,13 +576,19 @@ public class ConfiguracionService
                 ? "El cliente ya está activo"
                 : "El cliente ya está inactivo");
 
-        if (!_db.CambiarEstadoCliente(clienteId, activo))
-            return ProcessResult.Error("No se pudo cambiar el estado del cliente");
+        var auditoria = new RegistroBitacora
+        {
+            Fecha = DateTime.Now,
+            Usuario = SesionActual.Usuario?.Nombre ?? string.Empty,
+            Accion = AccionBitacora.CambiarEstadoCliente,
+            Entidad = "ClienteFiado",
+            EntidadId = clienteId.ToString(),
+            DatosAntes = $"Nombre={cliente.Nombre};Activo={(cliente.Activo ? 1 : 0)};Saldo={Dinero.Formatear(cliente.SaldoActual)}",
+            DatosDespues = $"Nombre={cliente.Nombre};Activo={(activo ? 1 : 0)};Saldo={Dinero.Formatear(cliente.SaldoActual)}"
+        };
 
-        _bitacora.Registrar(AccionBitacora.CambiarEstadoCliente, "ClienteFiado",
-            clienteId.ToString(),
-            $"Nombre={cliente.Nombre};Activo={(cliente.Activo ? 1 : 0)};Saldo={Dinero.Formatear(cliente.SaldoActual)}",
-            $"Nombre={cliente.Nombre};Activo={(activo ? 1 : 0)};Saldo={Dinero.Formatear(cliente.SaldoActual)}");
+        if (!_db.CambiarEstadoCliente(clienteId, activo, auditoria))
+            return ProcessResult.Error("No se pudo cambiar el estado del cliente");
 
         return ProcessResult.Success(activo
             ? "Cliente reactivado; podrá recibir nuevas ventas a fiado"
@@ -618,12 +669,19 @@ public class ConfiguracionService
 
         try
         {
-            if (!_db.ActualizarDatosCliente(clienteId, nombreRecortado, telefonoRecortado))
-                return ProcessResult.Error("No se pudo actualizar el cliente");
+            var auditoria = new RegistroBitacora
+            {
+                Fecha = DateTime.Now,
+                Usuario = SesionActual.Usuario?.Nombre ?? string.Empty,
+                Accion = AccionBitacora.EditarCliente,
+                Entidad = "ClienteFiado",
+                EntidadId = clienteId.ToString(),
+                DatosAntes = $"Nombre={cliente.Nombre};Telefono={cliente.Telefono}",
+                DatosDespues = $"Nombre={nombreRecortado};Telefono={telefonoRecortado}"
+            };
 
-            _bitacora.Registrar(AccionBitacora.EditarCliente, "ClienteFiado", clienteId.ToString(),
-                $"Nombre={cliente.Nombre};Telefono={cliente.Telefono}",
-                $"Nombre={nombreRecortado};Telefono={telefonoRecortado}");
+            if (!_db.ActualizarDatosCliente(clienteId, nombreRecortado, telefonoRecortado, auditoria))
+                return ProcessResult.Error("No se pudo actualizar el cliente");
 
             return ProcessResult.Success("Cliente actualizado correctamente");
         }
@@ -721,10 +779,16 @@ public class ConfiguracionService
 
         try
         {
-            _db.AgregarProveedor(nuevoProveedor);
-            _bitacora.Registrar(AccionBitacora.Proveedor, "Proveedor", nuevoProveedor.Id.ToString(),
-                string.Empty,
-                $"Alta: {nuevoProveedor.Nombre};Saldo={Dinero.Formatear(nuevoProveedor.SaldoPendiente)}");
+            var auditoria = new RegistroBitacora
+            {
+                Fecha = DateTime.Now,
+                Usuario = SesionActual.Usuario?.Nombre ?? string.Empty,
+                Accion = AccionBitacora.Proveedor,
+                Entidad = "Proveedor",
+                DatosDespues = $"Alta: {nuevoProveedor.Nombre};Saldo={Dinero.Formatear(nuevoProveedor.SaldoPendiente)}"
+            };
+
+            _db.AgregarProveedor(nuevoProveedor, auditoria);
             return ProcessResult<AgregarProveedorResponse>.OK(new AgregarProveedorResponse
             {
                 ProveedorId = nuevoProveedor.Id,
@@ -761,13 +825,19 @@ public class ConfiguracionService
                 ? "El proveedor ya está activo"
                 : "El proveedor ya está inactivo");
 
-        if (!_db.CambiarEstadoProveedor(proveedorId, activo))
-            return ProcessResult.Error("No se pudo cambiar el estado del proveedor");
+        var auditoria = new RegistroBitacora
+        {
+            Fecha = DateTime.Now,
+            Usuario = SesionActual.Usuario?.Nombre ?? string.Empty,
+            Accion = AccionBitacora.CambiarEstadoProveedor,
+            Entidad = "Proveedor",
+            EntidadId = proveedorId.ToString(),
+            DatosAntes = $"Nombre={proveedor.Nombre};Activo={(proveedor.Activo ? 1 : 0)};Saldo={Dinero.Formatear(proveedor.SaldoPendiente)}",
+            DatosDespues = $"Nombre={proveedor.Nombre};Activo={(activo ? 1 : 0)};Saldo={Dinero.Formatear(proveedor.SaldoPendiente)}"
+        };
 
-        _bitacora.Registrar(AccionBitacora.CambiarEstadoProveedor, "Proveedor",
-            proveedorId.ToString(),
-            $"Nombre={proveedor.Nombre};Activo={(proveedor.Activo ? 1 : 0)};Saldo={Dinero.Formatear(proveedor.SaldoPendiente)}",
-            $"Nombre={proveedor.Nombre};Activo={(activo ? 1 : 0)};Saldo={Dinero.Formatear(proveedor.SaldoPendiente)}");
+        if (!_db.CambiarEstadoProveedor(proveedorId, activo, auditoria))
+            return ProcessResult.Error("No se pudo cambiar el estado del proveedor");
 
         return ProcessResult.Success(activo
             ? "Proveedor reactivado y disponible en el directorio"
@@ -841,14 +911,21 @@ public class ConfiguracionService
 
         try
         {
-            if (!_db.ActualizarDatosProveedor(proveedorId, nombreRecortado, claveRecortada,
-                    telefonoRecortado, direccionRecortada))
-                return ProcessResult.Error("No se pudo actualizar el proveedor");
+            var auditoria = new RegistroBitacora
+            {
+                Fecha = DateTime.Now,
+                Usuario = SesionActual.Usuario?.Nombre ?? string.Empty,
+                Accion = AccionBitacora.EditarProveedor,
+                Entidad = "Proveedor",
+                EntidadId = proveedorId.ToString(),
+                DatosAntes = $"Nombre={proveedor.Nombre};Clave={proveedor.Clave};Telefono={proveedor.Telefono};Direccion={proveedor.Direccion}",
+                DatosDespues = $"Nombre={nombreRecortado};Clave={claveRecortada};Telefono={telefonoRecortado};Direccion={direccionRecortada}",
+                Motivo = "Corrección de datos del proveedor"
+            };
 
-            _bitacora.Registrar(AccionBitacora.EditarProveedor, "Proveedor", proveedorId.ToString(),
-                $"Nombre={proveedor.Nombre};Clave={proveedor.Clave};Telefono={proveedor.Telefono};Direccion={proveedor.Direccion}",
-                $"Nombre={nombreRecortado};Clave={claveRecortada};Telefono={telefonoRecortado};Direccion={direccionRecortada}",
-                "Corrección de datos del proveedor");
+            if (!_db.ActualizarDatosProveedor(proveedorId, nombreRecortado, claveRecortada,
+                    telefonoRecortado, direccionRecortada, auditoria))
+                return ProcessResult.Error("No se pudo actualizar el proveedor");
 
             return ProcessResult.Success("Proveedor actualizado correctamente");
         }

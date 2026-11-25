@@ -45,12 +45,19 @@ public class InventoryService
         producto.CodigoBarras = producto.CodigoBarras.Trim();
         producto.Nombre = producto.Nombre.Trim();
 
-        var id = _db.AgregarProducto(producto);
+        var auditoria = new RegistroBitacora
+        {
+            Fecha = DateTime.Now,
+            Usuario = SesionActual.Usuario?.Nombre ?? string.Empty,
+            Accion = AccionBitacora.EditarProducto,
+            Entidad = "Producto",
+            DatosDespues = $"Alta: {producto.Nombre};Stock={producto.Stock}"
+        };
+
+        var id = _db.AgregarProducto(producto, auditoria);
         if (id <= 0)
             return ProcessResult.Error("El código de barras ya existe. Use uno diferente.");
 
-        _bitacora.Registrar(AccionBitacora.EditarProducto, "Producto", id.ToString(),
-            string.Empty, $"Alta: {producto.Nombre};Stock={producto.Stock}");
         return ProcessResult.Success("Producto agregado correctamente");
     }
 
@@ -494,13 +501,20 @@ public class InventoryService
         if (autorizacion.IsError)
             return autorizacion;
 
-        if (!_db.ActualizarProducto(producto))
+        var auditoria = new RegistroBitacora
+        {
+            Fecha = DateTime.Now,
+            Usuario = SesionActual.Usuario?.Nombre ?? string.Empty,
+            Accion = cambiaPrecio ? AccionBitacora.CambioPrecio : AccionBitacora.EditarProducto,
+            Entidad = "Producto",
+            EntidadId = producto.Id.ToString(),
+            DatosAntes = $"Nombre={anterior.Nombre};Costo={Dinero.Formatear(anterior.Costo)};Precio={Dinero.Formatear(anterior.Precio)}",
+            DatosDespues = $"Nombre={producto.Nombre};Costo={Dinero.Formatear(producto.Costo)};Precio={Dinero.Formatear(producto.Precio)}"
+        };
+
+        if (!_db.ActualizarProducto(producto, auditoria))
             return ProcessResult.Error("No se encontró el producto");
 
-        var accion = cambiaPrecio ? AccionBitacora.CambioPrecio : AccionBitacora.EditarProducto;
-        _bitacora.Registrar(accion, "Producto", producto.Id.ToString(),
-            $"Nombre={anterior.Nombre};Costo={Dinero.Formatear(anterior.Costo)};Precio={Dinero.Formatear(anterior.Precio)}",
-            $"Nombre={producto.Nombre};Costo={Dinero.Formatear(producto.Costo)};Precio={Dinero.Formatear(producto.Precio)}");
         return ProcessResult.Success("Producto actualizado correctamente");
     }
 
@@ -546,12 +560,19 @@ public class InventoryService
             return ProcessResult.Error(
                 "El producto está desactivado; reactívalo para registrar entradas");
 
-        if (!_db.RegistrarEntrada(productoId, cantidad, costoUnitario, motivo, usuario))
-            return ProcessResult.Error("No se encontró el producto");
+        var auditoria = new RegistroBitacora
+        {
+            Fecha = DateTime.Now,
+            Usuario = usuario,
+            Accion = AccionBitacora.EntradaInventario,
+            Entidad = "Producto",
+            DatosAntes = $"Stock={producto.Stock}",
+            DatosDespues = $"Stock={producto.Stock + cantidad};CostoUnitario={Dinero.Formatear(costoUnitario)}",
+            Motivo = motivo
+        };
 
-        _bitacora.Registrar(AccionBitacora.EntradaInventario, "Producto", productoId.ToString(),
-            $"Stock={producto.Stock}",
-            $"Stock={producto.Stock + cantidad};CostoUnitario={Dinero.Formatear(costoUnitario)}", motivo);
+        if (!_db.RegistrarEntrada(productoId, cantidad, costoUnitario, motivo, usuario, auditoria))
+            return ProcessResult.Error("No se encontró el producto");
         return ProcessResult.Success($"Entrada registrada: {cantidad} unidades añadidas");
     }
 
@@ -578,13 +599,20 @@ public class InventoryService
             return ProcessResult.Error(
                 "El producto está desactivado; reactívalo para registrar mermas");
 
-        if (!_db.RegistrarSalida(productoId, cantidad, $"Merma: {motivo.Trim()}", usuario))
-            return ProcessResult.Error("Stock insuficiente para registrar la merma");
-
         var costoPerdido = Dinero.Multiplicar(producto.Costo, cantidad);
-        _bitacora.Registrar(AccionBitacora.Merma, "Producto", productoId.ToString(),
-            $"Stock={producto.Stock}",
-            $"Stock={producto.Stock - cantidad};CostoPerdido={Dinero.Formatear(costoPerdido)}", motivo);
+        var auditoria = new RegistroBitacora
+        {
+            Fecha = DateTime.Now,
+            Usuario = usuario,
+            Accion = AccionBitacora.Merma,
+            Entidad = "Producto",
+            DatosAntes = $"Stock={producto.Stock}",
+            DatosDespues = $"Stock={producto.Stock - cantidad};CostoPerdido={Dinero.Formatear(costoPerdido)}",
+            Motivo = motivo
+        };
+
+        if (!_db.RegistrarSalida(productoId, cantidad, $"Merma: {motivo.Trim()}", usuario, auditoria))
+            return ProcessResult.Error("Stock insuficiente para registrar la merma");
         return ProcessResult.Success(
             $"Merma registrada: {cantidad} unidades, costo perdido ${Dinero.Formatear(costoPerdido)}");
     }
@@ -612,11 +640,19 @@ public class InventoryService
             return ProcessResult.Error(
                 "El producto está desactivado; reactívalo para ajustar su stock");
 
-        if (!_db.AjustarStock(productoId, nuevoStock, motivo.Trim(), usuario))
-            return ProcessResult.Error("No se pudo ajustar el stock");
+        var auditoria = new RegistroBitacora
+        {
+            Fecha = DateTime.Now,
+            Usuario = usuario,
+            Accion = AccionBitacora.AjusteInventario,
+            Entidad = "Producto",
+            DatosAntes = $"Stock={producto?.Stock ?? 0}",
+            DatosDespues = $"Stock={nuevoStock}",
+            Motivo = motivo
+        };
 
-        _bitacora.Registrar(AccionBitacora.AjusteInventario, "Producto", productoId.ToString(),
-            $"Stock={producto?.Stock ?? 0}", $"Stock={nuevoStock}", motivo);
+        if (!_db.AjustarStock(productoId, nuevoStock, motivo.Trim(), usuario, auditoria))
+            return ProcessResult.Error("No se pudo ajustar el stock");
         return ProcessResult.Success("Stock ajustado correctamente");
     }
 
@@ -655,12 +691,19 @@ public class InventoryService
         if (producto.Activo == activo)
             return ProcessResult.Error(mensajeYaAplicado);
 
-        if (!_db.CambiarEstadoProducto(productoId, activo))
-            return ProcessResult.Error("No se pudo cambiar el estado del producto");
+        var auditoria = new RegistroBitacora
+        {
+            Fecha = DateTime.Now,
+            Usuario = SesionActual.Usuario?.Nombre ?? string.Empty,
+            Accion = AccionBitacora.CambiarEstadoProducto,
+            Entidad = "Producto",
+            EntidadId = productoId.ToString(),
+            DatosAntes = $"Nombre={producto.Nombre};Activo={(activo ? 0 : 1)};Stock={producto.Stock}",
+            DatosDespues = $"Nombre={producto.Nombre};Activo={(activo ? 1 : 0)};Stock={producto.Stock}"
+        };
 
-        _bitacora.Registrar(AccionBitacora.CambiarEstadoProducto, "Producto", productoId.ToString(),
-            $"Nombre={producto.Nombre};Activo={(activo ? 0 : 1)};Stock={producto.Stock}",
-            $"Nombre={producto.Nombre};Activo={(activo ? 1 : 0)};Stock={producto.Stock}");
+        if (!_db.CambiarEstadoProducto(productoId, activo, auditoria))
+            return ProcessResult.Error("No se pudo cambiar el estado del producto");
         return ProcessResult.Success(
             $"{mensajeExito}. Su stock ({producto.Stock}) se conserva" +
             (activo ? " y vuelve a estar disponible para la venta."

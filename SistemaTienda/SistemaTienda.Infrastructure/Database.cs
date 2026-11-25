@@ -373,9 +373,10 @@ public class DatabaseTools
     public ConfiguracionTienda ObtenerConfiguracion() =>
         ExecuteReportObject<ConfiguracionTienda>("SELECT * FROM ConfiguracionTienda ORDER BY Id LIMIT 1");
 
-    public bool ActualizarConfiguracion(ConfiguracionTienda config)
+    public bool ActualizarConfiguracion(ConfiguracionTienda config,
+        RegistroBitacora auditoria = null)
     {
-        var filas = ExecuteCommand(@"
+        return ActualizarConAuditoria(@"
             UPDATE ConfiguracionTienda
             SET NombreTienda = @nom, Giro = @giro, ImpuestoPredeterminado = @imp,
                 ComisionTarjeta = @comis, FondoCajaInicial = @fondo, FiadoActivado = @fiado,
@@ -383,7 +384,7 @@ public class DatabaseTools
                 MinutosInactividad = @inactividad,
                 RespaldoCifradoActivado = @cifrado,
                 VersionApp = @ver
-            WHERE Id = @id",
+            WHERE Id = @id", auditoria,
             new SqliteParameter("@id", config.Id),
             new SqliteParameter("@nom", config.NombreTienda),
             new SqliteParameter("@giro", config.Giro),
@@ -396,8 +397,6 @@ public class DatabaseTools
             new SqliteParameter("@inactividad", config.MinutosInactividad),
             new SqliteParameter("@cifrado", config.RespaldoCifradoActivado ? 1 : 0),
             new SqliteParameter("@ver", config.VersionApp));
-
-        return filas > 0;
     }
 
     // ---------- Estado de acceso ----------
@@ -468,21 +467,17 @@ public class DatabaseTools
 
     // ---------- Usuarios ----------
 
-    public int AgregarUsuario(UsuarioSistema usuario)
+    public int AgregarUsuario(UsuarioSistema usuario, RegistroBitacora auditoria = null)
     {
-        using var conn = CreateConnection();
-        conn.Open();
-        using var cmd = conn.CreateCommand();
-        cmd.CommandText = @"
+        usuario.Id = InsertarConAuditoria(@"
             INSERT INTO UsuariosSistema (Nombre, PINHash, Rol, PermisosEspeciales)
             VALUES (@nom, @pin, @rol, @perm);
-            SELECT last_insert_rowid();";
-        cmd.Parameters.AddWithValue("@nom", usuario.Nombre);
-        cmd.Parameters.AddWithValue("@pin", usuario.PINHash);
-        cmd.Parameters.AddWithValue("@rol", (int)usuario.Rol);
-        cmd.Parameters.AddWithValue("@perm", usuario.PermisosEspeciales ?? string.Empty);
+            SELECT last_insert_rowid();", auditoria,
+            new SqliteParameter("@nom", usuario.Nombre),
+            new SqliteParameter("@pin", usuario.PINHash),
+            new SqliteParameter("@rol", (int)usuario.Rol),
+            new SqliteParameter("@perm", usuario.PermisosEspeciales ?? string.Empty));
 
-        usuario.Id = Convert.ToInt32(cmd.ExecuteScalar(), CultureInfo.InvariantCulture);
         return usuario.Id;
     }
 
@@ -493,30 +488,33 @@ public class DatabaseTools
         ExecuteReportObject<UsuarioSistema>("SELECT * FROM UsuariosSistema WHERE Id = @id",
             new SqliteParameter("@id", usuarioId));
 
-    public bool ActualizarUsuario(int usuarioId, string nombre, RolUsuario rol) =>
-        ExecuteCommand(@"
+    public bool ActualizarUsuario(int usuarioId, string nombre, RolUsuario rol,
+        RegistroBitacora auditoria = null) =>
+        ActualizarConAuditoria(@"
             UPDATE UsuariosSistema
             SET Nombre = @nombre, Rol = @rol
-            WHERE Id = @id",
+            WHERE Id = @id", auditoria,
             new SqliteParameter("@id", usuarioId),
             new SqliteParameter("@nombre", nombre),
-            new SqliteParameter("@rol", (int)rol)) > 0;
+            new SqliteParameter("@rol", (int)rol));
 
-    public bool ActualizarPinUsuario(int usuarioId, string pinHash) =>
-        ExecuteCommand(@"
+    public bool ActualizarPinUsuario(int usuarioId, string pinHash,
+        RegistroBitacora auditoria = null) =>
+        ActualizarConAuditoria(@"
             UPDATE UsuariosSistema
             SET PINHash = @pin
-            WHERE Id = @id",
+            WHERE Id = @id", auditoria,
             new SqliteParameter("@id", usuarioId),
-            new SqliteParameter("@pin", pinHash)) > 0;
+            new SqliteParameter("@pin", pinHash));
 
-    public bool ActualizarPermisosUsuario(int usuarioId, string permisos) =>
-        ExecuteCommand(@"
+    public bool ActualizarPermisosUsuario(int usuarioId, string permisos,
+        RegistroBitacora auditoria = null) =>
+        ActualizarConAuditoria(@"
             UPDATE UsuariosSistema
             SET PermisosEspeciales = @permisos
-            WHERE Id = @id",
+            WHERE Id = @id", auditoria,
             new SqliteParameter("@id", usuarioId),
-            new SqliteParameter("@permisos", permisos ?? string.Empty)) > 0;
+            new SqliteParameter("@permisos", permisos ?? string.Empty));
 
     public int ContarUsuarios() =>
         ExecuteScalar<int>("SELECT COUNT(*) FROM UsuariosSistema");
@@ -527,7 +525,7 @@ public class DatabaseTools
     /// Inserta el producto y registra su stock inicial como movimiento de entrada.
     /// Devuelve el Id creado o 0 si el código de barras ya existe.
     /// </summary>
-    public int AgregarProducto(Producto producto)
+    public int AgregarProducto(Producto producto, RegistroBitacora auditoria = null)
     {
         using var conn = CreateConnection();
         conn.Open();
@@ -556,6 +554,12 @@ public class DatabaseTools
                 InsertarMovimiento(conn, tx, id, MovimientoTipo.Entrada, producto.Stock,
                     producto.Costo, "Stock inicial", "Sistema");
 
+            if (auditoria != null)
+            {
+                auditoria.EntidadId = id.ToString(CultureInfo.InvariantCulture);
+                AgregarBitacora(conn, tx, auditoria);
+            }
+
             tx.Commit();
             producto.Id = id;
             return id;
@@ -567,14 +571,14 @@ public class DatabaseTools
         }
     }
 
-    public bool ActualizarProducto(Producto producto)
+    public bool ActualizarProducto(Producto producto, RegistroBitacora auditoria = null)
     {
-        var filas = ExecuteCommand(@"
+        return ActualizarConAuditoria(@"
             UPDATE Productos
             SET Nombre = @nombre, Costo = @costo, Precio = @precio,
                 StockMinimo = @minimo, Categoria = @categoria, Impuesto = @impuesto,
                 UltimaActualizacion = datetime('now')
-            WHERE Id = @id",
+            WHERE Id = @id", auditoria,
             new SqliteParameter("@id", producto.Id),
             new SqliteParameter("@nombre", producto.Nombre),
             new SqliteParameter("@costo", producto.Costo),
@@ -582,8 +586,6 @@ public class DatabaseTools
             new SqliteParameter("@minimo", producto.StockMinimo),
             new SqliteParameter("@categoria", producto.Categoria ?? string.Empty),
             new SqliteParameter("@impuesto", producto.Impuesto));
-
-        return filas > 0;
     }
 
     public List<Producto> ObtenerProductos() =>
@@ -618,16 +620,15 @@ public class DatabaseTools
     /// <summary>
     /// Cambia el estado activo de un producto sin tocar su stock ni su historial.
     /// </summary>
-    public bool CambiarEstadoProducto(int productoId, bool activo)
+    public bool CambiarEstadoProducto(int productoId, bool activo,
+        RegistroBitacora auditoria = null)
     {
-        var filas = ExecuteCommand(@"
+        return ActualizarConAuditoria(@"
             UPDATE Productos
             SET Activo = @activo, UltimaActualizacion = datetime('now')
-            WHERE Id = @id",
+            WHERE Id = @id", auditoria,
             new SqliteParameter("@id", productoId),
             new SqliteParameter("@activo", activo ? 1 : 0));
-
-        return filas > 0;
     }
 
     public long ObtenerValorizadoInventario() =>
@@ -654,16 +655,19 @@ public class DatabaseTools
 
     // ---------- Movimientos de inventario ----------
 
-    public bool RegistrarEntrada(int productoId, int cantidad, long costoUnitario, string motivo, string usuario)
+    public bool RegistrarEntrada(int productoId, int cantidad, long costoUnitario, string motivo,
+        string usuario, RegistroBitacora auditoria = null)
     {
         if (cantidad <= 0) return false;
-        return RegistrarMovimientoSeguro(productoId, MovimientoTipo.Entrada, cantidad, costoUnitario, motivo, usuario);
+        return RegistrarMovimientoSeguro(productoId, MovimientoTipo.Entrada, cantidad,
+            costoUnitario, motivo, usuario, auditoria);
     }
 
     /// <summary>
     /// Registra una salida (venta o merma) validando stock dentro de la transacción.
     /// </summary>
-    public bool RegistrarSalida(int productoId, int cantidad, string motivo, string usuario)
+    public bool RegistrarSalida(int productoId, int cantidad, string motivo, string usuario,
+        RegistroBitacora auditoria = null)
     {
         if (cantidad <= 0) return false;
 
@@ -679,16 +683,32 @@ public class DatabaseTools
         }
 
         var producto = ObtenerProductoEnTransaccion(conn, tx, productoId);
-        InsertarMovimiento(conn, tx, productoId, MovimientoTipo.Salida, -cantidad,
-            producto?.Costo ?? 0, motivo, usuario);
-        tx.Commit();
-        return true;
+        try
+        {
+            InsertarMovimiento(conn, tx, productoId, MovimientoTipo.Salida, -cantidad,
+                producto?.Costo ?? 0, motivo, usuario);
+
+            if (auditoria != null)
+            {
+                auditoria.EntidadId = productoId.ToString(CultureInfo.InvariantCulture);
+                AgregarBitacora(conn, tx, auditoria);
+            }
+
+            tx.Commit();
+            return true;
+        }
+        catch (SqliteException)
+        {
+            try { tx.Rollback(); } catch (SqliteException) { }
+            return false;
+        }
     }
 
     /// <summary>
     /// Ajusta el stock a un valor absoluto registrando la diferencia como movimiento.
     /// </summary>
-    public bool AjustarStock(int productoId, int nuevoStock, string motivo, string usuario)
+    public bool AjustarStock(int productoId, int nuevoStock, string motivo, string usuario,
+        RegistroBitacora auditoria = null)
     {
         if (nuevoStock < 0) return false;
 
@@ -704,10 +724,25 @@ public class DatabaseTools
             return true;
         }
 
-        InsertarMovimiento(conn, tx, productoId, MovimientoTipo.Ajuste,
-            diferencia, 0, motivo, usuario);
-        tx.Commit();
-        return true;
+        try
+        {
+            InsertarMovimiento(conn, tx, productoId, MovimientoTipo.Ajuste,
+                diferencia, 0, motivo, usuario);
+
+            if (auditoria != null)
+            {
+                auditoria.EntidadId = productoId.ToString(CultureInfo.InvariantCulture);
+                AgregarBitacora(conn, tx, auditoria);
+            }
+
+            tx.Commit();
+            return true;
+        }
+        catch (SqliteException)
+        {
+            try { tx.Rollback(); } catch (SqliteException) { }
+            return false;
+        }
     }
 
     public List<MovimientoInventario> ObtenerHistorialMovimientos(int productoId) =>
@@ -716,7 +751,7 @@ public class DatabaseTools
             new SqliteParameter("@id", productoId));
 
     private bool RegistrarMovimientoSeguro(int productoId, string tipo, int cantidad,
-        long costoUnitario, string motivo, string usuario)
+        long costoUnitario, string motivo, string usuario, RegistroBitacora auditoria = null)
     {
         using var conn = CreateConnection();
         conn.Open();
@@ -728,9 +763,24 @@ public class DatabaseTools
             return false;
         }
 
-        InsertarMovimiento(conn, tx, productoId, tipo, cantidad, costoUnitario, motivo, usuario);
-        tx.Commit();
-        return true;
+        try
+        {
+            InsertarMovimiento(conn, tx, productoId, tipo, cantidad, costoUnitario, motivo, usuario);
+
+            if (auditoria != null)
+            {
+                auditoria.EntidadId = productoId.ToString(CultureInfo.InvariantCulture);
+                AgregarBitacora(conn, tx, auditoria);
+            }
+
+            tx.Commit();
+            return true;
+        }
+        catch (SqliteException)
+        {
+            try { tx.Rollback(); } catch (SqliteException) { }
+            return false;
+        }
     }
 
     private static void InsertarMovimiento(SqliteConnection conn, SqliteTransaction tx, int productoId,
@@ -817,6 +867,44 @@ public class DatabaseTools
         cmd.Parameters.AddWithValue("@despues", registro.DatosDespues ?? string.Empty);
         cmd.Parameters.AddWithValue("@motivo", registro.Motivo ?? string.Empty);
         cmd.ExecuteNonQuery();
+    }
+
+
+    private int InsertarConAuditoria(string sql, RegistroBitacora auditoria,
+        params SqliteParameter[] parametros)
+    {
+        using var conn = CreateConnection();
+        conn.Open();
+        using var tx = conn.BeginTransaction();
+        using var cmd = conn.CreateCommand();
+        cmd.Transaction = tx;
+        cmd.CommandText = sql;
+        cmd.Parameters.AddRange(parametros);
+        var id = Convert.ToInt32(cmd.ExecuteScalar() ?? 0, CultureInfo.InvariantCulture);
+        if (id > 0 && auditoria != null)
+        {
+            auditoria.EntidadId = id.ToString(CultureInfo.InvariantCulture);
+            AgregarBitacora(conn, tx, auditoria);
+        }
+        tx.Commit();
+        return id;
+    }
+
+    private bool ActualizarConAuditoria(string sql, RegistroBitacora auditoria,
+        params SqliteParameter[] parametros)
+    {
+        using var conn = CreateConnection();
+        conn.Open();
+        using var tx = conn.BeginTransaction();
+        using var cmd = conn.CreateCommand();
+        cmd.Transaction = tx;
+        cmd.CommandText = sql;
+        cmd.Parameters.AddRange(parametros);
+        var filas = cmd.ExecuteNonQuery();
+        if (filas > 0 && auditoria != null)
+            AgregarBitacora(conn, tx, auditoria);
+        tx.Commit();
+        return filas > 0;
     }
 
     public int AgregarBitacora(RegistroBitacora registro)
@@ -930,22 +1018,17 @@ public class DatabaseTools
 
     // ---------- Clientes fiado ----------
 
-    public int AgregarClienteFiado(ClienteFiado cliente)
+    public int AgregarClienteFiado(ClienteFiado cliente, RegistroBitacora auditoria = null)
     {
-        using var conn = CreateConnection();
-        conn.Open();
-        using var cmd = conn.CreateCommand();
-        cmd.CommandText = @"
+        cliente.Id = InsertarConAuditoria(@"
             INSERT INTO ClientesFiado (Nombre, Telefono, SaldoActual, FechaRegistro)
             VALUES (@nombre, @telefono, @saldo, @fecha);
-            SELECT last_insert_rowid();";
-        cmd.Parameters.AddWithValue("@nombre", cliente.Nombre);
-        cmd.Parameters.AddWithValue("@telefono", cliente.Telefono ?? string.Empty);
-        cmd.Parameters.AddWithValue("@saldo", cliente.SaldoActual);
-        // datetime('now') de SQLite es UTC; la fecha de alta es de negocio y va en hora local.
-        cmd.Parameters.AddWithValue("@fecha", cliente.FechaRegistro);
+            SELECT last_insert_rowid();", auditoria,
+            new SqliteParameter("@nombre", cliente.Nombre),
+            new SqliteParameter("@telefono", cliente.Telefono ?? string.Empty),
+            new SqliteParameter("@saldo", cliente.SaldoActual),
+            new SqliteParameter("@fecha", cliente.FechaRegistro));
 
-        cliente.Id = Convert.ToInt32(cmd.ExecuteScalar(), CultureInfo.InvariantCulture);
         return cliente.Id;
     }
 
@@ -974,29 +1057,26 @@ public class DatabaseTools
     /// <summary>
     /// Corrige nombre y teléfono. El saldo no se toca: solo cambia con ventas y abonos.
     /// </summary>
-    public bool ActualizarDatosCliente(int clienteId, string nombre, string telefono)
+    public bool ActualizarDatosCliente(int clienteId, string nombre, string telefono,
+        RegistroBitacora auditoria = null)
     {
-        var filas = ExecuteCommand(@"
+        return ActualizarConAuditoria(@"
             UPDATE ClientesFiado
             SET Nombre = @nombre, Telefono = @telefono, UltimaActualizacion = datetime('now')
-            WHERE Id = @id",
+            WHERE Id = @id", auditoria,
             new SqliteParameter("@id", clienteId),
             new SqliteParameter("@nombre", nombre),
             new SqliteParameter("@telefono", telefono ?? string.Empty));
-
-        return filas > 0;
     }
 
-    public bool CambiarEstadoCliente(int clienteId, bool activo)
+    public bool CambiarEstadoCliente(int clienteId, bool activo, RegistroBitacora auditoria = null)
     {
-        var filas = ExecuteCommand(@"
+        return ActualizarConAuditoria(@"
             UPDATE ClientesFiado
             SET Activo = @activo, UltimaActualizacion = datetime('now')
-            WHERE Id = @id",
+            WHERE Id = @id", auditoria,
             new SqliteParameter("@id", clienteId),
             new SqliteParameter("@activo", activo ? 1 : 0));
-
-        return filas > 0;
     }
 
     public List<VentaFiadaCliente> ObtenerVentasFiadasDeCliente(int clienteId) =>
@@ -1071,24 +1151,19 @@ public class DatabaseTools
 
     // ---------- Proveedores ----------
 
-    public int AgregarProveedor(Proveedor proveedor)
+    public int AgregarProveedor(Proveedor proveedor, RegistroBitacora auditoria = null)
     {
-        using var conn = CreateConnection();
-        conn.Open();
-        using var cmd = conn.CreateCommand();
-        cmd.CommandText = @"
+        proveedor.Id = InsertarConAuditoria(@"
             INSERT INTO Proveedores (Nombre, Clave, Telefono, Direccion, SaldoPendiente, FechaRegistro)
             VALUES (@nombre, @clave, @telefono, @direccion, @saldo, @fecha);
-            SELECT last_insert_rowid();";
-        cmd.Parameters.AddWithValue("@nombre", proveedor.Nombre);
-        cmd.Parameters.AddWithValue("@clave", proveedor.Clave ?? string.Empty);
-        cmd.Parameters.AddWithValue("@telefono", proveedor.Telefono ?? string.Empty);
-        cmd.Parameters.AddWithValue("@direccion", proveedor.Direccion ?? string.Empty);
-        cmd.Parameters.AddWithValue("@saldo", proveedor.SaldoPendiente);
-        // datetime('now') de SQLite es UTC; la fecha de alta es de negocio y va en hora local.
-        cmd.Parameters.AddWithValue("@fecha", proveedor.FechaRegistro);
+            SELECT last_insert_rowid();", auditoria,
+            new SqliteParameter("@nombre", proveedor.Nombre),
+            new SqliteParameter("@clave", proveedor.Clave ?? string.Empty),
+            new SqliteParameter("@telefono", proveedor.Telefono ?? string.Empty),
+            new SqliteParameter("@direccion", proveedor.Direccion ?? string.Empty),
+            new SqliteParameter("@saldo", proveedor.SaldoPendiente),
+            new SqliteParameter("@fecha", proveedor.FechaRegistro));
 
-        proveedor.Id = Convert.ToInt32(cmd.ExecuteScalar(), CultureInfo.InvariantCulture);
         return proveedor.Id;
     }
 
@@ -1103,32 +1178,28 @@ public class DatabaseTools
     /// Corrige los datos del proveedor. El saldo no se toca: solo cambia con pagos.
     /// </summary>
     public bool ActualizarDatosProveedor(int proveedorId, string nombre, string clave,
-        string telefono, string direccion)
+        string telefono, string direccion, RegistroBitacora auditoria = null)
     {
-        var filas = ExecuteCommand(@"
+        return ActualizarConAuditoria(@"
             UPDATE Proveedores
             SET Nombre = @nombre, Clave = @clave, Telefono = @telefono,
                 Direccion = @direccion, UltimaActualizacion = datetime('now')
-            WHERE Id = @id",
+            WHERE Id = @id", auditoria,
             new SqliteParameter("@id", proveedorId),
             new SqliteParameter("@nombre", nombre),
             new SqliteParameter("@clave", clave ?? string.Empty),
             new SqliteParameter("@telefono", telefono ?? string.Empty),
             new SqliteParameter("@direccion", direccion ?? string.Empty));
-
-        return filas > 0;
     }
 
-    public bool CambiarEstadoProveedor(int proveedorId, bool activo)
+    public bool CambiarEstadoProveedor(int proveedorId, bool activo, RegistroBitacora auditoria = null)
     {
-        var filas = ExecuteCommand(@"
+        return ActualizarConAuditoria(@"
             UPDATE Proveedores
             SET Activo = @activo, UltimaActualizacion = datetime('now')
-            WHERE Id = @id",
+            WHERE Id = @id", auditoria,
             new SqliteParameter("@id", proveedorId),
             new SqliteParameter("@activo", activo ? 1 : 0));
-
-        return filas > 0;
     }
 
     public List<PagoProveedor> ObtenerPagosDeProveedor(int proveedorId) =>

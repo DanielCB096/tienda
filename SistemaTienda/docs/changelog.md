@@ -17,6 +17,15 @@ Cada entrada tiene formato:
 
 ---
 
+## 2026-11-25 — Bitácora atómica ampliada (H4.2b)
+
+- **Modificado**: inventario (entrada, merma, ajuste), altas/ediciones de productos, clientes y proveedores, usuarios/PIN/permisos y configuración escriben su bitácora dentro de la misma transacción.
+- **Modificado**: si la bitácora falla, la operación se revierte; el stock y los saldos quedan intactos.
+- **Agregado**: helpers `InsertarConAuditoria` y `ActualizarConAuditoria` en `DatabaseTools`.
+- **Agregado**: 7 pruebas en `BitacoraTransaccionTests`, incluida la reversión de entrada, gasto y venta cuando la bitácora falla.
+- **Pendiente**: los respaldos se auditan después de crear el archivo (no hay transacción que abarque archivo y base).
+- Ver [ADR-007](../../SistemaMaestro/docs/07-decisiones/ADR-007-bitacora-transaccion.md).
+
 ## 2026-11-25 — Bitácora atómica (H4.2)
 
 - **Modificado**: la bitácora de venta, anulación, abono, gasto, movimiento de caja, corte, compra y pago se escribe dentro de la misma transacción que la operación.

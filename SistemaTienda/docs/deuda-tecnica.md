@@ -10,12 +10,12 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 
 ## Alta prioridad
 
-### Bitácora no atómica con la operación
+### Bitácora de respaldos fuera de la transacción
 
-- **Dónde**: `BitacoraService.Registrar` se llama después de que la operación de negocio ya se confirmó.
-- **Por qué**: los métodos de `DatabaseTools` abren su propia transacción y no exponen un punto de extensión; unificarlo exigía refactorizar cada operación sensible.
-- **Impacto**: si falla la escritura de la bitácora (por ejemplo, disco lleno), la operación ya quedó aplicada y falta su registro. La tabla sigue siendo inmutable y la operación normal sí queda auditada.
-- **Cierre**: pasar la transacción o un `UnitOfWork` a los servicios para insertar acción y bitácora en la misma transacción.
+- **Dónde**: `RespaldoService` registra la bitácora después de crear y verificar el archivo.
+- **Por qué**: el respaldo es un archivo fuera de SQLite; ninguna transacción abarca el archivo y la base a la vez.
+- **Impacto**: si falla la bitácora, el respaldo existe sin registro. No afecta ventas, caja ni stock, y el archivo se verifica antes de darse por bueno.
+- **Cierre**: no aplica mientras el respaldo sea un archivo; se migrará si algún día vive dentro de la base. Las operaciones de dinero, inventario, catálogo, clientes, proveedores, usuarios y configuración ya son atómicas.
 
 ### Ventas sin descuentos
 
