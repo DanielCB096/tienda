@@ -17,6 +17,13 @@ Cada entrada tiene formato:
 
 ---
 
+## 2026-11-25 — Preparación del piloto
+
+- **Agregado**: carpeta `08-piloto` con plan, instalación y día 0, checklist imprimible, capacitación, tarjeta del cajero, guion de 30 días, registro de incidencias, privacidad y criterios de éxito.
+- **Agregado**: `SistemaMaestro/scripts/piloto-preparar.ps1` arma un kit con la app, el instalador y la documentación; valida el manifiesto y calcula SHA-256. Probado con paquete simulado y con rechazo de un ZIP sin manifiesto.
+- **Pendiente**: ejecutar el piloto en una tienda real (instalación, capacitación y 30 días).
+- Ver [08-piloto/README.md](08-piloto/README.md).
+
 ## 2026-11-25 — Búsqueda medida y escaneo sin pérdida (H6.3)
 
 - **Medido**: 3000 productos en Windows Release: 33.52 ms para sugerencias, 28.08 ms para búsqueda por nombre y 0.07 ms para código exacto.

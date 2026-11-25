@@ -45,6 +45,9 @@ Pendiente para el MVP: verificar en más fabricantes, versiones y tabletas Andro
 | [06-operacion/instalacion-y-actualizacion.md](06-operacion/instalacion-y-actualizacion.md) | Instalación |
 | [07-pruebas/plan-de-pruebas.md](07-pruebas/plan-de-pruebas.md) | Estrategia y cobertura de pruebas |
 | [07-pruebas/datos-de-prueba.md](07-pruebas/datos-de-prueba.md) | Generador de bases de demostración |
+| [08-piloto/README.md](08-piloto/README.md) | Piloto en tienda real: plan, instalación, capacitación y 30 días |
+| [08-piloto/checklist-dia-0.md](08-piloto/checklist-dia-0.md) | Lista imprimible de arranque |
+| [08-piloto/tarjeta-cajero.md](08-piloto/tarjeta-cajero.md) | Guía de una página para el mostrador |
 | [changelog.md](changelog.md) | Cambios por versión |
 | [roadmap.md](roadmap.md) | Avance y siguiente trabajo |
 | [deuda-tecnica.md](deuda-tecnica.md) | Atajos y pendientes técnicos |
