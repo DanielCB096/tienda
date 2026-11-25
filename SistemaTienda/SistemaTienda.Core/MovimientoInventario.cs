@@ -28,3 +28,16 @@ public class GastoPorConcepto
     public string Concepto { get; set; } = string.Empty;
     public long Total { get; set; }
 }
+
+
+/// <summary>
+/// Producto cuyo stock en caché no coincide con la suma de sus movimientos.
+/// El inventario se reconcilia con este dato al abrir la base y en soporte.
+/// </summary>
+public sealed class DescuadreStock
+{
+    public int ProductoId { get; set; }
+    public string Nombre { get; set; } = string.Empty;
+    public int Stock { get; set; }
+    public int Movimientos { get; set; }
+}

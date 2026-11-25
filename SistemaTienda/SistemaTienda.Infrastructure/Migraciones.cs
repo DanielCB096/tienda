@@ -45,7 +45,8 @@ public static class Migraciones
         new Migracion(13, "crea las compras a proveedores y sus renglones", AplicarVersion13),
         new Migracion(14, "guarda el impuesto incluido congelado en las líneas de venta", AplicarVersion14),
         new Migracion(15, "agrega el bloqueo por inactividad y el estado de acceso", AplicarVersion15),
-        new Migracion(16, "agrega el indicador de respaldos cifrados", AplicarVersion16)
+        new Migracion(16, "agrega el indicador de respaldos cifrados", AplicarVersion16),
+        new Migracion(17, "reconcilia el stock con los movimientos", AplicarVersion17)
     };
 
     private static void AplicarVersion2(SqliteConnection conn, SqliteTransaction tx)
@@ -786,6 +787,24 @@ public static class Migraciones
         cmd.Transaction = tx;
         cmd.CommandText =
             "ALTER TABLE ConfiguracionTienda ADD COLUMN RespaldoCifradoActivado INTEGER NOT NULL DEFAULT 0;";
+        cmd.ExecuteNonQuery();
+    }
+
+    /// <summary>
+    /// Reconcilia la caché de stock con el log de movimientos. El log es la
+    /// verdad; la columna Productos.Stock se mantiene desde
+    /// InsertarMovimiento en la misma transacción y esta migración corrige
+    /// cualquier desfase previo.
+    /// </summary>
+    private static void AplicarVersion17(SqliteConnection conn, SqliteTransaction tx)
+    {
+        using var cmd = conn.CreateCommand();
+        cmd.Transaction = tx;
+        cmd.CommandText = @"
+            UPDATE Productos
+            SET Stock = COALESCE((SELECT SUM(m.Cantidad) FROM MovimientoInventario m
+                                  WHERE m.ProductoId = Productos.Id), 0);
+        ";
         cmd.ExecuteNonQuery();
     }
 

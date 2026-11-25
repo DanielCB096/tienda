@@ -17,6 +17,14 @@ Cada entrada tiene formato:
 
 ---
 
+## 2026-11-25 — Caracterización del inventario (H3)
+
+- **Agregado**: 6 pruebas de caracterización que verifican, tras alta, entrada, merma, ajuste, venta, anulación y compra, que el stock de cada producto coincide con la suma de sus movimientos.
+- **Agregado**: `ProductosDescuadrados()` para diagnosticar desfases y línea en el paquete de soporte.
+- **Esquema v17**: reconciliación de `Productos.Stock` con el log de movimientos.
+- **Decisión**: el log es la verdad; `InsertarMovimiento` es el único lugar que actualiza la caché, en la misma transacción. Ver ADR-005.
+- **Pruebas**: 430 en total.
+
 ## 2026-11-25 — Cierre de respaldos cifrados (H2.3b)
 
 - **Agregado**: el asistente inicial ofrece activar el cifrado, muestra la tarjeta de recuperación y deja la tienda nueva protegida; si el dueño dice «ahora no», se avisa que los respaldos quedan sin cifrar.

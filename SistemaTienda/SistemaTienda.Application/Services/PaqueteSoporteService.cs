@@ -52,6 +52,7 @@ public sealed class PaqueteSoporteService
             resumen.AppendLine($"Último respaldo: {RespaldoLocal.Ultimo(_db.DirectorioRespaldos)?.ToString("yyyy-MM-dd HH:mm:ss") ?? "Sin respaldos"}");
             resumen.AppendLine($"Base incluida: {(incluirBaseDatos ? "Sí" : "No")}");
             resumen.AppendLine($"Cifrado: {(string.IsNullOrWhiteSpace(claveRespaldo) ? "No" : "Sí")}");
+            resumen.AppendLine($"Productos con stock descuadrado: {_db.ProductosDescuadrados().Count}");
             resumen.AppendLine();
             resumen.AppendLine("Este paquete puede contener información del negocio. Compártelo solo por un canal seguro.");
 

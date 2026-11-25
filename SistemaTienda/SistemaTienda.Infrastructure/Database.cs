@@ -637,6 +637,21 @@ public class DatabaseTools
         ExecuteScalar<int>("SELECT COALESCE(SUM(Cantidad), 0) FROM MovimientoInventario WHERE ProductoId = @id",
             new SqliteParameter("@id", productoId));
 
+    /// <summary>
+    /// Productos cuyo stock en caché difiere de la suma de movimientos. El log
+    /// de movimientos es la verdad; si hay descuadres, algo escribió el stock
+    /// sin registrar el movimiento.
+    /// </summary>
+    public List<DescuadreStock> ProductosDescuadrados() =>
+        ExecuteReportObjects<DescuadreStock>(@"
+            SELECT p.Id AS ProductoId, p.Nombre, p.Stock,
+                   COALESCE((SELECT SUM(m.Cantidad) FROM MovimientoInventario m
+                             WHERE m.ProductoId = p.Id), 0) AS Movimientos
+            FROM Productos p
+            WHERE p.Stock <> COALESCE((SELECT SUM(m.Cantidad) FROM MovimientoInventario m
+                                       WHERE m.ProductoId = p.Id), 0)
+            ORDER BY p.Nombre");
+
     // ---------- Movimientos de inventario ----------
 
     public bool RegistrarEntrada(int productoId, int cantidad, long costoUnitario, string motivo, string usuario)

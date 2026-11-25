@@ -82,7 +82,8 @@ public sealed class BloqueoAccesoTests
         using var bd = new BaseDatosPrueba();
         bd.ConfigurarTienda();
 
-        Assert.Equal(16, bd.Db.ExecuteScalar<long>("PRAGMA user_version"));
+        var versionEsperada = Migraciones.VersionMaxima(Migraciones.ObtenerTodas());
+        Assert.Equal(versionEsperada, bd.Db.ExecuteScalar<long>("PRAGMA user_version"));
         var config = bd.Config.ObtenerConfiguracion().Value;
         Assert.Equal(5, config.MinutosInactividad);
         Assert.False(config.RespaldoCifradoActivado);
