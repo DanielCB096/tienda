@@ -2081,8 +2081,10 @@ public class DatabaseTools
             cmd.Transaction = tx;
             cmd.CommandText = @"
                 SELECT COALESCE(SUM(Monto), 0) FROM Gastos
-                WHERE Origen = @origen AND Fecha > @desde AND Fecha <= @hasta";
+                WHERE Origen = @origen AND MetodoPago = @metodo
+                  AND Fecha > @desde AND Fecha <= @hasta";
             cmd.Parameters.AddWithValue("@origen", OrigenGasto.Caja);
+            cmd.Parameters.AddWithValue("@metodo", MetodoPagoAbono.Efectivo);
             cmd.Parameters.AddWithValue("@desde", desde);
             cmd.Parameters.AddWithValue("@hasta", hasta);
             corte.GastosCaja = Convert.ToInt64(cmd.ExecuteScalar() ?? 0L, CultureInfo.InvariantCulture);

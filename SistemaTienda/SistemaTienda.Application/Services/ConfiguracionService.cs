@@ -411,6 +411,17 @@ public class ConfiguracionService
         if (nuevoGasto.Monto <= 0)
             return ProcessResult<AgregarGastoResponse>.Error("El monto debe ser mayor a cero");
 
+        // El gasto de caja nace en efectivo; si el método viene vacío se asume efectivo.
+        if (string.IsNullOrWhiteSpace(nuevoGasto.MetodoPago))
+            nuevoGasto.MetodoPago = MetodoPagoAbono.Efectivo;
+
+        if (nuevoGasto.Origen == OrigenGasto.Caja &&
+            !string.Equals(nuevoGasto.MetodoPago, MetodoPagoAbono.Efectivo,
+                StringComparison.OrdinalIgnoreCase))
+            return ProcessResult<AgregarGastoResponse>.Error(
+                "Un gasto de caja debe pagarse en efectivo. Si lo pagaste con tarjeta o " +
+                "transferencia, regístralo como gasto externo.");
+
         try
         {
             _db.AgregarGasto(nuevoGasto);

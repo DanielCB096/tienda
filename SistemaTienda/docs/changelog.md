@@ -17,6 +17,15 @@ Cada entrada tiene formato:
 
 ---
 
+## 2026-11-25 — Caracterización de caja y reportes (H4)
+
+- **Agregado**: 5 pruebas de caracterización de caja y reportes con un escenario completo: ventas efectivo/tarjeta/mixto/fiado, abono, ingreso, retiro y gastos.
+- **Corregido**: un gasto de caja pagado con tarjeta reducía el efectivo esperado. Ahora **Origen = Caja exige Efectivo**; el corte suma solo caja + efectivo y los registros históricos inconsistentes ya no restan.
+- **Modificado**: en Gastos, al marcar «Salió del efectivo de la caja» el método se fija en Efectivo y se deshabilita.
+- **Verificado**: la venta mixta no se duplica en el reporte (efectivo 240 + tarjeta 260 + fiado 200 = 700).
+- **Pruebas**: 435 en total.
+- **Pendiente de H4**: bitácora dentro de la transacción.
+
 ## 2026-11-25 — Caracterización del inventario (H3)
 
 - **Agregado**: 6 pruebas de caracterización que verifican, tras alta, entrada, merma, ajuste, venta, anulación y compra, que el stock de cada producto coincide con la suma de sus movimientos.

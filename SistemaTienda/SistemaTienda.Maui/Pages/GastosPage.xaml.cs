@@ -117,8 +117,15 @@ public partial class GastosPage : ContentPage
             return;
 
         OrigenAyudaLabel.Text = deCaja
-            ? "Se descontará del efectivo esperado del corte."
+            ? "Se descontará del efectivo esperado del corte y debe pagarse en efectivo."
             : "No toca el efectivo de la caja; solo afecta la utilidad.";
+
+        if (MetodoPicker != null)
+        {
+            MetodoPicker.IsEnabled = !deCaja;
+            if (deCaja)
+                MetodoPicker.SelectedIndex = 0;
+        }
     }
 
     private async void OnGuardarGastoClicked(object sender, EventArgs e)
