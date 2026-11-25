@@ -10,12 +10,26 @@
 
 ### Pasos de Instalación en Windows
 
-Todavía no hay instalador ni release publicados. Por ahora la app se compila y ejecuta desde el repositorio:
+El paquete de Windows (H5) se arma con `SistemaMaestro/scripts/h5-empaquetar.ps1` y se instala con `h5-instalar.ps1`. Cada paquete trae la app publicada y un `manifiesto.json` con la versión de la app y la versión de esquema que espera.
 
-1. Instalar el SDK de .NET 10 y las cargas de trabajo: `dotnet workload install maui-windows`.
-2. Compilar: `dotnet build SistemaTienda/SistemaTienda.Maui/SistemaTienda.Maui.csproj -f net10.0-windows10.0.19041.0`.
-3. Ejecutar: `dotnet run --project SistemaTienda/SistemaTienda.Maui/SistemaTienda.Maui.csproj -f net10.0-windows10.0.19041.0`.
-4. **Primera ejecución**: la app crea la base automáticamente, sin preguntar, en `%LOCALAPPDATA%\SistemaTienda\com.sistematienda.tienda\Data\tienda.db`, y abre el asistente.
+1. **Armar el paquete** (en el equipo de desarrollo):
+
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File SistemaMaestro\scripts\h5-empaquetar.ps1 -Version 1.1.0
+   ```
+
+   Genera `dist/SistemaTienda-1.1.0-win-x64.zip` con la app, el manifiesto y un `LEEME.txt`.
+2. **Instalar** (en el equipo de la tienda, sin internet):
+
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File h5-instalar.ps1 -Paquete SistemaTienda-1.1.0-win-x64.zip
+   ```
+
+   La app queda en `%LOCALAPPDATA%\SistemaTienda\app\versiones\<versión>` y el puntero en `app\actual.json`. Los datos **no** viven ahí y no se tocan.
+3. **Abrir la app** desde la carpeta de la versión instalada.
+4. **Primera ejecución**: la app crea la base automáticamente en `%LOCALAPPDATA%\SistemaTienda\com.sistematienda.tienda\Data\tienda.db` y abre el asistente.
+
+Para desarrollo también se puede compilar y ejecutar desde el repositorio con `dotnet build` y `dotnet run`.
 
 ### Pasos de Instalación en Android
 
@@ -49,19 +63,27 @@ El sistema soporta actualizaciones **offline**: el nuevo archivo de la aplicaci�
 
 ### Pasos para Actualizar
 
-Todavía no hay canal de releases ni verificación automática de versiones. Por ahora la actualización se hace reemplazando la build:
+1. **Crear respaldo manual** desde Ajustes antes de actualizar (recomendado, aunque la actualización también respalde).
+2. **Instalar el paquete nuevo** con `h5-instalar.ps1 -Paquete <zip>`. La versión anterior se conserva en `app\versiones` y el puntero `actual.json` cambia solo cuando la copia terminó.
+3. **La app actualiza la base al arrancar**: `ActualizadorEsquema` compara `PRAGMA user_version` con el esquema que declara el manifiesto y aplica las migraciones pendientes.
+4. **Respaldo previo automático**: antes de migrar se crea un respaldo `antes-migrar` verificado en `respaldos`.
+5. **Arranque de prueba**: al terminar se comprueba integridad, claves foráneas, tablas esenciales y una escritura que se revierte.
+6. **Si una migración o la verificación falla**: se restaura automáticamente el respaldo y la versión anterior de los datos sigue operativa. La app muestra el error con la ruta del respaldo.
+7. **Si la app nueva no arranca**: `h5-instalar.ps1 -Revertir` vuelve a la carpeta de la versión anterior. Los datos siguen intactos.
 
-1. **Crear respaldo manual** desde Ajustes antes de actualizar (recomendado aunque la migración también respalde).
-2. **Compilar o instalar la versión nueva** sobre la anterior. En Android, instalar el APK nuevo conserva los datos de la app.
-3. **Aplicación migra la BD**: al iniciar, el runner compara `PRAGMA user_version` con la versión de la app y aplica las migraciones pendientes una por una.
-4. **Respaldo previo automático**: antes de la primera migración se crea un respaldo `antes-migrar` verificado en la carpeta `respaldos`.
-5. **Si una migración falla**: se revierte esa migración, la app no arranca el sistema y muestra la página de error con las rutas de la base y los respaldos. El respaldo previo queda disponible para restaurar.
+### Actualización interrumpida
+
+- El paquete se copia primero a `versiones\<versión>.tmp` y se renombra al final. Si la copia se corta, la versión anterior sigue siendo la activa.
+- Si la luz se corta durante la migración, SQLite aplica su diario y el siguiente arranque vuelve a entrar por el actualizador; el respaldo `antes-migrar` permite restaurar.
+- El manifiesto declara el esquema esperado. Si la base quedó más nueva que la app, la app se niega a abrirla y pide instalar la versión correspondiente; no la degrada.
 
 ### Migraciones de Base de Datos en Actualizaciones
 
 - **Versión a versión**: las migraciones viven en `SistemaTienda.Infrastructure/Migraciones.cs` y se aplican en orden.
 - **Ejemplo**: la v4 convirtió los importes a centavos y la v6 agregó `AnulacionesVenta`; una base vieja recibe todas las migraciones pendientes al abrir la app.
-- **Si falla la migración**: se revierte esa migración y la app queda detenida con un mensaje; no se pierde el respaldo anterior.
+- **Si falla la migración o la verificación**: se restaura el respaldo `antes-migrar` y la base queda en la versión anterior; la app muestra el motivo y la ruta del respaldo.
+- **Filtros por día**: las consultas usan `date(Fecha)` sobre la fecha local guardada. La prueba `VentasDelDia_RespetaElDiaLocalEnLosBordes` fija que una venta de las 23:59 pertenece a su día y no al siguiente.
+- **CSV seguro**: los campos de texto libre que empiezan con `=`, `+`, `-`, `@`, tabulador o retorno se exportan con apóstrofo para que Excel no ejecute fórmulas.
 
 ### Desinstalación y Pérdida de Datos
 
@@ -92,7 +114,7 @@ Todavía no hay canal de releases ni verificación automática de versiones. Por
 ### "La app se cierra al iniciar"
 
 - **Causa**: Base de datos corrupta o versión de BD incompatible.
-- **Solución**: la app muestra una página de error con la ruta de la base y de los respaldos. Restaura un respaldo desde la consola (Configuración → Restaurar respaldo); la app MAUI todavía no tiene restauración. Si se reinstala, se crea una base nueva y se pierden los datos sin respaldo.
+- **Solución**: si la falla ocurrió al actualizar, la app ya restauró el respaldo `antes-migrar`; revisa el mensaje de error. Si no, restaura un respaldo desde la consola (Configuración → Restaurar respaldo) o vuelve a la versión anterior con `h5-instalar.ps1 -Revertir`. Si se reinstala, se crea una base nueva y se pierden los datos sin respaldo.
 
 ### "No hay suficiente espacio"
 

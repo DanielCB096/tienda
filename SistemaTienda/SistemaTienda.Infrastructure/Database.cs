@@ -72,15 +72,12 @@ public class DatabaseTools
             }
         }
 
-        var migrador = new MigradorEsquema(RutaBaseDatos, Migraciones.ObtenerTodas(), DirectorioRespaldos);
-        var resultado = migrador.Migrar(crearRespaldoPrevio: !esquemaCreado);
-        if (resultado.IsError)
-            throw new InvalidOperationException(resultado.Message);
+        var actualizador = new ActualizadorEsquema(RutaBaseDatos, DirectorioRespaldos);
+        var resultado = actualizador.Aplicar(crearRespaldoPrevio: !esquemaCreado);
+        if (!string.IsNullOrEmpty(resultado.Mensaje) && !resultado.Actualizada && !resultado.YaAlDia)
+            throw new InvalidOperationException(resultado.Mensaje);
 
-        UltimoRespaldoCreado = resultado.Value?.RutaRespaldo ?? string.Empty;
-
-        if ((esquemaCreado || resultado.Value?.HuboCambios == true) && !IntegridadOk())
-            throw new InvalidOperationException("La base de datos no pasó la verificación de integridad.");
+        UltimoRespaldoCreado = resultado.RutaRespaldo ?? string.Empty;
     }
 
     private static void CrearEsquemaBase(SqliteConnection conn)

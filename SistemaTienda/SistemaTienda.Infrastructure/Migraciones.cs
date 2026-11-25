@@ -810,6 +810,9 @@ public static class Migraciones
 
     public static int VersionMaxima(IReadOnlyList<Migracion> migraciones) =>
         migraciones.Count == 0 ? VersionEsquemaBase : migraciones.Max(m => m.Version);
+
+    /// <summary>Versión de esquema que conoce esta compilación.</summary>
+    public static int VersionActual => VersionMaxima(ObtenerTodas());
 }
 
 /// <summary>

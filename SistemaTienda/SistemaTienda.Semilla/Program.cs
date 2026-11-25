@@ -1,8 +1,16 @@
 // Punto de entrada de la herramienta de datos de prueba.
 using System.Text;
+using SistemaTienda.Infrastructure;
 using SistemaTienda.Semilla;
 
 Console.OutputEncoding = Encoding.UTF8;
+
+// El empaquetador de H5 pide el manifiesto para no duplicar la versión de esquema.
+if (args.Any(a => string.Equals(a, "--manifiesto", StringComparison.OrdinalIgnoreCase)))
+{
+    Console.WriteLine(ManifiestoSistema.Actual().ToJson());
+    return 0;
+}
 
 try
 {

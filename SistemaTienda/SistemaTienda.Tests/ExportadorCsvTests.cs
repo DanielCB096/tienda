@@ -49,6 +49,47 @@ public sealed class ExportadorCsvTests
         Assert.Equal(string.Empty, ExportadorCsv.Campo(null));
     }
 
+    [Theory]
+    [InlineData("=SUM(A1)", "'=SUM(A1)")]
+    [InlineData("+cmd|' /C calc'!A0", "'+cmd|' /C calc'!A0")]
+    [InlineData("-2+3", "'-2+3")]
+    [InlineData("@SUM(A1)", "'@SUM(A1)")]
+    [InlineData("texto normal", "texto normal")]
+    public void CampoTexto_NeutralizaFormulas(string valor, string esperado)
+    {
+        Assert.Equal(esperado, ExportadorCsv.CampoTexto(valor));
+    }
+
+    [Fact]
+    public void CampoTexto_ConComa_NeutralizaYEntrecomilla()
+    {
+        Assert.Equal("\"'=SUM(A1,B1)\"", ExportadorCsv.CampoTexto("=SUM(A1,B1)"));
+    }
+
+    [Fact]
+    public void ImporteNegativo_NoSeNeutralizaComoFormula()
+    {
+        Assert.Equal("-40.00", ExportadorCsv.Importe(-4_000));
+    }
+
+    [Fact]
+    public void EstadoCuentaCliente_NeutralizaNombreConFormula()
+    {
+        var estado = new EstadoCuentaCliente
+        {
+            Cliente = new ClienteFiado
+            {
+                Nombre = "=HYPERLINK(\"http://malo\")",
+                Telefono = "+5550000000"
+            }
+        };
+
+        var csv = ExportadorCsv.EstadoCuentaCliente(estado);
+
+        Assert.Contains("\"'=HYPERLINK(\"\"http://malo\"\")\"", csv);
+        Assert.Contains("'+5550000000", csv);
+    }
+
     [Fact]
     public void Importe_UsaPuntoDecimalInvariante()
     {

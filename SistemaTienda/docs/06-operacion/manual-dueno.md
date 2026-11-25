@@ -205,6 +205,12 @@ La app también intenta crear un respaldo automático al iniciar y al cerrar ses
 3. Elegir qué fecha/archivo restaurar.
 4. Confirmar. La app se reiniciará con los datos del respaldo.
 
+### Si una actualización falla
+
+1. La app intenta respaldar y migrar sola; si algo falla, restaura el respaldo y muestra el error.
+2. Si la app nueva no abre, pide al desarrollador que ejecute `h5-instalar.ps1 -Revertir`; vuelve a la versión anterior sin tocar los datos.
+3. No borres la carpeta de datos ni la de respaldos para "arreglarlo".
+
 ### Buenas prácticas
 
 - **Hacer respaldo después de un día intenso** (muchas ventas).

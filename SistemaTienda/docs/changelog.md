@@ -17,6 +17,17 @@ Cada entrada tiene formato:
 
 ---
 
+## 2026-11-25 — Instalación, actualización y reversión (H5)
+
+- **Agregado**: `ManifiestoSistema` con versión de app y esquema; el empaquetador lo genera con `SistemaTienda.Semilla --manifiesto`.
+- **Agregado**: `ActualizadorEsquema` crea respaldo `antes-migrar`, migra, ejecuta un arranque de prueba (integridad, claves foráneas, tablas esenciales y escritura revertida) y restaura el respaldo si algo falla.
+- **Agregado**: `scripts/h5-empaquetar.ps1` arma el ZIP de Windows con manifiesto y `scripts/h5-instalar.ps1` instala por versiones, actualiza y revierte con `-Revertir`.
+- **Modificado**: la app usa el actualizador al arrancar; una base más nueva que la app se rechaza sin degradarla.
+- **Corregido**: los CSV neutralizan fórmulas (`=`, `+`, `-`, `@`) en texto libre; los importes negativos siguen siendo números.
+- **Verificado**: el filtro por día local con `date(Fecha)` en los bordes 23:59 y 00:01.
+- **Pruebas**: 17 nuevas entre `ActualizacionTests`, `ExportadorCsvTests` y `FechasLocalesTests`; suite completa: 459.
+- Ver [ADR-008](../../SistemaMaestro/docs/07-decisiones/ADR-008-instalacion-actualizacion.md).
+
 ## 2026-11-25 — Bitácora atómica ampliada (H4.2b)
 
 - **Modificado**: inventario (entrada, merma, ajuste), altas/ediciones de productos, clientes y proveedores, usuarios/PIN/permisos y configuración escriben su bitácora dentro de la misma transacción.

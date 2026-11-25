@@ -16,7 +16,7 @@
 
 ## Distribución e Instalación
 
-- **Windows**: build de la app MAUI que se ejecuta en la computadora de la tienda (instalador pendiente de definir).
+- **Windows**: paquete ZIP por versión con `manifiesto.json` y scripts `h5-empaquetar.ps1` / `h5-instalar.ps1`; la instalación conserva la versión anterior y permite revertir sin tocar los datos ([ADR-008](../../../SistemaMaestro/docs/07-decisiones/ADR-008-instalacion-actualizacion.md)).
 - **Android**: APK generado desde MAUI; todavía no se ha probado en dispositivo.
 - **Máquina única por tienda**: No hay sincronización entre dispositivos. Lo que sí existe: restauración desde respaldo si la tablet se daña, se pierde o se formatea.
 

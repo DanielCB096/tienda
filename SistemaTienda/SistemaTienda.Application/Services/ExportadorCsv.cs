@@ -48,8 +48,8 @@ public static class ExportadorCsv
         var cliente = estado.Cliente ?? new ClienteFiado();
         var lineas = new List<string>
         {
-            Fila("Cliente", cliente.Nombre),
-            Fila("Telefono", cliente.Telefono),
+            FilaTexto("Cliente", cliente.Nombre),
+            FilaTexto("Telefono", cliente.Telefono),
             Fila("Saldo actual", Importe(estado.SaldoActual)),
             Fila("Total fiado", Importe(estado.TotalFiado)),
             Fila("Total abonado", Importe(estado.TotalAbonado)),
@@ -84,7 +84,7 @@ public static class ExportadorCsv
             lineas.Add(string.Join(",",
                 Campo(movimiento.Fecha.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)),
                 Campo(movimiento.Tipo),
-                Campo(movimiento.Detalle),
+                CampoTexto(movimiento.Detalle),
                 Campo(Importe(movimiento.Monto))));
         }
 
@@ -99,9 +99,9 @@ public static class ExportadorCsv
         var proveedor = estado.Proveedor ?? new Proveedor();
         var lineas = new List<string>
         {
-            Fila("Proveedor", proveedor.Nombre),
-            Fila("Clave", proveedor.Clave),
-            Fila("Telefono", proveedor.Telefono),
+            FilaTexto("Proveedor", proveedor.Nombre),
+            FilaTexto("Clave", proveedor.Clave),
+            FilaTexto("Telefono", proveedor.Telefono),
             Fila("Saldo pendiente", Importe(estado.SaldoPendiente)),
             Fila("Total comprado", Importe(estado.TotalComprado)),
             Fila("Total pagado", Importe(estado.TotalPagado)),
@@ -118,8 +118,8 @@ public static class ExportadorCsv
             lineas.Add(string.Join(",",
                 Campo(compra.Fecha.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)),
                 Campo($"Compra #{compra.Id}"),
-                Campo(detalle),
-                Campo(compra.Usuario),
+                CampoTexto(detalle),
+                CampoTexto(compra.Usuario),
                 Campo(Importe(compra.Total)),
                 Campo(Importe(compra.SaldoNuevo))));
         }
@@ -132,8 +132,8 @@ public static class ExportadorCsv
         {
             lineas.Add(string.Join(",",
                 Campo(pago.Fecha.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture)),
-                Campo(string.IsNullOrWhiteSpace(pago.MetodoPago) ? "Sin metodo" : pago.MetodoPago),
-                Campo(pago.Usuario),
+                CampoTexto(string.IsNullOrWhiteSpace(pago.MetodoPago) ? "Sin metodo" : pago.MetodoPago),
+                CampoTexto(pago.Usuario),
                 Campo(Importe(pago.Monto)),
                 Campo(Importe(pago.SaldoNuevo))));
         }
@@ -155,8 +155,25 @@ public static class ExportadorCsv
         return "\"" + texto.Replace("\"", "\"\"") + "\"";
     }
 
+    /// <summary>
+    /// Escapa texto libre y neutraliza fórmulas de hoja de cálculo: un valor que
+    /// empieza con =, +, -, @, tabulador o retorno se antepone con apóstrofo para
+    /// que Excel lo trate como texto y no lo ejecute.
+    /// </summary>
+    public static string CampoTexto(string valor)
+    {
+        var texto = valor ?? string.Empty;
+        if (texto.Length > 0 && "=+-@\t\r".IndexOf(texto[0]) >= 0)
+            texto = "'" + texto;
+
+        return Campo(texto);
+    }
+
     private static string Fila(string concepto, string valor) =>
         string.Join(",", Campo(concepto), Campo(valor));
+
+    private static string FilaTexto(string concepto, string valor) =>
+        string.Join(",", Campo(concepto), CampoTexto(valor));
 
     private static long MontoDe(ReporteUtilidad reporte, string metodo) =>
         reporte.DesglosePagos.FirstOrDefault(d => d.Metodo == metodo)?.Monto ?? 0;
