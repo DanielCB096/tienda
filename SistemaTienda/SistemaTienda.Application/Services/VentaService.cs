@@ -44,7 +44,8 @@ public class VentaService
         AutorizacionService.Exigir(SesionActual.Usuario, permiso);
 
     public ProcessResult<Venta> RegistrarVenta(
-        IReadOnlyList<LineaVentaSolicitada> lineas, PagoSolicitado pago, string usuario)
+        IReadOnlyList<LineaVentaSolicitada> lineas, PagoSolicitado pago, string usuario,
+        int? ticketEsperaId = null)
     {
         var autorizacion = Autorizar(PermisoSistema.Vender);
         if (autorizacion.IsError)
@@ -186,7 +187,10 @@ public class VentaService
             Motivo = venta.ClienteId.HasValue ? $"Cliente={venta.ClienteId.Value}" : string.Empty
         };
 
-        var guardado = _db.RegistrarVenta(venta, lineasVenta, auditoria);
+        if (ticketEsperaId.HasValue)
+            auditoria.DatosDespues += $";TicketEspera={ticketEsperaId.Value}";
+
+        var guardado = _db.RegistrarVenta(venta, lineasVenta, auditoria, ticketEsperaId);
         if (guardado.IsError)
             return ProcessResult<Venta>.Error(guardado.Message);
 

@@ -1201,6 +1201,241 @@ public class DatabaseTools
         return ExecuteReportObjects<RegistroBitacora>(sql, parametros.ToArray());
     }
 
+    // ---------- Tickets en espera ----------
+
+    public int ContarTicketsEsperaActivos() =>
+        ExecuteScalar<int>(@"SELECT COUNT(*) FROM TicketsEspera
+            WHERE Estado IN ('Disponible', 'Retomado')");
+
+    public ProcessResult<int> CrearTicketEspera(TicketEspera ticket,
+        RegistroBitacora auditoria = null)
+    {
+        using var conn = CreateConnection();
+        conn.Open();
+        using var tx = conn.BeginTransaction();
+
+        try
+        {
+            int ticketId;
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.Transaction = tx;
+                cmd.CommandText = @"
+                    INSERT INTO TicketsEspera (Nombre, Nota, Usuario, Fecha, Estado)
+                    VALUES (@nombre, @nota, @usuario, @fecha, @estado);
+                    SELECT last_insert_rowid();";
+                cmd.Parameters.AddWithValue("@nombre", ticket.Nombre ?? string.Empty);
+                cmd.Parameters.AddWithValue("@nota", ticket.Nota ?? string.Empty);
+                cmd.Parameters.AddWithValue("@usuario", ticket.Usuario ?? string.Empty);
+                cmd.Parameters.AddWithValue("@fecha", DateTime.Now);
+                cmd.Parameters.AddWithValue("@estado", EstadoTicketEspera.Disponible);
+                ticketId = Convert.ToInt32(cmd.ExecuteScalar(), CultureInfo.InvariantCulture);
+            }
+
+            foreach (var linea in ticket.Lineas)
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.Transaction = tx;
+                cmd.CommandText = @"
+                    INSERT INTO TicketEsperaLineas
+                        (TicketId, ProductoId, Cantidad, PrecioUnitario)
+                    VALUES (@ticket, @producto, @cantidad, @precio);";
+                cmd.Parameters.AddWithValue("@ticket", ticketId);
+                cmd.Parameters.AddWithValue("@producto", linea.ProductoId);
+                cmd.Parameters.AddWithValue("@cantidad", linea.Cantidad);
+                cmd.Parameters.AddWithValue("@precio", linea.PrecioUnitario);
+                cmd.ExecuteNonQuery();
+            }
+
+            if (auditoria != null)
+            {
+                auditoria.EntidadId = ticketId.ToString(CultureInfo.InvariantCulture);
+                auditoria.DatosDespues =
+                    $"Nombre={ticket.Nombre};Lineas={ticket.Lineas.Count};" +
+                    $"Total={Dinero.Formatear(ticket.TotalEstimado)}";
+                AgregarBitacora(conn, tx, auditoria);
+            }
+
+            tx.Commit();
+            ticket.Id = ticketId;
+            return ProcessResult<int>.OK(ticketId, $"Ticket en espera #{ticketId} guardado");
+        }
+        catch (SqliteException ex)
+        {
+            try { tx.Rollback(); } catch (SqliteException) { }
+            return ProcessResult<int>.Error($"No se pudo guardar el ticket: {ex.Message}");
+        }
+    }
+
+    public List<TicketEspera> ObtenerTicketsEspera()
+    {
+        var tickets = ExecuteReportObjects<TicketEspera>(@"
+            SELECT * FROM TicketsEspera
+            WHERE Estado IN ('Disponible', 'Retomado')
+            ORDER BY Fecha, Id");
+
+        foreach (var ticket in tickets)
+        {
+            ticket.Lineas = ExecuteReportObjects<TicketEsperaLinea>(@"
+                SELECT * FROM TicketEsperaLineas
+                WHERE TicketId = @id ORDER BY Id",
+                new SqliteParameter("@id", ticket.Id));
+        }
+
+        return tickets;
+    }
+
+    public TicketEspera ObtenerTicketEspera(int ticketId)
+    {
+        var ticket = ExecuteReportObject<TicketEspera>(
+            "SELECT * FROM TicketsEspera WHERE Id = @id",
+            new SqliteParameter("@id", ticketId));
+
+        if (ticket != null)
+            ticket.Lineas = ExecuteReportObjects<TicketEsperaLinea>(@"
+                SELECT * FROM TicketEsperaLineas
+                WHERE TicketId = @id ORDER BY Id",
+                new SqliteParameter("@id", ticketId));
+
+        return ticket;
+    }
+
+    public ProcessResult RetomarTicketEspera(int ticketId, string usuario,
+        RegistroBitacora auditoria = null)
+    {
+        using var conn = CreateConnection();
+        conn.Open();
+        using var tx = conn.BeginTransaction();
+
+        try
+        {
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.Transaction = tx;
+                cmd.CommandText = @"
+                    UPDATE TicketsEspera
+                    SET Estado = @retomado, RetomadoPor = @usuario, RetomadoFecha = @fecha
+                    WHERE Id = @id
+                      AND (Estado = @disponible
+                           OR (Estado = @retomado AND RetomadoPor = @usuario));";
+                cmd.Parameters.AddWithValue("@retomado", EstadoTicketEspera.Retomado);
+                cmd.Parameters.AddWithValue("@disponible", EstadoTicketEspera.Disponible);
+                cmd.Parameters.AddWithValue("@usuario", usuario ?? string.Empty);
+                cmd.Parameters.AddWithValue("@fecha", DateTime.Now);
+                cmd.Parameters.AddWithValue("@id", ticketId);
+                if (cmd.ExecuteNonQuery() == 0)
+                {
+                    tx.Rollback();
+                    return ProcessResult.Error(
+                        "El ticket ya fue cobrado, descartado o lo está usando otro cajero.");
+                }
+            }
+
+            if (auditoria != null)
+            {
+                auditoria.EntidadId = ticketId.ToString(CultureInfo.InvariantCulture);
+                auditoria.DatosDespues = $"Estado={EstadoTicketEspera.Retomado}";
+                AgregarBitacora(conn, tx, auditoria);
+            }
+
+            tx.Commit();
+            return ProcessResult.Success($"Ticket #{ticketId} retomado");
+        }
+        catch (SqliteException ex)
+        {
+            try { tx.Rollback(); } catch (SqliteException) { }
+            return ProcessResult.Error($"No se pudo retomar el ticket: {ex.Message}");
+        }
+    }
+
+    public ProcessResult DescartarTicketEspera(int ticketId, string usuario,
+        RegistroBitacora auditoria = null)
+    {
+        using var conn = CreateConnection();
+        conn.Open();
+        using var tx = conn.BeginTransaction();
+
+        try
+        {
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.Transaction = tx;
+                cmd.CommandText = @"
+                    UPDATE TicketsEspera
+                    SET Estado = @descartado, FechaCierre = @fecha
+                    WHERE Id = @id AND Estado IN (@disponible, @retomado);";
+                cmd.Parameters.AddWithValue("@descartado", EstadoTicketEspera.Descartado);
+                cmd.Parameters.AddWithValue("@disponible", EstadoTicketEspera.Disponible);
+                cmd.Parameters.AddWithValue("@retomado", EstadoTicketEspera.Retomado);
+                cmd.Parameters.AddWithValue("@fecha", DateTime.Now);
+                cmd.Parameters.AddWithValue("@id", ticketId);
+                if (cmd.ExecuteNonQuery() == 0)
+                {
+                    tx.Rollback();
+                    return ProcessResult.Error("El ticket ya fue cobrado o descartado.");
+                }
+            }
+
+            if (auditoria != null)
+            {
+                auditoria.EntidadId = ticketId.ToString(CultureInfo.InvariantCulture);
+                auditoria.DatosDespues = $"Estado={EstadoTicketEspera.Descartado}";
+                AgregarBitacora(conn, tx, auditoria);
+            }
+
+            tx.Commit();
+            return ProcessResult.Success($"Ticket #{ticketId} descartado");
+        }
+        catch (SqliteException ex)
+        {
+            try { tx.Rollback(); } catch (SqliteException) { }
+            return ProcessResult.Error($"No se pudo descartar el ticket: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Devuelve a Disponible los tickets que quedaron retomados por un cierre
+    /// inesperado de la app. No toca los que ya se cobraron o descartaron.
+    /// </summary>
+    public int LiberarTicketsEsperaVencidos(int minutos = 30) =>
+        ExecuteCommand(@"
+            UPDATE TicketsEspera
+            SET Estado = @disponible, RetomadoPor = '', RetomadoFecha = NULL
+            WHERE Estado = @retomado
+              AND RetomadoFecha IS NOT NULL
+              AND RetomadoFecha < @limite",
+            new SqliteParameter("@disponible", EstadoTicketEspera.Disponible),
+            new SqliteParameter("@retomado", EstadoTicketEspera.Retomado),
+            new SqliteParameter("@limite", DateTime.Now.AddMinutes(-Math.Clamp(minutos, 1, 1440))));
+
+    public bool LiberarTicketEspera(int ticketId, string usuario) =>
+        ExecuteCommand(@"
+            UPDATE TicketsEspera
+            SET Estado = @disponible, RetomadoPor = '', RetomadoFecha = NULL
+            WHERE Id = @id AND Estado = @retomado AND RetomadoPor = @usuario",
+            new SqliteParameter("@disponible", EstadoTicketEspera.Disponible),
+            new SqliteParameter("@retomado", EstadoTicketEspera.Retomado),
+            new SqliteParameter("@usuario", usuario ?? string.Empty),
+            new SqliteParameter("@id", ticketId)) > 0;
+
+    private static bool CerrarTicketEspera(SqliteConnection conn, SqliteTransaction tx,
+        int ticketId, string usuario, int ventaId)
+    {
+        using var cmd = conn.CreateCommand();
+        cmd.Transaction = tx;
+        cmd.CommandText = @"
+            UPDATE TicketsEspera
+            SET Estado = @cobrado, VentaId = @venta, FechaCierre = @fecha
+            WHERE Id = @id AND Estado = @retomado AND RetomadoPor = @usuario";
+        cmd.Parameters.AddWithValue("@cobrado", EstadoTicketEspera.Cobrado);
+        cmd.Parameters.AddWithValue("@retomado", EstadoTicketEspera.Retomado);
+        cmd.Parameters.AddWithValue("@venta", ventaId);
+        cmd.Parameters.AddWithValue("@fecha", DateTime.Now);
+        cmd.Parameters.AddWithValue("@usuario", usuario ?? string.Empty);
+        cmd.Parameters.AddWithValue("@id", ticketId);
+        return cmd.ExecuteNonQuery() > 0;
+    }
+
     // ---------- Gastos ----------
 
     public int AgregarGasto(Gasto gasto, RegistroBitacora auditoria = null)
@@ -1767,7 +2002,7 @@ public class DatabaseTools
     /// en una sola transacción. Si falta stock o se excede el crédito, no se guarda nada.
     /// </summary>
     public ProcessResult RegistrarVenta(Venta venta, IReadOnlyList<VentaLinea> lineas,
-        RegistroBitacora auditoria = null)
+        RegistroBitacora auditoria = null, int? ticketEsperaId = null)
     {
         using var conn = CreateConnection();
         conn.Open();
@@ -1848,6 +2083,14 @@ public class DatabaseTools
                     tx.Rollback();
                     return ProcessResult.Error(errorFiado);
                 }
+            }
+
+            if (ticketEsperaId.HasValue &&
+                !CerrarTicketEspera(conn, tx, ticketEsperaId.Value, venta.Usuario, ventaId))
+            {
+                tx.Rollback();
+                return ProcessResult.Error(
+                    "El ticket en espera ya fue cobrado, descartado o no está retomado por este usuario.");
             }
 
             if (auditoria != null)

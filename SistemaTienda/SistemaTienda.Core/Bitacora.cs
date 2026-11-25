@@ -111,6 +111,10 @@ public static class AccionBitacora
     public const string Configuracion = "Configuracion";
     public const string ImportacionProductos = "ImportacionProductos";
     public const string ReversionImportacion = "ReversionImportacion";
+    public const string DejarTicketEspera = "DejarTicketEspera";
+    public const string RetomarTicketEspera = "RetomarTicketEspera";
+    public const string DescartarTicketEspera = "DescartarTicketEspera";
+    public const string CobrarTicketEspera = "CobrarTicketEspera";
     public const string Respaldo = "Respaldo";
     public const string AccesoFallido = "AccesoFallido";
 }

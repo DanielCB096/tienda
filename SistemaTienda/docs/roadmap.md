@@ -1,6 +1,6 @@
 # Roadmap
 
-Estado al 2026-11-25. T1–T42 y H1–H5 están integrados en `main`; H6.1 (importación con vista previa y lotes) está en curso. La suite queda en 468 pruebas. Orden sugerido en [CLAUDE-tienda.md §13](../CLAUDE-tienda.md).
+Estado al 2026-11-25. T1–T42 y H1–H5 están integrados en `main`; H6.1 (importación con vista previa y lotes) y H6.2 (tickets en espera) están implementados; falta H6.3. La suite queda en 478 pruebas. Orden sugerido en [CLAUDE-tienda.md §13](../CLAUDE-tienda.md).
 
 ## Avance por módulo
 

@@ -33,6 +33,7 @@ public static class MauiProgram
 		builder.Services.AddSingleton<ConfiguracionService>();
 		builder.Services.AddSingleton<InventoryService>();
 		builder.Services.AddSingleton<VentaService>();
+	builder.Services.AddSingleton<TicketEsperaService>();
 		builder.Services.AddSingleton<TicketService>();
 		builder.Services.AddSingleton<CorteCajaService>();
 		builder.Services.AddSingleton<ReporteUtilidadService>();

@@ -49,6 +49,14 @@ El detalle, la reimpresión y la anulación desde Ventas llegaron en T16; los de
 
 El QR es informativo y offline: incluye tienda, folio, fecha, estado (`Vigente`/`Anulada`), total, método de pago y hasta diez productos, con la leyenda de que no es un comprobante fiscal. No contiene enlaces ni valida la venta. Se muestra en pantalla y se puede compartir como PNG generado localmente con `QrImagenService`, sin bibliotecas de dibujo adicionales. La decisión y sus límites están en [ADR-qr-ticket.md](../05-decisiones/ADR-qr-ticket.md).
 
+## Tickets en espera (H6.2)
+
+- En el POS, **Guardar en espera** pide un nombre o nota opcional y guarda el carrito en SQLite. No mueve stock, caja ni genera venta.
+- **En espera** lista los tickets activos (máximo 10). Cualquiera con permiso de vender puede retomar uno; si otro cajero lo tiene retomado, se muestra **En uso**.
+- Al retomar se recalculan precios y stock. Si un precio cambió, se muestran el anterior y el nuevo y se pide confirmación; si un producto está inactivo o sin stock, no se carga y se pide ajustar el inventario.
+- La venta cierra el ticket en la misma transacción (`Estado = Cobrado`, `VentaId`). Si el ticket ya fue cobrado, descartado o lo retomó otro cajero, la venta se revierte completa: no hay doble cobro.
+- **Descartar** deja bitácora con usuario, piezas y total. Un ticket retomado que queda huérfano por un cierre inesperado se libera a los 30 minutos.
+
 ## Anulación de Venta (T11, esquema v6)
 
 Reglas confirmadas con el usuario:

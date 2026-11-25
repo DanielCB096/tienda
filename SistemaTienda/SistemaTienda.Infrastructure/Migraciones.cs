@@ -47,7 +47,8 @@ public static class Migraciones
         new Migracion(15, "agrega el bloqueo por inactividad y el estado de acceso", AplicarVersion15),
         new Migracion(16, "agrega el indicador de respaldos cifrados", AplicarVersion16),
         new Migracion(17, "reconcilia el stock con los movimientos", AplicarVersion17),
-        new Migracion(18, "crea los lotes de importación de productos", AplicarVersion18)
+        new Migracion(18, "crea los lotes de importación de productos", AplicarVersion18),
+        new Migracion(19, "crea los tickets en espera del mostrador", AplicarVersion19)
     };
 
     private static void AplicarVersion2(SqliteConnection conn, SqliteTransaction tx)
@@ -797,6 +798,42 @@ public static class Migraciones
     /// InsertarMovimiento en la misma transacción y esta migración corrige
     /// cualquier desfase previo.
     /// </summary>
+    private static void AplicarVersion19(SqliteConnection conn, SqliteTransaction tx)
+    {
+        using var cmd = conn.CreateCommand();
+        cmd.Transaction = tx;
+        cmd.CommandText = @"
+            CREATE TABLE IF NOT EXISTS TicketsEspera (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                Nombre TEXT NOT NULL DEFAULT '',
+                Nota TEXT NOT NULL DEFAULT '',
+                Usuario TEXT NOT NULL DEFAULT '',
+                Fecha DATETIME NOT NULL,
+                Estado TEXT NOT NULL DEFAULT 'Disponible',
+                RetomadoPor TEXT NOT NULL DEFAULT '',
+                RetomadoFecha DATETIME NULL,
+                VentaId INTEGER NULL,
+                FechaCierre DATETIME NULL
+            );
+
+            CREATE INDEX IF NOT EXISTS IX_TicketsEspera_Estado ON TicketsEspera(Estado);
+
+            CREATE TABLE IF NOT EXISTS TicketEsperaLineas (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                TicketId INTEGER NOT NULL,
+                ProductoId INTEGER NOT NULL,
+                Cantidad INTEGER NOT NULL,
+                PrecioUnitario INTEGER NOT NULL,
+                FOREIGN KEY (TicketId) REFERENCES TicketsEspera(Id),
+                FOREIGN KEY (ProductoId) REFERENCES Productos(Id)
+            );
+
+            CREATE INDEX IF NOT EXISTS IX_TicketEsperaLineas_TicketId
+                ON TicketEsperaLineas(TicketId);
+        ";
+        cmd.ExecuteNonQuery();
+    }
+
     private static void AplicarVersion18(SqliteConnection conn, SqliteTransaction tx)
     {
         using (var cmd = conn.CreateCommand())

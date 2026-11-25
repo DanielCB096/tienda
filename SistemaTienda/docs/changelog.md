@@ -17,6 +17,16 @@ Cada entrada tiene formato:
 
 ---
 
+## 2026-11-25 — Tickets en espera (H6.2)
+
+- **Agregado**: carritos guardados en SQLite (`TicketsEspera` y `TicketEsperaLineas`, esquema v19) con nombre o nota opcional, usuario, fecha y estado.
+- **Agregado**: POS con **Guardar en espera** y **En espera**; el ticket se retoma con precios y stock actuales, avisa cambios de precio y bloquea si el producto está inactivo o sin stock.
+- **Agregado**: máximo 10 tickets activos; sin reserva de stock; descarte manual auditado.
+- **Modificado**: la venta cierra el ticket en la misma transacción (`Cobrado` + `VentaId`); un ticket de otro cajero o ya cobrado revierte la venta completa.
+- **Agregado**: bitácora `DejarTicketEspera`, `RetomarTicketEspera`, `DescartarTicketEspera` y el id del ticket en la venta.
+- **Pruebas**: 10 nuevas en `TicketsEsperaTests`; suite completa: 478.
+- Ver [ADR-009](../../SistemaMaestro/docs/07-decisiones/ADR-009-onboarding-tickets-busqueda.md).
+
 ## 2026-11-25 — Importación con vista previa y lotes (H6.1)
 
 - **Agregado**: vista previa de CSV/XLSX antes de escribir; muestra filas leídas, válidas, omitidas y los primeros errores.

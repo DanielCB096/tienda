@@ -130,6 +130,20 @@
                         IsEnabled="False"
                         Clicked="OnCobrarClicked" />
             </Grid>
+            <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                <Button x:Name="GuardarEsperaButton"
+                        Text="Guardar en espera"
+                        Style="{StaticResource BotonSecundario}"
+                        HeightRequest="40"
+                        IsEnabled="False"
+                        Clicked="OnGuardarEsperaClicked" />
+                <Button x:Name="TicketsEsperaButton"
+                        Grid.Column="1"
+                        Text="En espera"
+                        Style="{StaticResource BotonSecundario}"
+                        HeightRequest="40"
+                        Clicked="OnTicketsEsperaClicked" />
+            </Grid>
             <Label x:Name="MensajeLabel" Style="{StaticResource TextoNota}" IsVisible="False" />
         </VerticalStackLayout>
 

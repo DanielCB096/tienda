@@ -12,21 +12,25 @@ public partial class PosPage : ContentPage
     private readonly InventoryService _inventario;
     private readonly ConfiguracionService _configuracionService;
     private readonly TicketService _ticketService;
+    private readonly TicketEsperaService _ticketsEspera;
     private readonly SesionApp _sesion;
 
     private readonly List<CarritoFila> _carrito = new();
     private ConfiguracionTienda? _config;
     private CancellationTokenSource? _sugerenciasCts;
     private bool _limpiandoBuscador;
+    private int? _ticketEsperaId;
 
     public PosPage(VentaService ventas, InventoryService inventario,
-        ConfiguracionService configuracion, TicketService ticketService, SesionApp sesion)
+        ConfiguracionService configuracion, TicketService ticketService,
+        TicketEsperaService ticketsEspera, SesionApp sesion)
     {
         InitializeComponent();
         _ventas = ventas;
         _inventario = inventario;
         _configuracionService = configuracion;
         _ticketService = ticketService;
+        _ticketsEspera = ticketsEspera;
         _sesion = sesion;
     }
 
@@ -273,6 +277,7 @@ public partial class PosPage : ContentPage
 
         MostrarMensaje(null);
         ActualizarCarrito();
+        SoltarTicketSiVacio();
     }
 
     private void OnQuitarClicked(object sender, EventArgs e)
@@ -283,6 +288,7 @@ public partial class PosPage : ContentPage
         _carrito.Remove(fila);
         MostrarMensaje(null);
         ActualizarCarrito();
+        SoltarTicketSiVacio();
     }
 
     private void ActualizarCarrito()
@@ -291,6 +297,123 @@ public partial class PosPage : ContentPage
         ListaCarrito.ItemsSource = _carrito.ToList();
         TotalLabel.Text = Formato.Moneda(Total());
         CobrarButton.IsEnabled = _carrito.Count > 0;
+        GuardarEsperaButton.IsEnabled = _carrito.Count > 0;
+    }
+
+    private void SoltarTicketSiVacio()
+    {
+        if (_carrito.Count > 0 || !_ticketEsperaId.HasValue)
+            return;
+
+        var ticketId = _ticketEsperaId.Value;
+        _ticketEsperaId = null;
+        _sesion.Aplicar();
+        _ticketsEspera.Liberar(ticketId);
+    }
+
+    private async void OnGuardarEsperaClicked(object sender, EventArgs e)
+    {
+        if (_sesion.Usuario == null || _carrito.Count == 0)
+            return;
+
+        var nombre = await DisplayPromptAsync("Guardar en espera",
+            "Nombre o nota para identificar el ticket (opcional)",
+            "Guardar", "Cancelar", "Ej. Señora blusa roja", 40);
+        if (nombre == null)
+            return;
+
+        _sesion.Aplicar();
+        var lineas = _carrito
+            .Select(fila => new LineaTicketEsperaSolicitada(fila.Producto.Id, fila.Cantidad))
+            .ToList();
+
+        var anterior = _ticketEsperaId;
+        var resultado = _ticketsEspera.Dejar(lineas, nombre);
+        if (resultado.IsError)
+        {
+            MostrarMensaje(resultado.Message);
+            return;
+        }
+
+        // Si el carrito venía de un ticket retomado, se devuelve el original.
+        if (anterior.HasValue)
+            _ticketsEspera.Liberar(anterior.Value);
+
+        _ticketEsperaId = null;
+        _carrito.Clear();
+        ActualizarCarrito();
+        MostrarMensaje(resultado.Message);
+    }
+
+    private async void OnTicketsEsperaClicked(object sender, EventArgs e)
+    {
+        if (_sesion.Usuario == null)
+            return;
+
+        var espera = new TaskCompletionSource<TicketEspera?>();
+        await Navigation.PushModalAsync(new TicketsEsperaPage(_ticketsEspera, _sesion,
+            ticket => espera.TrySetResult(ticket)));
+        var ticket = await espera.Task;
+        if (ticket != null)
+            await CargarTicketEsperaAsync(ticket);
+    }
+
+    private async Task CargarTicketEsperaAsync(TicketEspera ticket)
+    {
+        var problemas = new List<string>();
+        var filas = new List<CarritoFila>();
+
+        foreach (var linea in ticket.Lineas)
+        {
+            var producto = _inventario.BuscarPorId(linea.ProductoId);
+            if (producto == null || !producto.Activo)
+            {
+                problemas.Add($"{linea.ProductoNombre} ya no está disponible.");
+                continue;
+            }
+
+            if (linea.Cantidad > producto.Stock)
+            {
+                problemas.Add($"{producto.Nombre}: pides {linea.Cantidad} y hay {producto.Stock}.");
+                continue;
+            }
+
+            filas.Add(new CarritoFila { Producto = producto, Cantidad = linea.Cantidad });
+        }
+
+        if (problemas.Count > 0)
+        {
+            await DisplayAlertAsync("Revisa el ticket",
+                string.Join(Environment.NewLine, problemas) + Environment.NewLine +
+                "Ajusta el inventario y vuelve a retomarlo.", "Continuar");
+            return;
+        }
+
+        var cambios = ticket.Lineas
+            .Where(linea => linea.CambioPrecio)
+            .Select(linea =>
+                $"{linea.ProductoNombre}: {Dinero.Formatear(linea.PrecioUnitario)} → " +
+                $"{Dinero.Formatear(linea.PrecioActual)}")
+            .ToList();
+
+        if (cambios.Count > 0)
+        {
+            var continuar = await DisplayAlertAsync("Precios actualizados",
+                string.Join(Environment.NewLine, cambios) + Environment.NewLine +
+                "Se cobrarán los precios actuales.", "Usar nuevos", "Cancelar");
+            if (!continuar)
+            {
+                _sesion.Aplicar();
+                _ticketsEspera.Liberar(ticket.Id);
+                return;
+            }
+        }
+
+        _carrito.Clear();
+        _carrito.AddRange(filas);
+        _ticketEsperaId = ticket.Id;
+        ActualizarCarrito();
+        MostrarMensaje($"Ticket #{ticket.Id} retomado; revisa y cobra.");
     }
 
     private void MostrarMensaje(string? mensaje)
@@ -509,7 +632,8 @@ public partial class PosPage : ContentPage
                 })
                 .ToList();
 
-            resultado = _ventas.RegistrarVenta(solicitadas, pago!, _sesion.Usuario.Nombre);
+            resultado = _ventas.RegistrarVenta(solicitadas, pago!, _sesion.Usuario.Nombre,
+                _ticketEsperaId);
         }
         catch (Exception ex)
         {
@@ -533,6 +657,7 @@ public partial class PosPage : ContentPage
         var ticket = _ticketService.Generar(
             resultado.Value, lineas, _config, nombreCliente, efectivoRecibido);
 
+        _ticketEsperaId = null;
         _carrito.Clear();
         ActualizarCarrito();
         PanelCobro.IsVisible = false;
