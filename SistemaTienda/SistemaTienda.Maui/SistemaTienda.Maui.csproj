@@ -12,7 +12,7 @@
 		<Nullable>enable</Nullable>
 
 		<!-- Display name -->
-		<ApplicationTitle>SistemaTienda</ApplicationTitle>
+		<ApplicationTitle>POSale</ApplicationTitle>
 
 		<!-- App Identifier -->
 		<ApplicationId>com.sistematienda.tienda</ApplicationId>

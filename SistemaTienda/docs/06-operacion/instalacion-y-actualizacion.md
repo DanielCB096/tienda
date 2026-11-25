@@ -18,11 +18,11 @@ El paquete de Windows (H5) se arma con `SistemaMaestro/scripts/h5-empaquetar.ps1
    powershell -ExecutionPolicy Bypass -File SistemaMaestro\scripts\h5-empaquetar.ps1 -Version 1.1.0
    ```
 
-   Genera `dist/SistemaTienda-1.1.0-win-x64.zip` con la app autocontenida (no requiere instalar .NET), el manifiesto y un `LEEME.txt`. El empaquetador verifica que el paquete incluya el runtime antes de comprimirlo.
+   Genera `dist/POSale-1.1.0-win-x64.zip` con la app autocontenida (no requiere instalar .NET), el manifiesto y un `LEEME.txt`. El empaquetador verifica que el paquete incluya el runtime antes de comprimirlo.
 2. **Instalar** (en el equipo de la tienda, sin internet):
 
    ```powershell
-   powershell -ExecutionPolicy Bypass -File h5-instalar.ps1 -Paquete SistemaTienda-1.1.0-win-x64.zip
+   powershell -ExecutionPolicy Bypass -File h5-instalar.ps1 -Paquete POSale-1.1.0-win-x64.zip
    ```
 
    La app queda en `%LOCALAPPDATA%\SistemaTienda\app\versiones\<versión>` y el puntero en `app\actual.json`. Los datos **no** viven ahí y no se tocan.

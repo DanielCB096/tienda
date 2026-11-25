@@ -145,7 +145,7 @@
                     Clicked="OnCerrarSesionClicked"
                     Margin="0,8,0,0" />
 
-            <Label Text="SistemaTienda 0.1 · 100 % local, sin conexión a internet."
+            <Label Text="POSale 0.1 · 100 % local, sin conexión a internet."
                    Style="{StaticResource TextoNota}"
                    HorizontalTextAlignment="Center"
                    Margin="0,8,0,0" />

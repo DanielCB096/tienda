@@ -32,7 +32,7 @@ No hay nube, ni cuentas en línea, ni telemetría. Todo vive en el equipo de la 
 > **Carta de participación en el piloto**
 >
 > Yo, ______________________________, dueño/responsable de
-> ______________________________, acepto participar en el piloto de SistemaTienda
+> ______________________________, acepto participar en el piloto de POSale
 > del ____ al ____ de ______.
 >
 > Entiendo que:
@@ -52,7 +52,7 @@ No hay nube, ni cuentas en línea, ni telemetría. Todo vive en el equipo de la 
 ## Autorización de testimonio (plantilla)
 
 > Autorizo el uso de mi nombre, el nombre de la tienda y mis comentarios sobre el
-> piloto en material de difusión de SistemaTienda. Puedo revisar el texto antes de
+> piloto en material de difusión de POSale. Puedo revisar el texto antes de
 > su publicación y revocar esta autorización por escrito.
 >
 > Firma: ____________________  Fecha: __________

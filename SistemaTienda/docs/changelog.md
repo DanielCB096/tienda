@@ -17,6 +17,13 @@ Cada entrada tiene formato:
 
 ---
 
+## 2026-11-25 — Marca POSale e icono
+
+- **Agregado**: nombre visible **POSale** en la app, la ventana, el asistente, Ajustes y el selector de respaldos.
+- **Agregado**: icono SVG de canasta con etiqueta y signo de peso (verde #2E6B4F, crema #F7F3E8, contorno #10231B), foreground adaptativo y splash.
+- **Modificado**: el paquete de Windows se llama `POSale-<versión>-win-x64.zip`; el repositorio, ApplicationId y carpeta de datos no cambian.
+- Ver [ADR-010](../../SistemaMaestro/docs/07-decisiones/ADR-010-marca-posale.md).
+
 ## 2026-11-25 — Preparación del piloto
 
 - **Agregado**: carpeta `08-piloto` con plan, instalación y día 0, checklist imprimible, capacitación, tarjeta del cajero, guion de 30 días, registro de incidencias, privacidad y criterios de éxito.
@@ -535,7 +542,7 @@ Próximamente después de completar los módulos críticos.
 - *Agregado*: respaldo automático al iniciar y cerrar sesión desde la app, con aviso cuando falla; Ajustes permite crear un respaldo y muestra la ruta.
 - *Agregado*: página de error de arranque con el mensaje y las rutas de base y respaldos, y botón para cerrar la aplicación.
 - *Modificado*: `SQLitePCLRaw.bundle_e_sqlite3` 2.1.14 en Infrastructure para corregir la vulnerabilidad alta GHSA-2m69-gcr7-jv3q que traía 2.1.6.
-- *Modificado*: el manifiesto de Android ya no pide permisos de red y desactiva el respaldo del sistema operativo; en Windows se corrigió el nombre visible del publicador para que la carpeta de datos sea `SistemaTienda`.
+- *Modificado*: el manifiesto de Android ya no pide permisos de red y desactiva el respaldo del sistema operativo; en Windows se corrigió el nombre visible del publicador para que la carpeta de datos sea `POSale`.
 - *Agregado*: job `app-maui` en GitHub Actions que compila la app para Windows y Android en cada push.
 - *Limitación*: las pestañas Ventas y Caja son informativas; todavía no hay punto de venta, cierre de corte, inventario ni ticket en la app. Android solo se ha compilado en CI, no probado en dispositivo.
 - Total del proyecto: 170 pruebas (sin cambios; la interfaz se verificó manualmente).

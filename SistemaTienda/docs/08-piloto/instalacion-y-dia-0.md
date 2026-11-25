@@ -22,7 +22,7 @@ La app es **autocontenida**: no hay que instalar .NET ni dependencias.
 - [ ] Reloj y zona horaria correctos (afectan cortes y reportes).
 - [ ] Lector configurado para enviar **Enter** al final del código.
 - [ ] USB de respaldo identificado y formateado.
-- [ ] Paquete `SistemaTienda-<versión>-win-x64.zip` descargado del kit.
+- [ ] Paquete `POSale-<versión>-win-x64.zip` descargado del kit.
 
 ## 3. Instalación
 
@@ -30,7 +30,7 @@ La app es **autocontenida**: no hay que instalar .NET ni dependencias.
 2. Abrir PowerShell en esa carpeta y ejecutar:
 
    ```powershell
-   powershell -ExecutionPolicy Bypass -File h5-instalar.ps1 -Paquete SistemaTienda-1.0.0-win-x64.zip
+   powershell -ExecutionPolicy Bypass -File h5-instalar.ps1 -Paquete POSale-1.0.0-win-x64.zip
    ```
 
 3. Verificar que termine con **Instalada la versión …** y anotar la ruta.

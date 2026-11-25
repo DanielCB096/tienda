@@ -17,9 +17,9 @@ public partial class App : Microsoft.Maui.Controls.Application
 	protected override Window CreateWindow(IActivationState? activationState)
 	{
 		if (MauiProgram.InstanciaDuplicada)
-			return new Window(new Pages.InstanciaDuplicadaPage()) { Title = "SistemaTienda" };
+			return new Window(new Pages.InstanciaDuplicadaPage()) { Title = "POSale" };
 
-		var ventana = new Window(_arranque.CrearPaginaInicial()) { Title = "SistemaTienda" };
+		var ventana = new Window(_arranque.CrearPaginaInicial()) { Title = "POSale" };
 		ventana.Activated += (_, _) => _bloqueo.Verificar();
 		return ventana;
 	}

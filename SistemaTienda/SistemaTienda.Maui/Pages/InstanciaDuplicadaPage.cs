@@ -7,7 +7,7 @@ public sealed class InstanciaDuplicadaPage : ContentPage
 {
     public InstanciaDuplicadaPage()
     {
-        Title = "SistemaTienda";
+        Title = "POSale";
 
         Content = new VerticalStackLayout
         {
@@ -18,7 +18,7 @@ public sealed class InstanciaDuplicadaPage : ContentPage
             {
                 new Label
                 {
-                    Text = "SistemaTienda ya está abierto",
+                    Text = "POSale ya está abierto",
                     FontSize = 24,
                     FontAttributes = FontAttributes.Bold,
                     HorizontalTextAlignment = TextAlignment.Center

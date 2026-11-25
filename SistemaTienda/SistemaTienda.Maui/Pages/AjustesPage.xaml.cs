@@ -740,7 +740,7 @@ public partial class AjustesPage : ContentPage
         {
             var archivo = await FilePicker.Default.PickAsync(new PickOptions
             {
-                PickerTitle = "Selecciona un respaldo de SistemaTienda",
+                PickerTitle = "Selecciona un respaldo de POSale",
                 FileTypes = TiposRespaldo
             });
 

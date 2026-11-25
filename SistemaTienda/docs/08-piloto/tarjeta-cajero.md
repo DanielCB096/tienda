@@ -4,7 +4,7 @@
 
 ## Abrir
 
-1. Abrir **SistemaTienda**.
+1. Abrir **POSale**.
 2. Escribir tu PIN (4–6 dígitos).
 3. Revisar **Inicio**: ventas del día y efectivo esperado.
 
