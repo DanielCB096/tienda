@@ -22,6 +22,7 @@ Cada entrada tiene formato:
 - **Agregado**: nombre visible **POSale** en la app, la ventana, el asistente, Ajustes y el selector de respaldos.
 - **Agregado**: icono SVG de canasta con etiqueta y signo de peso (verde #2E6B4F, crema #F7F3E8, contorno #10231B), foreground adaptativo y splash.
 - **Modificado**: el paquete de Windows se llama `POSale-<versión>-win-x64.zip`; el repositorio, ApplicationId y carpeta de datos no cambian.
+- **Corregido**: el icono adaptativo ya no duplica la canasta (fondo solo verde y marca en el foreground) y aparece a la izquierda de POSale en login, asistente, Ajustes e instancia duplicada.
 - Ver [ADR-010](../../SistemaMaestro/docs/07-decisiones/ADR-010-marca-posale.md).
 
 ## 2026-11-25 — Preparación del piloto

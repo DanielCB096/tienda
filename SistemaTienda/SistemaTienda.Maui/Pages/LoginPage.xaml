@@ -7,6 +7,19 @@
     <ScrollView>
         <VerticalStackLayout Padding="20,48" Spacing="12">
 
+            <HorizontalStackLayout HorizontalOptions="Center" Spacing="10">
+                <Image Source="posale_logo.png"
+                       WidthRequest="46"
+                       HeightRequest="46"
+                       Aspect="AspectFit"
+                       VerticalOptions="Center" />
+                <Label Text="POSale"
+                       FontSize="30"
+                       FontAttributes="Bold"
+                       VerticalOptions="Center"
+                       TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}" />
+            </HorizontalStackLayout>
+
             <Label x:Name="NombreTiendaLabel"
                    Text="Mi tienda"
                    Style="{StaticResource TituloPagina}"

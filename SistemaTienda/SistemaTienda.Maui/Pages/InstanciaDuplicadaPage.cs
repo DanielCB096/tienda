@@ -16,6 +16,29 @@ public sealed class InstanciaDuplicadaPage : ContentPage
             VerticalOptions = LayoutOptions.Center,
             Children =
             {
+                new HorizontalStackLayout
+                {
+                    Spacing = 10,
+                    HorizontalOptions = LayoutOptions.Center,
+                    Children =
+                    {
+                        new Image
+                        {
+                            Source = "posale_logo.png",
+                            WidthRequest = 44,
+                            HeightRequest = 44,
+                            Aspect = Aspect.AspectFit,
+                            VerticalOptions = LayoutOptions.Center
+                        },
+                        new Label
+                        {
+                            Text = "POSale",
+                            FontSize = 26,
+                            FontAttributes = FontAttributes.Bold,
+                            VerticalOptions = LayoutOptions.Center
+                        }
+                    }
+                },
                 new Label
                 {
                     Text = "POSale ya está abierto",

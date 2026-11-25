@@ -7,7 +7,19 @@
     <ScrollView>
         <VerticalStackLayout Padding="20,32" Spacing="12">
 
-            <Label Text="Configuración inicial de POSale"
+            <HorizontalStackLayout Spacing="10">
+                <Image Source="posale_logo.png"
+                       WidthRequest="40"
+                       HeightRequest="40"
+                       Aspect="AspectFit"
+                       VerticalOptions="Center" />
+                <Label Text="POSale"
+                       FontSize="28"
+                       FontAttributes="Bold"
+                       VerticalOptions="Center"
+                       TextColor="{AppThemeBinding Light={StaticResource Primary}, Dark={StaticResource PrimaryDark}}" />
+            </HorizontalStackLayout>
+            <Label Text="Configuración inicial"
                    Style="{StaticResource TituloPagina}" />
             <Label Text="Datos de la tienda y PIN del dueño. Puedes ajustarlos después; el PIN no se puede recuperar, anótalo."
                    Style="{StaticResource TextoNota}"

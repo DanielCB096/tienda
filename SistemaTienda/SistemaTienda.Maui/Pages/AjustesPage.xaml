@@ -145,10 +145,18 @@
                     Clicked="OnCerrarSesionClicked"
                     Margin="0,8,0,0" />
 
-            <Label Text="POSale 0.1 · 100 % local, sin conexión a internet."
-                   Style="{StaticResource TextoNota}"
-                   HorizontalTextAlignment="Center"
-                   Margin="0,8,0,0" />
+            <HorizontalStackLayout HorizontalOptions="Center"
+                                   Spacing="6"
+                                   Margin="0,8,0,0">
+                <Image Source="posale_logo.png"
+                       WidthRequest="22"
+                       HeightRequest="22"
+                       Aspect="AspectFit"
+                       VerticalOptions="Center" />
+                <Label Text="POSale 0.1 · 100 % local, sin conexión a internet."
+                       Style="{StaticResource TextoNota}"
+                       VerticalOptions="Center" />
+            </HorizontalStackLayout>
         </VerticalStackLayout>
     </ScrollView>
 
