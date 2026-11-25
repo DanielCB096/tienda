@@ -17,6 +17,14 @@ Cada entrada tiene formato:
 
 ---
 
+## 2026-11-25 — Bitácora atómica (H4.2)
+
+- **Modificado**: la bitácora de venta, anulación, abono, gasto, movimiento de caja, corte, compra y pago se escribe dentro de la misma transacción que la operación.
+- **Modificado**: si la bitácora falla, la operación se revierte; ya no quedan movimientos de dinero sin auditoría.
+- **Agregado**: `DatabaseTools.AgregarBitacora(conn, tx, registro)` para escribir la auditoría en una transacción abierta.
+- **Pendiente**: inventario (entrada, merma, ajuste), altas y ediciones, usuarios, configuración y respaldos.
+- Ver [ADR-007](../../SistemaMaestro/docs/07-decisiones/ADR-007-bitacora-transaccion.md).
+
 ## 2026-11-25 — Caracterización de caja y reportes (H4)
 
 - **Agregado**: 5 pruebas de caracterización de caja y reportes con un escenario completo: ventas efectivo/tarjeta/mixto/fiado, abono, ingreso, retiro y gastos.

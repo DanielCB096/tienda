@@ -795,6 +795,30 @@ public class DatabaseTools
 
     // ---------- Bitácora ----------
 
+    /// <summary>
+    /// Inserta la bitácora dentro de una transacción ya abierta para que la
+    /// operación y su auditoría sean atómicas.
+    /// </summary>
+    public static void AgregarBitacora(SqliteConnection conn, SqliteTransaction tx,
+        RegistroBitacora registro)
+    {
+        using var cmd = conn.CreateCommand();
+        cmd.Transaction = tx;
+        cmd.CommandText = @"
+            INSERT INTO Bitacora
+                (Fecha, Usuario, Accion, Entidad, EntidadId, DatosAntes, DatosDespues, Motivo)
+            VALUES (@fecha, @usuario, @accion, @entidad, @entidadId, @antes, @despues, @motivo);";
+        cmd.Parameters.AddWithValue("@fecha", registro.Fecha == default ? DateTime.Now : registro.Fecha);
+        cmd.Parameters.AddWithValue("@usuario", registro.Usuario ?? string.Empty);
+        cmd.Parameters.AddWithValue("@accion", registro.Accion ?? string.Empty);
+        cmd.Parameters.AddWithValue("@entidad", registro.Entidad ?? string.Empty);
+        cmd.Parameters.AddWithValue("@entidadId", registro.EntidadId ?? string.Empty);
+        cmd.Parameters.AddWithValue("@antes", registro.DatosAntes ?? string.Empty);
+        cmd.Parameters.AddWithValue("@despues", registro.DatosDespues ?? string.Empty);
+        cmd.Parameters.AddWithValue("@motivo", registro.Motivo ?? string.Empty);
+        cmd.ExecuteNonQuery();
+    }
+
     public int AgregarBitacora(RegistroBitacora registro)
     {
         using var conn = CreateConnection();
@@ -844,11 +868,13 @@ public class DatabaseTools
 
     // ---------- Gastos ----------
 
-    public int AgregarGasto(Gasto gasto)
+    public int AgregarGasto(Gasto gasto, RegistroBitacora auditoria = null)
     {
         using var conn = CreateConnection();
         conn.Open();
+        using var tx = conn.BeginTransaction();
         using var cmd = conn.CreateCommand();
+        cmd.Transaction = tx;
         cmd.CommandText = @"
             INSERT INTO Gastos (Concepto, Monto, Fecha, MetodoPago, Origen, Observaciones)
             VALUES (@concepto, @monto, @fecha, @metodo, @origen, @obs);
@@ -861,6 +887,14 @@ public class DatabaseTools
         cmd.Parameters.AddWithValue("@obs", gasto.Observaciones ?? string.Empty);
 
         gasto.Id = Convert.ToInt32(cmd.ExecuteScalar(), CultureInfo.InvariantCulture);
+
+        if (auditoria != null)
+        {
+            auditoria.EntidadId = gasto.Id.ToString(CultureInfo.InvariantCulture);
+            AgregarBitacora(conn, tx, auditoria);
+        }
+
+        tx.Commit();
         return gasto.Id;
     }
 
@@ -987,7 +1021,8 @@ public class DatabaseTools
     /// El historial permite reconstruir el efectivo recibido por periodo.
     /// </summary>
     public bool RegistrarAbonoFiado(int clienteId, long monto, long nuevoSaldo,
-        string usuario, string metodoPago = MetodoPagoAbono.Efectivo)
+        string usuario, string metodoPago = MetodoPagoAbono.Efectivo,
+        RegistroBitacora auditoria = null)
     {
         using var conn = CreateConnection();
         conn.Open();
@@ -1022,6 +1057,12 @@ public class DatabaseTools
             insert.Parameters.AddWithValue("@metodo", metodoPago ?? MetodoPagoAbono.Efectivo);
             insert.Parameters.AddWithValue("@usuario", usuario ?? string.Empty);
             insert.ExecuteNonQuery();
+        }
+
+        if (auditoria != null)
+        {
+            auditoria.EntidadId = clienteId.ToString(CultureInfo.InvariantCulture);
+            AgregarBitacora(conn, tx, auditoria);
         }
 
         tx.Commit();
@@ -1106,7 +1147,7 @@ public class DatabaseTools
     /// </summary>
     public ResultadoPagoProveedor RegistrarPagoProveedor(int proveedorId, string nombreProveedor,
         long monto, long saldoAnterior, long nuevoSaldo, string usuario, string metodoPago,
-        bool generarRetiroCaja)
+        bool generarRetiroCaja, RegistroBitacora auditoria = null)
     {
         using var conn = CreateConnection();
         conn.Open();
@@ -1168,6 +1209,16 @@ public class DatabaseTools
             insert.ExecuteNonQuery();
         }
 
+        if (auditoria != null)
+        {
+            auditoria.EntidadId = proveedorId.ToString(CultureInfo.InvariantCulture);
+            var detalle = $"Metodo={metodoPago};Pago={Dinero.Formatear(monto)}";
+            if (movimientoCajaId.HasValue)
+                detalle += $";RetiroCaja={movimientoCajaId.Value}";
+            auditoria.DatosDespues = $"Saldo={Dinero.Formatear(nuevoSaldo)};{detalle}";
+            AgregarBitacora(conn, tx, auditoria);
+        }
+
         tx.Commit();
         return new ResultadoPagoProveedor(true, movimientoCajaId);
     }
@@ -1205,7 +1256,8 @@ public class DatabaseTools
     /// del catálogo al último costo y suma el total al saldo del proveedor.
     /// </summary>
     public ProcessResult<CompraProveedor> RegistrarCompraProveedor(int proveedorId,
-        IReadOnlyList<CompraProveedorLinea> lineas, string usuario, string observaciones)
+        IReadOnlyList<CompraProveedorLinea> lineas, string usuario, string observaciones,
+        RegistroBitacora auditoria = null)
     {
         if (lineas == null || lineas.Count == 0)
             return ProcessResult<CompraProveedor>.Error("La compra debe tener al menos un producto");
@@ -1369,6 +1421,15 @@ public class DatabaseTools
                 update.ExecuteNonQuery();
             }
 
+            if (auditoria != null)
+            {
+                auditoria.EntidadId = compra.Id.ToString(CultureInfo.InvariantCulture);
+                auditoria.DatosDespues =
+                    $"Compra={compra.Id};Saldo={Dinero.Formatear(compra.SaldoNuevo)};" +
+                    $"Total={Dinero.Formatear(compra.Total)};Renglones={lineas.Count}";
+                AgregarBitacora(conn, tx, auditoria);
+            }
+
             compra.Lineas = lineas.ToList();
             tx.Commit();
             return ProcessResult<CompraProveedor>.OK(compra, $"Compra #{compra.Id} registrada");
@@ -1387,7 +1448,8 @@ public class DatabaseTools
     /// Guarda la venta, sus líneas, los movimientos de inventario y el saldo de fiado
     /// en una sola transacción. Si falta stock o se excede el crédito, no se guarda nada.
     /// </summary>
-    public ProcessResult RegistrarVenta(Venta venta, IReadOnlyList<VentaLinea> lineas)
+    public ProcessResult RegistrarVenta(Venta venta, IReadOnlyList<VentaLinea> lineas,
+        RegistroBitacora auditoria = null)
     {
         using var conn = CreateConnection();
         conn.Open();
@@ -1468,6 +1530,12 @@ public class DatabaseTools
                     tx.Rollback();
                     return ProcessResult.Error(errorFiado);
                 }
+            }
+
+            if (auditoria != null)
+            {
+                auditoria.EntidadId = ventaId.ToString(CultureInfo.InvariantCulture);
+                AgregarBitacora(conn, tx, auditoria);
             }
 
             tx.Commit();
@@ -1569,7 +1637,8 @@ public class DatabaseTools
     /// el stock con el costo congelado y revierte el fiado. No permite anular una venta
     /// que ya quedó incluida en un corte de caja cerrado.
     /// </summary>
-    public ProcessResult AnularVenta(int ventaId, string usuario, string motivo)
+    public ProcessResult AnularVenta(int ventaId, string usuario, string motivo,
+        RegistroBitacora auditoria = null)
     {
         using var conn = CreateConnection();
         conn.Open();
@@ -1677,6 +1746,12 @@ public class DatabaseTools
                 cmd.Parameters.AddWithValue("@fiado", venta.PagoFiado);
                 cmd.Parameters.AddWithValue("@id", venta.ClienteId.Value);
                 cmd.ExecuteNonQuery();
+            }
+
+            if (auditoria != null)
+            {
+                auditoria.EntidadId = ventaId.ToString(CultureInfo.InvariantCulture);
+                AgregarBitacora(conn, tx, auditoria);
             }
 
             tx.Commit();
@@ -1834,7 +1909,8 @@ public class DatabaseTools
     /// por denominaciones, su suma debe coincidir con el efectivo contado.
     /// </summary>
     public ProcessResult<CorteCaja> RegistrarCorteCaja(long efectivoContado, long fondoInicial,
-        string usuario, string observaciones, IReadOnlyList<CorteCajaDesglose> desglose = null)
+        string usuario, string observaciones, IReadOnlyList<CorteCajaDesglose> desglose = null,
+        RegistroBitacora auditoria = null)
     {
         var renglones = desglose?.ToList() ?? new List<CorteCajaDesglose>();
         if (desglose != null)
@@ -1940,6 +2016,20 @@ public class DatabaseTools
 
         corte.Desglose = renglones;
 
+        if (auditoria != null)
+        {
+            auditoria.EntidadId = corte.Id.ToString(CultureInfo.InvariantCulture);
+            auditoria.DatosDespues =
+                $"Esperado={Dinero.Formatear(corte.EfectivoEsperado)};" +
+                $"Contado={Dinero.Formatear(corte.EfectivoContado)};" +
+                $"Diferencia={Dinero.Formatear(corte.Diferencia)};" +
+                (corte.Desglose.Count == 0
+                    ? "Desglose=No"
+                    : "Desglose=" + string.Join(", ", corte.Desglose.Select(
+                        d => $"{ConteoEfectivo.Etiqueta(d.ValorCentavos)}x{d.Cantidad}")));
+            AgregarBitacora(conn, tx, auditoria);
+        }
+
         tx.Commit();
         return ProcessResult<CorteCaja>.OK(corte, $"Corte #{corte.Id} registrado");
     }
@@ -1978,11 +2068,14 @@ public class DatabaseTools
             ORDER BY ValorCentavos DESC",
             new SqliteParameter("@corte", corteCajaId));
 
-    public int RegistrarMovimientoCaja(MovimientoCaja movimiento)
+    public int RegistrarMovimientoCaja(MovimientoCaja movimiento,
+        RegistroBitacora auditoria = null)
     {
         using var conn = CreateConnection();
         conn.Open();
+        using var tx = conn.BeginTransaction();
         using var cmd = conn.CreateCommand();
+        cmd.Transaction = tx;
         cmd.CommandText = @"
             INSERT INTO MovimientosCaja (Fecha, Tipo, Monto, Motivo, Usuario)
             VALUES (@fecha, @tipo, @monto, @motivo, @usuario);
@@ -1994,6 +2087,14 @@ public class DatabaseTools
         cmd.Parameters.AddWithValue("@usuario", movimiento.Usuario ?? string.Empty);
 
         movimiento.Id = Convert.ToInt32(cmd.ExecuteScalar(), CultureInfo.InvariantCulture);
+
+        if (auditoria != null)
+        {
+            auditoria.EntidadId = movimiento.Id.ToString(CultureInfo.InvariantCulture);
+            AgregarBitacora(conn, tx, auditoria);
+        }
+
+        tx.Commit();
         return movimiento.Id;
     }
 

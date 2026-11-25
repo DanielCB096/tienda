@@ -174,15 +174,22 @@ public class VentaService
             venta.EfectivoRecibido = pago.EfectivoRecibido.Value;
         }
 
-        var guardado = _db.RegistrarVenta(venta, lineasVenta);
+        var auditoria = new RegistroBitacora
+        {
+            Fecha = DateTime.Now,
+            Usuario = usuario,
+            Accion = AccionBitacora.Venta,
+            Entidad = "Venta",
+            DatosDespues =
+                $"Total={Dinero.Formatear(venta.Total)};Costo={Dinero.Formatear(venta.CostoTotal)};" +
+                $"Metodo={venta.MetodoPago};Comision={Dinero.Formatear(venta.ComisionTarjeta)}",
+            Motivo = venta.ClienteId.HasValue ? $"Cliente={venta.ClienteId.Value}" : string.Empty
+        };
+
+        var guardado = _db.RegistrarVenta(venta, lineasVenta, auditoria);
         if (guardado.IsError)
             return ProcessResult<Venta>.Error(guardado.Message);
 
-        _bitacora.Registrar(AccionBitacora.Venta, "Venta", venta.Id.ToString(),
-            string.Empty,
-            $"Total={Dinero.Formatear(venta.Total)};Costo={Dinero.Formatear(venta.CostoTotal)};" +
-            $"Metodo={venta.MetodoPago};Comision={Dinero.Formatear(venta.ComisionTarjeta)}",
-            venta.ClienteId.HasValue ? $"Cliente={venta.ClienteId.Value}" : string.Empty);
         return ProcessResult<Venta>.OK(venta, guardado.Message);
     }
 
@@ -222,16 +229,19 @@ public class VentaService
         if (venta.Anulada)
             return ProcessResult.Error($"La venta #{ventaId} ya está anulada");
 
-        var resultado = _db.AnularVenta(ventaId, usuario.Trim(), motivo.Trim());
-        if (resultado.IsError)
-            return resultado;
+        var auditoria = new RegistroBitacora
+        {
+            Fecha = DateTime.Now,
+            Usuario = usuario.Trim(),
+            Accion = AccionBitacora.AnulacionVenta,
+            Entidad = "Venta",
+            DatosAntes = $"Total={Dinero.Formatear(venta.Total)};Metodo={venta.MetodoPago};" +
+                         $"PagoFiado={Dinero.Formatear(venta.PagoFiado)}" +
+                         (venta.ClienteId.HasValue ? $";Cliente={venta.ClienteId.Value}" : string.Empty),
+            DatosDespues = "Anulada",
+            Motivo = motivo.Trim()
+        };
 
-        _bitacora.Registrar(AccionBitacora.AnulacionVenta, "Venta", ventaId.ToString(),
-            $"Total={Dinero.Formatear(venta.Total)};Metodo={venta.MetodoPago};" +
-            $"PagoFiado={Dinero.Formatear(venta.PagoFiado)}" +
-            (venta.ClienteId.HasValue ? $";Cliente={venta.ClienteId.Value}" : string.Empty),
-            "Anulada",
-            motivo.Trim());
-        return resultado;
+        return _db.AnularVenta(ventaId, usuario.Trim(), motivo.Trim(), auditoria);
     }
 }

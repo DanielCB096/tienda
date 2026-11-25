@@ -424,10 +424,17 @@ public class ConfiguracionService
 
         try
         {
-            _db.AgregarGasto(nuevoGasto);
-            _bitacora.Registrar(AccionBitacora.Gasto, "Gasto", nuevoGasto.Id.ToString(),
-                string.Empty,
-                $"Concepto={nuevoGasto.Concepto};Monto={Dinero.Formatear(nuevoGasto.Monto)};Origen={nuevoGasto.Origen}");
+            var auditoria = new RegistroBitacora
+            {
+                Fecha = DateTime.Now,
+                Usuario = SesionActual.Usuario?.Nombre ?? string.Empty,
+                Accion = AccionBitacora.Gasto,
+                Entidad = "Gasto",
+                DatosDespues =
+                    $"Concepto={nuevoGasto.Concepto};Monto={Dinero.Formatear(nuevoGasto.Monto)};Origen={nuevoGasto.Origen}"
+            };
+
+            _db.AgregarGasto(nuevoGasto, auditoria);
             return ProcessResult<AgregarGastoResponse>.OK(new AgregarGastoResponse
             {
                 GastoId = nuevoGasto.Id,
@@ -674,12 +681,19 @@ public class ConfiguracionService
                 $"El abono (${Dinero.Formatear(montoAbono)}) supera el saldo pendiente (${Dinero.Formatear(cliente.SaldoActual)})");
 
         var nuevoSaldo = cliente.SaldoActual - montoAbono;
-        if (!_db.RegistrarAbonoFiado(cliente.Id, montoAbono, nuevoSaldo, usuario, metodo))
-            return ProcessResult<RegistrarAbonoResponse>.Error("No se pudo registrar el abono");
+        var auditoria = new RegistroBitacora
+        {
+            Fecha = DateTime.Now,
+            Usuario = usuario,
+            Accion = AccionBitacora.Abono,
+            Entidad = "ClienteFiado",
+            DatosAntes = $"Saldo={Dinero.Formatear(cliente.SaldoActual)}",
+            DatosDespues =
+                $"Saldo={Dinero.Formatear(nuevoSaldo)};Abono={Dinero.Formatear(montoAbono)};Metodo={metodo}"
+        };
 
-        _bitacora.Registrar(AccionBitacora.Abono, "ClienteFiado", cliente.Id.ToString(),
-            $"Saldo={Dinero.Formatear(cliente.SaldoActual)}",
-            $"Saldo={Dinero.Formatear(nuevoSaldo)};Abono={Dinero.Formatear(montoAbono)};Metodo={metodo}");
+        if (!_db.RegistrarAbonoFiado(cliente.Id, montoAbono, nuevoSaldo, usuario, metodo, auditoria))
+            return ProcessResult<RegistrarAbonoResponse>.Error("No se pudo registrar el abono");
         return ProcessResult<RegistrarAbonoResponse>.OK(new RegistrarAbonoResponse
         {
             ClienteId = cliente.Id,
@@ -930,20 +944,18 @@ public class ConfiguracionService
             });
         }
 
-        var resultado = _db.RegistrarCompraProveedor(proveedor.Id, renglones,
-            SesionActual.Usuario?.Nombre ?? string.Empty, observaciones);
+        var auditoria = new RegistroBitacora
+        {
+            Fecha = DateTime.Now,
+            Usuario = SesionActual.Usuario?.Nombre ?? string.Empty,
+            Accion = AccionBitacora.CompraProveedor,
+            Entidad = "Proveedor",
+            DatosAntes = $"Saldo={Dinero.Formatear(proveedor.SaldoPendiente)}",
+            Motivo = string.IsNullOrWhiteSpace(observaciones) ? "Compra a proveedor" : observaciones
+        };
 
-        if (resultado.IsError)
-            return resultado;
-
-        var compra = resultado.Value;
-        _bitacora.Registrar(AccionBitacora.CompraProveedor, "Proveedor", proveedor.Id.ToString(),
-            $"Saldo={Dinero.Formatear(compra.SaldoAnterior)}",
-            $"Compra={compra.Id};Saldo={Dinero.Formatear(compra.SaldoNuevo)};" +
-            $"Total={Dinero.Formatear(compra.Total)};Renglones={compra.Lineas.Count}",
-            string.IsNullOrWhiteSpace(compra.Observaciones) ? "Compra a proveedor" : compra.Observaciones);
-
-        return resultado;
+        return _db.RegistrarCompraProveedor(proveedor.Id, renglones,
+            SesionActual.Usuario?.Nombre ?? string.Empty, observaciones, auditoria);
     }
 
     public ProcessResult<RegistrarPagoProveedorResponse> RegistrarPagoProveedor(int proveedorId,
@@ -972,19 +984,20 @@ public class ConfiguracionService
         var nuevoSaldo = proveedor.SaldoPendiente - montoPago;
         var usuario = SesionActual.Usuario?.Nombre ?? string.Empty;
         var esEfectivo = metodo == MetodoPagoProveedor.Efectivo;
+        var auditoria = new RegistroBitacora
+        {
+            Fecha = DateTime.Now,
+            Usuario = usuario,
+            Accion = AccionBitacora.PagoProveedor,
+            Entidad = "Proveedor",
+            DatosAntes = $"Saldo={Dinero.Formatear(proveedor.SaldoPendiente)}"
+        };
+
         var registro = _db.RegistrarPagoProveedor(proveedor.Id, proveedor.Nombre, montoPago,
-            proveedor.SaldoPendiente, nuevoSaldo, usuario, metodo, esEfectivo);
+            proveedor.SaldoPendiente, nuevoSaldo, usuario, metodo, esEfectivo, auditoria);
 
         if (!registro.Exito)
             return ProcessResult<RegistrarPagoProveedorResponse>.Error("No se pudo registrar el pago");
-
-        var detalle = $"Metodo={metodo};Pago={Dinero.Formatear(montoPago)}";
-        if (registro.MovimientoCajaId.HasValue)
-            detalle += $";RetiroCaja={registro.MovimientoCajaId.Value}";
-
-        _bitacora.Registrar(AccionBitacora.PagoProveedor, "Proveedor", proveedor.Id.ToString(),
-            $"Saldo={Dinero.Formatear(proveedor.SaldoPendiente)}",
-            $"Saldo={Dinero.Formatear(nuevoSaldo)};{detalle}");
 
         return ProcessResult<RegistrarPagoProveedorResponse>.OK(new RegistrarPagoProveedorResponse
         {

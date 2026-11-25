@@ -63,25 +63,17 @@ public class CorteCajaService
                     $"${Dinero.Formatear(efectivoContado)}; deben coincidir");
         }
 
-        var resultado = _db.RegistrarCorteCaja(efectivoContado, fondoInicial, usuario.Trim(),
-            observaciones, conteo == null ? null : desglose.Value);
-        if (resultado.IsSuccess)
+        var auditoria = new RegistroBitacora
         {
-            var detalleDesglose = resultado.Value.Desglose.Count == 0
-                ? "Desglose=No"
-                : "Desglose=" + string.Join(", ", resultado.Value.Desglose.Select(
-                    d => $"{ConteoEfectivo.Etiqueta(d.ValorCentavos)}x{d.Cantidad}"));
+            Fecha = DateTime.Now,
+            Usuario = usuario.Trim(),
+            Accion = AccionBitacora.CorteCaja,
+            Entidad = "CorteCaja",
+            Motivo = observaciones ?? string.Empty
+        };
 
-            _bitacora.Registrar(AccionBitacora.CorteCaja, "CorteCaja", resultado.Value.Id.ToString(),
-                string.Empty,
-                $"Esperado={Dinero.Formatear(resultado.Value.EfectivoEsperado)};" +
-                $"Contado={Dinero.Formatear(resultado.Value.EfectivoContado)};" +
-                $"Diferencia={Dinero.Formatear(resultado.Value.Diferencia)};" +
-                detalleDesglose,
-                observaciones);
-        }
-
-        return resultado;
+        return _db.RegistrarCorteCaja(efectivoContado, fondoInicial, usuario.Trim(),
+            observaciones, conteo == null ? null : desglose.Value, auditoria);
     }
 
     /// <summary>Desglose guardado de un corte; vacío si se capturó con total manual.</summary>
@@ -123,10 +115,17 @@ public class CorteCajaService
             Usuario = usuario.Trim()
         };
 
-        _db.RegistrarMovimientoCaja(movimiento);
-        _bitacora.Registrar(AccionBitacora.MovimientoCaja, "MovimientoCaja", movimiento.Id.ToString(),
-            string.Empty,
-            $"Tipo={movimiento.Tipo};Monto={Dinero.Formatear(movimiento.Monto)}", movimiento.Motivo);
+        var auditoria = new RegistroBitacora
+        {
+            Fecha = DateTime.Now,
+            Usuario = movimiento.Usuario,
+            Accion = AccionBitacora.MovimientoCaja,
+            Entidad = "MovimientoCaja",
+            DatosDespues = $"Tipo={movimiento.Tipo};Monto={Dinero.Formatear(movimiento.Monto)}",
+            Motivo = movimiento.Motivo
+        };
+
+        _db.RegistrarMovimientoCaja(movimiento, auditoria);
         return ProcessResult<MovimientoCaja>.OK(movimiento,
             $"{tipo} de ${Dinero.Formatear(movimiento.Monto)} registrado");
     }
