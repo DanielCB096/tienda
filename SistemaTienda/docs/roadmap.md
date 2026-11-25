@@ -1,13 +1,13 @@
 # Roadmap
 
-Estado al 2026-11-22. T1–T41 están integradas o en PR; T41 (IVA incluido) está en `feat/impuesto-incluido` y T42 (bitácora en Ajustes) en `feat/bitacora-ajustes`. La suite queda en 368 pruebas. Orden sugerido en [CLAUDE-tienda.md §13](../CLAUDE-tienda.md).
+Estado al 2026-11-25. T1–T42 y H1–H5 están integrados en `main`; H6.1 (importación con vista previa y lotes) está en curso. La suite queda en 468 pruebas. Orden sugerido en [CLAUDE-tienda.md §13](../CLAUDE-tienda.md).
 
 ## Avance por módulo
 
 | # | Módulo | Estado | Notas |
 |---|--------|--------|-------|
 | 1 | Configuración y usuarios | ✅ Base implementada | Asistente, PIN hasheado, roles, gastos, bitácora inmutable y permisos en servicios; edición de la configuración global y gestión de usuarios/PIN desde Ajustes (solo dueño). El impuesto configurado se usa como predeterminado del producto y se desglosa como IVA incluido |
-| 2 | Catálogo e inventario | ✅ Base implementada | Alta/edición, movimientos, stock bajo, búsqueda, escaneo, historial, valorizado, desactivación (v7) e importación CSV/XLSX; operación desde la app MAUI. Falta filtro por categoría |
+| 2 | Catálogo e inventario | ✅ Base implementada | Alta/edición, movimientos, stock bajo, búsqueda, escaneo, historial, valorizado, desactivación (v7), importación CSV/XLSX con vista previa, lotes y reversión (v18); operación desde la app MAUI. Falta filtro por categoría |
 | 3 | Ventas / POS | ✅ Base implementada | Venta multi-línea atómica, efectivo/tarjeta/mixto/fiado, costo y precio congelados, IVA incluido congelado por línea (v14), comisión, efectivo recibido guardado para reimprimir el cambio (v12), ticket de texto con QR informativo compartible como texto o imagen PNG y anulación completa con reverso; POS, detalle, reimpresión y anulación en MAUI. Descuentos quedan para Fase 2 |
 | 4 | Mermas | 🟡 Parcial | Descuenta stock y reporta costo; el historial sale de movimientos |
 | 5 | Gastos y pagos | 🟡 Parcial | Gastos simples con resumen por origen, historial y alta en la app; pagos al personal no existen |

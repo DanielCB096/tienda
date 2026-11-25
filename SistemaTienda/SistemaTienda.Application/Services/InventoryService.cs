@@ -61,19 +61,80 @@ public class InventoryService
         return ProcessResult.Success("Producto agregado correctamente");
     }
 
-    public ProcessResult<ResultadoImportacionProductos> ImportarProductosCsv(
+    public ProcessResult<VistaPreviaImportacion> PrevisualizarProductosCsv(
         Stream archivo, decimal impuestoPredeterminado)
+    {
+        var autorizacion = Autorizar(PermisoSistema.EditarProducto);
+        if (autorizacion.IsError)
+            return ProcessResult<VistaPreviaImportacion>.Error(autorizacion.Message);
+
+        var filas = LeerFilasCsv(archivo, impuestoPredeterminado);
+        if (filas.IsError)
+            return ProcessResult<VistaPreviaImportacion>.Error(filas.Message);
+
+        return ProcessResult<VistaPreviaImportacion>.OK(CrearVista(filas.Value));
+    }
+
+    public ProcessResult<VistaPreviaImportacion> PrevisualizarProductosXlsx(
+        Stream archivo, decimal impuestoPredeterminado)
+    {
+        var autorizacion = Autorizar(PermisoSistema.EditarProducto);
+        if (autorizacion.IsError)
+            return ProcessResult<VistaPreviaImportacion>.Error(autorizacion.Message);
+
+        var filas = LeerFilasXlsx(archivo, impuestoPredeterminado);
+        if (filas.IsError)
+            return ProcessResult<VistaPreviaImportacion>.Error(filas.Message);
+
+        return ProcessResult<VistaPreviaImportacion>.OK(CrearVista(filas.Value));
+    }
+
+    public ProcessResult<ResultadoImportacionProductos> ImportarProductosCsv(
+        Stream archivo, decimal impuestoPredeterminado, string nombreArchivo = null)
     {
         var autorizacion = Autorizar(PermisoSistema.EditarProducto);
         if (autorizacion.IsError)
             return ProcessResult<ResultadoImportacionProductos>.Error(autorizacion.Message);
 
+        if (archivo == null || !archivo.CanRead)
+            return ProcessResult<ResultadoImportacionProductos>.Error("No se puede leer el archivo.");
+
+        var contenido = LeerBytes(archivo);
+        var filas = LeerFilasCsv(new MemoryStream(contenido), impuestoPredeterminado);
+        if (filas.IsError)
+            return ProcessResult<ResultadoImportacionProductos>.Error(filas.Message);
+
+        return AplicarImportacion(filas.Value, nombreArchivo ?? "importacion.csv",
+            HashArchivo(contenido));
+    }
+
+    public ProcessResult<ResultadoImportacionProductos> ImportarProductosXlsx(
+        Stream archivo, decimal impuestoPredeterminado, string nombreArchivo = null)
+    {
+        var autorizacion = Autorizar(PermisoSistema.EditarProducto);
+        if (autorizacion.IsError)
+            return ProcessResult<ResultadoImportacionProductos>.Error(autorizacion.Message);
+
+        if (archivo == null || !archivo.CanRead)
+            return ProcessResult<ResultadoImportacionProductos>.Error("No se puede leer el archivo.");
+
+        var contenido = LeerBytes(archivo);
+        var filas = LeerFilasXlsx(new MemoryStream(contenido), impuestoPredeterminado);
+        if (filas.IsError)
+            return ProcessResult<ResultadoImportacionProductos>.Error(filas.Message);
+
+        return AplicarImportacion(filas.Value, nombreArchivo ?? "importacion.xlsx",
+            HashArchivo(contenido));
+    }
+
+    private ProcessResult<List<FilaImportacionProducto>> LeerFilasCsv(
+        Stream archivo, decimal impuestoPredeterminado)
+    {
         var validacion = ValidarImportacion(archivo, impuestoPredeterminado);
         if (validacion.IsError)
-            return ProcessResult<ResultadoImportacionProductos>.Error(validacion.Message);
+            return ProcessResult<List<FilaImportacionProducto>>.Error(validacion.Message);
 
         var filas = new List<FilaImportacionProducto>();
-        string[] encabezados;
         TextFieldParser parser = null;
 
         try
@@ -89,13 +150,13 @@ public class InventoryService
                 parser.SetDelimiters(",");
 
                 if (parser.EndOfData)
-                    return ProcessResult<ResultadoImportacionProductos>.Error(
+                    return ProcessResult<List<FilaImportacionProducto>>.Error(
                         "El archivo CSV está vacío.");
 
-                encabezados = parser.ReadFields() ?? Array.Empty<string>();
+                var encabezados = parser.ReadFields() ?? Array.Empty<string>();
                 var columnas = CrearMapaColumnas(encabezados);
                 if (columnas.IsError)
-                    return ProcessResult<ResultadoImportacionProductos>.Error(columnas.Message);
+                    return ProcessResult<List<FilaImportacionProducto>>.Error(columnas.Message);
 
                 var indices = columnas.Value;
                 var numeroFilas = 0;
@@ -121,39 +182,35 @@ public class InventoryService
                 }
 
                 if (numeroFilas == 0)
-                    return ProcessResult<ResultadoImportacionProductos>.Error(
+                    return ProcessResult<List<FilaImportacionProducto>>.Error(
                         "El archivo CSV no contiene filas de productos.");
             }
         }
         catch (MalformedLineException ex)
         {
-            return ProcessResult<ResultadoImportacionProductos>.Error(
+            return ProcessResult<List<FilaImportacionProducto>>.Error(
                 $"El CSV está mal formado cerca de la línea {parser.ErrorLineNumber}: {ex.Message}");
         }
         catch (DecoderFallbackException)
         {
-            return ProcessResult<ResultadoImportacionProductos>.Error(
+            return ProcessResult<List<FilaImportacionProducto>>.Error(
                 "El archivo no tiene una codificación UTF-8 válida.");
         }
         catch (OverflowException)
         {
-            return ProcessResult<ResultadoImportacionProductos>.Error(
+            return ProcessResult<List<FilaImportacionProducto>>.Error(
                 "El archivo contiene un número de fila fuera del rango permitido.");
         }
 
-        return ImportarFilas(filas);
+        return ProcessResult<List<FilaImportacionProducto>>.OK(filas);
     }
 
-    public ProcessResult<ResultadoImportacionProductos> ImportarProductosXlsx(
+    private ProcessResult<List<FilaImportacionProducto>> LeerFilasXlsx(
         Stream archivo, decimal impuestoPredeterminado)
     {
-        var autorizacion = Autorizar(PermisoSistema.EditarProducto);
-        if (autorizacion.IsError)
-            return ProcessResult<ResultadoImportacionProductos>.Error(autorizacion.Message);
-
         var validacion = ValidarImportacion(archivo, impuestoPredeterminado);
         if (validacion.IsError)
-            return ProcessResult<ResultadoImportacionProductos>.Error(validacion.Message);
+            return ProcessResult<List<FilaImportacionProducto>>.Error(validacion.Message);
 
         HojaProductosXlsx hoja;
         try
@@ -162,18 +219,18 @@ public class InventoryService
         }
         catch (InvalidDataException ex)
         {
-            return ProcessResult<ResultadoImportacionProductos>.Error(
+            return ProcessResult<List<FilaImportacionProducto>>.Error(
                 $"El archivo XLSX no es válido: {ex.Message}");
         }
         catch (IOException)
         {
-            return ProcessResult<ResultadoImportacionProductos>.Error(
+            return ProcessResult<List<FilaImportacionProducto>>.Error(
                 "No se pudo leer el archivo XLSX.");
         }
 
         var columnas = CrearMapaColumnas(hoja.Encabezados);
         if (columnas.IsError)
-            return ProcessResult<ResultadoImportacionProductos>.Error(columnas.Message);
+            return ProcessResult<List<FilaImportacionProducto>>.Error(columnas.Message);
 
         var filas = new List<FilaImportacionProducto>();
         foreach (var filaExcel in hoja.Filas)
@@ -206,26 +263,13 @@ public class InventoryService
         }
 
         if (filas.Count == 0)
-            return ProcessResult<ResultadoImportacionProductos>.Error(
+            return ProcessResult<List<FilaImportacionProducto>>.Error(
                 "La primera hoja no contiene filas de productos.");
 
-        return ImportarFilas(filas);
+        return ProcessResult<List<FilaImportacionProducto>>.OK(filas);
     }
 
-    private static ProcessResult ValidarImportacion(Stream archivo, decimal impuestoPredeterminado)
-    {
-        if (archivo == null || !archivo.CanRead)
-            return ProcessResult.Error("No se puede leer el archivo.");
-
-        if (impuestoPredeterminado < 0 || impuestoPredeterminado > 100)
-            return ProcessResult.Error(
-                "El impuesto predeterminado debe estar entre 0 y 100.");
-
-        return ProcessResult.Success(string.Empty);
-    }
-
-    private ProcessResult<ResultadoImportacionProductos> ImportarFilas(
-        List<FilaImportacionProducto> filas)
+    private VistaPreviaImportacion CrearVista(List<FilaImportacionProducto> filas)
     {
         AgregarErroresPorDuplicados(filas);
         var codigosExistentes = ObtenerProductos()
@@ -239,33 +283,135 @@ public class InventoryService
                 fila.Errores.Add("El código de barras ya existe en el catálogo.");
         }
 
-        var importados = 0;
-        var errores = new List<ErrorImportacionProducto>();
-        foreach (var fila in filas)
-        {
-            if (fila.Errores.Count == 0 && fila.Producto != null)
-            {
-                var resultado = AgregarProducto(fila.Producto);
-                if (resultado.IsSuccess)
-                    importados++;
-                else
-                    fila.Errores.Add(resultado.Message);
-            }
+        var validas = filas
+            .Where(fila => fila.Errores.Count == 0 && fila.Producto != null)
+            .ToList();
 
-            if (fila.Errores.Count > 0)
-                errores.Add(new ErrorImportacionProducto(
-                    fila.NumeroFila, string.Join(" ", fila.Errores)));
+        var errores = filas
+            .Where(fila => fila.Errores.Count > 0)
+            .Select(fila => new ErrorImportacionProducto(
+                fila.NumeroFila, string.Join(" ", fila.Errores)))
+            .ToList();
+
+        return new VistaPreviaImportacion
+        {
+            FilasLeidas = filas.Count,
+            FilasValidas = validas.Count,
+            FilasOmitidas = errores.Count,
+            Errores = errores,
+            Muestra = validas.Take(20).Select(fila => new FilaVistaPreviaImportacion
+            {
+                NumeroFila = fila.NumeroFila,
+                CodigoBarras = fila.Producto.CodigoBarras,
+                Nombre = fila.Producto.Nombre,
+                Precio = fila.Producto.Precio,
+                Stock = fila.Producto.Stock
+            }).ToList()
+        };
+    }
+
+    private ProcessResult<ResultadoImportacionProductos> AplicarImportacion(
+        List<FilaImportacionProducto> filas, string nombreArchivo, string hashArchivo)
+    {
+        var vista = CrearVista(filas);
+        if (vista.FilasValidas == 0)
+        {
+            var detalle = vista.Errores.Count > 0
+                ? " " + string.Join(" ", vista.Errores.Take(3)
+                    .Select(error => $"Fila {error.NumeroFila}: {error.Mensaje}"))
+                : string.Empty;
+            return ProcessResult<ResultadoImportacionProductos>.Error(
+                "Ninguna fila es válida; no se importó nada." + detalle);
         }
 
-        var reporte = new ResultadoImportacionProductos
+        var productos = filas
+            .Where(fila => fila.Errores.Count == 0 && fila.Producto != null)
+            .Select(fila => fila.Producto)
+            .ToList();
+
+        var auditoria = new RegistroBitacora
         {
-            ProductosImportados = importados,
-            Errores = errores
+            Fecha = DateTime.Now,
+            Usuario = SesionActual.Usuario?.Nombre ?? string.Empty,
+            Accion = AccionBitacora.ImportacionProductos,
+            Entidad = "Importacion",
+            Motivo = nombreArchivo
         };
-        var resumen = $"Se importaron {importados} producto(s) y se omitieron " +
-                      $"{errores.Count} fila(s).";
-        return ProcessResult<ResultadoImportacionProductos>.OK(reporte, resumen);
+
+        var guardado = _db.ImportarProductos(productos, nombreArchivo, hashArchivo,
+            SesionActual.Usuario?.Nombre ?? string.Empty, vista.FilasLeidas,
+            vista.FilasOmitidas, auditoria);
+        if (guardado.IsError)
+            return ProcessResult<ResultadoImportacionProductos>.Error(guardado.Message);
+
+        var resumen = $"Se importaron {guardado.Value.ProductosInsertados} producto(s) y " +
+                      $"se omitieron {vista.FilasOmitidas} fila(s). Lote #{guardado.Value.Id}.";
+        return ProcessResult<ResultadoImportacionProductos>.OK(new ResultadoImportacionProductos
+        {
+            ProductosImportados = guardado.Value.ProductosInsertados,
+            FilasOmitidas = vista.FilasOmitidas,
+            ImportacionId = guardado.Value.Id,
+            Errores = vista.Errores
+        }, resumen);
     }
+
+    /// <summary>
+    /// Revierte un lote completo. Es exclusivo del dueño: devuelve el stock con
+    /// ajustes compensatorios y desactiva los productos sin borrar historial.
+    /// </summary>
+    public ProcessResult RevertirImportacion(int importacionId)
+    {
+        var autorizacion = Autorizar(PermisoSistema.DesactivarProducto);
+        if (autorizacion.IsError)
+            return autorizacion;
+
+        var importacion = _db.ObtenerImportacion(importacionId);
+        if (importacion == null)
+            return ProcessResult.Error($"La importación #{importacionId} no existe");
+
+        var auditoria = new RegistroBitacora
+        {
+            Fecha = DateTime.Now,
+            Usuario = SesionActual.Usuario?.Nombre ?? string.Empty,
+            Accion = AccionBitacora.ReversionImportacion,
+            Entidad = "Importacion",
+            EntidadId = importacionId.ToString()
+        };
+
+        return _db.RevertirImportacion(importacionId,
+            SesionActual.Usuario?.Nombre ?? string.Empty, auditoria);
+    }
+
+    public List<Importacion> ObtenerImportaciones(int limite = 50)
+    {
+        var autorizacion = Autorizar(PermisoSistema.EditarProducto);
+        return autorizacion.IsError ? new List<Importacion>() : _db.ObtenerImportaciones(limite);
+    }
+
+    public Importacion ObtenerImportacion(int importacionId) =>
+        _db.ObtenerImportacion(importacionId);
+
+    private static ProcessResult ValidarImportacion(Stream archivo, decimal impuestoPredeterminado)
+    {
+        if (archivo == null || !archivo.CanRead)
+            return ProcessResult.Error("No se puede leer el archivo.");
+
+        if (impuestoPredeterminado < 0 || impuestoPredeterminado > 100)
+            return ProcessResult.Error(
+                "El impuesto predeterminado debe estar entre 0 y 100.");
+
+        return ProcessResult.Success(string.Empty);
+    }
+
+    private static byte[] LeerBytes(Stream archivo)
+    {
+        using var copia = new MemoryStream();
+        archivo.CopyTo(copia);
+        return copia.ToArray();
+    }
+
+    private static string HashArchivo(byte[] contenido) =>
+        Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(contenido));
 
     private static ProcessResult<Dictionary<string, int>> CrearMapaColumnas(string[] encabezados)
     {

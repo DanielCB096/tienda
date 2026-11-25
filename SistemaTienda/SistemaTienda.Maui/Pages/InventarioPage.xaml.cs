@@ -82,6 +82,8 @@ public partial class InventarioPage : ContentPage
         var puedeConsultar = AutorizacionService.Puede(usuario, PermisoSistema.Consultar);
 
         ImportarArchivoButton.IsVisible = _puedeEditar;
+        PlantillaButton.IsVisible = _puedeEditar;
+        LotesButton.IsVisible = _puedeDesactivar;
         NuevoProductoButton.IsVisible = _puedeEditar;
         EditarButton.IsVisible = _puedeEditar;
         EntradaButton.IsVisible = _puedeEntrada;
@@ -418,13 +420,65 @@ public partial class InventarioPage : ContentPage
         ImportarArchivoButton.IsEnabled = false;
         try
         {
-            using var stream = await archivo.OpenReadAsync();
+            var contenido = await LeerBytesAsync(archivo);
+
+            var vista = await Task.Run(() =>
+            {
+                _sesion.Aplicar();
+                using var memoria = new MemoryStream(contenido);
+                return esXlsx
+                    ? _inventario.PrevisualizarProductosXlsx(memoria, _impuestoPredeterminado)
+                    : _inventario.PrevisualizarProductosCsv(memoria, _impuestoPredeterminado);
+            });
+
+            if (vista.IsError)
+            {
+                await DisplayAlertAsync("No se pudo leer el archivo", vista.Message, "Continuar");
+                return;
+            }
+
+            var resumen = $"Filas leídas: {vista.Value.FilasLeidas}.\n" +
+                          $"Se importarán: {vista.Value.FilasValidas}.\n" +
+                          $"Se omitirán: {vista.Value.FilasOmitidas}.";
+            if (vista.Value.Muestra.Count > 0)
+            {
+                resumen += Environment.NewLine + Environment.NewLine + "Primeras filas:";
+                resumen += Environment.NewLine + string.Join(Environment.NewLine,
+                    vista.Value.Muestra.Take(5).Select(fila =>
+                        $"Fila {fila.NumeroFila}: {fila.CodigoBarras} · {fila.Nombre}"));
+            }
+
+            if (vista.Value.Errores.Count > 0)
+            {
+                resumen += Environment.NewLine + Environment.NewLine + "Errores:";
+                resumen += Environment.NewLine + string.Join(Environment.NewLine,
+                    vista.Value.Errores.Take(5).Select(error =>
+                        $"Fila {error.NumeroFila}: {error.Mensaje}"));
+                if (vista.Value.Errores.Count > 5)
+                    resumen += Environment.NewLine +
+                        $"… y {vista.Value.Errores.Count - 5} error(es) más.";
+            }
+
+            if (vista.Value.FilasValidas == 0)
+            {
+                await DisplayAlertAsync("Nada que importar", resumen, "Continuar");
+                return;
+            }
+
+            var confirmar = await DisplayAlertAsync("Vista previa de importación", resumen,
+                $"Importar {vista.Value.FilasValidas}", "Cancelar");
+            if (!confirmar)
+                return;
+
             var resultado = await Task.Run(() =>
             {
                 _sesion.Aplicar();
+                using var memoria = new MemoryStream(contenido);
                 return esXlsx
-                    ? _inventario.ImportarProductosXlsx(stream, _impuestoPredeterminado)
-                    : _inventario.ImportarProductosCsv(stream, _impuestoPredeterminado);
+                    ? _inventario.ImportarProductosXlsx(memoria, _impuestoPredeterminado,
+                        archivo.FileName)
+                    : _inventario.ImportarProductosCsv(memoria, _impuestoPredeterminado,
+                        archivo.FileName);
             });
 
             if (resultado.IsError)
@@ -433,16 +487,18 @@ public partial class InventarioPage : ContentPage
                 return;
             }
 
-            if (resultado.Value.ProductosImportados > 0)
-                CargarCatalogo(BuscarEntry.Text);
+            CargarCatalogo(BuscarEntry.Text);
 
             var errores = string.Join(Environment.NewLine,
-                resultado.Value.Errores.Select(error =>
+                resultado.Value.Errores.Take(10).Select(error =>
                     $"Fila {error.NumeroFila}: {error.Mensaje}"));
             var mensaje = string.IsNullOrEmpty(errores)
                 ? resultado.Message
                 : $"{resultado.Message}{Environment.NewLine}{Environment.NewLine}{errores}";
-            await DisplayAlertAsync("Resultado de importación", mensaje, "Continuar");
+            var verLotes = await DisplayAlertAsync("Resultado de importación", mensaje,
+                "Ver lotes", "Cerrar");
+            if (verLotes && _puedeDesactivar)
+                await AbrirLotesAsync();
         }
         catch (IOException ex)
         {
@@ -456,6 +512,43 @@ public partial class InventarioPage : ContentPage
         {
             ImportarArchivoButton.IsEnabled = true;
         }
+    }
+
+    private async void OnPlantillaClicked(object sender, EventArgs e)
+    {
+        try
+        {
+            var ruta = Path.Combine(FileSystem.CacheDirectory, PlantillaProductos.NombreArchivo);
+            await File.WriteAllBytesAsync(ruta, PlantillaProductos.ComoBytes());
+            await Share.Default.RequestAsync(new ShareFileRequest
+            {
+                Title = "Plantilla de productos",
+                File = new ShareFile(ruta)
+            });
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlertAsync("No se pudo compartir la plantilla", ex.Message, "Continuar");
+        }
+    }
+
+    private async void OnLotesClicked(object sender, EventArgs e)
+    {
+        _sesion.Aplicar();
+        await AbrirLotesAsync();
+    }
+
+    private async Task AbrirLotesAsync()
+    {
+        await Navigation.PushModalAsync(new ImportacionesPage(_inventario, _sesion));
+    }
+
+    private static async Task<byte[]> LeerBytesAsync(FileResult archivo)
+    {
+        using var stream = await archivo.OpenReadAsync();
+        using var memoria = new MemoryStream();
+        await stream.CopyToAsync(memoria);
+        return memoria.ToArray();
     }
 
     private void AbrirEditorNuevo(string? codigo = null)

@@ -68,6 +68,15 @@ Las fórmulas no se calculan: cualquier fila con una fórmula se omite y se repo
 
 Solo se admite `.xlsx`; los archivos `.xls`, las plantillas por giro y la evaluación de fórmulas quedan fuera del alcance.
 
+### Vista previa, lotes y reversión (H6.1)
+
+- Al elegir un CSV o XLSX, la app valida todas las filas y muestra leídas, válidas, omitidas y los primeros errores. Nada se escribe hasta confirmar.
+- **Plantilla**: botón que comparte un CSV con encabezados y dos ejemplos. El orden de las columnas puede cambiar; los encabezados no.
+- Cada importación queda en un lote con archivo, hash, usuario, conteos y estado; los productos y sus movimientos iniciales guardan `ImportacionId`.
+- Las filas válidas se insertan en una sola transacción: si falla la escritura, no queda ningún producto del lote.
+- **Lotes** (solo dueño) muestra el historial y permite revertir. Revertir devuelve el stock con ajustes, desactiva los productos y deja bitácora; se bloquea si el lote ya tuvo ventas, compras u otros movimientos. El historial no se borra.
+- Se rechazan códigos repetidos dentro del archivo y contra el catálogo antes de escribir.
+
 ### 2. Buscar y consultar productos
 
 1. **Métodos de búsqueda**:

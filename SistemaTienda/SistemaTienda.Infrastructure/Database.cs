@@ -742,6 +742,252 @@ public class DatabaseTools
         }
     }
 
+    /// <summary>
+    /// Inserta el lote y sus productos válidos en una sola transacción. Los
+    /// movimientos de stock inicial quedan ligados al lote para poder revertirlo.
+    /// </summary>
+    public ProcessResult<Importacion> ImportarProductos(IReadOnlyList<Producto> productos,
+        string nombreArchivo, string hashArchivo, string usuario, int filasLeidas,
+        int filasOmitidas, RegistroBitacora auditoria = null)
+    {
+        if (productos == null || productos.Count == 0)
+            return ProcessResult<Importacion>.Error(
+                "No hay filas válidas que importar.");
+
+        using var conn = CreateConnection();
+        conn.Open();
+        using var tx = conn.BeginTransaction();
+
+        try
+        {
+            int importacionId;
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.Transaction = tx;
+                cmd.CommandText = @"
+                    INSERT INTO Importaciones
+                        (Fecha, Usuario, NombreArchivo, HashArchivo, FilasLeidas,
+                         FilasValidas, FilasOmitidas, ProductosInsertados, Estado)
+                    VALUES (@fecha, @usuario, @archivo, @hash, @leidas,
+                            @validas, @omitidas, @insertados, @estado);
+                    SELECT last_insert_rowid();";
+                cmd.Parameters.AddWithValue("@fecha", DateTime.Now);
+                cmd.Parameters.AddWithValue("@usuario", usuario ?? string.Empty);
+                cmd.Parameters.AddWithValue("@archivo", nombreArchivo ?? string.Empty);
+                cmd.Parameters.AddWithValue("@hash", hashArchivo ?? string.Empty);
+                cmd.Parameters.AddWithValue("@leidas", filasLeidas);
+                cmd.Parameters.AddWithValue("@validas", productos.Count);
+                cmd.Parameters.AddWithValue("@omitidas", filasOmitidas);
+                cmd.Parameters.AddWithValue("@insertados", productos.Count);
+                cmd.Parameters.AddWithValue("@estado", EstadoImportacion.Aplicada);
+                importacionId = Convert.ToInt32(cmd.ExecuteScalar(), CultureInfo.InvariantCulture);
+            }
+
+            foreach (var producto in productos)
+            {
+                using var cmd = conn.CreateCommand();
+                cmd.Transaction = tx;
+                cmd.CommandText = @"
+                    INSERT INTO Productos
+                        (CodigoBarras, Nombre, Costo, Precio, Stock, StockMinimo,
+                         Categoria, Impuesto, ImportacionId)
+                    VALUES (@codigo, @nombre, @costo, @precio, 0, @minimo,
+                            @categoria, @impuesto, @importacion);
+                    SELECT last_insert_rowid();";
+                cmd.Parameters.AddWithValue("@codigo", producto.CodigoBarras);
+                cmd.Parameters.AddWithValue("@nombre", producto.Nombre);
+                cmd.Parameters.AddWithValue("@costo", producto.Costo);
+                cmd.Parameters.AddWithValue("@precio", producto.Precio);
+                cmd.Parameters.AddWithValue("@minimo", producto.StockMinimo);
+                cmd.Parameters.AddWithValue("@categoria", producto.Categoria ?? string.Empty);
+                cmd.Parameters.AddWithValue("@impuesto", producto.Impuesto);
+                cmd.Parameters.AddWithValue("@importacion", importacionId);
+
+                producto.Id = Convert.ToInt32(cmd.ExecuteScalar(), CultureInfo.InvariantCulture);
+                producto.ImportacionId = importacionId;
+
+                if (producto.Stock > 0)
+                    InsertarMovimiento(conn, tx, producto.Id, MovimientoTipo.Entrada,
+                        producto.Stock, producto.Costo, "Stock inicial", usuario,
+                        importacionId);
+            }
+
+            if (auditoria != null)
+            {
+                auditoria.EntidadId = importacionId.ToString(CultureInfo.InvariantCulture);
+                auditoria.DatosDespues =
+                    $"Archivo={nombreArchivo};Productos={productos.Count};Omitidas={filasOmitidas}";
+                AgregarBitacora(conn, tx, auditoria);
+            }
+
+            tx.Commit();
+            return ProcessResult<Importacion>.OK(new Importacion
+            {
+                Id = importacionId,
+                Usuario = usuario ?? string.Empty,
+                NombreArchivo = nombreArchivo ?? string.Empty,
+                HashArchivo = hashArchivo ?? string.Empty,
+                FilasLeidas = filasLeidas,
+                FilasValidas = productos.Count,
+                FilasOmitidas = filasOmitidas,
+                ProductosInsertados = productos.Count,
+                Estado = EstadoImportacion.Aplicada
+            }, $"Importación #{importacionId} registrada");
+        }
+        catch (SqliteException ex)
+        {
+            try { tx.Rollback(); } catch (SqliteException) { }
+            return ProcessResult<Importacion>.Error(
+                $"No se importó nada: {ex.Message}");
+        }
+    }
+
+    public List<Importacion> ObtenerImportaciones(int limite = 50) =>
+        ExecuteReportObjects<Importacion>(
+            "SELECT * FROM Importaciones ORDER BY Fecha DESC, Id DESC LIMIT @limite",
+            new SqliteParameter("@limite", Math.Clamp(limite, 1, 500)));
+
+    public Importacion ObtenerImportacion(int importacionId) =>
+        ExecuteReportObject<Importacion>(
+            "SELECT * FROM Importaciones WHERE Id = @id",
+            new SqliteParameter("@id", importacionId));
+
+    /// <summary>
+    /// Revierte un lote sin borrar historial: devuelve el stock con movimientos de
+    /// ajuste, desactiva sus productos y marca el lote como revertido. Solo se
+    /// permite si ningún producto tuvo movimientos ajenos al lote.
+    /// </summary>
+    public ProcessResult RevertirImportacion(int importacionId, string usuario,
+        RegistroBitacora auditoria = null)
+    {
+        using var conn = CreateConnection();
+        conn.Open();
+        using var tx = conn.BeginTransaction();
+
+        try
+        {
+            string estado;
+            int productosInsertados;
+            using (var consulta = conn.CreateCommand())
+            {
+                consulta.Transaction = tx;
+                consulta.CommandText =
+                    "SELECT Estado, ProductosInsertados FROM Importaciones WHERE Id = @id";
+                consulta.Parameters.AddWithValue("@id", importacionId);
+                using var reader = consulta.ExecuteReader();
+                if (!reader.Read())
+                {
+                    tx.Rollback();
+                    return ProcessResult.Error($"La importación #{importacionId} no existe");
+                }
+
+                estado = reader.GetString(0);
+                productosInsertados = Convert.ToInt32(reader.GetValue(1), CultureInfo.InvariantCulture);
+            }
+
+            if (!string.Equals(estado, EstadoImportacion.Aplicada, StringComparison.OrdinalIgnoreCase))
+            {
+                tx.Rollback();
+                return ProcessResult.Error($"La importación #{importacionId} ya fue revertida");
+            }
+
+            var productos = new List<(int Id, int Stock)>();
+            using (var consulta = conn.CreateCommand())
+            {
+                consulta.Transaction = tx;
+                consulta.CommandText =
+                    "SELECT Id, Stock FROM Productos WHERE ImportacionId = @id ORDER BY Id";
+                consulta.Parameters.AddWithValue("@id", importacionId);
+                using var reader = consulta.ExecuteReader();
+                while (reader.Read())
+                {
+                    productos.Add((
+                        Convert.ToInt32(reader.GetValue(0), CultureInfo.InvariantCulture),
+                        Convert.ToInt32(reader.GetValue(1), CultureInfo.InvariantCulture)));
+                }
+            }
+
+            if (productos.Count == 0)
+            {
+                tx.Rollback();
+                return ProcessResult.Error(
+                    $"La importación #{importacionId} no tiene productos que revertir");
+            }
+
+            using (var consulta = conn.CreateCommand())
+            {
+                consulta.Transaction = tx;
+                consulta.CommandText = @"
+                    SELECT COUNT(*) FROM MovimientoInventario
+                    WHERE ProductoId IN (SELECT Id FROM Productos WHERE ImportacionId = @id)
+                      AND (ImportacionId IS NULL OR ImportacionId <> @id)";
+                consulta.Parameters.AddWithValue("@id", importacionId);
+                if (Convert.ToInt32(consulta.ExecuteScalar(), CultureInfo.InvariantCulture) > 0)
+                {
+                    tx.Rollback();
+                    return ProcessResult.Error(
+                        "El lote ya tiene ventas, compras u otros movimientos; no se puede " +
+                        "revertir el stock. Puedes desactivar los productos desde Inventario.");
+                }
+            }
+
+            var unidadesRevertidas = 0;
+            foreach (var (productoId, _) in productos)
+            {
+                var stockActual = ObtenerStockEnTransaccion(conn, tx, productoId);
+                if (stockActual != 0)
+                {
+                    InsertarMovimiento(conn, tx, productoId, MovimientoTipo.Ajuste,
+                        -stockActual, 0, "Reversión de importación", usuario, importacionId);
+                    unidadesRevertidas += stockActual;
+                }
+
+                using var desactivar = conn.CreateCommand();
+                desactivar.Transaction = tx;
+                desactivar.CommandText = @"
+                    UPDATE Productos
+                    SET Activo = 0, UltimaActualizacion = datetime('now')
+                    WHERE Id = @id";
+                desactivar.Parameters.AddWithValue("@id", productoId);
+                desactivar.ExecuteNonQuery();
+            }
+
+            using (var actualizar = conn.CreateCommand())
+            {
+                actualizar.Transaction = tx;
+                actualizar.CommandText = @"
+                    UPDATE Importaciones
+                    SET Estado = @estado, FechaReversion = @fecha, UsuarioReversion = @usuario
+                    WHERE Id = @id";
+                actualizar.Parameters.AddWithValue("@estado", EstadoImportacion.Revertida);
+                actualizar.Parameters.AddWithValue("@fecha", DateTime.Now);
+                actualizar.Parameters.AddWithValue("@usuario", usuario ?? string.Empty);
+                actualizar.Parameters.AddWithValue("@id", importacionId);
+                actualizar.ExecuteNonQuery();
+            }
+
+            if (auditoria != null)
+            {
+                auditoria.EntidadId = importacionId.ToString(CultureInfo.InvariantCulture);
+                auditoria.DatosAntes = $"Estado={EstadoImportacion.Aplicada};Productos={productosInsertados}";
+                auditoria.DatosDespues =
+                    $"Estado={EstadoImportacion.Revertida};Unidades={unidadesRevertidas}";
+                auditoria.Motivo = "Reversión de importación";
+                AgregarBitacora(conn, tx, auditoria);
+            }
+
+            tx.Commit();
+            return ProcessResult.Success(
+                $"Importación #{importacionId} revertida: {productos.Count} producto(s) " +
+                "desactivados y su stock devuelto");
+        }
+        catch (SqliteException ex)
+        {
+            try { tx.Rollback(); } catch (SqliteException) { }
+            return ProcessResult.Error($"No se pudo revertir la importación: {ex.Message}");
+        }
+    }
+
     public List<MovimientoInventario> ObtenerHistorialMovimientos(int productoId) =>
         ExecuteReportObjects<MovimientoInventario>(
             "SELECT * FROM MovimientoInventario WHERE ProductoId = @id ORDER BY Fecha DESC, Id DESC LIMIT 200",
@@ -781,15 +1027,17 @@ public class DatabaseTools
     }
 
     private static void InsertarMovimiento(SqliteConnection conn, SqliteTransaction tx, int productoId,
-        string tipo, int cantidadFirmada, long costoUnitario, string motivo, string usuario)
+        string tipo, int cantidadFirmada, long costoUnitario, string motivo, string usuario,
+        int? importacionId = null)
     {
         using var insert = conn.CreateCommand();
         insert.Transaction = tx;
         // Fecha local explícita: el esquema usa datetime('now') (UTC) por defecto,
         // pero ventas, gastos y reportes filtran por fecha local de la tienda.
         insert.CommandText = @"
-            INSERT INTO MovimientoInventario (ProductoId, Tipo, Cantidad, CostoUnitario, Motivo, Usuario, Fecha)
-            VALUES (@producto, @tipo, @cantidad, @costo, @motivo, @usuario, @fecha)";
+            INSERT INTO MovimientoInventario
+                (ProductoId, Tipo, Cantidad, CostoUnitario, Motivo, Usuario, Fecha, ImportacionId)
+            VALUES (@producto, @tipo, @cantidad, @costo, @motivo, @usuario, @fecha, @importacion)";
         insert.Parameters.AddWithValue("@producto", productoId);
         insert.Parameters.AddWithValue("@tipo", tipo);
         insert.Parameters.AddWithValue("@cantidad", cantidadFirmada);
@@ -797,6 +1045,8 @@ public class DatabaseTools
         insert.Parameters.AddWithValue("@motivo", motivo ?? string.Empty);
         insert.Parameters.AddWithValue("@usuario", usuario ?? string.Empty);
         insert.Parameters.AddWithValue("@fecha", DateTime.Now);
+        insert.Parameters.AddWithValue("@importacion",
+            importacionId.HasValue ? importacionId.Value : DBNull.Value);
         insert.ExecuteNonQuery();
 
         using var update = conn.CreateCommand();

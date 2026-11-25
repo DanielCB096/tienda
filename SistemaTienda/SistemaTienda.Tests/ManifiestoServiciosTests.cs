@@ -31,9 +31,11 @@ public sealed class ManifiestoServiciosTests
         {
             "ActualizarProducto", "AgregarProducto", "AjustarStock", "BuscarPorCodigo",
             "BuscarPorId", "BuscarPorNombre", "DesactivarProducto", "HistorialMovimientos",
-            "ImportarProductosCsv", "ImportarProductosXlsx", "ObtenerProductos",
-            "ObtenerValorizadoInventario", "ProductosStockBajo", "ReactivarProducto",
-            "ReducirStockVenta", "RegistrarEntrada", "RegistrarMerma", "SugerirProductos"
+            "ImportarProductosCsv", "ImportarProductosXlsx", "ObtenerImportacion",
+            "ObtenerImportaciones", "ObtenerProductos", "ObtenerValorizadoInventario",
+            "PrevisualizarProductosCsv", "PrevisualizarProductosXlsx", "ProductosStockBajo",
+            "ReactivarProducto", "ReducirStockVenta", "RegistrarEntrada", "RegistrarMerma",
+            "RevertirImportacion", "SugerirProductos"
         },
         ["VentaService"] = new[]
         {

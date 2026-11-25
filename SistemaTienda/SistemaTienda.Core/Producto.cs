@@ -19,6 +19,8 @@ public class Producto
     /// su stock se conserva. La edición de sus datos sigue permitida.
     /// </summary>
     public bool Activo { get; set; } = true;
+    /// <summary>Lote de importación que creó el producto; null si fue alta manual.</summary>
+    public int? ImportacionId { get; set; }
     public DateTime FechaCreacion { get; set; } = DateTime.Now;
     public DateTime? UltimaActualizacion { get; set; }
 }

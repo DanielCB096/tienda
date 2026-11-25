@@ -17,6 +17,16 @@ Cada entrada tiene formato:
 
 ---
 
+## 2026-11-25 — Importación con vista previa y lotes (H6.1)
+
+- **Agregado**: vista previa de CSV/XLSX antes de escribir; muestra filas leídas, válidas, omitidas y los primeros errores.
+- **Agregado**: cada importación queda en un lote (`Importaciones`, esquema v18) con archivo, hash, conteos y estado; los productos y sus movimientos iniciales quedan ligados al lote.
+- **Agregado**: reversión compensatoria por lote: devuelve el stock con ajustes, desactiva los productos y registra `ReversionImportacion`; se bloquea si hubo ventas, compras u otros movimientos.
+- **Agregado**: plantilla CSV compartible con dos ejemplos.
+- **Modificado**: las filas válidas se insertan en una sola transacción; si falla, no queda nada del lote.
+- **Pruebas**: 9 nuevas en `ImportacionLotesTests` (incluye 3000 filas y migración v17 → v18); suite completa: 468.
+- Ver [ADR-009](../../SistemaMaestro/docs/07-decisiones/ADR-009-onboarding-tickets-busqueda.md).
+
 ## 2026-11-25 — Instalación, actualización y reversión (H5)
 
 - **Agregado**: `ManifiestoSistema` con versión de app y esquema; el empaquetador lo genera con `SistemaTienda.Semilla --manifiesto`.

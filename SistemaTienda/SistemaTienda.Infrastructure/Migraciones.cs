@@ -46,7 +46,8 @@ public static class Migraciones
         new Migracion(14, "guarda el impuesto incluido congelado en las líneas de venta", AplicarVersion14),
         new Migracion(15, "agrega el bloqueo por inactividad y el estado de acceso", AplicarVersion15),
         new Migracion(16, "agrega el indicador de respaldos cifrados", AplicarVersion16),
-        new Migracion(17, "reconcilia el stock con los movimientos", AplicarVersion17)
+        new Migracion(17, "reconcilia el stock con los movimientos", AplicarVersion17),
+        new Migracion(18, "crea los lotes de importación de productos", AplicarVersion18)
     };
 
     private static void AplicarVersion2(SqliteConnection conn, SqliteTransaction tx)
@@ -796,6 +797,66 @@ public static class Migraciones
     /// InsertarMovimiento en la misma transacción y esta migración corrige
     /// cualquier desfase previo.
     /// </summary>
+    private static void AplicarVersion18(SqliteConnection conn, SqliteTransaction tx)
+    {
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.Transaction = tx;
+            cmd.CommandText = @"
+                CREATE TABLE IF NOT EXISTS Importaciones (
+                    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    Fecha DATETIME NOT NULL,
+                    Usuario TEXT NOT NULL DEFAULT '',
+                    NombreArchivo TEXT NOT NULL DEFAULT '',
+                    HashArchivo TEXT NOT NULL DEFAULT '',
+                    FilasLeidas INTEGER NOT NULL DEFAULT 0,
+                    FilasValidas INTEGER NOT NULL DEFAULT 0,
+                    FilasOmitidas INTEGER NOT NULL DEFAULT 0,
+                    ProductosInsertados INTEGER NOT NULL DEFAULT 0,
+                    Estado TEXT NOT NULL DEFAULT 'Aplicada',
+                    FechaReversion DATETIME NULL,
+                    UsuarioReversion TEXT NOT NULL DEFAULT ''
+                );
+
+                CREATE INDEX IF NOT EXISTS IX_Importaciones_Fecha ON Importaciones(Fecha);
+            ";
+            cmd.ExecuteNonQuery();
+        }
+
+        AgregarColumnaSiFalta(conn, tx, "Productos", "ImportacionId", "INTEGER NULL");
+        AgregarColumnaSiFalta(conn, tx, "MovimientoInventario", "ImportacionId", "INTEGER NULL");
+
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.Transaction = tx;
+            cmd.CommandText = @"
+                CREATE INDEX IF NOT EXISTS IX_Productos_ImportacionId
+                    ON Productos(ImportacionId);
+                CREATE INDEX IF NOT EXISTS IX_MovimientoInventario_ImportacionId
+                    ON MovimientoInventario(ImportacionId);
+            ";
+            cmd.ExecuteNonQuery();
+        }
+    }
+
+    private static void AgregarColumnaSiFalta(SqliteConnection conn, SqliteTransaction tx,
+        string tabla, string columna, string definicion)
+    {
+        using (var consulta = conn.CreateCommand())
+        {
+            consulta.Transaction = tx;
+            consulta.CommandText = $"SELECT COUNT(*) FROM pragma_table_info('{tabla}') WHERE name = @columna";
+            consulta.Parameters.AddWithValue("@columna", columna);
+            if (Convert.ToInt32(consulta.ExecuteScalar()) > 0)
+                return;
+        }
+
+        using var cmd = conn.CreateCommand();
+        cmd.Transaction = tx;
+        cmd.CommandText = $"ALTER TABLE {tabla} ADD COLUMN {columna} {definicion}";
+        cmd.ExecuteNonQuery();
+    }
+
     private static void AplicarVersion17(SqliteConnection conn, SqliteTransaction tx)
     {
         using var cmd = conn.CreateCommand();

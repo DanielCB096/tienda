@@ -109,6 +109,8 @@ public static class AccionBitacora
     public const string EditarUsuario = "EditarUsuario";
     public const string CambiarPin = "CambiarPin";
     public const string Configuracion = "Configuracion";
+    public const string ImportacionProductos = "ImportacionProductos";
+    public const string ReversionImportacion = "ReversionImportacion";
     public const string Respaldo = "Respaldo";
     public const string AccesoFallido = "AccesoFallido";
 }
