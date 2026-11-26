@@ -8,17 +8,39 @@
     <Grid>
         <Grid RowDefinitions="Auto,*" Padding="20,20,20,0" RowSpacing="12">
 
-            <VerticalStackLayout Grid.Row="0" Spacing="4">
-                <Label Text="Ventas de hoy" Style="{StaticResource TituloPagina}" />
+            <VerticalStackLayout Grid.Row="0" Spacing="6">
+                <Label Text="Ventas" Style="{StaticResource TituloPagina}" />
                 <Label x:Name="ResumenLabel" Style="{StaticResource TextoNota}" />
+
                 <Label Text="Toca una venta para ver el detalle, reimprimir el ticket o anularla."
                        Style="{StaticResource TextoNota}"
                        FontSize="12" />
-                <Button Text="Actualizar"
-                        Style="{StaticResource BotonSecundario}"
-                        Clicked="OnActualizarClicked"
-                        HorizontalOptions="Start"
-                        Margin="0,8,0,0" />
+
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="8" Margin="0,6,0,0">
+                    <VerticalStackLayout Spacing="2">
+                        <Label Text="Desde" Style="{StaticResource TextoNota}" FontSize="12" />
+                        <DatePicker x:Name="DesdePicker" Format="dd/MM/yyyy" />
+                    </VerticalStackLayout>
+                    <VerticalStackLayout Grid.Column="1" Spacing="2">
+                        <Label Text="Hasta" Style="{StaticResource TextoNota}" FontSize="12" />
+                        <DatePicker x:Name="HastaPicker" Format="dd/MM/yyyy" />
+                    </VerticalStackLayout>
+                </Grid>
+
+                <HorizontalStackLayout Spacing="8" Margin="0,4,0,0">
+                    <Button Text="Aplicar"
+                            Style="{StaticResource BotonSecundario}"
+                            Clicked="OnAplicarRangoClicked" />
+                    <Button Text="Hoy"
+                            Style="{StaticResource BotonSecundario}"
+                            Clicked="OnHoyClicked" />
+                    <Button Text="Este mes"
+                            Style="{StaticResource BotonSecundario}"
+                            Clicked="OnMesClicked" />
+                    <Button Text="Actualizar"
+                            Style="{StaticResource BotonSecundario}"
+                            Clicked="OnActualizarClicked" />
+                </HorizontalStackLayout>
             </VerticalStackLayout>
 
             <RefreshView x:Name="Refresco" Grid.Row="1" Refreshing="OnRefrescando">

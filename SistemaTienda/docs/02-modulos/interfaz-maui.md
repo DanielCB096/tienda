@@ -85,11 +85,11 @@ SistemaTienda.Maui/
 | Pantalla | Contenido | Escritura |
 |----------|-----------|-----------|
 | Asistente | Nombre, giro, impuesto, comisión, fondo, fiado y límite, intervalo de respaldo, PIN y confirmación | Crea tienda y usuario dueño |
-| Login | Nombre de la tienda y PIN numérico; 3 intentos y luego bloqueo hasta reabrir la app | Inicia sesión y evalúa respaldo automático |
+| Login | Nombre de la tienda y PIN numérico; 5 fallos bloquean 3 minutos | Inicia sesión y evalúa respaldo automático |
 | Inicio | Ventas de hoy (vigentes y anuladas), efectivo esperado del periodo, stock bajo, último respaldo y aviso si venció | Solo lectura |
 | Vender | Búsqueda con sugerencias al escribir o escaneo por código, carrito con cantidades, total, cobro efectivo con cambio visible/tarjeta/mixto/fiado y ticket interno con QR | Venta y salida de stock |
 | Inventario | Resumen de productos, stock bajo y valorizado; búsqueda o escaneo, alta y edición, importación CSV/Excel (`.xlsx`), entrada, merma, ajuste, historial, filtros Todos/Activos/Stock bajo/Inactivos y desactivar/reactivar | Catálogo y movimientos de inventario |
-| Ventas | Lista de ventas del día con folio, total, método, hora y estado; detalle con líneas, pagos, comisión y datos de anulación; reimpresión del ticket y anulación | Anulación de venta completa |
+| Ventas | Historial por rango con **Desde/Hasta**, atajos **Hoy** y **Este mes**, folio, total, método, fecha y estado; detalle con líneas, pagos, comisión y datos de anulación; reimpresión del ticket y anulación | Anulación de venta completa |
 | Clientes | Resumen de clientes, con saldo y total por cobrar; búsqueda, filtros Todos/Con saldo/Inactivos, alta, abono y estado de cuenta | Alta, edición, abono y baja/reactivación lógica (solo dueño) |
 | Proveedores | Resumen de proveedores, con saldo y total por pagar; búsqueda, filtros Todos/Con saldo/Inactivos, alta, pago con método y estado de cuenta | Alta, edición, pago y baja/reactivación lógica (solo dueño); retiro automático de caja si es efectivo |
 | Gastos | Resumen del total, lo pagado del efectivo de la caja y lo pagado con otra fuente; historial de los últimos 200 gastos y alta con concepto, monto, método, origen y observaciones | Alta de gasto (dueño y encargado) |

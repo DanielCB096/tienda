@@ -17,6 +17,12 @@ Cada entrada tiene formato:
 
 ---
 
+## 2026-11-26 — Historial de ventas por rango
+
+- **Agregado**: pestaña **Ventas** con **Desde/Hasta**, atajos **Hoy** y **Este mes**, resumen del rango y fecha/hora por venta.
+- **Modificado**: el detalle, la reimpresión y la anulación siguen disponibles para cualquier venta del rango.
+- **Pruebas**: 3 nuevas en `HistorialVentasTests` (extremos del día, anuladas y rango invertido); suite completa: 492.
+
 ## 2026-11-26 — Restauración guiada al instalar o recuperar
 
 - **Agregado**: el asistente inicial permite **Restaurar un respaldo** cuando la base está vacía; después se inicia sesión con el PIN del respaldo.

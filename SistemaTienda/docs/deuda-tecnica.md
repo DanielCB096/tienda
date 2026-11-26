@@ -81,7 +81,7 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 
 - **Dónde**: `SistemaTienda.Maui/Pages`.
 - **Por qué**: el punto de venta se entregó en T13, la caja operativa en T14, el inventario en T15, el detalle/anulación de ventas en T16, el conteo con historial de cortes en T17, la pantalla de clientes en T18, la de proveedores en T19, la de gastos en T21, la edición/estado de cuenta de clientes en T22, la edición/estado de cuenta de proveedores en T23 y los reportes de utilidad en T24.
-- **Impacto**: desde la app se vende, se opera el inventario, se cierra el corte con conteo, se registran ingresos, retiros y abonos de fiado, se anulan ventas, se reimprime el ticket, se consulta el historial de cortes, se gestiona el directorio de clientes con sus abonos, edición y estado de cuenta, se gestiona el directorio de proveedores con sus pagos, edición y estado de cuenta, se registran gastos, se consultan los reportes de utilidad del periodo y se crea respaldo. La consulta de ventas de fechas anteriores sigue solo en la consola.
+- **Impacto**: desde la app se vende, se opera el inventario, se cierra el corte con conteo, se registran ingresos, retiros y abonos de fiado, se anulan ventas, se reimprime el ticket, se consulta el historial de cortes, se gestiona el directorio de clientes con sus abonos, edición y estado de cuenta, se gestiona el directorio de proveedores con sus pagos, edición y estado de cuenta, se registran gastos, se consultan los reportes de utilidad del periodo y se crea respaldo.
 - **Cierre**: consulta histórica de ventas en la app.
 
 ### Gastos sin edición, fecha retroactiva ni reporte en la app
@@ -126,7 +126,7 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 ### Reportes sin desglose por producto
 
 - **Dónde**: `ReporteUtilidadService`, `PeriodoReporte`, `ComparacionReporte`, `ExportadorCsv`, `ExportadorPdf` y la pestaña Reportes de la app MAUI.
-- **Impacto**: ya existe la utilidad por periodo (ventas, costo congelado, comisión, mermas y gastos), se consulta en la app con filtros hoy/mes/rango, se desglosa por método de cobro (Efectivo, Tarjeta y Fiado), se compara con el bloque anterior y se exporta a CSV y PDF desde T31/T36/T37/T38. Faltan ventas por día y utilidad por producto o categoría. La consulta de ventas de fechas anteriores sigue solo en la consola.
+- **Impacto**: ya existe la utilidad por periodo (ventas, costo congelado, comisión, mermas y gastos), se consulta en la app con filtros hoy/mes/rango, se desglosa por método de cobro (Efectivo, Tarjeta y Fiado), se compara con el bloque anterior y se exporta a CSV y PDF desde T31/T36/T37/T38. Faltan ventas por día y utilidad por producto o categoría.
 - **Cierre**: consultas agregadas por producto y periodo con índices por fecha (ya existen en `Ventas(Fecha)`) y ventas por día.
 
 ## Baja prioridad

@@ -1,3 +1,4 @@
+using System.Globalization;
 using SistemaTienda.Application.Services;
 using SistemaTienda.Core;
 using SistemaTienda.Maui.Models;
@@ -29,6 +30,9 @@ public partial class VentasPage : ContentPage
         _configuracion = configuracion;
         _tickets = tickets;
         _sesion = sesion;
+
+        DesdePicker.Date = DateTime.Today;
+        HastaPicker.Date = DateTime.Today;
     }
 
     protected override void OnAppearing()
@@ -41,6 +45,23 @@ public partial class VentasPage : ContentPage
     }
 
     private void OnActualizarClicked(object sender, EventArgs e) => Cargar();
+
+    private void OnAplicarRangoClicked(object sender, EventArgs e) => Cargar();
+
+    private void OnHoyClicked(object sender, EventArgs e)
+    {
+        DesdePicker.Date = DateTime.Today;
+        HastaPicker.Date = DateTime.Today;
+        Cargar();
+    }
+
+    private void OnMesClicked(object sender, EventArgs e)
+    {
+        var hoy = DateTime.Today;
+        DesdePicker.Date = new DateTime(hoy.Year, hoy.Month, 1);
+        HastaPicker.Date = hoy;
+        Cargar();
+    }
 
     private void OnRefrescando(object sender, EventArgs e)
     {
@@ -58,7 +79,16 @@ public partial class VentasPage : ContentPage
         _config = _configuracion.ObtenerConfiguracion().Value;
         _puedeAnular = AutorizacionService.Puede(usuario, PermisoSistema.AnularVenta);
 
-        var ventas = _ventas.ObtenerVentasDelDia(DateTime.Now)
+        var desde = (DesdePicker.Date ?? DateTime.Today).Date;
+        var hasta = (HastaPicker.Date ?? DateTime.Today).Date;
+        if (hasta < desde)
+        {
+            (desde, hasta) = (hasta, desde);
+            DesdePicker.Date = desde;
+            HastaPicker.Date = hasta;
+        }
+
+        var ventas = _ventas.ObtenerVentas(desde, hasta)
             .OrderByDescending(v => v.Fecha)
             .ToList();
 
