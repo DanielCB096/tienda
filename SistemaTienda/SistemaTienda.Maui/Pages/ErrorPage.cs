@@ -121,23 +121,19 @@ public sealed class ErrorPage : ContentPage
 
         try
         {
-            var archivo = await FilePicker.Default.PickAsync(new PickOptions
-            {
-                PickerTitle = "Selecciona el respaldo de POSale",
-                FileTypes = TiposRespaldo
-            });
-            if (archivo == null)
+            var ruta = await SelectorArchivoRespaldo.ElegirAsync(this);
+            if (string.IsNullOrEmpty(ruta))
                 return;
 
             var confirmar = await DisplayAlertAsync("Restaurar respaldo",
-                $"Se reemplazará la base actual por:\n{archivo.FileName}\n\n" +
+                $"Se reemplazará la base actual por:\n{Path.GetFileName(ruta)}\n\n" +
                 "Se guardará un respaldo previo. La aplicación volverá al inicio de sesión.",
                 "Restaurar", "Cancelar");
             if (!confirmar)
                 return;
 
             string? clave = null;
-            if (archivo.FileName.EndsWith(CifradoRespaldo.Extension,
+            if (ruta.EndsWith(CifradoRespaldo.Extension,
                     StringComparison.OrdinalIgnoreCase))
             {
                 clave = await DisplayPromptAsync("Respaldo cifrado",
@@ -148,7 +144,7 @@ public sealed class ErrorPage : ContentPage
             }
 
             var resultado = _respaldos.RestaurarEnRecuperacion(
-                archivo.FullPath, confirmado: true, claveRespaldo: clave);
+                ruta, confirmado: true, claveRespaldo: clave);
             if (resultado.IsError)
             {
                 _estado.Text = resultado.Message;

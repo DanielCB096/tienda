@@ -202,7 +202,7 @@ La app también intenta crear un respaldo automático al iniciar y al cerrar ses
 
 1. Instala POSale en el equipo nuevo.
 2. En la pantalla **Configuración inicial**, toca **Restaurar un respaldo**.
-3. Elige el archivo `.db` o `.db.stb`; si está cifrado, escribe la clave de 24 caracteres.
+3. En Android elige el archivo; en Windows pega la ruta completa del `.db` o `.db.stb`. Si está cifrado, escribe la clave de 24 caracteres.
 4. Confirma. La app vuelve al inicio de sesión y entras con el PIN de ese respaldo.
 5. Si la app muestra **No se pudo iniciar**, usa **Restaurar un respaldo** en esa misma pantalla.
 

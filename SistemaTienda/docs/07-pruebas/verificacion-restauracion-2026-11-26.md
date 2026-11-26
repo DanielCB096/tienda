@@ -10,14 +10,23 @@ Respaldo de origen: escenario `configurado` con 53 productos y tres usuarios.
    `RespaldoService.RestaurarEnInstalacionNueva(respaldo, confirmado: true)`.
 3. Resultado: éxito; se creó `tienda-<fecha>-antes-restaurar.db` y la base quedó con
    **3 usuarios**, tienda **Abarrotes La Esquina** y **53 productos**.
-4. Se abrió la app: mostró el **login de Abarrotes La Esquina** con el encabezado
-   POSale, no el asistente. Es el resultado esperado tras restaurar.
+4. Se pulsó **Restaurar un respaldo** en la interfaz, se pegó la ruta del archivo y
+   se confirmó. La app mostró el bloqueo/login de **Abarrotes La Esquina** y el PIN
+   del respaldo (1234) permitió entrar.
+5. La app mostró el **login de Abarrotes La Esquina** con el encabezado POSale, no
+   el asistente. Es el resultado esperado tras restaurar.
+
+## Selector en Windows
+
+El `FilePicker` de MAUI falla con `COMException 0x80004005` en esta app sin
+empaquetar. El selector de WinRT falla igual y el diálogo nativo de comdlg32 quedó
+colgado. Para desbloquear la restauración, Windows pide la **ruta del archivo** en
+un cuadro de texto (se puede copiar desde el Explorador). Android mantiene el
+selector del sistema.
 
 ## Pendiente
 
-- Pulsar el botón y elegir el archivo desde el selector de Windows/Android (la
-  automatización de la ventana no logró abrir el selector en esta sesión).
 - Probar la pantalla de arranque fallido con una base corrupta.
 - Repetir con un respaldo `.db.stb` y la clave de 24 caracteres desde la interfaz.
-
-El servicio y la apertura posterior quedan verificados en este equipo.
+- Mejorar el selector de Windows (deuda técnica): un explorador propio o un
+  empaquetado MSIX para recuperar el selector nativo.

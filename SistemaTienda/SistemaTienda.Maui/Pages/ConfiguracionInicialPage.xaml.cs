@@ -49,23 +49,19 @@ public partial class ConfiguracionInicialPage : ContentPage
         RestaurarRespaldoButton.IsEnabled = false;
         try
         {
-            var archivo = await FilePicker.Default.PickAsync(new PickOptions
-            {
-                PickerTitle = "Selecciona el respaldo de POSale",
-                FileTypes = TiposRespaldo
-            });
-            if (archivo == null)
+            var ruta = await SelectorArchivoRespaldo.ElegirAsync(this);
+            if (string.IsNullOrEmpty(ruta))
                 return;
 
             var confirmar = await DisplayAlertAsync("Restaurar respaldo",
-                $"Se reemplazará la base de este equipo por:\n{archivo.FileName}\n\n" +
+                $"Se reemplazará la base de este equipo por:\n{Path.GetFileName(ruta)}\n\n" +
                 "Se guardará un respaldo previo. Después inicia sesión con el PIN de ese respaldo.",
                 "Restaurar", "Cancelar");
             if (!confirmar)
                 return;
 
             string? clave = null;
-            if (archivo.FileName.EndsWith(CifradoRespaldo.Extension,
+            if (ruta.EndsWith(CifradoRespaldo.Extension,
                     StringComparison.OrdinalIgnoreCase))
             {
                 clave = await DisplayPromptAsync("Respaldo cifrado",
@@ -76,7 +72,7 @@ public partial class ConfiguracionInicialPage : ContentPage
             }
 
             var resultado = _respaldos.RestaurarEnInstalacionNueva(
-                archivo.FullPath, confirmado: true, claveRespaldo: clave);
+                ruta, confirmado: true, claveRespaldo: clave);
             if (resultado.IsError)
             {
                 MostrarError(resultado.Message);
