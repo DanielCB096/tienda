@@ -24,6 +24,7 @@ Cada entrada tiene formato:
 - El ticket, la reimpresión y el detalle de Ventas muestran subtotal, descuento y total; los reportes por producto/categoría quedan netos.
 - **Esquema v20/v21**: `Ventas.Descuento`, `Ventas.DescuentoPorcentaje`, `VentaLineas.Descuento` y `VentaLineas.DescuentoPorcentaje`.
 - **Pruebas**: 13 nuevas en `DescuentosTests`; suite completa: 513.
+- *Verificado*: Windows, 2026-11-26. Descuento distinto por producto en % y monto, atajo para toda la venta, total y ticket correctos. Android pendiente.
 - Ver [ADR-013](../../SistemaMaestro/docs/07-decisiones/ADR-013-descuento-por-producto.md).
 
 ## 2026-11-26 — Reportes por producto/categoría y edición de gastos
