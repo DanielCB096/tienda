@@ -152,7 +152,9 @@ public partial class VentasPage : ContentPage
         BindableLayout.SetItemsSource(DetalleLineas, _lineasActuales.Select(l => new LineaVentaFila
         {
             Nombre = $"{l.Cantidad} x {l.Nombre}",
-            Detalle = $"{Formato.Moneda(l.PrecioUnitario)} c/u",
+            Detalle = l.Descuento > 0
+                ? $"{Formato.Moneda(l.PrecioUnitario)} c/u · Descuento -{Formato.Moneda(l.Descuento)}"
+                : $"{Formato.Moneda(l.PrecioUnitario)} c/u",
             Importe = Formato.Moneda(l.Subtotal)
         }).ToList());
 

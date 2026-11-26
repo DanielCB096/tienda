@@ -2125,11 +2125,11 @@ public class DatabaseTools
                     INSERT INTO VentaLineas
                         (VentaId, ProductoId, CodigoBarras, Nombre, Cantidad,
                          PrecioUnitario, CostoUnitario, Importe, ImpuestoPorcentaje, ImpuestoImporte,
-                         Descuento)
+                         Descuento, DescuentoPorcentaje)
                     VALUES
                         (@venta, @producto, @codigo, @nombre, @cantidad,
                          @precio, @costo, @importe, @impuesto, @impuestoImporte,
-                         @descuento)";
+                         @descuento, @descuentoPorcentaje)";
                 cmd.Parameters.AddWithValue("@venta", ventaId);
                 cmd.Parameters.AddWithValue("@producto", linea.ProductoId);
                 cmd.Parameters.AddWithValue("@codigo", linea.CodigoBarras);
@@ -2141,6 +2141,7 @@ public class DatabaseTools
                 cmd.Parameters.AddWithValue("@impuesto", linea.ImpuestoPorcentaje);
                 cmd.Parameters.AddWithValue("@impuestoImporte", linea.ImpuestoImporte);
                 cmd.Parameters.AddWithValue("@descuento", linea.Descuento);
+                cmd.Parameters.AddWithValue("@descuentoPorcentaje", linea.DescuentoPorcentaje);
                 cmd.ExecuteNonQuery();
 
                 linea.VentaId = ventaId;

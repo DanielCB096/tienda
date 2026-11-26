@@ -63,54 +63,13 @@ public partial class PosPage : ContentPage
         ActualizarVistaMetodo();
     }
 
-    private long Subtotal() =>
-        _carrito.Sum(c => Dinero.Multiplicar(c.Producto.Precio, c.Cantidad));
+    private long Subtotal() => _carrito.Sum(c => c.SubtotalLinea);
+
+    private long Descuento() => _carrito.Sum(c => c.DescuentoTotal);
 
     private bool PuedeDescontar =>
         _sesion.Usuario != null &&
         AutorizacionService.Puede(_sesion.Usuario, PermisoSistema.AplicarDescuento);
-
-    private bool EsPorcentaje() => DescuentoTipoPicker.SelectedIndex <= 0;
-
-    private decimal PorcentajeCapturado()
-    {
-        if (!EsPorcentaje())
-            return 0m;
-
-        var limpio = (DescuentoEntry.Text ?? string.Empty)
-            .Replace("%", string.Empty)
-            .Replace(" ", string.Empty)
-            .Replace(",", ".");
-
-        return decimal.TryParse(limpio, NumberStyles.AllowDecimalPoint,
-            CultureInfo.InvariantCulture, out var porcentaje)
-            ? porcentaje
-            : 0m;
-    }
-
-    /// <summary>Descuento vigente en centavos; cero si la captura no es válida.</summary>
-    private long Descuento()
-    {
-        if (!PuedeDescontar || _carrito.Count == 0)
-            return 0;
-
-        var subtotal = Subtotal();
-        if (subtotal <= 0 || string.IsNullOrWhiteSpace(DescuentoEntry.Text))
-            return 0;
-
-        if (EsPorcentaje())
-        {
-            var porcentaje = PorcentajeCapturado();
-            return DescuentoVenta.EsPorcentajeValido(porcentaje)
-                ? Dinero.Porcentaje(subtotal, porcentaje)
-                : 0;
-        }
-
-        var monto = LeerCentavos(DescuentoEntry.Text);
-        return monto.HasValue && DescuentoVenta.EsMontoValido(monto.Value, subtotal)
-            ? monto.Value
-            : 0;
-    }
 
     private long Total() => Math.Max(0, Subtotal() - Descuento());
 
@@ -309,8 +268,22 @@ public partial class PosPage : ContentPage
         }
 
         fila.Cantidad++;
-        MostrarMensaje(null);
+        if (!AjustarDescuentoPorCantidad(fila))
+            MostrarMensaje(null);
         ActualizarCarrito();
+    }
+
+    private bool AjustarDescuentoPorCantidad(CarritoFila fila)
+    {
+        if (fila.DescuentoMonto > 0 &&
+            !DescuentoVenta.EsMontoValido(fila.DescuentoMonto, fila.SubtotalLinea))
+        {
+            fila.DescuentoMonto = 0;
+            MostrarMensaje($"Se quitó el descuento de {fila.Nombre} porque la cantidad cambió.");
+            return true;
+        }
+
+        return false;
     }
 
     private void OnMenosClicked(object sender, EventArgs e)
@@ -323,7 +296,10 @@ public partial class PosPage : ContentPage
         else
             _carrito.Remove(fila);
 
-        MostrarMensaje(null);
+        var avisoDescuento = _carrito.Contains(fila) && AjustarDescuentoPorCantidad(fila);
+        if (!avisoDescuento)
+            MostrarMensaje(null);
+
         ActualizarCarrito();
         SoltarTicketSiVacio();
     }
@@ -341,10 +317,6 @@ public partial class PosPage : ContentPage
 
     private void ActualizarCarrito()
     {
-        if (_carrito.Count == 0 && DescuentoEntry != null &&
-            !string.IsNullOrEmpty(DescuentoEntry.Text))
-            DescuentoEntry.Text = string.Empty;
-
         ListaCarrito.ItemsSource = null;
         ListaCarrito.ItemsSource = _carrito.ToList();
         ActualizarTotales();
@@ -358,39 +330,116 @@ public partial class PosPage : ContentPage
         var descuento = Descuento();
         TotalLabel.Text = Formato.Moneda(Math.Max(0, subtotal - descuento));
 
-        var mostrar = descuento > 0;
-        SubtotalLabel.IsVisible = mostrar;
-        DescuentoAplicadoLabel.IsVisible = mostrar;
-        if (mostrar)
+        SubtotalLabel.IsVisible = descuento > 0;
+        DescuentoAplicadoLabel.IsVisible = descuento > 0;
+        if (descuento > 0)
         {
             SubtotalLabel.Text = $"Subtotal {Formato.Moneda(subtotal)}";
-            var etiqueta = EsPorcentaje()
-                ? $"Descuento ({PorcentajeCapturado().ToString("0.##", CultureInfo.InvariantCulture)}%)"
-                : "Descuento";
-            DescuentoAplicadoLabel.Text = $"{etiqueta} -{Formato.Moneda(descuento)}";
+            DescuentoAplicadoLabel.Text = $"Descuento -{Formato.Moneda(descuento)}";
         }
 
-        DescuentoPanel.IsVisible = PuedeDescontar && _carrito.Count > 0;
+        DescuentoGeneralButton.IsVisible = PuedeDescontar && _carrito.Count > 0;
     }
 
-    private void OnDescuentoChanged(object sender, TextChangedEventArgs e) => ActualizarTotales();
-
-    private void OnDescuentoTipoChanged(object sender, EventArgs e)
+    private async void OnDescuentoLineaClicked(object sender, EventArgs e)
     {
-        // El mismo número significa cosas distintas en % y en $; se limpia.
-        if (DescuentoEntry != null)
-            DescuentoEntry.Text = string.Empty;
+        if ((sender as Button)?.CommandParameter is CarritoFila fila)
+            await EditarDescuentoAsync(fila);
+    }
 
-        if (DescuentoEntry != null)
-            DescuentoEntry.Placeholder = EsPorcentaje() ? "0" : "0.00";
+    private async void OnLineaTapped(object sender, TappedEventArgs e)
+    {
+        if (e.Parameter is CarritoFila fila)
+            await EditarDescuentoAsync(fila);
+    }
 
-        ActualizarTotales();
+    private async Task EditarDescuentoAsync(CarritoFila fila)
+    {
+        if (!PuedeDescontar || _sesion.Usuario == null)
+            return;
+
+        var pagina = new DescuentoPage("Descuento del producto", fila.Nombre,
+            fila.SubtotalLinea, fila.DescuentoPorcentaje, fila.DescuentoMonto);
+
+        await Navigation.PushModalAsync(pagina);
+        var seleccion = await pagina.Resultado;
+        if (seleccion == null)
+            return;
+
+        if (seleccion.Valor <= 0)
+        {
+            fila.DescuentoPorcentaje = 0;
+            fila.DescuentoMonto = 0;
+        }
+        else if (seleccion.EsPorcentaje)
+        {
+            fila.DescuentoPorcentaje = seleccion.Valor;
+            fila.DescuentoMonto = 0;
+        }
+        else
+        {
+            fila.DescuentoPorcentaje = 0;
+            fila.DescuentoMonto = (long)seleccion.Valor;
+        }
+
+        ActualizarCarrito();
+    }
+
+    private async void OnDescuentoGeneralClicked(object sender, EventArgs e)
+    {
+        if (!PuedeDescontar || _carrito.Count == 0 || _sesion.Usuario == null)
+            return;
+
+        var pagina = new DescuentoPage("Descuento a toda la venta",
+            "Se aplica a todos los productos del carrito.", Subtotal(), 0m, 0);
+
+        await Navigation.PushModalAsync(pagina);
+        var seleccion = await pagina.Resultado;
+        if (seleccion == null)
+            return;
+
+        if (seleccion.Valor <= 0)
+        {
+            foreach (var fila in _carrito)
+            {
+                fila.DescuentoPorcentaje = 0;
+                fila.DescuentoMonto = 0;
+            }
+
+            ActualizarCarrito();
+            return;
+        }
+
+        if (seleccion.EsPorcentaje)
+        {
+            foreach (var fila in _carrito)
+            {
+                fila.DescuentoPorcentaje = seleccion.Valor;
+                fila.DescuentoMonto = 0;
+            }
+
+            ActualizarCarrito();
+            return;
+        }
+
+        var reparto = DescuentoVenta.Repartir((long)seleccion.Valor,
+            _carrito.Select(c => c.SubtotalLinea).ToList());
+        for (var i = 0; i < _carrito.Count; i++)
+        {
+            _carrito[i].DescuentoPorcentaje = 0;
+            _carrito[i].DescuentoMonto = reparto[i];
+        }
+
+        ActualizarCarrito();
     }
 
     private void LimpiarDescuento()
     {
-        if (DescuentoEntry != null)
-            DescuentoEntry.Text = string.Empty;
+        foreach (var fila in _carrito)
+        {
+            fila.DescuentoPorcentaje = 0;
+            fila.DescuentoMonto = 0;
+        }
     }
 
     private void SoltarTicketSiVacio()
@@ -637,12 +686,24 @@ public partial class PosPage : ContentPage
         pago = null;
         error = string.Empty;
 
-        if (PuedeDescontar && !string.IsNullOrWhiteSpace(DescuentoEntry.Text) && Descuento() == 0)
+        if (PuedeDescontar)
         {
-            error = EsPorcentaje()
-                ? "El descuento debe ser mayor a 0% y menor a 100%."
-                : "El descuento debe ser mayor a cero y menor al subtotal.";
-            return false;
+            foreach (var fila in _carrito)
+            {
+                if (fila.DescuentoPorcentaje > 0 &&
+                    !DescuentoVenta.EsPorcentajeValido(fila.DescuentoPorcentaje))
+                {
+                    error = $"El descuento de \"{fila.Nombre}\" debe ser mayor a 0% y menor a 100%.";
+                    return false;
+                }
+
+                if (fila.DescuentoMonto > 0 &&
+                    !DescuentoVenta.EsMontoValido(fila.DescuentoMonto, fila.SubtotalLinea))
+                {
+                    error = $"El descuento de \"{fila.Nombre}\" debe ser mayor a cero y menor a su importe.";
+                    return false;
+                }
+            }
         }
 
         var total = Total();
@@ -722,12 +783,6 @@ public partial class PosPage : ContentPage
             return;
         }
 
-        if (PuedeDescontar)
-        {
-            pago!.DescuentoPorcentaje = EsPorcentaje() ? PorcentajeCapturado() : 0m;
-            pago.DescuentoMonto = EsPorcentaje() ? 0 : Descuento();
-        }
-
         _sesion.Aplicar();
         ConfirmarCobroButton.IsEnabled = false;
 
@@ -738,7 +793,9 @@ public partial class PosPage : ContentPage
                 .Select(c => new LineaVentaSolicitada
                 {
                     ProductoId = c.Producto.Id,
-                    Cantidad = c.Cantidad
+                    Cantidad = c.Cantidad,
+                    DescuentoPorcentaje = c.DescuentoPorcentaje,
+                    DescuentoMonto = c.DescuentoMonto
                 })
                 .ToList();
 

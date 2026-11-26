@@ -49,7 +49,8 @@ public static class Migraciones
         new Migracion(17, "reconcilia el stock con los movimientos", AplicarVersion17),
         new Migracion(18, "crea los lotes de importación de productos", AplicarVersion18),
         new Migracion(19, "crea los tickets en espera del mostrador", AplicarVersion19),
-        new Migracion(20, "guarda el descuento de la venta y su reparto por línea", AplicarVersion20)
+        new Migracion(20, "guarda el descuento de la venta y su reparto por línea", AplicarVersion20),
+        new Migracion(21, "guarda el porcentaje de descuento por línea", AplicarVersion21)
     };
 
     private static void AplicarVersion2(SqliteConnection conn, SqliteTransaction tx)
@@ -912,6 +913,12 @@ public static class Migraciones
         AgregarColumnaSiFalta(conn, tx, "Ventas", "Descuento", "INTEGER NOT NULL DEFAULT 0");
         AgregarColumnaSiFalta(conn, tx, "Ventas", "DescuentoPorcentaje", "DECIMAL NOT NULL DEFAULT 0");
         AgregarColumnaSiFalta(conn, tx, "VentaLineas", "Descuento", "INTEGER NOT NULL DEFAULT 0");
+    }
+
+    private static void AplicarVersion21(SqliteConnection conn, SqliteTransaction tx)
+    {
+        AgregarColumnaSiFalta(conn, tx, "VentaLineas", "DescuentoPorcentaje",
+            "DECIMAL NOT NULL DEFAULT 0");
     }
 
     public static int VersionMaxima(IReadOnlyList<Migracion> migraciones) =>

@@ -178,4 +178,4 @@ Las ventas anuladas se excluyen del corte pendiente y del reporte de utilidad, y
 
 ---
 
-**Próximos pasos en código**: descuento por renglón y autorización por PIN. El ticket con QR, la reimpresión con cambio, la anulación, el descuento por venta y el desglose de IVA incluido ya están implementados en la app.
+**Próximos pasos en código**: autorización por PIN y descuento por mayoreo. El ticket con QR, la reimpresión con cambio, la anulación, el descuento por venta y el desglose de IVA incluido ya están implementados en la app.

@@ -83,10 +83,18 @@
                     </CollectionView.EmptyView>
                     <CollectionView.ItemTemplate>
                         <DataTemplate x:DataType="models:CarritoFila">
-                            <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto" ColumnSpacing="6" Padding="0,5">
+                            <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="6" Padding="0,5">
                                 <VerticalStackLayout Spacing="0" VerticalOptions="Center">
+                                    <VerticalStackLayout.GestureRecognizers>
+                                        <TapGestureRecognizer Tapped="OnLineaTapped"
+                                                              CommandParameter="{Binding .}" />
+                                    </VerticalStackLayout.GestureRecognizers>
                                     <Label Text="{Binding Nombre}" FontAttributes="Bold" />
                                     <Label Text="{Binding PrecioUnitario}" Style="{StaticResource TextoNota}" />
+                                    <Label Text="{Binding DescuentoTexto}"
+                                           TextColor="#B3261E"
+                                           FontSize="12"
+                                           IsVisible="{Binding TieneDescuento}" />
                                 </VerticalStackLayout>
                                 <Button Grid.Column="1"
                                         Text="−"
@@ -109,6 +117,18 @@
                                         CommandParameter="{Binding .}"
                                         Clicked="OnQuitarClicked"
                                         Style="{StaticResource BotonQuitar}" />
+                                <Button Grid.Column="5"
+                                        Text="%"
+                                        WidthRequest="34"
+                                        HeightRequest="38"
+                                        Padding="0"
+                                        FontSize="14"
+                                        FontAttributes="Bold"
+                                        CornerRadius="10"
+                                        BackgroundColor="#F3E3E1"
+                                        TextColor="#2E6B4F"
+                                        CommandParameter="{Binding .}"
+                                        Clicked="OnDescuentoLineaClicked" />
                             </Grid>
                         </DataTemplate>
                     </CollectionView.ItemTemplate>
@@ -117,31 +137,12 @@
         </Border>
 
         <VerticalStackLayout Grid.Row="4" Spacing="6">
-            <Grid x:Name="DescuentoPanel"
-                  ColumnDefinitions="Auto,*,Auto"
-                  ColumnSpacing="8"
-                  IsVisible="False">
-                <Label Text="Descuento"
-                       Style="{StaticResource EtiquetaSeccion}"
-                       VerticalOptions="Center" />
-                <Entry x:Name="DescuentoEntry"
-                       Grid.Column="1"
-                       Style="{StaticResource CampoTexto}"
-                       Keyboard="Numeric"
-                       Placeholder="0"
-                       HeightRequest="42"
-                       TextChanged="OnDescuentoChanged" />
-                <Picker x:Name="DescuentoTipoPicker"
-                        Grid.Column="2"
-                        WidthRequest="64"
-                        SelectedIndex="0"
-                        SelectedIndexChanged="OnDescuentoTipoChanged">
-                    <Picker.Items>
-                        <x:String>%</x:String>
-                        <x:String>$</x:String>
-                    </Picker.Items>
-                </Picker>
-            </Grid>
+            <Button x:Name="DescuentoGeneralButton"
+                    Text="Descuento a toda la venta"
+                    Style="{StaticResource BotonSecundario}"
+                    HeightRequest="38"
+                    IsVisible="False"
+                    Clicked="OnDescuentoGeneralClicked" />
             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                 <VerticalStackLayout Spacing="0" VerticalOptions="Center">
                     <Label x:Name="SubtotalLabel"

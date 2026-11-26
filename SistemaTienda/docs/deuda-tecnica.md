@@ -17,11 +17,11 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 - **Impacto**: si falla la bitácora, el respaldo existe sin registro. No afecta ventas, caja ni stock, y el archivo se verifica antes de darse por bueno.
 - **Cierre**: no aplica mientras el respaldo sea un archivo; se migrará si algún día vive dentro de la base. Las operaciones de dinero, inventario, catálogo, clientes, proveedores, usuarios y configuración ya son atómicas.
 
-### Descuento por venta (resuelto el 2026-11-26)
+### Descuento por producto (resuelto el 2026-11-26)
 
 - **Dónde**: `VentaService`, `DescuentoVenta` (Core), `VentasPage`/`PosPage` y esquema v20.
-- **Resuelto**: descuento por venta en porcentaje o monto, con permiso `AplicarDescuento` (dueño y encargado), reparto proporcional por línea, IVA y comisión sobre el neto, y bitácora dentro de la transacción. Ver [ADR-013](../../SistemaMaestro/docs/07-decisiones/ADR-013-descuento-por-venta.md).
-- **Pendiente**: descuento por renglón y autorización por PIN sin cambiar de sesión.
+- **Resuelto**: descuento por producto en porcentaje o monto, con permiso `AplicarDescuento` (dueño y encargado), reparto proporcional por línea, IVA y comisión sobre el neto, y bitácora dentro de la transacción. Ver [ADR-013](../../SistemaMaestro/docs/07-decisiones/ADR-013-descuento-por-producto.md).
+- **Pendiente**: autorización por PIN sin cambiar de sesión y precios de mayoreo.
 
 ### QR del ticket: imagen resuelta, validación pendiente
 

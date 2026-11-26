@@ -8,6 +8,14 @@ public sealed class LineaVentaSolicitada
 {
     public int ProductoId { get; set; }
     public int Cantidad { get; set; }
+
+    /// <summary>
+    /// Descuento de este renglón: porcentaje o monto en centavos, nunca ambos.
+    /// El total de la venta se calcula con el importe neto de cada línea.
+    /// </summary>
+    public decimal DescuentoPorcentaje { get; set; }
+
+    public long DescuentoMonto { get; set; }
 }
 
 /// <summary>
@@ -27,15 +35,6 @@ public sealed class PagoSolicitado
     /// parte de la suma de pagos: solo sirve para guardar el cambio.
     /// </summary>
     public long? EfectivoRecibido { get; set; }
-
-    /// <summary>
-    /// Descuento de la venta. Se captura como porcentaje o como monto en centavos,
-    /// nunca ambos. El total que se cobra es el subtotal menos el descuento.
-    /// </summary>
-    public decimal DescuentoPorcentaje { get; set; }
-
-    /// <summary>Descuento en centavos cuando se captura como monto fijo.</summary>
-    public long DescuentoMonto { get; set; }
 }
 
 public class VentaService
@@ -110,59 +109,77 @@ public class VentaService
             });
         }
 
-        if (pago.DescuentoPorcentaje < 0 || pago.DescuentoMonto < 0)
-            return ProcessResult<Venta>.Error("El descuento no puede ser negativo");
+        var hayDescuento = lineas.Any(l =>
+            l != null && (l.DescuentoPorcentaje > 0 || l.DescuentoMonto > 0));
 
-        if (pago.DescuentoPorcentaje > 0 && pago.DescuentoMonto > 0)
-            return ProcessResult<Venta>.Error(
-                "Indique el descuento como porcentaje o como monto, no ambos");
-
-        var subtotal = lineasVenta.Sum(l => l.Importe);
-        var descuento = 0L;
-        if (pago.DescuentoPorcentaje > 0 || pago.DescuentoMonto > 0)
+        if (hayDescuento)
         {
             var autorizacionDescuento = Autorizar(PermisoSistema.AplicarDescuento);
             if (autorizacionDescuento.IsError)
                 return ProcessResult<Venta>.Error(autorizacionDescuento.Message);
+        }
 
-            if (pago.DescuentoPorcentaje > 0)
-            {
-                if (!DescuentoVenta.EsPorcentajeValido(pago.DescuentoPorcentaje))
-                    return ProcessResult<Venta>.Error(
-                        "El descuento debe ser mayor a 0% y menor a 100%");
+        // El descuento vive en cada renglón: puede ser un porcentaje o un monto
+        // distinto por producto. El importe de la línea queda neto desde aquí,
+        // así que el IVA y los reportes por producto también quedan netos.
+        for (var i = 0; i < lineasVenta.Count; i++)
+        {
+            var solicitada = lineas[i];
+            var linea = lineasVenta[i];
 
-                descuento = DescuentoVenta.DesdePorcentaje(subtotal, pago.DescuentoPorcentaje);
-            }
-            else
-            {
-                if (!DescuentoVenta.EsMontoValido(pago.DescuentoMonto, subtotal))
-                    return ProcessResult<Venta>.Error(
-                        "El descuento debe ser mayor a cero y menor al subtotal de la venta");
+            if (solicitada.DescuentoPorcentaje < 0 || solicitada.DescuentoMonto < 0)
+                return ProcessResult<Venta>.Error("El descuento no puede ser negativo");
 
-                descuento = pago.DescuentoMonto;
-            }
-
-            if (descuento <= 0)
+            if (solicitada.DescuentoPorcentaje > 0 && solicitada.DescuentoMonto > 0)
                 return ProcessResult<Venta>.Error(
-                    "El descuento calculado es cero; ajusta el porcentaje o usa un monto");
+                    $"En \"{linea.Nombre}\" indique el descuento como porcentaje o como monto, no ambos");
 
-            // El descuento se reparte entre las líneas para que el reporte por
-            // producto y el IVA incluido queden netos desde el origen.
-            var reparto = DescuentoVenta.Repartir(descuento,
-                lineasVenta.Select(l => l.Importe).ToList());
-            for (var i = 0; i < lineasVenta.Count; i++)
+            if (solicitada.DescuentoPorcentaje > 0)
             {
-                var linea = lineasVenta[i];
-                linea.Descuento = reparto[i];
-                linea.Importe -= reparto[i];
+                if (!DescuentoVenta.EsPorcentajeValido(solicitada.DescuentoPorcentaje))
+                    return ProcessResult<Venta>.Error(
+                        $"El descuento de \"{linea.Nombre}\" debe ser mayor a 0% y menor a 100%");
+
+                var montoDescuento = DescuentoVenta.DesdePorcentaje(
+                    linea.Importe, solicitada.DescuentoPorcentaje);
+                if (montoDescuento <= 0)
+                    return ProcessResult<Venta>.Error(
+                        $"El descuento de \"{linea.Nombre}\" es cero; ajusta el porcentaje o usa un monto");
+
+                linea.Descuento = montoDescuento;
+                linea.DescuentoPorcentaje = solicitada.DescuentoPorcentaje;
+            }
+            else if (solicitada.DescuentoMonto > 0)
+            {
+                if (!DescuentoVenta.EsMontoValido(solicitada.DescuentoMonto, linea.Importe))
+                    return ProcessResult<Venta>.Error(
+                        $"El descuento de \"{linea.Nombre}\" debe ser mayor a cero y menor a su importe");
+
+                linea.Descuento = solicitada.DescuentoMonto;
+            }
+
+            if (linea.Descuento > 0)
+            {
+                linea.Importe -= linea.Descuento;
                 linea.ImpuestoImporte = Dinero.ImpuestoIncluido(
                     linea.Importe, linea.ImpuestoPorcentaje);
             }
         }
 
+        var subtotal = lineasVenta.Sum(l => l.Subtotal);
+        var descuento = lineasVenta.Sum(l => l.Descuento);
         var total = subtotal - descuento;
         if (total <= 0)
             return ProcessResult<Venta>.Error("El total de la venta debe ser mayor a cero");
+
+        var porcentajes = lineasVenta
+            .Where(l => l.Descuento > 0 && l.DescuentoPorcentaje > 0)
+            .Select(l => l.DescuentoPorcentaje)
+            .Distinct()
+            .ToList();
+        var descuentoPorcentaje = descuento > 0 && porcentajes.Count == 1
+            ? porcentajes[0]
+            : 0m;
 
         var pagado = pago.Efectivo + pago.Tarjeta + pago.Fiado;
         if (pagado != total)
@@ -219,7 +236,7 @@ public class VentaService
             MetodoPago = metodoPago,
             Total = total,
             Descuento = descuento,
-            DescuentoPorcentaje = descuento > 0 ? pago.DescuentoPorcentaje : 0m,
+            DescuentoPorcentaje = descuentoPorcentaje,
             CostoTotal = lineasVenta.Sum(l => Dinero.Multiplicar(l.CostoUnitario, l.Cantidad)),
             PagoEfectivo = pago.Efectivo,
             PagoTarjeta = pago.Tarjeta,

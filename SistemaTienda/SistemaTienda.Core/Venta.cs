@@ -69,6 +69,9 @@ public class VentaLinea
     /// <summary>Parte del descuento de la venta asignada a esta línea, en centavos.</summary>
     public long Descuento { get; set; }
 
+    /// <summary>Porcentaje capturado para esta línea; cero si el descuento fue un monto.</summary>
+    public decimal DescuentoPorcentaje { get; set; }
+
     /// <summary>Importe bruto antes del descuento, en centavos.</summary>
     public long Subtotal => Importe + Descuento;
 

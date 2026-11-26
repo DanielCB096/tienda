@@ -17,14 +17,14 @@ Cada entrada tiene formato:
 
 ---
 
-## 2026-11-26 — Descuento por venta
+## 2026-11-26 — Descuento por producto
 
-- **Agregado**: el POS permite un descuento por venta en porcentaje o monto fijo, solo para dueño y encargado (`AplicarDescuento`).
-- El descuento se reparte proporcionalmente entre las líneas (mayor residuo, suma exacta) y el IVA incluido y la comisión se calculan sobre el neto.
+- **Agregado**: el POS permite un descuento por producto en porcentaje o monto fijo, con un atajo para toda la venta, solo para dueño y encargado (`AplicarDescuento`).
+- Cada renglón guarda su descuento y porcentaje; el atajo de monto para toda la venta se reparte proporcionalmente (mayor residuo, suma exacta). El IVA incluido y la comisión se calculan sobre el neto.
 - El ticket, la reimpresión y el detalle de Ventas muestran subtotal, descuento y total; los reportes por producto/categoría quedan netos.
-- **Esquema v20**: `Ventas.Descuento`, `Ventas.DescuentoPorcentaje` y `VentaLineas.Descuento`.
-- **Pruebas**: 11 nuevas en `DescuentosTests`; suite completa: 510.
-- Ver [ADR-013](../../SistemaMaestro/docs/07-decisiones/ADR-013-descuento-por-venta.md).
+- **Esquema v20/v21**: `Ventas.Descuento`, `Ventas.DescuentoPorcentaje`, `VentaLineas.Descuento` y `VentaLineas.DescuentoPorcentaje`.
+- **Pruebas**: 13 nuevas en `DescuentosTests`; suite completa: 513.
+- Ver [ADR-013](../../SistemaMaestro/docs/07-decisiones/ADR-013-descuento-por-producto.md).
 
 ## 2026-11-26 — Reportes por producto/categoría y edición de gastos
 

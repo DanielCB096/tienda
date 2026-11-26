@@ -54,6 +54,14 @@ public sealed class TicketService
             sb.AppendLine(
                 $"   ${Dinero.Formatear(linea.PrecioUnitario)} c/u = " +
                 $"${Dinero.Formatear(Dinero.Multiplicar(linea.PrecioUnitario, linea.Cantidad))}");
+
+            if (linea.Descuento > 0)
+            {
+                var etiquetaLinea = linea.DescuentoPorcentaje > 0
+                    ? $"   Desc. {linea.DescuentoPorcentaje.ToString("0.##", Cultura)}%"
+                    : "   Descuento";
+                sb.AppendLine($"{etiquetaLinea}: -${Dinero.Formatear(linea.Descuento)}");
+            }
         }
 
         sb.AppendLine(new string('-', 40));
