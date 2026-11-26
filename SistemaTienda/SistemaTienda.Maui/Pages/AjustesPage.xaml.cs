@@ -821,6 +821,8 @@ public partial class AjustesPage : ContentPage
         var app = Microsoft.Maui.Controls.Application.Current;
         if (app?.Windows.Count > 0)
             app.CloseWindow(app.Windows[0]);
+#elif ANDROID
+        Microsoft.Maui.ApplicationModel.Platform.CurrentActivity?.FinishAffinity();
 #endif
     }
 

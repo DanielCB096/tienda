@@ -8,13 +8,31 @@ namespace SistemaTienda.Maui.Pages;
 
 public partial class ConfiguracionInicialPage : ContentPage
 {
+    private static readonly FilePickerFileType TiposRespaldo = new(
+        new Dictionary<DevicePlatform, IEnumerable<string>>
+        {
+            [DevicePlatform.WinUI] = new[] { ".db", ".stb" },
+            [DevicePlatform.Android] = new[]
+            {
+                "application/octet-stream",
+                "application/x-sqlite3",
+                "application/vnd.sqlite3",
+                "*/*"
+            },
+            [DevicePlatform.iOS] = new[] { "public.database" },
+            [DevicePlatform.MacCatalyst] = new[] { "public.database" }
+        });
+
     private readonly ConfiguracionService _config;
+    private readonly RespaldoService _respaldos;
     private readonly NavegacionApp _navegacion;
 
-    public ConfiguracionInicialPage(ConfiguracionService config, NavegacionApp navegacion)
+    public ConfiguracionInicialPage(ConfiguracionService config, RespaldoService respaldos,
+        NavegacionApp navegacion)
     {
         InitializeComponent();
         _config = config;
+        _respaldos = respaldos;
         _navegacion = navegacion;
 
         GiroEntry.Text = ConfiguracionPorDefecto.GiroPredeterminado;
@@ -24,6 +42,60 @@ public partial class ConfiguracionInicialPage : ContentPage
             .ToString("F2", CultureInfo.InvariantCulture);
         LimiteEntry.Text = "0";
         RespaldoEntry.Text = ConfiguracionPorDefecto.RespaldoIntervaloDiasPredeterminado.ToString(CultureInfo.InvariantCulture);
+    }
+
+    private async void OnRestaurarRespaldoClicked(object sender, EventArgs e)
+    {
+        RestaurarRespaldoButton.IsEnabled = false;
+        try
+        {
+            var archivo = await FilePicker.Default.PickAsync(new PickOptions
+            {
+                PickerTitle = "Selecciona el respaldo de POSale",
+                FileTypes = TiposRespaldo
+            });
+            if (archivo == null)
+                return;
+
+            var confirmar = await DisplayAlertAsync("Restaurar respaldo",
+                $"Se reemplazará la base de este equipo por:\n{archivo.FileName}\n\n" +
+                "Se guardará un respaldo previo. Después inicia sesión con el PIN de ese respaldo.",
+                "Restaurar", "Cancelar");
+            if (!confirmar)
+                return;
+
+            string? clave = null;
+            if (archivo.FileName.EndsWith(CifradoRespaldo.Extension,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                clave = await DisplayPromptAsync("Respaldo cifrado",
+                    "Escribe la clave de respaldo de 24 caracteres.",
+                    accept: "Restaurar", cancel: "Cancelar", maxLength: 40);
+                if (clave == null)
+                    return;
+            }
+
+            var resultado = _respaldos.RestaurarEnInstalacionNueva(
+                archivo.FullPath, confirmado: true, claveRespaldo: clave);
+            if (resultado.IsError)
+            {
+                MostrarError(resultado.Message);
+                return;
+            }
+
+            await DisplayAlertAsync("Respaldo restaurado",
+                "La tienda quedó restaurada. Inicia sesión con el PIN de ese respaldo.",
+                "Continuar");
+            _navegacion.MostrarLogin();
+        }
+        catch (Exception ex)
+        {
+            MostrarError($"No se pudo restaurar: {ex.Message}");
+        }
+        finally
+        {
+            RestaurarRespaldoButton.IsEnabled = true;
+        }
     }
 
     private async void OnCrearClicked(object sender, EventArgs e)

@@ -198,6 +198,14 @@ La app también intenta crear un respaldo automático al iniciar y al cerrar ses
 - Si después de una actualización la app se comporta raro.
 - Antes de hacer cambios mayores (nueva configuración de impuestos, agregar muchos productos).
 
+### Restaurar en un equipo nuevo o si la app no abre
+
+1. Instala POSale en el equipo nuevo.
+2. En la pantalla **Configuración inicial**, toca **Restaurar un respaldo**.
+3. Elige el archivo `.db` o `.db.stb`; si está cifrado, escribe la clave de 24 caracteres.
+4. Confirma. La app vuelve al inicio de sesión y entras con el PIN de ese respaldo.
+5. Si la app muestra **No se pudo iniciar**, usa **Restaurar un respaldo** en esa misma pantalla.
+
 ### Cómo restaurar
 
 1. Ir a Configuración → "Respaldo y Restauración".

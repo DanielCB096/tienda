@@ -149,20 +149,53 @@ public class RespaldoService
     }
 
     /// <summary>
-    /// Reemplaza la base actual. Requiere confirmación explícita y reiniciar la aplicación.
+    /// Reemplaza la base actual desde Ajustes. Requiere sesión con permiso de
+    /// configuración, confirmación explícita y reiniciar la aplicación.
     /// </summary>
     public ProcessResult Restaurar(string rutaRespaldo, bool confirmado,
         string claveRespaldo = null)
+    {
+        var autorizacion = AutorizacionService.Exigir(SesionActual.Usuario, PermisoSistema.Configurar);
+        if (autorizacion.IsError)
+            return ProcessResult.Error(autorizacion.Message);
+
+        return RestaurarArchivo(rutaRespaldo, confirmado, claveRespaldo);
+    }
+
+    /// <summary>
+    /// Restaura durante la configuración inicial, cuando todavía no hay usuarios.
+    /// Sirve para recuperar otro equipo o una instalación nueva con la tarjeta de
+    /// recuperación. Después se inicia sesión con los usuarios del respaldo.
+    /// </summary>
+    public ProcessResult RestaurarEnInstalacionNueva(string rutaRespaldo, bool confirmado,
+        string claveRespaldo = null)
+    {
+        if (!confirmado)
+            return ProcessResult.Error("La restauración requiere confirmación explícita");
+
+        if (_db.ContarUsuarios() > 0)
+            return ProcessResult.Error(
+                "Ya hay una tienda configurada en este equipo. Inicia sesión y restaura desde Ajustes.");
+
+        return RestaurarArchivo(rutaRespaldo, confirmado, claveRespaldo);
+    }
+
+    /// <summary>
+    /// Restaura desde la pantalla de arranque fallido. No hay sesión porque la
+    /// base no abre; la confirmación y la clave del respaldo siguen siendo necesarias.
+    /// </summary>
+    public ProcessResult RestaurarEnRecuperacion(string rutaRespaldo, bool confirmado,
+        string claveRespaldo = null) =>
+        RestaurarArchivo(rutaRespaldo, confirmado, claveRespaldo);
+
+    private ProcessResult RestaurarArchivo(string rutaRespaldo, bool confirmado,
+        string claveRespaldo)
     {
         if (!confirmado)
             return ProcessResult.Error("La restauración requiere confirmación explícita");
 
         if (string.IsNullOrWhiteSpace(rutaRespaldo))
             return ProcessResult.Error("Indique la ruta del respaldo a restaurar");
-
-        var autorizacion = AutorizacionService.Exigir(SesionActual.Usuario, PermisoSistema.Configurar);
-        if (autorizacion.IsError)
-            return ProcessResult.Error(autorizacion.Message);
 
         string temporal = null;
         try

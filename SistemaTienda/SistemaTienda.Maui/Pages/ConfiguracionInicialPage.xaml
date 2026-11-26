@@ -76,6 +76,21 @@
                 </VerticalStackLayout>
             </Border>
 
+            <Border Style="{StaticResource Tarjeta}"
+                    MaximumWidthRequest="520"
+                    HorizontalOptions="Center">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="¿YA TIENES UN RESPALDO?" Style="{StaticResource EtiquetaSeccion}" />
+                    <Label Text="Restaura la base de otro equipo o una copia anterior. Se pedirá la clave si el respaldo está cifrado."
+                           Style="{StaticResource TextoNota}" />
+                    <Button x:Name="RestaurarRespaldoButton"
+                            Text="Restaurar un respaldo"
+                            Style="{StaticResource BotonSecundario}"
+                            Clicked="OnRestaurarRespaldoClicked"
+                            Margin="0,6,0,0" />
+                </VerticalStackLayout>
+            </Border>
+
             <Label Text="Los datos viven solo en este dispositivo. Configura un respaldo desde Ajustes."
                    Style="{StaticResource TextoNota}"
                    HorizontalTextAlignment="Center"

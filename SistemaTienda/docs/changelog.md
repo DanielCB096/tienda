@@ -17,6 +17,14 @@ Cada entrada tiene formato:
 
 ---
 
+## 2026-11-26 — Restauración guiada al instalar o recuperar
+
+- **Agregado**: el asistente inicial permite **Restaurar un respaldo** cuando la base está vacía; después se inicia sesión con el PIN del respaldo.
+- **Agregado**: la pantalla de arranque fallido permite restaurar sin sesión, con confirmación y clave si el respaldo está cifrado.
+- **Modificado**: restaurar desde Ajustes cierra la app también en Android para abrir la base restaurada.
+- **Pruebas**: 6 nuevas en `RestauracionInstalacionTests`; suite completa: 489.
+- Ver [ADR-011](../../SistemaMaestro/docs/07-decisiones/ADR-011-restauracion-sin-sesion.md).
+
 ## 2026-11-25 — Marca POSale e icono
 
 - **Agregado**: nombre visible **POSale** en la app, la ventana, el asistente, Ajustes y el selector de respaldos.

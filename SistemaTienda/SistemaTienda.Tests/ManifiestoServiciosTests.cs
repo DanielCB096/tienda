@@ -53,7 +53,8 @@ public sealed class ManifiestoServiciosTests
         ["RespaldoService"] = new[]
         {
             "CrearRespaldo", "CrearRespaldoManual", "EjecutarAutomaticoSiCorresponde",
-            "ListarRespaldos", "ObtenerUltimoRespaldo", "Restaurar"
+            "ListarRespaldos", "ObtenerUltimoRespaldo", "Restaurar",
+            "RestaurarEnInstalacionNueva", "RestaurarEnRecuperacion"
         },
         ["PaqueteSoporteService"] = new[] { "Crear" }
     };

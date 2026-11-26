@@ -30,7 +30,9 @@ public sealed class ArranqueApp
         }
         catch (Exception ex)
         {
-            return new ErrorPage(ex.Message, _db.RutaBaseDatos, _db.DirectorioRespaldos);
+            return new ErrorPage(ex.Message, _db.RutaBaseDatos, _db.DirectorioRespaldos,
+                _services.GetRequiredService<Application.Services.RespaldoService>(),
+                _services.GetRequiredService<NavegacionApp>());
         }
     }
 }
