@@ -128,7 +128,7 @@ dotnet test SistemaTienda/SistemaTienda.sln
 | `InventarioBordeTests` | Venta que agota el stock, costo o cantidad inválidos en entrada, merma no positiva, código duplicado tras recortar, comodines literales en la búsqueda |
 | `UsuariosPermisosTests` | Nombre recortado, PIN de cuatro dígitos, nombre en blanco, usuario inexistente, sal distinta por hash y hash mal formado |
 | `MapeoTiposTests` | Rol entero a enum y fecha nullable nula o cargada |
-| `ReportesTests` | Utilidad con costo congelado, costo modificado después de vender, comisión de tarjeta, mermas, gastos de ambos orígenes, venta fuera del rango y rango invertido |
+| `ReportesTests` | Utilidad con costo congelado, costo modificado después de vender, comisión de tarjeta, mermas, gastos de ambos orígenes, venta fuera del rango, rango invertido, agrupación por producto/categoría/día y exclusión de anuladas |
 | `RespaldoAutomaticoTests` | Respaldo automático sin copia previa y su auditoría, respaldo vigente que no duplica, intervalo cumplido, intervalo 0 deshabilitado y auditoría del respaldo manual |
 | `TicketServiceTests` | Texto del ticket (efectivo con recibido y cambio, mixto con comisión, fiado con cliente), marcador de anulación, contenido del QR con estado, límite de diez productos y nombre de tienda por defecto |
 | `ConteoEfectivoTests` | Catálogo de 11 denominaciones de mayor a menor y sin duplicados, subtotal por cantidad, cantidades cero o negativas ignoradas, total de billetes y monedas y líneas sin cantidad |

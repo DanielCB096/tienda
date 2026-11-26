@@ -67,6 +67,20 @@ public static class ExportadorCsv
             }
         }
 
+        if (reporte.Dias.Count > 0)
+        {
+            lineas.Add(string.Empty);
+            lineas.Add("Ventas por dia");
+            lineas.Add("Fecha,Ventas,Costo,Comision,Utilidad");
+            foreach (var dia in reporte.Dias)
+            {
+                lineas.Add(string.Join(",",
+                    Campo(dia.Fecha.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)),
+                    Campo(Importe(dia.Ventas)), Campo(Importe(dia.Costo)),
+                    Campo(Importe(dia.Comision)), Campo(Importe(dia.Utilidad))));
+            }
+        }
+
         return string.Join(FinLinea, lineas) + FinLinea;
     }
 

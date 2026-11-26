@@ -64,6 +64,17 @@ public static class ExportadorPdf
             }
         }
 
+        if (reporte.Dias.Count > 0)
+        {
+            pdf.Espacio(4);
+            pdf.Texto("Ventas por dia", 10, true);
+            foreach (var dia in reporte.Dias)
+            {
+                pdf.Fila($"{dia.Fecha.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)} ({dia.NumeroVentas} ventas)",
+                    $"{Dinero.Formatear(dia.Ventas)} / {Dinero.Formatear(dia.Utilidad)}", 9);
+            }
+        }
+
         pdf.Espacio(8);
         pdf.Texto("Utilidad bruta = ventas - costo - comision. Utilidad neta = bruta - mermas - gastos.", 8);
         pdf.Texto("Las ventas anuladas no se incluyen.", 8);

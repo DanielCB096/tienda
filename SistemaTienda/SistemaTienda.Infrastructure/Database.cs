@@ -2566,6 +2566,34 @@ public class DatabaseTools
         using (var cmd = conn.CreateCommand())
         {
             cmd.CommandText = @"
+                SELECT date(v.Fecha), COUNT(*), COALESCE(SUM(v.Total), 0),
+                       COALESCE(SUM(v.CostoTotal), 0), COALESCE(SUM(v.ComisionTarjeta), 0)
+                FROM Ventas v
+                WHERE date(v.Fecha) BETWEEN date(@desde) AND date(@hasta)
+                  AND NOT EXISTS (SELECT 1 FROM AnulacionesVenta a WHERE a.VentaId = v.Id)
+                GROUP BY date(v.Fecha)
+                ORDER BY date(v.Fecha)";
+            cmd.Parameters.AddWithValue("@desde", desde.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+            cmd.Parameters.AddWithValue("@hasta", hasta.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                reporte.Dias.Add(new ReporteDia
+                {
+                    Fecha = DateTime.ParseExact(reader.GetString(0), "yyyy-MM-dd",
+                        CultureInfo.InvariantCulture),
+                    NumeroVentas = Convert.ToInt32(reader.GetValue(1), CultureInfo.InvariantCulture),
+                    Ventas = Convert.ToInt64(reader.GetValue(2), CultureInfo.InvariantCulture),
+                    Costo = Convert.ToInt64(reader.GetValue(3), CultureInfo.InvariantCulture),
+                    Comision = Convert.ToInt64(reader.GetValue(4), CultureInfo.InvariantCulture)
+                });
+            }
+        }
+
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.CommandText = @"
                 SELECT COALESCE(SUM(Monto), 0) FROM Gastos
                 WHERE date(Fecha) BETWEEN date(@desde) AND date(@hasta)";
             cmd.Parameters.AddWithValue("@desde", desde.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));

@@ -123,6 +123,17 @@ public sealed class ExportadorCsvTests
             Categorias = new List<ReporteCategoria>
             {
                 new() { Categoria = "Abarrotes", Cantidad = 2, Ventas = 2_000, Costo = 1_200 }
+            },
+            Dias = new List<ReporteDia>
+            {
+                new()
+                {
+                    Fecha = new DateTime(2026, 11, 20),
+                    NumeroVentas = 1,
+                    Ventas = 2_000,
+                    Costo = 1_200,
+                    Comision = 0
+                }
             }
         };
 
@@ -132,6 +143,8 @@ public sealed class ExportadorCsvTests
         Assert.Contains("Café,Abarrotes,2,20.00,12.00,8.00", csv);
         Assert.Contains("Categorias", csv);
         Assert.Contains("Abarrotes,2,20.00,12.00,8.00", csv);
+        Assert.Contains("Ventas por dia", csv);
+        Assert.Contains("2026-11-20,20.00,12.00,0.00,8.00", csv);
     }
 
     [Fact]

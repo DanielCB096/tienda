@@ -1,5 +1,9 @@
 # Reportes
 
+## Ventas por día
+
+El reporte agrupa las ventas no anuladas por día dentro del periodo. Cada renglón muestra el total cobrado, el número de ventas, el costo congelado más la comisión de tarjeta y la utilidad del día. La utilidad diaria es bruta: no resta mermas ni gastos, porque esos son del periodo completo y se muestran en el resumen. Los días sin ventas no aparecen.
+
 ## Estado de implementación (2026-11-21)
 
 Base implementada en consola y en la app MAUI. Los reportes ya existentes (valorizado, stock bajo, gastos, saldos y cortes) se complementan con el reporte de utilidad por periodo.

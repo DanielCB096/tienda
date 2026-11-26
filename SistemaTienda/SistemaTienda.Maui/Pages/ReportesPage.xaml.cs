@@ -100,6 +100,7 @@ public partial class ReportesPage : ContentPage
         MostrarCobros(reporte);
         MostrarProductos(reporte);
         MostrarCategorias(reporte);
+        MostrarDias(reporte);
 
         UtilidadBrutaLabel.Text = Formato.Moneda(reporte.UtilidadBruta);
         UtilidadBrutaLabel.TextColor = reporte.UtilidadBruta >= 0 ? ColorPositivo : ColorNegativo;
@@ -156,6 +157,25 @@ public partial class ReportesPage : ContentPage
 
         BindableLayout.SetItemsSource(CategoriasLista, filas);
         SinCategoriasLabel.IsVisible = filas.Count == 0;
+    }
+
+    private void MostrarDias(ReporteUtilidad reporte)
+    {
+        var filas = reporte.Dias
+            .Select(dia => new ReporteDiaFila
+            {
+                Nombre = Formato.FechaCorta(dia.Fecha),
+                Detalle = dia.NumeroVentas == 1
+                    ? $"1 venta · Costo {Formato.Moneda(dia.Costo + dia.Comision)}"
+                    : $"{dia.NumeroVentas} ventas · Costo {Formato.Moneda(dia.Costo + dia.Comision)}",
+                Total = Formato.Moneda(dia.Ventas),
+                Utilidad = $"Utilidad {Formato.Moneda(dia.Utilidad)}",
+                UtilidadColor = dia.Utilidad >= 0 ? ColorPositivo : ColorNegativo
+            })
+            .ToList();
+
+        BindableLayout.SetItemsSource(DiasLista, filas);
+        SinDiasLabel.IsVisible = filas.Count == 0;
     }
 
     private static DesgloseMetodoPago DesgloseDe(ReporteUtilidad reporte, string metodo) =>

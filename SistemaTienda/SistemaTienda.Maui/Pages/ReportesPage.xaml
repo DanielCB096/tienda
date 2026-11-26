@@ -274,6 +274,36 @@
                 </VerticalStackLayout>
             </Border>
 
+            <Border Style="{StaticResource Tarjeta}" Padding="16">
+                <VerticalStackLayout Spacing="6">
+                    <Label Text="VENTAS POR DÍA" Style="{StaticResource EtiquetaSeccion}" />
+                    <Label Text="La utilidad del día descuenta costo y comisión; mermas y gastos se restan en el total del periodo."
+                           Style="{StaticResource TextoNota}"
+                           FontSize="12" />
+                    <Label x:Name="SinDiasLabel"
+                           Text="No hay ventas en el periodo."
+                           Style="{StaticResource TextoNota}"
+                           IsVisible="False" />
+                    <VerticalStackLayout x:Name="DiasLista" Spacing="8">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="models:ReporteDiaFila">
+                                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="8">
+                                    <Label Text="{Binding Nombre}" FontSize="14" FontAttributes="Bold" />
+                                    <Label Grid.Column="1" Text="{Binding Total}"
+                                           FontSize="14" FontAttributes="Bold"
+                                           HorizontalTextAlignment="End" />
+                                    <Label Grid.Row="1" Text="{Binding Detalle}"
+                                           Style="{StaticResource TextoNota}" FontSize="12" />
+                                    <Label Grid.Row="1" Grid.Column="1" Text="{Binding Utilidad}"
+                                           TextColor="{Binding UtilidadColor}"
+                                           FontSize="12" HorizontalTextAlignment="End" />
+                                </Grid>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
+                </VerticalStackLayout>
+            </Border>
+
             <Border Style="{StaticResource Aviso}">
                 <Label Text="Utilidad bruta = ventas − costo de ventas − comisión de tarjeta. Utilidad neta = bruta − mermas − gastos. Las ventas anuladas no se incluyen."
                        FontSize="13"

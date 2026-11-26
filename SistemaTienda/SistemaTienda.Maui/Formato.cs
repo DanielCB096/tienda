@@ -18,6 +18,8 @@ public static class Formato
 
     public static string FechaHora(DateTime fecha) => fecha.ToString("dd/MM/yyyy HH:mm", Cultura);
 
+    public static string FechaCorta(DateTime fecha) => fecha.ToString("dd/MM/yyyy", Cultura);
+
     public static string FechaLarga(DateTime fecha) =>
         fecha.ToString("dddd, d 'de' MMMM 'de' yyyy", Cultura);
 

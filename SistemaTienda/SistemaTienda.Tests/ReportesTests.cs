@@ -91,6 +91,41 @@ public sealed class ReportesTests
     }
 
     [Fact]
+    public void Obtener_AgrupaVentasPorDiaYExcluyeAnuladas()
+    {
+        using var bd = new BaseDatosPrueba();
+        bd.ConfigurarTienda();
+        var producto = CrearProducto(bd, "R14", precio: 1_000, costo: 600, stock: 20);
+
+        VenderEnFecha(bd, producto, DateTime.Today.AddDays(-1).AddHours(10), 1);
+        VenderEnFecha(bd, producto, DateTime.Today.AddHours(9), 2);
+
+        var anulada = Vender(bd, new PagoSolicitado { Efectivo = 1_000 }, (producto, 1));
+        Assert.True(anulada.IsSuccess, anulada.Message);
+        var anulacion = new VentaService(bd.Db).AnularVenta(anulada.Value.Id, "Prueba", "Dueño");
+        Assert.True(anulacion.IsSuccess, anulacion.Message);
+
+        var reporte = new ReporteUtilidadService(bd.Db)
+            .Obtener(DateTime.Today.AddDays(-1), DateTime.Today).Value;
+
+        Assert.Equal(2, reporte.Dias.Count);
+
+        var ayer = reporte.Dias[0];
+        Assert.Equal(DateTime.Today.AddDays(-1).Date, ayer.Fecha);
+        Assert.Equal(1, ayer.NumeroVentas);
+        Assert.Equal(1_000, ayer.Ventas);
+        Assert.Equal(600, ayer.Costo);
+        Assert.Equal(400, ayer.Utilidad);
+
+        var hoy = reporte.Dias[1];
+        Assert.Equal(DateTime.Today.Date, hoy.Fecha);
+        Assert.Equal(1, hoy.NumeroVentas);
+        Assert.Equal(2_000, hoy.Ventas);
+        Assert.Equal(1_200, hoy.Costo);
+        Assert.Equal(800, hoy.Utilidad);
+    }
+
+    [Fact]
     public void Obtener_ExcluyeVentasAnuladasDelDesglose()
     {
         using var bd = new BaseDatosPrueba();

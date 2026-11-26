@@ -17,6 +17,13 @@ Cada entrada tiene formato:
 
 ---
 
+## 2026-11-26 — Ventas por día
+
+- **Agregado**: Reportes muestra **ventas por día** con total cobrado, número de ventas, costo más comisión y utilidad bruta del día.
+- Los días sin ventas no aparecen y las ventas anuladas quedan fuera. La utilidad diaria no resta mermas ni gastos, que siguen en el total del periodo.
+- El desglose se incluye en el CSV y el PDF del reporte.
+- **Pruebas**: 1 nueva en `ReportesTests` y cobertura de CSV; suite completa: 514.
+
 ## 2026-11-26 — Descuento por producto
 
 - **Agregado**: el POS permite un descuento por producto en porcentaje o monto fijo, con un atajo para toda la venta, solo para dueño y encargado (`AplicarDescuento`).

@@ -33,6 +33,9 @@ public sealed class ReporteUtilidad
     /// <summary>Ventas del periodo agrupadas por categoría actual del producto.</summary>
     public List<ReporteCategoria> Categorias { get; set; } = new();
 
+    /// <summary>Ventas del periodo agrupadas por día (sin anuladas).</summary>
+    public List<ReporteDia> Dias { get; set; } = new();
+
     public long UtilidadBruta => VentasTotal - CostoVentas - ComisionTarjeta;
     public long UtilidadNeta => UtilidadBruta - Mermas - Gastos;
 }
@@ -66,4 +69,18 @@ public sealed class ReporteCategoria
     public long Ventas { get; set; }
     public long Costo { get; set; }
     public long Utilidad => Ventas - Costo;
+}
+
+/// <summary>
+/// Ventas y utilidad bruta de un día, en centavos. La utilidad del día descuenta
+/// costo y comisión de tarjeta, pero no mermas ni gastos: esos son del periodo.
+/// </summary>
+public sealed class ReporteDia
+{
+    public DateTime Fecha { get; set; }
+    public int NumeroVentas { get; set; }
+    public long Ventas { get; set; }
+    public long Costo { get; set; }
+    public long Comision { get; set; }
+    public long Utilidad => Ventas - Costo - Comision;
 }
