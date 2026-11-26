@@ -86,7 +86,7 @@ Cada agente: su carpeta, su rama y su PR.
 - H6.1: importación con vista previa, lote auditable, plantilla y reversión compensatoria (ADR-009); 3000 filas en una transacción.
 - H6.2: tickets en espera persistidos (esquema v19), sin reservar stock, precios recalculados con aviso, máximo 10 y venta atómica que cierra el ticket.
 - Reportes por producto/categoría y edición de gastos (bloqueada tras corte cerrado) con 499 pruebas; pendiente prueba visual.
-- Ventas por rango: historial con Desde/Hasta, Hoy/Este mes, fecha y hora; 492 pruebas; pendiente verificación visual.
+- Ventas por rango: historial con Desde/Hasta, Hoy/Este mes, tarjeta de total cobrado y anuladas marcadas; 492 pruebas; verificado en Windows el 2026-11-26.
 - H2 A3: restauración guiada en el asistente y en la pantalla de arranque fallido, con confirmación y clave; 489 pruebas. Verificado en Windows el 2026-11-26 (botón, ruta, confirmación y PIN); en Windows se usa un explorador propio porque los selectores nativos fallan sin empaquetar; Android conserva el selector. Pendiente Android y arranque fallido.
 - Marca: nombre visible **POSale**, icono de canasta con etiqueta y peso; los identificadores internos y la ruta de datos siguen como `SistemaTienda` (ADR-010).
 - Piloto preparado: plan, instalación/día 0, checklist, capacitación, tarjeta del cajero, guion de 30 días, incidencias, privacidad y criterios de éxito en `SistemaTienda/docs/08-piloto/`; kit con `scripts/piloto-preparar.ps1` (probado con paquete real/simulado). Listo para ejecutar con una tienda.
