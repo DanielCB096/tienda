@@ -27,6 +27,15 @@ public sealed class PagoSolicitado
     /// parte de la suma de pagos: solo sirve para guardar el cambio.
     /// </summary>
     public long? EfectivoRecibido { get; set; }
+
+    /// <summary>
+    /// Descuento de la venta. Se captura como porcentaje o como monto en centavos,
+    /// nunca ambos. El total que se cobra es el subtotal menos el descuento.
+    /// </summary>
+    public decimal DescuentoPorcentaje { get; set; }
+
+    /// <summary>Descuento en centavos cuando se captura como monto fijo.</summary>
+    public long DescuentoMonto { get; set; }
 }
 
 public class VentaService
@@ -101,7 +110,57 @@ public class VentaService
             });
         }
 
-        var total = lineasVenta.Sum(l => l.Importe);
+        if (pago.DescuentoPorcentaje < 0 || pago.DescuentoMonto < 0)
+            return ProcessResult<Venta>.Error("El descuento no puede ser negativo");
+
+        if (pago.DescuentoPorcentaje > 0 && pago.DescuentoMonto > 0)
+            return ProcessResult<Venta>.Error(
+                "Indique el descuento como porcentaje o como monto, no ambos");
+
+        var subtotal = lineasVenta.Sum(l => l.Importe);
+        var descuento = 0L;
+        if (pago.DescuentoPorcentaje > 0 || pago.DescuentoMonto > 0)
+        {
+            var autorizacionDescuento = Autorizar(PermisoSistema.AplicarDescuento);
+            if (autorizacionDescuento.IsError)
+                return ProcessResult<Venta>.Error(autorizacionDescuento.Message);
+
+            if (pago.DescuentoPorcentaje > 0)
+            {
+                if (!DescuentoVenta.EsPorcentajeValido(pago.DescuentoPorcentaje))
+                    return ProcessResult<Venta>.Error(
+                        "El descuento debe ser mayor a 0% y menor a 100%");
+
+                descuento = DescuentoVenta.DesdePorcentaje(subtotal, pago.DescuentoPorcentaje);
+            }
+            else
+            {
+                if (!DescuentoVenta.EsMontoValido(pago.DescuentoMonto, subtotal))
+                    return ProcessResult<Venta>.Error(
+                        "El descuento debe ser mayor a cero y menor al subtotal de la venta");
+
+                descuento = pago.DescuentoMonto;
+            }
+
+            if (descuento <= 0)
+                return ProcessResult<Venta>.Error(
+                    "El descuento calculado es cero; ajusta el porcentaje o usa un monto");
+
+            // El descuento se reparte entre las líneas para que el reporte por
+            // producto y el IVA incluido queden netos desde el origen.
+            var reparto = DescuentoVenta.Repartir(descuento,
+                lineasVenta.Select(l => l.Importe).ToList());
+            for (var i = 0; i < lineasVenta.Count; i++)
+            {
+                var linea = lineasVenta[i];
+                linea.Descuento = reparto[i];
+                linea.Importe -= reparto[i];
+                linea.ImpuestoImporte = Dinero.ImpuestoIncluido(
+                    linea.Importe, linea.ImpuestoPorcentaje);
+            }
+        }
+
+        var total = subtotal - descuento;
         if (total <= 0)
             return ProcessResult<Venta>.Error("El total de la venta debe ser mayor a cero");
 
@@ -159,6 +218,8 @@ public class VentaService
             ClienteId = pago.ClienteId,
             MetodoPago = metodoPago,
             Total = total,
+            Descuento = descuento,
+            DescuentoPorcentaje = descuento > 0 ? pago.DescuentoPorcentaje : 0m,
             CostoTotal = lineasVenta.Sum(l => Dinero.Multiplicar(l.CostoUnitario, l.Cantidad)),
             PagoEfectivo = pago.Efectivo,
             PagoTarjeta = pago.Tarjeta,
@@ -183,7 +244,13 @@ public class VentaService
             Entidad = "Venta",
             DatosDespues =
                 $"Total={Dinero.Formatear(venta.Total)};Costo={Dinero.Formatear(venta.CostoTotal)};" +
-                $"Metodo={venta.MetodoPago};Comision={Dinero.Formatear(venta.ComisionTarjeta)}",
+                $"Metodo={venta.MetodoPago};Comision={Dinero.Formatear(venta.ComisionTarjeta)}" +
+                (venta.Descuento > 0
+                    ? $";Descuento={Dinero.Formatear(venta.Descuento)}" +
+                      (venta.DescuentoPorcentaje > 0
+                          ? $";DescuentoPorcentaje={venta.DescuentoPorcentaje}"
+                          : string.Empty)
+                    : string.Empty),
             Motivo = venta.ClienteId.HasValue ? $"Cliente={venta.ClienteId.Value}" : string.Empty
         };
 

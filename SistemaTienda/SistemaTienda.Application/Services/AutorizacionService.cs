@@ -40,6 +40,7 @@ public static class AutorizacionService
             RolUsuario.Encargado => permiso is
                 PermisoSistema.Vender or
                 PermisoSistema.AnularVenta or
+                PermisoSistema.AplicarDescuento or
                 PermisoSistema.Consultar or
                 PermisoSistema.RegistrarMerma or
                 PermisoSistema.RegistrarGasto or
@@ -77,6 +78,7 @@ public static class AutorizacionService
     {
         PermisoSistema.Vender => "vender",
         PermisoSistema.AnularVenta => "anular ventas",
+        PermisoSistema.AplicarDescuento => "aplicar descuentos",
         PermisoSistema.Consultar => "consultar",
         PermisoSistema.RegistrarMerma => "registrar mermas",
         PermisoSistema.RegistrarGasto => "registrar gastos",

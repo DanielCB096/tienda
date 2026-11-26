@@ -12,6 +12,19 @@ public class Venta
     public int? ClienteId { get; set; }
     public string MetodoPago { get; set; } = MetodoPagoVenta.Efectivo;
     public long Total { get; set; }
+
+    /// <summary>Descuento aplicado a la venta, en centavos. No se suma al total.</summary>
+    public long Descuento { get; set; }
+
+    /// <summary>
+    /// Porcentaje capturado por el cajero. Vale cero cuando el descuento se dio
+    /// como monto fijo o cuando la venta no tiene descuento.
+    /// </summary>
+    public decimal DescuentoPorcentaje { get; set; }
+
+    /// <summary>Importe antes del descuento, en centavos.</summary>
+    public long Subtotal => Total + Descuento;
+
     public long CostoTotal { get; set; }
     public long PagoEfectivo { get; set; }
     public long PagoTarjeta { get; set; }
@@ -49,7 +62,15 @@ public class VentaLinea
     public int Cantidad { get; set; }
     public long PrecioUnitario { get; set; }
     public long CostoUnitario { get; set; }
+
+    /// <summary>Importe neto después del descuento, en centavos.</summary>
     public long Importe { get; set; }
+
+    /// <summary>Parte del descuento de la venta asignada a esta línea, en centavos.</summary>
+    public long Descuento { get; set; }
+
+    /// <summary>Importe bruto antes del descuento, en centavos.</summary>
+    public long Subtotal => Importe + Descuento;
 
     /// <summary>Tasa de impuesto congelada al vender; el precio ya la incluye.</summary>
     public decimal ImpuestoPorcentaje { get; set; }

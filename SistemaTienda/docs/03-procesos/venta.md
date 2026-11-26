@@ -37,7 +37,7 @@ La pestaña **Vender** replica el flujo de la consola sobre los mismos servicios
 5. Al confirmar, `VentaService.RegistrarVenta` guarda la venta y descuenta el stock en una transacción. La app limpia el carrito y muestra el ticket.
 6. El ticket interno (no fiscal) incluye un QR informativo, se puede compartir como texto o como imagen PNG con el sistema, o copiar al portapapeles. Si el pago fue en efectivo, imprime el monto recibido y el cambio.
 
-El detalle, la reimpresión y la anulación desde Ventas llegaron en T16; los descuentos siguen fuera del alcance. El cierre de corte se hace desde la pestaña Caja. La interfaz no tiene pruebas automatizadas: el POS se verificó manualmente en Windows el 2026-10-25 (efectivo con cambio, tarjeta, mixto, fiado, límite de stock, producto agotado y ticket con copiar/cerrar); compartir con el diálogo del sistema y Android siguen pendientes.
+El detalle, la reimpresión y la anulación desde Ventas llegaron en T16; el descuento por venta llegó en la v20 (ADR-013). El cierre de corte se hace desde la pestaña Caja. La interfaz no tiene pruebas automatizadas: el POS se verificó manualmente en Windows el 2026-10-25 (efectivo con cambio, tarjeta, mixto, fiado, límite de stock, producto agotado y ticket con copiar/cerrar); compartir con el diálogo del sistema y Android siguen pendientes.
 
 ## Detalle, reimpresión y anulación en la app MAUI (T16)
 
@@ -87,7 +87,7 @@ Las ventas anuladas se excluyen del corte pendiente y del reporte de utilidad, y
 |----------|-------------|
 | **Sin ventas en espera** | Una venta a la vez por cajero. El sistema no permite iniciar una nueva venta mientras haya una en progreso. |
 | **Precio incluye impuesto** | El campo `Precio` en `Producto` ya considera el impuesto. Al vender se congelan la tasa y el importe de IVA incluido por línea (esquema v14); el total sigue siendo `Precio × Cantidad`. |
-| **No hay descuentos en MVP** | El precio final es el precio de catálogo × cantidad. Los descuentos quedan para Fase 2. |
+| **Descuento por venta** | Se captura como % o monto, solo dueño y encargado. El total neto se reparte entre las líneas y el IVA se calcula sobre el neto. |
 | **QR en ticket** | El ticket de la app incluye un QR informativo offline con los datos esenciales de la venta (folio, fecha, estado, total, método y hasta diez productos). No es un enlace ni un comprobante fiscal. |
 
 ### Flujo de Venta Simplificado
@@ -173,9 +173,9 @@ Las ventas anuladas se excluyen del corte pendiente y del reporte de utilidad, y
 - [x] Precio incluye impuesto: **CONFIRMADO** - No hay cálculo adicional en venta.
 - [x] Sin ventas en espera: **CONFIRMADO** - Una venta a la vez.
 - [x] QR en ticket: **CONFIRMADO** - Incluido en la generación.
-- [ ] Descuentos en MVP: **DEFINIDO NO INCLUIR** - Para Fase 2.
+- [x] Descuento por venta: **IMPLEMENTADO** en la v20 (ADR-013).
 - [ ] Mixto y Fiado: **DISEÑADOS SIN IMPEDIR** - Opcionales para futuras activaciones.
 
 ---
 
-**Próximos pasos en código**: descuentos (Fase 2). El ticket con QR, la reimpresión con cambio, la anulación y el desglose de IVA incluido ya están implementados en la app.
+**Próximos pasos en código**: descuento por renglón y autorización por PIN. El ticket con QR, la reimpresión con cambio, la anulación, el descuento por venta y el desglose de IVA incluido ya están implementados en la app.

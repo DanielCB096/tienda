@@ -63,8 +63,56 @@ public partial class PosPage : ContentPage
         ActualizarVistaMetodo();
     }
 
-    private long Total() =>
+    private long Subtotal() =>
         _carrito.Sum(c => Dinero.Multiplicar(c.Producto.Precio, c.Cantidad));
+
+    private bool PuedeDescontar =>
+        _sesion.Usuario != null &&
+        AutorizacionService.Puede(_sesion.Usuario, PermisoSistema.AplicarDescuento);
+
+    private bool EsPorcentaje() => DescuentoTipoPicker.SelectedIndex <= 0;
+
+    private decimal PorcentajeCapturado()
+    {
+        if (!EsPorcentaje())
+            return 0m;
+
+        var limpio = (DescuentoEntry.Text ?? string.Empty)
+            .Replace("%", string.Empty)
+            .Replace(" ", string.Empty)
+            .Replace(",", ".");
+
+        return decimal.TryParse(limpio, NumberStyles.AllowDecimalPoint,
+            CultureInfo.InvariantCulture, out var porcentaje)
+            ? porcentaje
+            : 0m;
+    }
+
+    /// <summary>Descuento vigente en centavos; cero si la captura no es válida.</summary>
+    private long Descuento()
+    {
+        if (!PuedeDescontar || _carrito.Count == 0)
+            return 0;
+
+        var subtotal = Subtotal();
+        if (subtotal <= 0 || string.IsNullOrWhiteSpace(DescuentoEntry.Text))
+            return 0;
+
+        if (EsPorcentaje())
+        {
+            var porcentaje = PorcentajeCapturado();
+            return DescuentoVenta.EsPorcentajeValido(porcentaje)
+                ? Dinero.Porcentaje(subtotal, porcentaje)
+                : 0;
+        }
+
+        var monto = LeerCentavos(DescuentoEntry.Text);
+        return monto.HasValue && DescuentoVenta.EsMontoValido(monto.Value, subtotal)
+            ? monto.Value
+            : 0;
+    }
+
+    private long Total() => Math.Max(0, Subtotal() - Descuento());
 
     protected override void OnDisappearing()
     {
@@ -293,11 +341,56 @@ public partial class PosPage : ContentPage
 
     private void ActualizarCarrito()
     {
+        if (_carrito.Count == 0 && DescuentoEntry != null &&
+            !string.IsNullOrEmpty(DescuentoEntry.Text))
+            DescuentoEntry.Text = string.Empty;
+
         ListaCarrito.ItemsSource = null;
         ListaCarrito.ItemsSource = _carrito.ToList();
-        TotalLabel.Text = Formato.Moneda(Total());
+        ActualizarTotales();
         CobrarButton.IsEnabled = _carrito.Count > 0;
         GuardarEsperaButton.IsEnabled = _carrito.Count > 0;
+    }
+
+    private void ActualizarTotales()
+    {
+        var subtotal = Subtotal();
+        var descuento = Descuento();
+        TotalLabel.Text = Formato.Moneda(Math.Max(0, subtotal - descuento));
+
+        var mostrar = descuento > 0;
+        SubtotalLabel.IsVisible = mostrar;
+        DescuentoAplicadoLabel.IsVisible = mostrar;
+        if (mostrar)
+        {
+            SubtotalLabel.Text = $"Subtotal {Formato.Moneda(subtotal)}";
+            var etiqueta = EsPorcentaje()
+                ? $"Descuento ({PorcentajeCapturado().ToString("0.##", CultureInfo.InvariantCulture)}%)"
+                : "Descuento";
+            DescuentoAplicadoLabel.Text = $"{etiqueta} -{Formato.Moneda(descuento)}";
+        }
+
+        DescuentoPanel.IsVisible = PuedeDescontar && _carrito.Count > 0;
+    }
+
+    private void OnDescuentoChanged(object sender, TextChangedEventArgs e) => ActualizarTotales();
+
+    private void OnDescuentoTipoChanged(object sender, EventArgs e)
+    {
+        // El mismo número significa cosas distintas en % y en $; se limpia.
+        if (DescuentoEntry != null)
+            DescuentoEntry.Text = string.Empty;
+
+        if (DescuentoEntry != null)
+            DescuentoEntry.Placeholder = EsPorcentaje() ? "0" : "0.00";
+
+        ActualizarTotales();
+    }
+
+    private void LimpiarDescuento()
+    {
+        if (DescuentoEntry != null)
+            DescuentoEntry.Text = string.Empty;
     }
 
     private void SoltarTicketSiVacio()
@@ -341,6 +434,7 @@ public partial class PosPage : ContentPage
 
         _ticketEsperaId = null;
         _carrito.Clear();
+        LimpiarDescuento();
         ActualizarCarrito();
         MostrarMensaje(resultado.Message);
     }
@@ -412,6 +506,7 @@ public partial class PosPage : ContentPage
         _carrito.Clear();
         _carrito.AddRange(filas);
         _ticketEsperaId = ticket.Id;
+        LimpiarDescuento();
         ActualizarCarrito();
         MostrarMensaje($"Ticket #{ticket.Id} retomado; revisa y cobra.");
     }
@@ -541,6 +636,15 @@ public partial class PosPage : ContentPage
     {
         pago = null;
         error = string.Empty;
+
+        if (PuedeDescontar && !string.IsNullOrWhiteSpace(DescuentoEntry.Text) && Descuento() == 0)
+        {
+            error = EsPorcentaje()
+                ? "El descuento debe ser mayor a 0% y menor a 100%."
+                : "El descuento debe ser mayor a cero y menor al subtotal.";
+            return false;
+        }
+
         var total = Total();
         var metodo = MetodoPicker.SelectedItem as string ?? MetodoPagoVenta.Efectivo;
 
@@ -618,6 +722,12 @@ public partial class PosPage : ContentPage
             return;
         }
 
+        if (PuedeDescontar)
+        {
+            pago!.DescuentoPorcentaje = EsPorcentaje() ? PorcentajeCapturado() : 0m;
+            pago.DescuentoMonto = EsPorcentaje() ? 0 : Descuento();
+        }
+
         _sesion.Aplicar();
         ConfirmarCobroButton.IsEnabled = false;
 
@@ -659,6 +769,7 @@ public partial class PosPage : ContentPage
 
         _ticketEsperaId = null;
         _carrito.Clear();
+        LimpiarDescuento();
         ActualizarCarrito();
         PanelCobro.IsVisible = false;
         LimpiarBuscador();

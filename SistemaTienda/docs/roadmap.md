@@ -8,7 +8,7 @@ Estado al 2026-11-25. T1–T42 y H1–H5 están integrados en `main`; H6.1 (impo
 |---|--------|--------|-------|
 | 1 | Configuración y usuarios | ✅ Base implementada | Asistente, PIN hasheado, roles, gastos, bitácora inmutable y permisos en servicios; edición de la configuración global y gestión de usuarios/PIN desde Ajustes (solo dueño). El impuesto configurado se usa como predeterminado del producto y se desglosa como IVA incluido |
 | 2 | Catálogo e inventario | ✅ Base implementada | Alta/edición, movimientos, stock bajo, búsqueda, escaneo, historial, valorizado, desactivación (v7), importación CSV/XLSX con vista previa, lotes y reversión (v18); operación desde la app MAUI. Falta filtro por categoría |
-| 3 | Ventas / POS | ✅ Base implementada | Venta multi-línea atómica, efectivo/tarjeta/mixto/fiado, costo y precio congelados, IVA incluido congelado por línea (v14), comisión, efectivo recibido guardado para reimprimir el cambio (v12), ticket de texto con QR informativo compartible como texto o imagen PNG y anulación completa con reverso; POS, detalle, reimpresión y anulación en MAUI. Descuentos quedan para Fase 2 |
+| 3 | Ventas / POS | ✅ Base implementada | Venta multi-línea atómica, efectivo/tarjeta/mixto/fiado, costo y precio congelados, IVA incluido congelado por línea (v14), comisión, efectivo recibido guardado para reimprimir el cambio (v12), ticket de texto con QR informativo compartible como texto o imagen PNG y anulación completa con reverso; POS, detalle, reimpresión y anulación en MAUI; descuento por venta en % o monto con permiso de dueño/encargado, reparto por línea y bitácora (v20) |
 | 4 | Mermas | 🟡 Parcial | Descuenta stock y reporta costo; el historial sale de movimientos |
 | 5 | Gastos y pagos | 🟡 Parcial | Gastos simples con resumen por origen, historial y alta en la app; pagos al personal no existen |
 | 6 | Clientes y fiado | 🟡 Parcial | Cliente, saldo y abono con historial (`AbonosFiado`) y método (Efectivo/Tarjeta/Transferencia/Otro); directorio, búsqueda, alta, abono, edición, estado de cuenta con exportación CSV y PDF, detección de duplicados y baja/reactivación lógica solo del dueño (esquema v10); falta envío o recordatorio |
@@ -33,7 +33,6 @@ Estado al 2026-11-25. T1–T42 y H1–H5 están integrados en `main`; H6.1 (impo
 
 1. **Plantillas por giro para importar catálogos**, si se requieren; CSV y XLSX de productos ya están implementados en T6/T28.
 2. **Copia de respaldos a USB o nube personal** (Fase 2).
-3. **Descuentos** por línea o venta (Fase 2).
 4. **Verificar en otros fabricantes y versiones de Android**, y en tabletas; la verificación de T29–T35 en Android 16 ya está hecha.
 
 ## Riesgos abiertos

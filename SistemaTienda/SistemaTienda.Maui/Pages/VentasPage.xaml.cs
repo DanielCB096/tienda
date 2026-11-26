@@ -153,8 +153,18 @@ public partial class VentasPage : ContentPage
         {
             Nombre = $"{l.Cantidad} x {l.Nombre}",
             Detalle = $"{Formato.Moneda(l.PrecioUnitario)} c/u",
-            Importe = Formato.Moneda(l.Importe)
+            Importe = Formato.Moneda(l.Subtotal)
         }).ToList());
+
+        DetalleDescuentoGrid.IsVisible = venta.Descuento > 0;
+        if (venta.Descuento > 0)
+        {
+            DetalleSubtotalLabel.Text = $"Subtotal {Formato.Moneda(venta.Subtotal)}";
+            var etiqueta = venta.DescuentoPorcentaje > 0
+                ? $"Descuento ({venta.DescuentoPorcentaje.ToString("0.##", CultureInfo.InvariantCulture)}%)"
+                : "Descuento";
+            DetalleDescuentoLabel.Text = $"{etiqueta} -{Formato.Moneda(venta.Descuento)}";
+        }
 
         DetalleTotalLabel.Text = Formato.Moneda(venta.Total);
 

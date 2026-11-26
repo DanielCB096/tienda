@@ -124,6 +124,13 @@
 
                         <BoxView HeightRequest="1" Color="#D1D5DB" Margin="0,4" />
 
+                        <Grid x:Name="DetalleDescuentoGrid" ColumnDefinitions="*,Auto" IsVisible="False">
+                            <Label x:Name="DetalleSubtotalLabel" Text="Subtotal"
+                                   Style="{StaticResource TextoNota}" />
+                            <Label x:Name="DetalleDescuentoLabel" Grid.Column="1"
+                                   TextColor="#B3261E" FontSize="13" HorizontalTextAlignment="End" />
+                        </Grid>
+
                         <Grid ColumnDefinitions="*,Auto">
                             <Label Text="Total" FontAttributes="Bold" FontSize="16" />
                             <Label x:Name="DetalleTotalLabel" Grid.Column="1"

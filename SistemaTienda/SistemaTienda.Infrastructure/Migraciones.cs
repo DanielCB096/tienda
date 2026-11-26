@@ -48,7 +48,8 @@ public static class Migraciones
         new Migracion(16, "agrega el indicador de respaldos cifrados", AplicarVersion16),
         new Migracion(17, "reconcilia el stock con los movimientos", AplicarVersion17),
         new Migracion(18, "crea los lotes de importación de productos", AplicarVersion18),
-        new Migracion(19, "crea los tickets en espera del mostrador", AplicarVersion19)
+        new Migracion(19, "crea los tickets en espera del mostrador", AplicarVersion19),
+        new Migracion(20, "guarda el descuento de la venta y su reparto por línea", AplicarVersion20)
     };
 
     private static void AplicarVersion2(SqliteConnection conn, SqliteTransaction tx)
@@ -904,6 +905,13 @@ public static class Migraciones
                                   WHERE m.ProductoId = Productos.Id), 0);
         ";
         cmd.ExecuteNonQuery();
+    }
+
+    private static void AplicarVersion20(SqliteConnection conn, SqliteTransaction tx)
+    {
+        AgregarColumnaSiFalta(conn, tx, "Ventas", "Descuento", "INTEGER NOT NULL DEFAULT 0");
+        AgregarColumnaSiFalta(conn, tx, "Ventas", "DescuentoPorcentaje", "DECIMAL NOT NULL DEFAULT 0");
+        AgregarColumnaSiFalta(conn, tx, "VentaLineas", "Descuento", "INTEGER NOT NULL DEFAULT 0");
     }
 
     public static int VersionMaxima(IReadOnlyList<Migracion> migraciones) =>

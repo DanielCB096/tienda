@@ -52,10 +52,20 @@ public sealed class TicketService
         {
             sb.AppendLine($"{linea.Cantidad} x {linea.Nombre}");
             sb.AppendLine(
-                $"   ${Dinero.Formatear(linea.PrecioUnitario)} c/u = ${Dinero.Formatear(linea.Importe)}");
+                $"   ${Dinero.Formatear(linea.PrecioUnitario)} c/u = " +
+                $"${Dinero.Formatear(Dinero.Multiplicar(linea.PrecioUnitario, linea.Cantidad))}");
         }
 
         sb.AppendLine(new string('-', 40));
+        if (venta.Descuento > 0)
+        {
+            sb.AppendLine($"Subtotal: ${Dinero.Formatear(venta.Subtotal)}");
+            var etiqueta = venta.DescuentoPorcentaje > 0
+                ? $"Descuento ({venta.DescuentoPorcentaje.ToString("0.##", Cultura)}%)"
+                : "Descuento";
+            sb.AppendLine($"{etiqueta}: -${Dinero.Formatear(venta.Descuento)}");
+        }
+
         sb.AppendLine($"TOTAL: ${Dinero.Formatear(venta.Total)}");
         var impuestoIncluido = lineas.Sum(l => l.ImpuestoImporte);
         if (impuestoIncluido > 0)

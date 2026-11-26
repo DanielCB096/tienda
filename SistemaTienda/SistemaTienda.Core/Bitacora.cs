@@ -48,7 +48,8 @@ public enum PermisoSistema
     CrearCliente,
     CrearProveedor,
     ExportarDatos,
-    VerCostos
+    VerCostos,
+    AplicarDescuento
 }
 
 /// <summary>

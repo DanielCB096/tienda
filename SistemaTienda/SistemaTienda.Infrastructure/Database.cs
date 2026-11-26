@@ -2094,10 +2094,12 @@ public class DatabaseTools
                 cmd.CommandText = @"
                     INSERT INTO Ventas
                         (Fecha, Usuario, ClienteId, MetodoPago, Total, CostoTotal,
-                         PagoEfectivo, PagoTarjeta, PagoFiado, ComisionTarjeta, EfectivoRecibido)
+                         PagoEfectivo, PagoTarjeta, PagoFiado, ComisionTarjeta, EfectivoRecibido,
+                         Descuento, DescuentoPorcentaje)
                     VALUES
                         (@fecha, @usuario, @cliente, @metodo, @total, @costo,
-                         @efectivo, @tarjeta, @fiado, @comision, @recibido);
+                         @efectivo, @tarjeta, @fiado, @comision, @recibido,
+                         @descuento, @descuentoPorcentaje);
                     SELECT last_insert_rowid();";
                 cmd.Parameters.AddWithValue("@fecha", venta.Fecha);
                 cmd.Parameters.AddWithValue("@usuario", venta.Usuario ?? string.Empty);
@@ -2110,6 +2112,8 @@ public class DatabaseTools
                 cmd.Parameters.AddWithValue("@fiado", venta.PagoFiado);
                 cmd.Parameters.AddWithValue("@comision", venta.ComisionTarjeta);
                 cmd.Parameters.AddWithValue("@recibido", (object)venta.EfectivoRecibido ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@descuento", venta.Descuento);
+                cmd.Parameters.AddWithValue("@descuentoPorcentaje", venta.DescuentoPorcentaje);
                 ventaId = Convert.ToInt32(cmd.ExecuteScalar(), CultureInfo.InvariantCulture);
             }
 
@@ -2120,10 +2124,12 @@ public class DatabaseTools
                 cmd.CommandText = @"
                     INSERT INTO VentaLineas
                         (VentaId, ProductoId, CodigoBarras, Nombre, Cantidad,
-                         PrecioUnitario, CostoUnitario, Importe, ImpuestoPorcentaje, ImpuestoImporte)
+                         PrecioUnitario, CostoUnitario, Importe, ImpuestoPorcentaje, ImpuestoImporte,
+                         Descuento)
                     VALUES
                         (@venta, @producto, @codigo, @nombre, @cantidad,
-                         @precio, @costo, @importe, @impuesto, @impuestoImporte)";
+                         @precio, @costo, @importe, @impuesto, @impuestoImporte,
+                         @descuento)";
                 cmd.Parameters.AddWithValue("@venta", ventaId);
                 cmd.Parameters.AddWithValue("@producto", linea.ProductoId);
                 cmd.Parameters.AddWithValue("@codigo", linea.CodigoBarras);
@@ -2134,6 +2140,7 @@ public class DatabaseTools
                 cmd.Parameters.AddWithValue("@importe", linea.Importe);
                 cmd.Parameters.AddWithValue("@impuesto", linea.ImpuestoPorcentaje);
                 cmd.Parameters.AddWithValue("@impuestoImporte", linea.ImpuestoImporte);
+                cmd.Parameters.AddWithValue("@descuento", linea.Descuento);
                 cmd.ExecuteNonQuery();
 
                 linea.VentaId = ventaId;
