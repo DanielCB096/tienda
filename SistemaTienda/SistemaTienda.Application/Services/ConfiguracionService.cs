@@ -432,6 +432,65 @@ public class ConfiguracionService
         return CryptographicOperations.FixedTimeEquals(hashCalculado, hashEsperado);
     }
 
+    /// <summary>
+    /// Corrige concepto, monto, método, origen y observaciones. No cambia la fecha
+    /// ni permite tocar gastos incluidos en un corte cerrado.
+    /// </summary>
+    public ProcessResult EditarGasto(int gastoId, string concepto, long monto,
+        string metodoPago, string origen, string observaciones)
+    {
+        var autorizacion = Autorizar(PermisoSistema.RegistrarGasto);
+        if (autorizacion.IsError)
+            return autorizacion;
+
+        concepto = (concepto ?? string.Empty).Trim();
+        metodoPago = string.IsNullOrWhiteSpace(metodoPago)
+            ? MetodoPagoAbono.Efectivo
+            : metodoPago.Trim();
+        origen = string.IsNullOrWhiteSpace(origen) ? OrigenGasto.Caja : origen.Trim();
+        observaciones = (observaciones ?? string.Empty).Trim();
+
+        if (concepto.Length == 0)
+            return ProcessResult.Error("El concepto del gasto es obligatorio");
+
+        if (monto <= 0)
+            return ProcessResult.Error("El monto debe ser mayor a cero");
+
+        if (origen == OrigenGasto.Caja &&
+            !string.Equals(metodoPago, MetodoPagoAbono.Efectivo, StringComparison.OrdinalIgnoreCase))
+            return ProcessResult.Error(
+                "Un gasto de caja debe pagarse en efectivo. Si lo pagaste con tarjeta o " +
+                "transferencia, regístralo como gasto externo.");
+
+        var actual = _db.ObtenerGastoPorId(gastoId);
+        if (actual == null)
+            return ProcessResult.Error($"El gasto #{gastoId} no existe");
+
+        var auditoria = new RegistroBitacora
+        {
+            Fecha = DateTime.Now,
+            Usuario = SesionActual.Usuario?.Nombre ?? string.Empty,
+            Accion = AccionBitacora.EditarGasto,
+            Entidad = "Gasto",
+            EntidadId = gastoId.ToString(),
+            DatosAntes = $"Concepto={actual.Concepto};Monto={Dinero.Formatear(actual.Monto)};" +
+                         $"Metodo={actual.MetodoPago};Origen={actual.Origen}",
+            DatosDespues = $"Concepto={concepto};Monto={Dinero.Formatear(monto)};" +
+                           $"Metodo={metodoPago};Origen={origen}"
+        };
+
+        return _db.ActualizarGasto(new Gasto
+        {
+            Id = gastoId,
+            Concepto = concepto,
+            Monto = monto,
+            Fecha = actual.Fecha,
+            MetodoPago = metodoPago,
+            Origen = origen,
+            Observaciones = observaciones
+        }, auditoria);
+    }
+
     public ProcessResult<AgregarGastoResponse> AgregarGasto(Gasto nuevoGasto)
     {
         var autorizacion = Autorizar(PermisoSistema.RegistrarGasto);

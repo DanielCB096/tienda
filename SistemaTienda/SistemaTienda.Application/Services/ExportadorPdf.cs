@@ -42,6 +42,28 @@ public static class ExportadorPdf
         pdf.LineaHorizontal();
         pdf.Fila("Utilidad neta", Dinero.Formatear(reporte.UtilidadNeta), 12, true);
 
+        if (reporte.Productos.Count > 0)
+        {
+            pdf.Espacio(4);
+            pdf.Texto("Productos mas vendidos", 10, true);
+            foreach (var producto in reporte.Productos.Take(15))
+            {
+                pdf.Fila($"{producto.Nombre} ({producto.Cantidad})",
+                    $"{Dinero.Formatear(producto.Ventas)} / {Dinero.Formatear(producto.Utilidad)}", 9);
+            }
+        }
+
+        if (reporte.Categorias.Count > 0)
+        {
+            pdf.Espacio(4);
+            pdf.Texto("Ventas por categoria", 10, true);
+            foreach (var categoria in reporte.Categorias)
+            {
+                pdf.Fila($"{categoria.Categoria} ({categoria.Cantidad})",
+                    $"{Dinero.Formatear(categoria.Ventas)} / {Dinero.Formatear(categoria.Utilidad)}", 9);
+            }
+        }
+
         pdf.Espacio(8);
         pdf.Texto("Utilidad bruta = ventas - costo - comision. Utilidad neta = bruta - mermas - gastos.", 8);
         pdf.Texto("Las ventas anuladas no se incluyen.", 8);

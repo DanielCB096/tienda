@@ -15,6 +15,7 @@ public partial class GastosPage : ContentPage
 
     private readonly ConfiguracionService _config;
     private readonly SesionApp _sesion;
+    private Gasto? _gastoEditando;
 
     public GastosPage(ConfiguracionService config, SesionApp sesion)
     {
@@ -66,7 +67,8 @@ public partial class GastosPage : ContentPage
             Origen = g.Origen == OrigenGasto.Caja ? "Salió de la caja" : "Gasto externo",
             OrigenColor = g.Origen == OrigenGasto.Caja ? ColorCaja : ColorExterno,
             Observaciones = g.Observaciones ?? string.Empty,
-            TieneObservaciones = !string.IsNullOrWhiteSpace(g.Observaciones)
+            TieneObservaciones = !string.IsNullOrWhiteSpace(g.Observaciones),
+            Fuente = g
         }).ToList();
 
         ResultadosLabel.Text = gastos.Count > MaximoEnLista
@@ -93,6 +95,9 @@ public partial class GastosPage : ContentPage
             return;
         }
 
+        _gastoEditando = null;
+        EditorTituloLabel.Text = "Nuevo gasto";
+        GuardarGastoButton.Text = "Guardar gasto";
         ConceptoEntry.Text = string.Empty;
         MontoEntry.Text = string.Empty;
         MetodoPicker.SelectedIndex = 0;
@@ -105,8 +110,40 @@ public partial class GastosPage : ContentPage
             ConceptoEntry.Focus();
     }
 
-    private void OnCancelarNuevoClicked(object sender, EventArgs e) =>
+    private void OnCancelarNuevoClicked(object sender, EventArgs e)
+    {
+        _gastoEditando = null;
         NuevoOverlay.IsVisible = false;
+    }
+
+    private void OnGastoTapped(object sender, TappedEventArgs e)
+    {
+        if (e.Parameter is not GastoFila fila || fila.Fuente == null)
+            return;
+
+        if (_sesion.Usuario == null ||
+            !AutorizacionService.Puede(_sesion.Usuario, PermisoSistema.RegistrarGasto))
+        {
+            _ = DisplayAlertAsync("Sin permiso",
+                "Tu rol no permite editar gastos.", "Continuar");
+            return;
+        }
+
+        var gasto = fila.Fuente;
+        _gastoEditando = gasto;
+        EditorTituloLabel.Text = $"Editar gasto #{gasto.Id}";
+        GuardarGastoButton.Text = "Guardar cambios";
+        ConceptoEntry.Text = gasto.Concepto;
+        MontoEntry.Text = Dinero.APesos(gasto.Monto).ToString("F2", CultureInfo.InvariantCulture);
+        var indice = Array.FindIndex(Metodos,
+            m => string.Equals(m, gasto.MetodoPago, StringComparison.OrdinalIgnoreCase));
+        MetodoPicker.SelectedIndex = indice >= 0 ? indice : 0;
+        OrigenSwitch.IsToggled = gasto.Origen == OrigenGasto.Caja;
+        ObservacionesEditor.Text = gasto.Observaciones ?? string.Empty;
+        NuevoErrorLabel.IsVisible = false;
+        NuevoOverlay.IsVisible = true;
+        ActualizarAyudaOrigen(OrigenSwitch.IsToggled);
+    }
 
     private void OnOrigenChanged(object sender, ToggledEventArgs e) =>
         ActualizarAyudaOrigen(e.Value);
@@ -153,15 +190,27 @@ public partial class GastosPage : ContentPage
         try
         {
             _sesion.Aplicar();
-            var resultado = _config.AgregarGasto(new Gasto
+            ProcessResult resultado;
+            if (_gastoEditando != null)
             {
-                Concepto = concepto,
-                Monto = monto.Value,
-                Fecha = DateTime.Now,
-                MetodoPago = metodo,
-                Origen = origen,
-                Observaciones = observaciones
-            });
+                resultado = _config.EditarGasto(_gastoEditando.Id, concepto, monto.Value,
+                    metodo, origen, observaciones);
+            }
+            else
+            {
+                var alta = _config.AgregarGasto(new Gasto
+                {
+                    Concepto = concepto,
+                    Monto = monto.Value,
+                    Fecha = DateTime.Now,
+                    MetodoPago = metodo,
+                    Origen = origen,
+                    Observaciones = observaciones
+                });
+                resultado = alta.IsError
+                    ? ProcessResult.Error(alta.Message)
+                    : ProcessResult.Success(alta.Message);
+            }
 
             if (resultado.IsError)
             {
@@ -169,12 +218,15 @@ public partial class GastosPage : ContentPage
                 return;
             }
 
+            var editando = _gastoEditando != null;
+            _gastoEditando = null;
             NuevoOverlay.IsVisible = false;
             Cargar();
             var efecto = origen == OrigenGasto.Caja
                 ? "Se descontará del efectivo esperado del corte."
                 : "No afecta el efectivo de la caja; solo la utilidad.";
-            await DisplayAlertAsync("Gasto registrado", $"{resultado.Message}\n{efecto}", "Continuar");
+            await DisplayAlertAsync(editando ? "Gasto actualizado" : "Gasto registrado",
+                $"{resultado.Message}\n{efecto}", "Continuar");
         }
         finally
         {

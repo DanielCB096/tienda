@@ -1,6 +1,7 @@
 using System.Globalization;
 using SistemaTienda.Application.Services;
 using SistemaTienda.Core;
+using SistemaTienda.Maui.Models;
 using SistemaTienda.Maui.Services;
 
 namespace SistemaTienda.Maui.Pages;
@@ -97,6 +98,8 @@ public partial class ReportesPage : ContentPage
         GastosLabel.Text = Formato.Moneda(reporte.Gastos);
 
         MostrarCobros(reporte);
+        MostrarProductos(reporte);
+        MostrarCategorias(reporte);
 
         UtilidadBrutaLabel.Text = Formato.Moneda(reporte.UtilidadBruta);
         UtilidadBrutaLabel.TextColor = reporte.UtilidadBruta >= 0 ? ColorPositivo : ColorNegativo;
@@ -120,6 +123,39 @@ public partial class ReportesPage : ContentPage
         EfectivoMontoLabel.Text = Formato.Moneda(efectivo.Monto);
         TarjetaMontoLabel.Text = Formato.Moneda(tarjeta.Monto);
         FiadoMontoLabel.Text = Formato.Moneda(fiado.Monto);
+    }
+
+    private void MostrarProductos(ReporteUtilidad reporte)
+    {
+        var filas = reporte.Productos
+            .Take(10)
+            .Select(producto => new ReporteProductoFila
+            {
+                Nombre = producto.Nombre,
+                Detalle = $"{producto.Cantidad} pza(s) · {Formato.Moneda(producto.Ventas)} ventas",
+                Utilidad = Formato.Moneda(producto.Utilidad),
+                UtilidadColor = producto.Utilidad >= 0 ? ColorPositivo : ColorNegativo
+            })
+            .ToList();
+
+        BindableLayout.SetItemsSource(ProductosLista, filas);
+        SinProductosLabel.IsVisible = filas.Count == 0;
+    }
+
+    private void MostrarCategorias(ReporteUtilidad reporte)
+    {
+        var filas = reporte.Categorias
+            .Select(categoria => new ReporteCategoriaFila
+            {
+                Nombre = categoria.Categoria,
+                Detalle = $"{categoria.Cantidad} pza(s) · {Formato.Moneda(categoria.Ventas)} ventas",
+                Utilidad = Formato.Moneda(categoria.Utilidad),
+                UtilidadColor = categoria.Utilidad >= 0 ? ColorPositivo : ColorNegativo
+            })
+            .ToList();
+
+        BindableLayout.SetItemsSource(CategoriasLista, filas);
+        SinCategoriasLabel.IsVisible = filas.Count == 0;
     }
 
     private static DesgloseMetodoPago DesgloseDe(ReporteUtilidad reporte, string metodo) =>

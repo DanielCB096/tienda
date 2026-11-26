@@ -6,7 +6,7 @@ namespace SistemaTienda.Tests;
 public sealed class ReportesTests
 {
     private static Producto CrearProducto(BaseDatosPrueba bd, string codigo,
-        long precio, long costo, int stock)
+        long precio, long costo, int stock, string categoria = "")
     {
         var producto = new Producto
         {
@@ -14,7 +14,8 @@ public sealed class ReportesTests
             Nombre = $"Producto {codigo}",
             Costo = costo,
             Precio = precio,
-            Stock = stock
+            Stock = stock,
+            Categoria = categoria
         };
 
         Assert.True(bd.Inventario.AgregarProducto(producto).IsSuccess);
@@ -59,6 +60,53 @@ public sealed class ReportesTests
 
         var resultado = bd.Db.RegistrarVenta(venta, new[] { linea });
         Assert.True(resultado.IsSuccess, resultado.Message);
+    }
+
+    [Fact]
+    public void Obtener_AgrupaVentasPorProductoYCategoria()
+    {
+        using var bd = new BaseDatosPrueba();
+        bd.ConfigurarTienda();
+        var abarrotes = CrearProducto(bd, "R1", precio: 1_000, costo: 600, stock: 10,
+            categoria: "Abarrotes");
+        var bebidas = CrearProducto(bd, "R2", precio: 2_000, costo: 1_200, stock: 10,
+            categoria: "Bebidas");
+
+        Assert.True(Vender(bd, new PagoSolicitado { Efectivo = 3_000 },
+            (abarrotes, 1), (bebidas, 1)).IsSuccess);
+
+        var reporte = DelDia(bd);
+
+        Assert.Equal(2, reporte.Productos.Count);
+        var producto = reporte.Productos.Single(p => p.ProductoId == abarrotes.Id);
+        Assert.Equal("Abarrotes", producto.Categoria);
+        Assert.Equal(1, producto.Cantidad);
+        Assert.Equal(1_000, producto.Ventas);
+        Assert.Equal(600, producto.Costo);
+        Assert.Equal(400, producto.Utilidad);
+
+        Assert.Equal(2, reporte.Categorias.Count);
+        Assert.Equal(1_000, reporte.Categorias.Single(c => c.Categoria == "Abarrotes").Ventas);
+        Assert.Equal(2_000, reporte.Categorias.Single(c => c.Categoria == "Bebidas").Ventas);
+    }
+
+    [Fact]
+    public void Obtener_ExcluyeVentasAnuladasDelDesglose()
+    {
+        using var bd = new BaseDatosPrueba();
+        bd.ConfigurarTienda();
+        var producto = CrearProducto(bd, "R3", precio: 1_500, costo: 1_000, stock: 10,
+            categoria: "Abarrotes");
+
+        var venta = Vender(bd, new PagoSolicitado { Efectivo = 1_500 }, (producto, 1));
+        Assert.True(venta.IsSuccess, venta.Message);
+        var anulacion = new VentaService(bd.Db).AnularVenta(venta.Value.Id, "Prueba", "Dueño");
+        Assert.True(anulacion.IsSuccess, anulacion.Message);
+
+        var reporte = DelDia(bd);
+
+        Assert.Empty(reporte.Productos);
+        Assert.Empty(reporte.Categorias);
     }
 
     [Fact]

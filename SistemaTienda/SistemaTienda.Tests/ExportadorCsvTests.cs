@@ -99,6 +99,42 @@ public sealed class ExportadorCsvTests
     }
 
     [Fact]
+    public void ReporteUtilidad_IncluyeProductosYCategorias()
+    {
+        var reporte = new ReporteUtilidad
+        {
+            Desde = new DateTime(2026, 11, 1),
+            Hasta = new DateTime(2026, 11, 30),
+            NumeroVentas = 1,
+            VentasTotal = 2_000,
+            CostoVentas = 1_200,
+            Productos = new List<ReporteProducto>
+            {
+                new()
+                {
+                    ProductoId = 1,
+                    Nombre = "Café",
+                    Categoria = "Abarrotes",
+                    Cantidad = 2,
+                    Ventas = 2_000,
+                    Costo = 1_200
+                }
+            },
+            Categorias = new List<ReporteCategoria>
+            {
+                new() { Categoria = "Abarrotes", Cantidad = 2, Ventas = 2_000, Costo = 1_200 }
+            }
+        };
+
+        var csv = ExportadorCsv.ReporteUtilidad(reporte);
+
+        Assert.Contains("Productos", csv);
+        Assert.Contains("Café,Abarrotes,2,20.00,12.00,8.00", csv);
+        Assert.Contains("Categorias", csv);
+        Assert.Contains("Abarrotes,2,20.00,12.00,8.00", csv);
+    }
+
+    [Fact]
     public void EstadoCuentaCliente_IncluyeResumenYMovimientos()
     {
         var estado = new EstadoCuentaCliente

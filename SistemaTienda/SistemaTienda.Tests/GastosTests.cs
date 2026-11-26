@@ -1,9 +1,104 @@
-﻿using SistemaTienda.Core;
+﻿using Microsoft.Data.Sqlite;
+using SistemaTienda.Application.Services;
+using SistemaTienda.Core;
 
 namespace SistemaTienda.Tests;
 
 public sealed class GastosTests
 {
+    [Fact]
+    public void EditarGasto_CambiaCamposConservaFechaYDejaBitacora()
+    {
+        using var bd = new BaseDatosPrueba();
+        bd.ConfigurarTienda();
+        var fecha = new DateTime(2026, 11, 10, 9, 30, 0);
+        Assert.True(bd.Config.AgregarGasto(new Gasto
+        {
+            Concepto = "Luz",
+            Monto = 10_000,
+            Fecha = fecha,
+            MetodoPago = MetodoPagoAbono.Efectivo,
+            Origen = OrigenGasto.Caja
+        }).IsSuccess);
+        var gasto = Assert.Single(bd.Config.ObtenerTodosLosGastos().Value);
+
+        var resultado = bd.Config.EditarGasto(gasto.Id, "  Luz de noviembre  ",
+            12_000, MetodoPagoAbono.Efectivo, OrigenGasto.Externo, "  Corregido  ");
+
+        Assert.True(resultado.IsSuccess, resultado.Message);
+        var actualizado = Assert.Single(bd.Config.ObtenerTodosLosGastos().Value);
+        Assert.Equal("Luz de noviembre", actualizado.Concepto);
+        Assert.Equal(12_000, actualizado.Monto);
+        Assert.Equal(OrigenGasto.Externo, actualizado.Origen);
+        Assert.Equal("Corregido", actualizado.Observaciones);
+        Assert.Equal(fecha, actualizado.Fecha);
+        Assert.Equal(1, bd.Db.ExecuteScalar<int>(
+            "SELECT COUNT(*) FROM Bitacora WHERE Accion = @accion",
+            new SqliteParameter("@accion", AccionBitacora.EditarGasto)));
+    }
+
+    [Fact]
+    public void EditarGasto_ConCorteCerrado_SeBloquea()
+    {
+        using var bd = new BaseDatosPrueba();
+        bd.ConfigurarTienda();
+        Assert.True(bd.Config.AgregarGasto(new Gasto
+        {
+            Concepto = "Luz",
+            Monto = 10_000,
+            MetodoPago = MetodoPagoAbono.Efectivo,
+            Origen = OrigenGasto.Caja
+        }).IsSuccess);
+        var gasto = Assert.Single(bd.Config.ObtenerTodosLosGastos().Value);
+
+        var corte = new CorteCajaService(bd.Db).RegistrarCorte(0, 0, "Dueño",
+            "Cierre de prueba");
+        Assert.True(corte.IsSuccess, corte.Message);
+
+        var resultado = bd.Config.EditarGasto(gasto.Id, "Luz corregida", 12_000,
+            MetodoPagoAbono.Efectivo, OrigenGasto.Caja, string.Empty);
+
+        Assert.True(resultado.IsError);
+        Assert.Contains("corte cerrado", resultado.Message);
+        Assert.Equal(10_000, Assert.Single(bd.Config.ObtenerTodosLosGastos().Value).Monto);
+    }
+
+    [Fact]
+    public void EditarGasto_ConCajaYTarjeta_SeRechaza()
+    {
+        using var bd = new BaseDatosPrueba();
+        bd.ConfigurarTienda();
+        Assert.True(bd.Config.AgregarGasto(new Gasto
+        {
+            Concepto = "Luz",
+            Monto = 10_000,
+            MetodoPago = MetodoPagoAbono.Efectivo,
+            Origen = OrigenGasto.Caja
+        }).IsSuccess);
+        var gasto = Assert.Single(bd.Config.ObtenerTodosLosGastos().Value);
+
+        var resultado = bd.Config.EditarGasto(gasto.Id, "Luz", 10_000,
+            "Tarjeta", OrigenGasto.Caja, string.Empty);
+
+        Assert.True(resultado.IsError);
+        Assert.Contains("efectivo", resultado.Message);
+    }
+
+    [Fact]
+    public void EditarGasto_EmpleadoSinPermiso_SeRechaza()
+    {
+        using var bd = new BaseDatosPrueba();
+        bd.ConfigurarTienda();
+        Assert.True(bd.Config.AgregarGasto(new Gasto { Concepto = "Luz", Monto = 1_000 }).IsSuccess);
+        var gasto = Assert.Single(bd.Config.ObtenerTodosLosGastos().Value);
+        bd.IniciarSesion(RolUsuario.Empleado, "Empleado");
+
+        var resultado = bd.Config.EditarGasto(gasto.Id, "Luz", 2_000,
+            MetodoPagoAbono.Efectivo, OrigenGasto.Caja, string.Empty);
+
+        Assert.True(resultado.IsError);
+    }
+
     [Fact]
     public void AgregarGasto_ConMontoDeUnCentavo_SeAceptaYTotaliza()
     {

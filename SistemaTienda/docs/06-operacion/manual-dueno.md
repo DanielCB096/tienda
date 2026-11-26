@@ -141,6 +141,9 @@ Acceso en la app: pestaña **Proveedores**.
 
 ### 9. Gastos (pestaña Gastos)
 
+- **Editar**: toca un gasto del historial para corregir concepto, monto, método, origen u observaciones. La fecha no cambia y no se puede editar si el gasto ya quedó en un corte cerrado.
+
+
 Acceso en la app: pestaña **Gastos**.
 
 - **Resumen**: total gastado, lo pagado del efectivo de la caja y lo pagado con otra fuente, más el número de gastos registrados.

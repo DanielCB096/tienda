@@ -17,6 +17,14 @@ Cada entrada tiene formato:
 
 ---
 
+## 2026-11-26 — Reportes por producto/categoría y edición de gastos
+
+- **Agregado**: Reportes muestra **productos más vendidos** (top 10) y **ventas por categoría** con cantidad, ventas y utilidad; se incluyen en CSV y PDF.
+- **Agregado**: edición de gastos desde el historial (concepto, monto, método, origen y observaciones), con bitácora atómica y fecha intacta.
+- **Regla**: no se edita un gasto que ya quedó en un corte cerrado; se pide registrar uno nuevo.
+- **Pruebas**: 4 de edición de gastos y 3 de reportes/exportación; suite completa: 499.
+- Ver [ADR-012](../../SistemaMaestro/docs/07-decisiones/ADR-012-edicion-gastos.md).
+
 ## 2026-11-26 — Historial de ventas por rango
 
 - **Agregado**: pestaña **Ventas** con **Desde/Hasta**, atajos **Hoy** y **Este mes**, resumen del rango y fecha/hora por venta.

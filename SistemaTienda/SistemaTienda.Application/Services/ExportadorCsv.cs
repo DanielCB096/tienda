@@ -37,6 +37,36 @@ public static class ExportadorCsv
             Fila("Utilidad neta", Importe(reporte.UtilidadNeta))
         };
 
+        if (reporte.Productos.Count > 0)
+        {
+            lineas.Add(string.Empty);
+            lineas.Add("Productos");
+            lineas.Add("Producto,Categoria,Cantidad,Ventas,Costo,Utilidad");
+            foreach (var producto in reporte.Productos.Take(15))
+            {
+                lineas.Add(string.Join(",",
+                    Campo(producto.Nombre), Campo(producto.Categoria),
+                    Campo(producto.Cantidad.ToString(CultureInfo.InvariantCulture)),
+                    Campo(Importe(producto.Ventas)), Campo(Importe(producto.Costo)),
+                    Campo(Importe(producto.Utilidad))));
+            }
+        }
+
+        if (reporte.Categorias.Count > 0)
+        {
+            lineas.Add(string.Empty);
+            lineas.Add("Categorias");
+            lineas.Add("Categoria,Cantidad,Ventas,Costo,Utilidad");
+            foreach (var categoria in reporte.Categorias)
+            {
+                lineas.Add(string.Join(",",
+                    Campo(categoria.Categoria),
+                    Campo(categoria.Cantidad.ToString(CultureInfo.InvariantCulture)),
+                    Campo(Importe(categoria.Ventas)), Campo(Importe(categoria.Costo)),
+                    Campo(Importe(categoria.Utilidad))));
+            }
+        }
+
         return string.Join(FinLinea, lineas) + FinLinea;
     }
 

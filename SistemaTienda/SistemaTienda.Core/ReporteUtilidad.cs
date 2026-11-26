@@ -27,6 +27,12 @@ public sealed class ReporteUtilidad
     /// </summary>
     public List<DesgloseMetodoPago> DesglosePagos { get; set; } = new();
 
+    /// <summary>Ventas del periodo agrupadas por producto (sin anuladas).</summary>
+    public List<ReporteProducto> Productos { get; set; } = new();
+
+    /// <summary>Ventas del periodo agrupadas por categoría actual del producto.</summary>
+    public List<ReporteCategoria> Categorias { get; set; } = new();
+
     public long UtilidadBruta => VentasTotal - CostoVentas - ComisionTarjeta;
     public long UtilidadNeta => UtilidadBruta - Mermas - Gastos;
 }
@@ -37,4 +43,27 @@ public sealed class DesgloseMetodoPago
     public string Metodo { get; set; } = string.Empty;
     public int NumeroVentas { get; set; }
     public long Monto { get; set; }
+}
+
+
+/// <summary>Ventas y utilidad de un producto en el periodo, en centavos.</summary>
+public sealed class ReporteProducto
+{
+    public int ProductoId { get; set; }
+    public string Nombre { get; set; } = string.Empty;
+    public string Categoria { get; set; } = string.Empty;
+    public int Cantidad { get; set; }
+    public long Ventas { get; set; }
+    public long Costo { get; set; }
+    public long Utilidad => Ventas - Costo;
+}
+
+/// <summary>Ventas y utilidad de una categoría en el periodo, en centavos.</summary>
+public sealed class ReporteCategoria
+{
+    public string Categoria { get; set; } = string.Empty;
+    public int Cantidad { get; set; }
+    public long Ventas { get; set; }
+    public long Costo { get; set; }
+    public long Utilidad => Ventas - Costo;
 }

@@ -1,3 +1,5 @@
+using SistemaTienda.Core;
+
 namespace SistemaTienda.Maui.Models;
 
 public sealed class GastoFila
@@ -9,4 +11,7 @@ public sealed class GastoFila
     public Color OrigenColor { get; init; } = Colors.Gray;
     public string Observaciones { get; init; } = string.Empty;
     public bool TieneObservaciones { get; init; }
+
+    /// <summary>Gasto original para abrir el editor sin volver a consultarlo.</summary>
+    public Gasto? Fuente { get; init; }
 }

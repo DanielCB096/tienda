@@ -1468,6 +1468,72 @@ public class DatabaseTools
         return gasto.Id;
     }
 
+    public Gasto ObtenerGastoPorId(int gastoId) =>
+        ExecuteReportObject<Gasto>("SELECT * FROM Gastos WHERE Id = @id",
+            new SqliteParameter("@id", gastoId));
+
+    /// <summary>
+    /// Edita un gasto sin cambiar su fecha. Se bloquea si ya quedó dentro de un
+    /// corte cerrado, porque alteraría un arqueo histórico.
+    /// </summary>
+    public ProcessResult ActualizarGasto(Gasto gasto, RegistroBitacora auditoria = null)
+    {
+        using var conn = CreateConnection();
+        conn.Open();
+        using var tx = conn.BeginTransaction();
+
+        try
+        {
+            using (var consulta = conn.CreateCommand())
+            {
+                consulta.Transaction = tx;
+                consulta.CommandText = @"
+                    SELECT COUNT(*) FROM CortesCaja
+                    WHERE Hasta >= (SELECT Fecha FROM Gastos WHERE Id = @id)";
+                consulta.Parameters.AddWithValue("@id", gasto.Id);
+                if (Convert.ToInt32(consulta.ExecuteScalar(), CultureInfo.InvariantCulture) > 0)
+                {
+                    tx.Rollback();
+                    return ProcessResult.Error(
+                        "El gasto ya quedó dentro de un corte cerrado; no se puede editar. " +
+                        "Registra un gasto nuevo si necesitas corregirlo.");
+                }
+            }
+
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.Transaction = tx;
+                cmd.CommandText = @"
+                    UPDATE Gastos
+                    SET Concepto = @concepto, Monto = @monto, MetodoPago = @metodo,
+                        Origen = @origen, Observaciones = @obs
+                    WHERE Id = @id";
+                cmd.Parameters.AddWithValue("@id", gasto.Id);
+                cmd.Parameters.AddWithValue("@concepto", gasto.Concepto);
+                cmd.Parameters.AddWithValue("@monto", gasto.Monto);
+                cmd.Parameters.AddWithValue("@metodo", gasto.MetodoPago ?? string.Empty);
+                cmd.Parameters.AddWithValue("@origen", gasto.Origen ?? OrigenGasto.Caja);
+                cmd.Parameters.AddWithValue("@obs", gasto.Observaciones ?? string.Empty);
+                if (cmd.ExecuteNonQuery() == 0)
+                {
+                    tx.Rollback();
+                    return ProcessResult.Error("No se encontró el gasto");
+                }
+            }
+
+            if (auditoria != null)
+                AgregarBitacora(conn, tx, auditoria);
+
+            tx.Commit();
+            return ProcessResult.Success("Gasto actualizado");
+        }
+        catch (SqliteException ex)
+        {
+            try { tx.Rollback(); } catch (SqliteException) { }
+            return ProcessResult.Error($"No se pudo actualizar el gasto: {ex.Message}");
+        }
+    }
+
     public List<Gasto> ObtenerGastos() =>
         ExecuteReportObjects<Gasto>("SELECT * FROM Gastos ORDER BY Fecha DESC, Id DESC");
 
@@ -2426,6 +2492,67 @@ public class DatabaseTools
             cmd.Parameters.AddWithValue("@hasta", hasta.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
 
             reporte.Mermas = Convert.ToInt64(cmd.ExecuteScalar() ?? 0L, CultureInfo.InvariantCulture);
+        }
+
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.CommandText = @"
+                SELECT l.ProductoId, l.Nombre,
+                       COALESCE(NULLIF(TRIM(p.Categoria), ''), 'Sin categoría') AS Categoria,
+                       SUM(l.Cantidad), SUM(l.Importe),
+                       SUM(l.CostoUnitario * l.Cantidad)
+                FROM VentaLineas l
+                INNER JOIN Ventas v ON v.Id = l.VentaId
+                LEFT JOIN Productos p ON p.Id = l.ProductoId
+                WHERE date(v.Fecha) BETWEEN date(@desde) AND date(@hasta)
+                  AND NOT EXISTS (SELECT 1 FROM AnulacionesVenta a WHERE a.VentaId = v.Id)
+                GROUP BY l.ProductoId, l.Nombre, Categoria
+                ORDER BY SUM(l.Importe) DESC, SUM(l.Cantidad) DESC";
+            cmd.Parameters.AddWithValue("@desde", desde.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+            cmd.Parameters.AddWithValue("@hasta", hasta.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                reporte.Productos.Add(new ReporteProducto
+                {
+                    ProductoId = Convert.ToInt32(reader.GetValue(0), CultureInfo.InvariantCulture),
+                    Nombre = reader.GetString(1),
+                    Categoria = reader.GetString(2),
+                    Cantidad = Convert.ToInt32(reader.GetValue(3), CultureInfo.InvariantCulture),
+                    Ventas = Convert.ToInt64(reader.GetValue(4), CultureInfo.InvariantCulture),
+                    Costo = Convert.ToInt64(reader.GetValue(5), CultureInfo.InvariantCulture)
+                });
+            }
+        }
+
+        using (var cmd = conn.CreateCommand())
+        {
+            cmd.CommandText = @"
+                SELECT COALESCE(NULLIF(TRIM(p.Categoria), ''), 'Sin categoría') AS Categoria,
+                       SUM(l.Cantidad), SUM(l.Importe),
+                       SUM(l.CostoUnitario * l.Cantidad)
+                FROM VentaLineas l
+                INNER JOIN Ventas v ON v.Id = l.VentaId
+                LEFT JOIN Productos p ON p.Id = l.ProductoId
+                WHERE date(v.Fecha) BETWEEN date(@desde) AND date(@hasta)
+                  AND NOT EXISTS (SELECT 1 FROM AnulacionesVenta a WHERE a.VentaId = v.Id)
+                GROUP BY Categoria
+                ORDER BY SUM(l.Importe) DESC";
+            cmd.Parameters.AddWithValue("@desde", desde.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+            cmd.Parameters.AddWithValue("@hasta", hasta.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+            {
+                reporte.Categorias.Add(new ReporteCategoria
+                {
+                    Categoria = reader.GetString(0),
+                    Cantidad = Convert.ToInt32(reader.GetValue(1), CultureInfo.InvariantCulture),
+                    Ventas = Convert.ToInt64(reader.GetValue(2), CultureInfo.InvariantCulture),
+                    Costo = Convert.ToInt64(reader.GetValue(3), CultureInfo.InvariantCulture)
+                });
+            }
         }
 
         using (var cmd = conn.CreateCommand())

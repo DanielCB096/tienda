@@ -92,6 +92,7 @@ public static class AccionBitacora
     public const string Merma = "Merma";
     public const string EntradaInventario = "EntradaInventario";
     public const string Gasto = "Gasto";
+    public const string EditarGasto = "EditarGasto";
     public const string CorteCaja = "CorteCaja";
     public const string MovimientoCaja = "MovimientoCaja";
     public const string Venta = "Venta";

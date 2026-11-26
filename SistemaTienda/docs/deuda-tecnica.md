@@ -126,7 +126,7 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 ### Reportes sin desglose por producto
 
 - **Dónde**: `ReporteUtilidadService`, `PeriodoReporte`, `ComparacionReporte`, `ExportadorCsv`, `ExportadorPdf` y la pestaña Reportes de la app MAUI.
-- **Impacto**: ya existe la utilidad por periodo (ventas, costo congelado, comisión, mermas y gastos), se consulta en la app con filtros hoy/mes/rango, se desglosa por método de cobro (Efectivo, Tarjeta y Fiado), se compara con el bloque anterior y se exporta a CSV y PDF desde T31/T36/T37/T38. Faltan ventas por día y utilidad por producto o categoría.
+- **Impacto**: ya existe la utilidad por periodo (ventas, costo congelado, comisión, mermas y gastos), se consulta en la app con filtros hoy/mes/rango, se desglosa por método de cobro (Efectivo, Tarjeta y Fiado), se compara con el bloque anterior y se exporta a CSV y PDF desde T31/T36/T37/T38. Ya hay productos y categorías; faltan ventas por día y comparación por producto entre periodos.
 - **Cierre**: consultas agregadas por producto y periodo con índices por fecha (ya existen en `Ventas(Fecha)`) y ventas por día.
 
 ## Baja prioridad

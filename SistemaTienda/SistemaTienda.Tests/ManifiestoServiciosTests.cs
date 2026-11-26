@@ -19,7 +19,7 @@ public sealed class ManifiestoServiciosTests
             "AgregarClienteFiado", "AgregarGasto", "AgregarProveedor", "AgregarUsuario",
             "BuscarClientes", "BuscarProveedores", "CambiarPin", "DesactivarCliente",
             "DesactivarProveedor", "DetectarDuplicadosCliente", "DetectarDuplicadosProveedor",
-            "EditarClienteFiado", "EditarProveedor", "EjecutarAsistenteInicial",
+            "EditarClienteFiado", "EditarGasto", "EditarProveedor", "EjecutarAsistenteInicial",
             "ObtenerClientesConSaldo", "ObtenerConfiguracion", "ObtenerEstadoCuentaCliente",
             "ObtenerEstadoCuentaProveedor", "ObtenerGastosPorConcepto", "ObtenerResumenGastos",
             "ObtenerTodosLosClientes", "ObtenerTodosLosGastos", "ObtenerTodosLosProveedores",
