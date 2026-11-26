@@ -10,12 +10,6 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 
 ## Alta prioridad
 
-### Selector de respaldo en Windows
-
-- **Dónde**: `SelectorArchivoRespaldo` en la app MAUI.
-- **Impacto**: el `FilePicker` de MAUI y WinRT fallan con `0x80004005` en la app sin empaquetar; el diálogo nativo de comdlg32 también falló. En Windows se pide la ruta del archivo, lo que es incómodo para un dueño no técnico.
-- **Cierre**: un explorador de archivos propio en MAUI o publicar como MSIX para recuperar el selector del sistema. Mientras tanto, el facilitador ayuda a pegar la ruta y Android usa el selector normal.
-
 ### Bitácora de respaldos fuera de la transacción
 
 - **Dónde**: `RespaldoService` registra la bitácora después de crear y verificar el archivo.

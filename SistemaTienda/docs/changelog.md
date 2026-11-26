@@ -22,7 +22,7 @@ Cada entrada tiene formato:
 - **Agregado**: el asistente inicial permite **Restaurar un respaldo** cuando la base está vacía; después se inicia sesión con el PIN del respaldo.
 - **Agregado**: la pantalla de arranque fallido permite restaurar sin sesión, con confirmación y clave si el respaldo está cifrado.
 - **Modificado**: restaurar desde Ajustes cierra la app también en Android para abrir la base restaurada.
-- **Verificado en Windows** (2026-11-26): botón del asistente, ruta, confirmación y PIN del respaldo. En Windows se pide la ruta porque los selectores nativos fallan en la app sin empaquetar; Android conserva el selector del sistema.
+- **Verificado en Windows** (2026-11-26): botón del asistente, explorador propio, confirmación y PIN del respaldo. En Windows el explorador muestra carpetas y accesos rápidos con filas de solo contorno; Android conserva el selector del sistema.
 - **Pruebas**: 6 nuevas en `RestauracionInstalacionTests`; suite completa: 489.
 - Ver [ADR-011](../../SistemaMaestro/docs/07-decisiones/ADR-011-restauracion-sin-sesion.md).
 

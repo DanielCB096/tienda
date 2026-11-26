@@ -738,16 +738,11 @@ public partial class AjustesPage : ContentPage
         RestaurarRespaldoButton.IsEnabled = false;
         try
         {
-            var archivo = await FilePicker.Default.PickAsync(new PickOptions
-            {
-                PickerTitle = "Selecciona un respaldo de POSale",
-                FileTypes = TiposRespaldo
-            });
-
-            if (archivo == null)
+            var ruta = await SelectorArchivoRespaldo.ElegirAsync(this);
+            if (string.IsNullOrEmpty(ruta))
                 return;
 
-            await RestaurarDesdeRutaAsync(archivo.FullPath, archivo.FileName);
+            await RestaurarDesdeRutaAsync(ruta, Path.GetFileName(ruta));
         }
         catch (Exception ex)
         {

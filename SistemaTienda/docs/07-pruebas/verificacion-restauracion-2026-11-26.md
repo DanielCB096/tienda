@@ -20,13 +20,13 @@ Respaldo de origen: escenario `configurado` con 53 productos y tres usuarios.
 
 El `FilePicker` de MAUI falla con `COMException 0x80004005` en esta app sin
 empaquetar. El selector de WinRT falla igual y el diálogo nativo de comdlg32 quedó
-colgado. Para desbloquear la restauración, Windows pide la **ruta del archivo** en
-un cuadro de texto (se puede copiar desde el Explorador). Android mantiene el
-selector del sistema.
+colgado. Por eso la app incluye un **explorador propio**: carpetas, Descargas,
+Escritorio, Documentos, carpeta de respaldos, Subir, ruta manual y filas con
+contorno. Android mantiene el selector del sistema.
 
 ## Pendiente
 
 - Probar la pantalla de arranque fallido con una base corrupta.
 - Repetir con un respaldo `.db.stb` y la clave de 24 caracteres desde la interfaz.
-- Mejorar el selector de Windows (deuda técnica): un explorador propio o un
-  empaquetado MSIX para recuperar el selector nativo.
+- Un empaquetado MSIX permitiría usar el selector nativo en Windows; el explorador
+  propio ya cubre la operación.
