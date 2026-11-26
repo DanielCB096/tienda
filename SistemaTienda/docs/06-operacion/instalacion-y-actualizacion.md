@@ -115,7 +115,7 @@ El sistema soporta actualizaciones **offline**: el nuevo archivo de la aplicaci�
 ### "La app se cierra al iniciar"
 
 - **Causa**: Base de datos corrupta o versión de BD incompatible.
-- **Solución**: si la falla ocurrió al actualizar, la app ya restauró el respaldo `antes-migrar`; revisa el mensaje de error. Si no, restaura un respaldo desde la consola (Configuración → Restaurar respaldo) o vuelve a la versión anterior con `h5-instalar.ps1 -Revertir`. Si se reinstala, se crea una base nueva y se pierden los datos sin respaldo.
+- **Solución**: si la falla ocurrió al actualizar, la app ya restauró el respaldo `antes-migrar`; revisa el mensaje de error. Si no, usa **Restaurar un respaldo** en la pantalla de error, en el asistente de instalación nueva o en **Ajustes** con sesión. También puedes volver a la versión anterior con `h5-instalar.ps1 -Revertir`. Si reinstalas sin restaurar, se crea una base nueva y se pierden los datos sin respaldo.
 
 ### "No hay suficiente espacio"
 
