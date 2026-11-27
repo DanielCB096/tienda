@@ -37,12 +37,11 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 
 ## Media prioridad
 
-### Entrada de inventario no actualiza el costo del catálogo
+### Costo del catálogo en entradas (resuelto el 2026-11-27)
 
-- **Dónde**: `InventoryService.RegistrarEntrada` y la pestaña Inventario de la app MAUI.
-- **Por qué**: el servicio registra el costo unitario del movimiento, pero no toca `Productos.Costo`; el encargado puede registrar entradas sin tener permiso para cambiar precios.
-- **Impacto**: después de una compra a otro costo, el valorizado y el costo congelado de las siguientes ventas siguen usando el costo anterior hasta que el dueño lo edite a mano. La interfaz lo advierte, pero es un paso fácil de olvidar.
-- **Cierre**: decidir si la entrada actualiza el costo del catálogo (con bitácora) o si se captura un costo de reposición separado, y reflejarlo en la interfaz.
+- **Dónde**: `InventoryService.RegistrarEntrada`, `DatabaseTools.RegistrarEntrada` y la pestaña Inventario.
+- **Resuelto**: la entrada actualiza `Productos.Costo` con el costo capturado en la misma transacción, con casilla para conservar el actual y bitácora antes/después. Costo cero o igual no actualiza. Dueño y encargado. Ver [ADR-014](../../SistemaMaestro/docs/07-decisiones/ADR-014-costo-entrada.md).
+- **Pendiente**: un costo de reposición separado, si se necesita valuar sin cambiar el costo congelado.
 
 ### Reembolso de anulación sin movimiento de caja
 

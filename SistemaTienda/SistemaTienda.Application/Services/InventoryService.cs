@@ -694,7 +694,7 @@ public class InventoryService
     }
 
     public ProcessResult RegistrarEntrada(int productoId, int cantidad, long costoUnitario,
-        string usuario, string motivo = "Compra")
+        string usuario, string motivo = "Compra", bool actualizarCosto = true)
     {
         var autorizacion = Autorizar(PermisoSistema.RegistrarEntrada);
         if (autorizacion.IsError)
@@ -714,20 +714,35 @@ public class InventoryService
             return ProcessResult.Error(
                 "El producto está desactivado; reactívalo para registrar entradas");
 
+        // El costo cero se conserva como dato del movimiento, pero no borra el
+        // costo del catálogo: una entrada de regalo no debe inflar la utilidad.
+        var nuevoCosto = actualizarCosto && costoUnitario > 0 && costoUnitario != producto.Costo
+            ? costoUnitario
+            : (long?)null;
+        var costoFinal = nuevoCosto ?? producto.Costo;
+
         var auditoria = new RegistroBitacora
         {
             Fecha = DateTime.Now,
             Usuario = usuario,
             Accion = AccionBitacora.EntradaInventario,
             Entidad = "Producto",
-            DatosAntes = $"Stock={producto.Stock}",
-            DatosDespues = $"Stock={producto.Stock + cantidad};CostoUnitario={Dinero.Formatear(costoUnitario)}",
+            DatosAntes = $"Stock={producto.Stock};Costo={Dinero.Formatear(producto.Costo)}",
+            DatosDespues =
+                $"Stock={producto.Stock + cantidad};CostoUnitario={Dinero.Formatear(costoUnitario)};" +
+                $"Costo={Dinero.Formatear(costoFinal)};CostoActualizado={(nuevoCosto.HasValue ? "Si" : "No")}",
             Motivo = motivo
         };
 
-        if (!_db.RegistrarEntrada(productoId, cantidad, costoUnitario, motivo, usuario, auditoria))
+        if (!_db.RegistrarEntrada(productoId, cantidad, costoUnitario, motivo, usuario,
+                auditoria, nuevoCosto))
             return ProcessResult.Error("No se encontró el producto");
-        return ProcessResult.Success($"Entrada registrada: {cantidad} unidades añadidas");
+
+        var mensaje = $"Entrada registrada: {cantidad} unidades añadidas";
+        if (nuevoCosto.HasValue)
+            mensaje += $". Costo del catálogo actualizado a ${Dinero.Formatear(nuevoCosto.Value)}";
+
+        return ProcessResult.Success(mensaje);
     }
 
     /// <summary>

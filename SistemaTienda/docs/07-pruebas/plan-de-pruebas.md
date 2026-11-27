@@ -125,6 +125,7 @@ dotnet test SistemaTienda/SistemaTienda.sln
 | `BitacoraPermisosTests` | Ajuste autorizado con antes/después, empleado sin permiso, encargado sin cambio de precio pero con edición, merma, gasto, pago a proveedor, retiro denegado e ingreso permitido, inmutabilidad por disparadores, filtros de consulta, registro sin acción o sin sesión |
 | `GastosTests` | Gasto de un centavo, suma de centavos sin perder precisión, monto cero o negativo rechazado, campos persistidos, orden del historial del más reciente al más antiguo y resumen que separa caja y externos |
 | `SaldosBordeTests` | Abono igual al saldo, abono con saldo cero, centavos exactos, pago a proveedor que liquida el saldo |
+| `CostoEntradaTests` | La entrada actualiza el costo del catálogo, casilla desmarcada, costo cero o igual, costo congelado de la siguiente venta, encargado y empleado |
 | `InventarioBordeTests` | Venta que agota el stock, costo o cantidad inválidos en entrada, merma no positiva, código duplicado tras recortar, comodines literales en la búsqueda |
 | `UsuariosPermisosTests` | Nombre recortado, PIN de cuatro dígitos, nombre en blanco, usuario inexistente, sal distinta por hash y hash mal formado |
 | `MapeoTiposTests` | Rol entero a enum y fecha nullable nula o cargada |
@@ -250,7 +251,7 @@ Ejecutada en Windows el 2026-10-25 sobre la misma base demo del POS y la Caja, c
 | Consultar como empleado | Pasó (sin + Nuevo; en el detalle solo Ver movimientos y Cerrar, con aviso de solo lectura) |
 | Valorizado después de las operaciones | Pasó ($838.00 con 6 productos) |
 
-Observación: la entrada conserva el costo del movimiento, pero no actualiza el costo del catálogo; el costo vigente se cambia desde Editar con permiso de dueño. Quedó anotado en [deuda-técnica](../deuda-tecnica.md).
+Observación: desde el 2026-11-27 la entrada actualiza el costo del catálogo si la casilla está marcada (por defecto); el costo vigente también se puede cambiar desde Editar con permiso de dueño.
 
 Pendiente de Inventario:
 

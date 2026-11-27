@@ -657,7 +657,9 @@ public partial class InventarioPage : ContentPage
         CostoEntradaEntry.Text = Dinero.APesos(actual.Costo)
             .ToString("0.00", CultureInfo.InvariantCulture);
         MotivoEntradaEntry.Text = "Compra";
-        TotalEntradaLabel.Text = "Total de la entrada: —";
+        TotalEntradaLabel.Text = "Total de la entrada: -";
+        ActualizarCostoCheck.IsChecked = true;
+        ActualizarCostoEntrada();
 
         AbrirOverlay(VistaInventario.Entrada, "Registrar entrada", actual.Nombre);
         Dispatcher.Dispatch(() => CantidadEntradaEntry.Focus());
@@ -794,7 +796,38 @@ public partial class InventarioPage : ContentPage
 
         TotalEntradaLabel.Text = cantidad > 0 && costo.HasValue
             ? $"Total de la entrada: {Formato.Moneda(Dinero.Multiplicar(costo.Value, cantidad))}"
-            : "Total de la entrada: —";
+            : "Total de la entrada: -";
+
+        ActualizarCostoEntrada();
+    }
+
+    private void OnActualizarCostoChanged(object sender, CheckedChangedEventArgs e) =>
+        ActualizarCostoEntrada();
+
+    private void ActualizarCostoEntrada()
+    {
+        if (_producto == null || CostoCatalogoLabel == null)
+            return;
+
+        var actual = _producto.Costo;
+        if (ActualizarCostoCheck?.IsChecked != true)
+        {
+            CostoCatalogoLabel.Text =
+                $"Se conservará el costo del catálogo ({Formato.Moneda(actual)}).";
+            return;
+        }
+
+        var costo = LeerCentavos(CostoEntradaEntry.Text);
+        if (!costo.HasValue || costo.Value <= 0)
+        {
+            CostoCatalogoLabel.Text =
+                $"Costo del catálogo actual: {Formato.Moneda(actual)}.";
+            return;
+        }
+
+        CostoCatalogoLabel.Text = costo.Value == actual
+            ? $"El costo del catálogo no cambia ({Formato.Moneda(actual)})."
+            : $"Costo del catálogo: {Formato.Moneda(actual)} → {Formato.Moneda(costo.Value)}.";
     }
 
     private void OnMermaChanged(object sender, TextChangedEventArgs e)
@@ -1034,7 +1067,8 @@ public partial class InventarioPage : ContentPage
             motivo = "Compra";
 
         var resultado = _inventario.RegistrarEntrada(
-            _producto.Id, cantidad, costo.Value, _sesion.Usuario!.Nombre, motivo);
+            _producto.Id, cantidad, costo.Value, _sesion.Usuario!.Nombre, motivo,
+            actualizarCosto: ActualizarCostoCheck?.IsChecked ?? true);
         if (resultado.IsError)
         {
             MostrarErrorOverlay(resultado.Message);

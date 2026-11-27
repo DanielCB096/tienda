@@ -653,11 +653,60 @@ public class DatabaseTools
     // ---------- Movimientos de inventario ----------
 
     public bool RegistrarEntrada(int productoId, int cantidad, long costoUnitario, string motivo,
-        string usuario, RegistroBitacora auditoria = null)
+        string usuario, RegistroBitacora auditoria = null, long? nuevoCosto = null)
     {
         if (cantidad <= 0) return false;
-        return RegistrarMovimientoSeguro(productoId, MovimientoTipo.Entrada, cantidad,
-            costoUnitario, motivo, usuario, auditoria);
+
+        if (!nuevoCosto.HasValue)
+            return RegistrarMovimientoSeguro(productoId, MovimientoTipo.Entrada, cantidad,
+                costoUnitario, motivo, usuario, auditoria);
+
+        using var conn = CreateConnection();
+        conn.Open();
+        using var tx = conn.BeginTransaction();
+
+        if (ObtenerProductoEnTransaccion(conn, tx, productoId) == null)
+        {
+            tx.Rollback();
+            return false;
+        }
+
+        try
+        {
+            InsertarMovimiento(conn, tx, productoId, MovimientoTipo.Entrada, cantidad,
+                costoUnitario, motivo, usuario);
+
+            using (var update = conn.CreateCommand())
+            {
+                update.Transaction = tx;
+                update.CommandText = @"
+                    UPDATE Productos
+                    SET Costo = @costo, UltimaActualizacion = @fecha
+                    WHERE Id = @id";
+                update.Parameters.AddWithValue("@costo", nuevoCosto.Value);
+                update.Parameters.AddWithValue("@fecha", DateTime.Now);
+                update.Parameters.AddWithValue("@id", productoId);
+                if (update.ExecuteNonQuery() == 0)
+                {
+                    tx.Rollback();
+                    return false;
+                }
+            }
+
+            if (auditoria != null)
+            {
+                auditoria.EntidadId = productoId.ToString(CultureInfo.InvariantCulture);
+                AgregarBitacora(conn, tx, auditoria);
+            }
+
+            tx.Commit();
+            return true;
+        }
+        catch (SqliteException)
+        {
+            try { tx.Rollback(); } catch (SqliteException) { }
+            return false;
+        }
     }
 
     /// <summary>

@@ -379,12 +379,21 @@
                                    Keyboard="Numeric"
                                    Placeholder="0.00"
                                    TextChanged="OnEntradaChanged" />
+                            <HorizontalStackLayout Spacing="6" Margin="0,4,0,0">
+                                <CheckBox x:Name="ActualizarCostoCheck"
+                                          IsChecked="True"
+                                          CheckedChanged="OnActualizarCostoChanged" />
+                                <Label Text="Actualizar el costo del catálogo"
+                                       FontSize="14"
+                                       VerticalOptions="Center" />
+                            </HorizontalStackLayout>
+                            <Label x:Name="CostoCatalogoLabel" Style="{StaticResource TextoNota}" />
                             <Label x:Name="TotalEntradaLabel" FontAttributes="Bold" />
                             <Label Text="Motivo" Style="{StaticResource EtiquetaSeccion}" Margin="0,4,0,0" />
                             <Entry x:Name="MotivoEntradaEntry"
                                    Style="{StaticResource CampoTexto}"
                                    Placeholder="Compra" />
-                            <Label Text="El costo del catálogo se edita por separado; aquí se registra el costo del movimiento."
+                            <Label Text="Si lo desmarcas, las próximas ventas seguirán usando el costo anterior."
                                    Style="{StaticResource TextoNota}" />
                         </VerticalStackLayout>
 

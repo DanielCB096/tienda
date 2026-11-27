@@ -17,6 +17,14 @@ Cada entrada tiene formato:
 
 ---
 
+## 2026-11-27 — Costo del catálogo al registrar entradas
+
+- **Agregado**: la entrada de inventario actualiza el costo del catálogo con el costo capturado, en la misma transacción que el movimiento y con bitácora antes/después.
+- **Agregado**: casilla **Actualizar el costo del catálogo** (marcada por defecto) para conservar el costo anterior. Un costo cero o igual no lo modifica.
+- **Regla**: dueño y encargado pueden actualizarlo al recibir mercancía; el formulario del producto sigue reservado al dueño.
+- **Pruebas**: 7 nuevas en `CostoEntradaTests`; suite completa: 521.
+- Ver [ADR-014](../../SistemaMaestro/docs/07-decisiones/ADR-014-costo-entrada.md).
+
 ## 2026-11-26 — Ventas por día
 
 - **Agregado**: Reportes muestra **ventas por día** con total cobrado, número de ventas, costo más comisión y utilidad bruta del día.
