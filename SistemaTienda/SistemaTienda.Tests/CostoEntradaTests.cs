@@ -22,6 +22,68 @@ public sealed class CostoEntradaTests
     }
 
     [Fact]
+    public void PrecioVenta_ConservaElMargenEnPesos()
+    {
+        Assert.Equal(1_900, PrecioVenta.ConservandoMargen(
+            precioActual: 1_800, costoActual: 1_200, costoNuevo: 1_300));
+    }
+
+    [Fact]
+    public void RegistrarEntrada_ConPrecioNuevo_ActualizaCostoYPrecio()
+    {
+        using var bd = new BaseDatosPrueba();
+        bd.ConfigurarTienda();
+        var producto = CrearProducto(bd, costo: 1_200);
+
+        var entrada = bd.Inventario.RegistrarEntrada(producto.Id, 10, 1_300, "Dueño",
+            nuevoPrecio: 1_900);
+
+        Assert.True(entrada.IsSuccess, entrada.Message);
+        Assert.Contains("Precio", entrada.Message);
+        var actualizado = bd.Inventario.BuscarPorId(producto.Id);
+        Assert.Equal(1_300, actualizado.Costo);
+        Assert.Equal(1_900, actualizado.Precio);
+        Assert.Equal(1, bd.Db.ExecuteScalar<int>(
+            "SELECT COUNT(*) FROM Bitacora WHERE Accion = @accion",
+            new SqliteParameter("@accion", AccionBitacora.EntradaInventario)));
+    }
+
+    [Fact]
+    public void RegistrarEntrada_EncargadoNoPuedeCambiarElPrecio()
+    {
+        using var bd = new BaseDatosPrueba();
+        bd.ConfigurarTienda();
+        var producto = CrearProducto(bd, costo: 1_200);
+        bd.IniciarSesion(RolUsuario.Encargado, "Encargada");
+
+        var entrada = bd.Inventario.RegistrarEntrada(producto.Id, 4, 1_300, "Encargada",
+            nuevoPrecio: 1_900);
+
+        Assert.True(entrada.IsError);
+        var sinCambios = bd.Inventario.BuscarPorId(producto.Id);
+        Assert.Equal(1_200, sinCambios.Costo);
+        Assert.Equal(1_000, sinCambios.Precio);
+        Assert.Equal(5, sinCambios.Stock);
+    }
+
+    [Fact]
+    public void RegistrarEntrada_ConPrecioCero_SeRechazaSinCambiarNada()
+    {
+        using var bd = new BaseDatosPrueba();
+        bd.ConfigurarTienda();
+        var producto = CrearProducto(bd, costo: 1_200);
+
+        var entrada = bd.Inventario.RegistrarEntrada(producto.Id, 4, 1_300, "Dueño",
+            nuevoPrecio: 0);
+
+        Assert.True(entrada.IsError);
+        var sinCambios = bd.Inventario.BuscarPorId(producto.Id);
+        Assert.Equal(1_200, sinCambios.Costo);
+        Assert.Equal(1_000, sinCambios.Precio);
+        Assert.Equal(5, sinCambios.Stock);
+    }
+
+    [Fact]
     public void RegistrarEntrada_ConCostoNuevo_ActualizaElCatalogo()
     {
         using var bd = new BaseDatosPrueba();

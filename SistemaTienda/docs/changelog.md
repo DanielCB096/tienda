@@ -22,7 +22,8 @@ Cada entrada tiene formato:
 - **Agregado**: la entrada de inventario actualiza el costo del catálogo con el costo capturado, en la misma transacción que el movimiento y con bitácora antes/después.
 - **Agregado**: casilla **Actualizar el costo del catálogo** (marcada por defecto) para conservar el costo anterior. Un costo cero o igual no lo modifica.
 - **Regla**: dueño y encargado pueden actualizarlo al recibir mercancía; el formulario del producto sigue reservado al dueño.
-- **Pruebas**: 7 nuevas en `CostoEntradaTests`; suite completa: 521.
+- **Agregado**: si el dueño lo decide, la entrada también actualiza el precio de venta conservando el margen en pesos ($12→$13 y $18→$19); la casilla está desmarcada por defecto.
+- **Pruebas**: 11 nuevas en `CostoEntradaTests`; suite completa: 525.
 - Ver [ADR-014](../../SistemaMaestro/docs/07-decisiones/ADR-014-costo-entrada.md).
 
 ## 2026-11-26 — Ventas por día

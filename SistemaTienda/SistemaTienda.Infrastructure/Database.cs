@@ -653,11 +653,12 @@ public class DatabaseTools
     // ---------- Movimientos de inventario ----------
 
     public bool RegistrarEntrada(int productoId, int cantidad, long costoUnitario, string motivo,
-        string usuario, RegistroBitacora auditoria = null, long? nuevoCosto = null)
+        string usuario, RegistroBitacora auditoria = null, long? nuevoCosto = null,
+        long? nuevoPrecio = null)
     {
         if (cantidad <= 0) return false;
 
-        if (!nuevoCosto.HasValue)
+        if (!nuevoCosto.HasValue && !nuevoPrecio.HasValue)
             return RegistrarMovimientoSeguro(productoId, MovimientoTipo.Entrada, cantidad,
                 costoUnitario, motivo, usuario, auditoria);
 
@@ -665,7 +666,8 @@ public class DatabaseTools
         conn.Open();
         using var tx = conn.BeginTransaction();
 
-        if (ObtenerProductoEnTransaccion(conn, tx, productoId) == null)
+        var producto = ObtenerProductoEnTransaccion(conn, tx, productoId);
+        if (producto == null)
         {
             tx.Rollback();
             return false;
@@ -681,9 +683,10 @@ public class DatabaseTools
                 update.Transaction = tx;
                 update.CommandText = @"
                     UPDATE Productos
-                    SET Costo = @costo, UltimaActualizacion = @fecha
+                    SET Costo = @costo, Precio = @precio, UltimaActualizacion = @fecha
                     WHERE Id = @id";
-                update.Parameters.AddWithValue("@costo", nuevoCosto.Value);
+                update.Parameters.AddWithValue("@costo", nuevoCosto ?? producto.Costo);
+                update.Parameters.AddWithValue("@precio", nuevoPrecio ?? producto.Precio);
                 update.Parameters.AddWithValue("@fecha", DateTime.Now);
                 update.Parameters.AddWithValue("@id", productoId);
                 if (update.ExecuteNonQuery() == 0)

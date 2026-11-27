@@ -388,6 +388,21 @@
                                        VerticalOptions="Center" />
                             </HorizontalStackLayout>
                             <Label x:Name="CostoCatalogoLabel" Style="{StaticResource TextoNota}" />
+                            <HorizontalStackLayout x:Name="ActualizarPrecioPanel"
+                                                   Spacing="6"
+                                                   Margin="0,4,0,0"
+                                                   IsVisible="False">
+                                <CheckBox x:Name="ActualizarPrecioCheck"
+                                          IsChecked="False"
+                                          CheckedChanged="OnActualizarPrecioChanged" />
+                                <Label x:Name="TextoActualizarPrecioLabel"
+                                       Text="Actualizar también el precio de venta"
+                                       FontSize="14"
+                                       VerticalOptions="Center" />
+                            </HorizontalStackLayout>
+                            <Label x:Name="PrecioSugeridoLabel"
+                                   Style="{StaticResource TextoNota}"
+                                   IsVisible="False" />
                             <Label x:Name="TotalEntradaLabel" FontAttributes="Bold" />
                             <Label Text="Motivo" Style="{StaticResource EtiquetaSeccion}" Margin="0,4,0,0" />
                             <Entry x:Name="MotivoEntradaEntry"

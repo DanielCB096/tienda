@@ -659,7 +659,9 @@ public partial class InventarioPage : ContentPage
         MotivoEntradaEntry.Text = "Compra";
         TotalEntradaLabel.Text = "Total de la entrada: -";
         ActualizarCostoCheck.IsChecked = true;
+        ActualizarPrecioCheck.IsChecked = false;
         ActualizarCostoEntrada();
+        ActualizarPrecioEntrada();
 
         AbrirOverlay(VistaInventario.Entrada, "Registrar entrada", actual.Nombre);
         Dispatcher.Dispatch(() => CantidadEntradaEntry.Focus());
@@ -799,10 +801,67 @@ public partial class InventarioPage : ContentPage
             : "Total de la entrada: -";
 
         ActualizarCostoEntrada();
+        ActualizarPrecioEntrada();
     }
 
-    private void OnActualizarCostoChanged(object sender, CheckedChangedEventArgs e) =>
+    private void OnActualizarCostoChanged(object sender, CheckedChangedEventArgs e)
+    {
         ActualizarCostoEntrada();
+        ActualizarPrecioEntrada();
+    }
+
+    private void OnActualizarPrecioChanged(object sender, CheckedChangedEventArgs e) =>
+        ActualizarPrecioEntrada();
+
+    private long CostoNuevo()
+    {
+        if (_producto == null)
+            return 0;
+
+        var capturado = LeerCentavos(CostoEntradaEntry.Text);
+        return ActualizarCostoCheck?.IsChecked == true && capturado.HasValue && capturado.Value > 0
+            ? capturado.Value
+            : _producto.Costo;
+    }
+
+    private long PrecioSugerido() =>
+        _producto == null
+            ? 0
+            : PrecioVenta.ConservandoMargen(_producto.Precio, _producto.Costo, CostoNuevo());
+
+    private void ActualizarPrecioEntrada()
+    {
+        if (_producto == null || ActualizarPrecioPanel == null ||
+            TextoActualizarPrecioLabel == null || PrecioSugeridoLabel == null)
+            return;
+
+        var disponible = _puedeCambiarPrecios;
+        ActualizarPrecioPanel.IsVisible = disponible;
+        if (!disponible)
+        {
+            PrecioSugeridoLabel.IsVisible = false;
+            return;
+        }
+
+        var costoNuevo = CostoNuevo();
+        var cambiaCosto = costoNuevo != _producto.Costo;
+        var sugerido = PrecioSugerido();
+        var margen = _producto.Precio - _producto.Costo;
+
+        TextoActualizarPrecioLabel.Text =
+            $"Actualizar el precio a {Formato.Moneda(sugerido)} (conservar margen)";
+        ActualizarPrecioCheck.IsEnabled = cambiaCosto;
+        if (!cambiaCosto && ActualizarPrecioCheck.IsChecked == true)
+            ActualizarPrecioCheck.IsChecked = false;
+
+        PrecioSugeridoLabel.IsVisible = cambiaCosto;
+        if (cambiaCosto)
+        {
+            PrecioSugeridoLabel.Text =
+                $"Precio actual {Formato.Moneda(_producto.Precio)}; margen actual " +
+                $"{Formato.Moneda(margen)}. El precio sugerido conserva ese margen.";
+        }
+    }
 
     private void ActualizarCostoEntrada()
     {
@@ -1066,9 +1125,18 @@ public partial class InventarioPage : ContentPage
         if (string.IsNullOrWhiteSpace(motivo))
             motivo = "Compra";
 
+        long? nuevoPrecio = null;
+        if (_puedeCambiarPrecios && ActualizarPrecioCheck?.IsChecked == true)
+        {
+            var sugerido = PrecioSugerido();
+            if (sugerido != _producto.Precio)
+                nuevoPrecio = sugerido;
+        }
+
         var resultado = _inventario.RegistrarEntrada(
             _producto.Id, cantidad, costo.Value, _sesion.Usuario!.Nombre, motivo,
-            actualizarCosto: ActualizarCostoCheck?.IsChecked ?? true);
+            actualizarCosto: ActualizarCostoCheck?.IsChecked ?? true,
+            nuevoPrecio: nuevoPrecio);
         if (resultado.IsError)
         {
             MostrarErrorOverlay(resultado.Message);

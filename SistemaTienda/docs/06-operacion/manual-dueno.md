@@ -40,7 +40,7 @@ Acceso en la app: pestaña **Inventario**.
 
 - Listado de todos los productos con stock, mínimo, categoría y precio; resumen de stock bajo y valorizado.
 - **Acciones**: buscar por nombre o escanear el código, dar de alta, editar, importar CSV o Excel (`.xlsx`), registrar entrada, merma o ajuste, y consultar movimientos. El borrado no está implementado.
-- **Precios y ajustes**: solo el dueño puede cambiar costo/precio desde el formulario y ajustar el stock; el encargado puede editar los demás datos, registrar entradas o mermas y, al recibir mercancía, actualizar el costo del catálogo desde la entrada (queda en la bitácora).
+- **Precios y ajustes**: solo el dueño puede cambiar costo/precio desde el formulario y ajustar el stock; el encargado puede editar los demás datos, registrar entradas o mermas y, al recibir mercancía, actualizar el costo del catálogo desde la entrada (queda en la bitácora). El dueño puede marcar **Actualizar el precio a $X** para conservar el margen en pesos.
 - **Stock actual**: se muestra el stock disponible y se actualiza por movimientos; nunca se edita directamente desde el formulario.
 
 #### Importar productos desde CSV o Excel

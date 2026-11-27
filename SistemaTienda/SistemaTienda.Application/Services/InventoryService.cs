@@ -694,7 +694,8 @@ public class InventoryService
     }
 
     public ProcessResult RegistrarEntrada(int productoId, int cantidad, long costoUnitario,
-        string usuario, string motivo = "Compra", bool actualizarCosto = true)
+        string usuario, string motivo = "Compra", bool actualizarCosto = true,
+        long? nuevoPrecio = null)
     {
         var autorizacion = Autorizar(PermisoSistema.RegistrarEntrada);
         if (autorizacion.IsError)
@@ -705,6 +706,16 @@ public class InventoryService
 
         if (costoUnitario < 0)
             return ProcessResult.Error("El costo unitario no puede ser negativo");
+
+        if (nuevoPrecio.HasValue)
+        {
+            var autorizacionPrecio = Autorizar(PermisoSistema.CambiarPrecios);
+            if (autorizacionPrecio.IsError)
+                return autorizacionPrecio;
+
+            if (nuevoPrecio.Value <= 0)
+                return ProcessResult.Error("El precio de venta debe ser mayor a cero");
+        }
 
         var producto = _db.ObtenerProductoPorId(productoId);
         if (producto == null)
@@ -720,6 +731,7 @@ public class InventoryService
             ? costoUnitario
             : (long?)null;
         var costoFinal = nuevoCosto ?? producto.Costo;
+        var precioFinal = nuevoPrecio ?? producto.Precio;
 
         var auditoria = new RegistroBitacora
         {
@@ -727,20 +739,25 @@ public class InventoryService
             Usuario = usuario,
             Accion = AccionBitacora.EntradaInventario,
             Entidad = "Producto",
-            DatosAntes = $"Stock={producto.Stock};Costo={Dinero.Formatear(producto.Costo)}",
+            DatosAntes =
+                $"Stock={producto.Stock};Costo={Dinero.Formatear(producto.Costo)};" +
+                $"Precio={Dinero.Formatear(producto.Precio)}",
             DatosDespues =
                 $"Stock={producto.Stock + cantidad};CostoUnitario={Dinero.Formatear(costoUnitario)};" +
-                $"Costo={Dinero.Formatear(costoFinal)};CostoActualizado={(nuevoCosto.HasValue ? "Si" : "No")}",
+                $"Costo={Dinero.Formatear(costoFinal)};CostoActualizado={(nuevoCosto.HasValue ? "Si" : "No")};" +
+                $"Precio={Dinero.Formatear(precioFinal)};PrecioActualizado={(nuevoPrecio.HasValue ? "Si" : "No")}",
             Motivo = motivo
         };
 
         if (!_db.RegistrarEntrada(productoId, cantidad, costoUnitario, motivo, usuario,
-                auditoria, nuevoCosto))
+                auditoria, nuevoCosto, nuevoPrecio))
             return ProcessResult.Error("No se encontró el producto");
 
         var mensaje = $"Entrada registrada: {cantidad} unidades añadidas";
         if (nuevoCosto.HasValue)
             mensaje += $". Costo del catálogo actualizado a ${Dinero.Formatear(nuevoCosto.Value)}";
+        if (nuevoPrecio.HasValue)
+            mensaje += $". Precio de venta actualizado a ${Dinero.Formatear(nuevoPrecio.Value)}";
 
         return ProcessResult.Success(mensaje);
     }

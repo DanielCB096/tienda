@@ -125,7 +125,7 @@ dotnet test SistemaTienda/SistemaTienda.sln
 | `BitacoraPermisosTests` | Ajuste autorizado con antes/después, empleado sin permiso, encargado sin cambio de precio pero con edición, merma, gasto, pago a proveedor, retiro denegado e ingreso permitido, inmutabilidad por disparadores, filtros de consulta, registro sin acción o sin sesión |
 | `GastosTests` | Gasto de un centavo, suma de centavos sin perder precisión, monto cero o negativo rechazado, campos persistidos, orden del historial del más reciente al más antiguo y resumen que separa caja y externos |
 | `SaldosBordeTests` | Abono igual al saldo, abono con saldo cero, centavos exactos, pago a proveedor que liquida el saldo |
-| `CostoEntradaTests` | La entrada actualiza el costo del catálogo, casilla desmarcada, costo cero o igual, costo congelado de la siguiente venta, encargado y empleado |
+| `CostoEntradaTests` | La entrada actualiza el costo del catálogo, casilla desmarcada, costo cero o igual, costo congelado de la siguiente venta, precio sugerido con margen en pesos, precio aplicado, encargado sin permiso de precio y empleado |
 | `InventarioBordeTests` | Venta que agota el stock, costo o cantidad inválidos en entrada, merma no positiva, código duplicado tras recortar, comodines literales en la búsqueda |
 | `UsuariosPermisosTests` | Nombre recortado, PIN de cuatro dígitos, nombre en blanco, usuario inexistente, sal distinta por hash y hash mal formado |
 | `MapeoTiposTests` | Rol entero a enum y fecha nullable nula o cargada |
