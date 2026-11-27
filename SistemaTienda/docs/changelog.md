@@ -22,7 +22,8 @@ Cada entrada tiene formato:
 - **Agregado**: `DiaCompletoTests` simula un día con ventas en efectivo, tarjeta, mixta y fiado, descuentos por producto, dos anulaciones con reembolso, abono, gasto, merma y compra; valida ventas, reporte, desglose, caja, stock y corte sin diferencia.
 - **Modificado**: el escenario `demo` agrega una venta con descuentos, una anulación reembolsada en efectivo y otra con reembolso parcial con tarjeta para revisar las pantallas.
 - **Pruebas**: 1 nueva en `DiaCompletoTests`; `SemillaTests` valida anulaciones y reembolsos; suite completa: 535.
-- **Extra**: la base de pruebas usa SQLite sin pooling para evitar bloqueos entre pruebas.
+- *Verificado*: Windows, 2026-11-27. La demo mostró 21 ventas vigentes por $1,366.50, 3 anuladas, reembolsos, ventas por día y el corte pendiente con el retiro del reembolso.
+- **Extra**: la base de pruebas y el migrador usan SQLite sin pooling para evitar conexiones con el esquema viejo.
 
 ## 2026-11-27 — Reembolso de ventas anuladas
 
@@ -30,6 +31,7 @@ Cada entrada tiene formato:
 - El efectivo genera un retiro de caja en la misma transacción; tarjeta, transferencia y otro no mueven la caja. El fiado no se reembolsa porque la anulación revierte el saldo.
 - **Esquema v22**: `ReembolsosVenta` inmutable con `MovimientoCajaId` opcional.
 - **Pruebas**: 9 nuevas en `ReembolsosTests`; suite completa: 534.
+- *Verificado*: Windows, 2026-11-27. Reembolso completo de $13.00 en efectivo con retiro de caja y reembolso parcial de $9.00 de $18.00 con tarjeta; el pendiente quedó visible. Android pendiente.
 - Ver [ADR-015](../../SistemaMaestro/docs/07-decisiones/ADR-015-reembolso-anulacion.md).
 
 ## 2026-11-27 — Costo del catálogo al registrar entradas
