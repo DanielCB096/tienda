@@ -23,7 +23,7 @@ Cada entrada tiene formato:
 - **Modificado**: el escenario `demo` agrega una venta con descuentos, una anulación reembolsada en efectivo y otra con reembolso parcial con tarjeta para revisar las pantallas.
 - **Pruebas**: 1 nueva en `DiaCompletoTests`; `SemillaTests` valida anulaciones y reembolsos; suite completa: 535.
 - *Verificado*: Windows, 2026-11-27. La demo mostró 21 ventas vigentes por $1,366.50, 3 anuladas, reembolsos, ventas por día y el corte pendiente con el retiro del reembolso.
-- **Extra**: la base de pruebas y el migrador usan SQLite sin pooling para evitar conexiones con el esquema viejo.
+- **Extra**: la base de pruebas y el migrador usan SQLite sin pooling para evitar conexiones con el esquema viejo; las pruebas de migración crean la base en la versión anterior y aplican el resto, sin `DROP COLUMN`.
 
 ## 2026-11-27 — Reembolso de ventas anuladas
 
