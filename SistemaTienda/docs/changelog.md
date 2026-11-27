@@ -24,6 +24,7 @@ Cada entrada tiene formato:
 - **Regla**: dueño y encargado pueden actualizarlo al recibir mercancía; el formulario del producto sigue reservado al dueño.
 - **Agregado**: si el dueño lo decide, la entrada también actualiza el precio de venta conservando el margen en pesos ($12→$13 y $18→$19); la casilla está desmarcada por defecto.
 - **Pruebas**: 11 nuevas en `CostoEntradaTests`; suite completa: 525.
+- *Verificado*: Windows, 2026-11-27. La entrada mostró el precio sugerido $19.00 al pasar el costo de $12 a $13; la casilla desmarcada conservó el precio y el encargado no vio el cambio de precio. Android pendiente.
 - Ver [ADR-014](../../SistemaMaestro/docs/07-decisiones/ADR-014-costo-entrada.md).
 
 ## 2026-11-26 — Ventas por día
