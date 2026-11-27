@@ -14,7 +14,7 @@ public class DatabaseTools
     public string DirectorioRespaldos { get; }
     public string UltimoRespaldoCreado { get; private set; } = string.Empty;
 
-    public DatabaseTools(string databasePath)
+    public DatabaseTools(string databasePath, bool pooling = true)
     {
         RutaBaseDatos = Path.GetFullPath(databasePath);
         var directory = Path.GetDirectoryName(RutaBaseDatos);
@@ -27,7 +27,10 @@ public class DatabaseTools
         {
             DataSource = RutaBaseDatos,
             ForeignKeys = true,
-            DefaultTimeout = 30
+            DefaultTimeout = 30,
+            // Las pruebas crean y borran una base por caso; sin pooling,
+            // ClearAllPools de una prueba no cierra conexiones de otra.
+            Pooling = pooling
         }.ToString();
     }
 
@@ -2318,6 +2321,119 @@ public class DatabaseTools
         ExecuteReportObject<AnulacionVenta>(
             "SELECT * FROM AnulacionesVenta WHERE VentaId = @id",
             new SqliteParameter("@id", ventaId));
+
+    public List<ReembolsoVenta> ObtenerReembolsosVenta(int ventaId) =>
+        ExecuteReportObjects<ReembolsoVenta>(
+            "SELECT * FROM ReembolsosVenta WHERE VentaId = @id ORDER BY Fecha, Id",
+            new SqliteParameter("@id", ventaId));
+
+    /// <summary>
+    /// Guarda un reembolso de una venta anulada. Si es en efectivo, inserta el
+    /// retiro de caja en la misma transacci�n. Vuelve a validar el pendiente
+    /// contra lo pagado para que dos capturas simult�neas no se excedan.
+    /// </summary>
+    public ProcessResult RegistrarReembolso(ReembolsoVenta reembolso, bool generarRetiro,
+        RegistroBitacora auditoria = null)
+    {
+        using var conn = CreateConnection();
+        conn.Open();
+        using var tx = conn.BeginTransaction();
+
+        try
+        {
+            long pagado;
+            long reembolsado;
+            using (var consulta = conn.CreateCommand())
+            {
+                consulta.Transaction = tx;
+                consulta.CommandText = @"
+                    SELECT COALESCE(v.PagoEfectivo, 0) + COALESCE(v.PagoTarjeta, 0),
+                           COALESCE((SELECT SUM(r.Monto) FROM ReembolsosVenta r
+                                     WHERE r.VentaId = v.Id), 0),
+                           EXISTS (SELECT 1 FROM AnulacionesVenta a WHERE a.VentaId = v.Id)
+                    FROM Ventas v WHERE v.Id = @id";
+                consulta.Parameters.AddWithValue("@id", reembolso.VentaId);
+
+                using var reader = consulta.ExecuteReader();
+                if (!reader.Read())
+                {
+                    tx.Rollback();
+                    return ProcessResult.Error($"La venta #{reembolso.VentaId} no existe");
+                }
+
+                if (Convert.ToInt32(reader.GetValue(2), CultureInfo.InvariantCulture) == 0)
+                {
+                    tx.Rollback();
+                    return ProcessResult.Error("Solo se reembolsan ventas anuladas");
+                }
+
+                pagado = Convert.ToInt64(reader.GetValue(0), CultureInfo.InvariantCulture);
+                reembolsado = Convert.ToInt64(reader.GetValue(1), CultureInfo.InvariantCulture);
+            }
+
+            if (reembolso.Monto <= 0 || reembolso.Monto > pagado - reembolsado)
+            {
+                tx.Rollback();
+                return ProcessResult.Error(
+                    $"El reembolso debe ser mayor a cero y no superar el pendiente de " +
+                    $"${Dinero.Formatear(Math.Max(0, pagado - reembolsado))}");
+            }
+
+            int? movimientoCajaId = null;
+            if (generarRetiro)
+            {
+                using var movimiento = conn.CreateCommand();
+                movimiento.Transaction = tx;
+                movimiento.CommandText = @"
+                    INSERT INTO MovimientosCaja (Fecha, Tipo, Monto, Motivo, Usuario)
+                    VALUES (@fecha, @tipo, @monto, @motivo, @usuario);
+                    SELECT last_insert_rowid();";
+                movimiento.Parameters.AddWithValue("@fecha", reembolso.Fecha);
+                movimiento.Parameters.AddWithValue("@tipo", TipoMovimientoCaja.Retiro);
+                movimiento.Parameters.AddWithValue("@monto", reembolso.Monto);
+                movimiento.Parameters.AddWithValue("@motivo",
+                    $"Reembolso venta #{reembolso.VentaId}");
+                movimiento.Parameters.AddWithValue("@usuario", reembolso.Usuario ?? string.Empty);
+                movimientoCajaId = Convert.ToInt32(
+                    movimiento.ExecuteScalar(), CultureInfo.InvariantCulture);
+            }
+
+            using (var cmd = conn.CreateCommand())
+            {
+                cmd.Transaction = tx;
+                cmd.CommandText = @"
+                    INSERT INTO ReembolsosVenta
+                        (VentaId, Fecha, Usuario, Metodo, Monto, MovimientoCajaId)
+                    VALUES
+                        (@venta, @fecha, @usuario, @metodo, @monto, @movimiento);
+                    SELECT last_insert_rowid();";
+                cmd.Parameters.AddWithValue("@venta", reembolso.VentaId);
+                cmd.Parameters.AddWithValue("@fecha", reembolso.Fecha);
+                cmd.Parameters.AddWithValue("@usuario", reembolso.Usuario ?? string.Empty);
+                cmd.Parameters.AddWithValue("@metodo", reembolso.Metodo ?? string.Empty);
+                cmd.Parameters.AddWithValue("@monto", reembolso.Monto);
+                cmd.Parameters.AddWithValue("@movimiento",
+                    movimientoCajaId.HasValue ? movimientoCajaId.Value : DBNull.Value);
+                reembolso.Id = Convert.ToInt32(cmd.ExecuteScalar(), CultureInfo.InvariantCulture);
+                reembolso.MovimientoCajaId = movimientoCajaId;
+            }
+
+            if (auditoria != null)
+            {
+                auditoria.EntidadId = reembolso.Id.ToString(CultureInfo.InvariantCulture);
+                AgregarBitacora(conn, tx, auditoria);
+            }
+
+            tx.Commit();
+            return ProcessResult.Success(
+                $"Reembolso #{reembolso.Id} registrado: ${Dinero.Formatear(reembolso.Monto)}");
+        }
+        catch (SqliteException ex)
+        {
+            try { tx.Rollback(); } catch (SqliteException) { }
+            return ProcessResult.Error($"No se pudo registrar el reembolso: {ex.Message}");
+        }
+    }
 
     /// <summary>
     /// Anula una venta completa en una sola transacción: registra la anulación, devuelve

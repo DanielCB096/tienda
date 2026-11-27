@@ -190,7 +190,7 @@ El detalle vive en el tablero. Resumen y criterios de terminado:
 - Las ventas anuladas se excluyen del corte pendiente y de la utilidad, y se marcan `[ANULADA]` en ventas del día.
 - Menú Ventas → [3] Anular venta con confirmación `ANULAR`.
 - Pruebas en `AnulacionVentasTests` (8 casos); total 170.
-- Limitación confirmada: el reembolso en efectivo es manual; ver `deuda-tecnica.md`.
+- El reembolso en efectivo se registra por método desde la venta anulada y genera retiro de caja (v22).
 
 ### T6 — Importación Excel/CSV
 

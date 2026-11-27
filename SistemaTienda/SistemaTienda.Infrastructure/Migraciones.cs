@@ -50,7 +50,8 @@ public static class Migraciones
         new Migracion(18, "crea los lotes de importación de productos", AplicarVersion18),
         new Migracion(19, "crea los tickets en espera del mostrador", AplicarVersion19),
         new Migracion(20, "guarda el descuento de la venta y su reparto por línea", AplicarVersion20),
-        new Migracion(21, "guarda el porcentaje de descuento por línea", AplicarVersion21)
+        new Migracion(21, "guarda el porcentaje de descuento por línea", AplicarVersion21),
+        new Migracion(22, "crea los reembolsos de ventas anuladas", AplicarVersion22)
     };
 
     private static void AplicarVersion2(SqliteConnection conn, SqliteTransaction tx)
@@ -919,6 +920,43 @@ public static class Migraciones
     {
         AgregarColumnaSiFalta(conn, tx, "VentaLineas", "DescuentoPorcentaje",
             "DECIMAL NOT NULL DEFAULT 0");
+    }
+
+    private static void AplicarVersion22(SqliteConnection conn, SqliteTransaction tx)
+    {
+        using var cmd = conn.CreateCommand();
+        cmd.Transaction = tx;
+        cmd.CommandText = @"
+            CREATE TABLE IF NOT EXISTS ReembolsosVenta (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                VentaId INTEGER NOT NULL,
+                Fecha DATETIME NOT NULL,
+                Usuario TEXT NOT NULL DEFAULT '',
+                Metodo TEXT NOT NULL,
+                Monto INTEGER NOT NULL,
+                MovimientoCajaId INTEGER NULL,
+                FOREIGN KEY (VentaId) REFERENCES Ventas(Id),
+                FOREIGN KEY (MovimientoCajaId) REFERENCES MovimientosCaja(Id)
+            );
+
+            CREATE INDEX IF NOT EXISTS IX_ReembolsosVenta_VentaId
+                ON ReembolsosVenta(VentaId);
+            CREATE INDEX IF NOT EXISTS IX_ReembolsosVenta_Fecha
+                ON ReembolsosVenta(Fecha);
+
+            CREATE TRIGGER IF NOT EXISTS TR_ReembolsosVenta_NoUpdate
+            BEFORE UPDATE ON ReembolsosVenta
+            BEGIN
+                SELECT RAISE(ABORT, 'Los reembolsos son inmutables: no se pueden modificar');
+            END;
+
+            CREATE TRIGGER IF NOT EXISTS TR_ReembolsosVenta_NoDelete
+            BEFORE DELETE ON ReembolsosVenta
+            BEGIN
+                SELECT RAISE(ABORT, 'Los reembolsos son inmutables: no se pueden borrar');
+            END;
+        ";
+        cmd.ExecuteNonQuery();
     }
 
     public static int VersionMaxima(IReadOnlyList<Migracion> migraciones) =>

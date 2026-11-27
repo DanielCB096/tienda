@@ -39,8 +39,9 @@ public sealed class ManifiestoServiciosTests
         },
         ["VentaService"] = new[]
         {
-            "AnularVenta", "ObtenerAnulacion", "ObtenerLineas", "ObtenerVentaPorId",
-            "ObtenerVentas", "ObtenerVentasDelDia", "RegistrarVenta"
+            "AnularVenta", "ObtenerAnulacion", "ObtenerEstadoReembolso", "ObtenerLineas",
+            "ObtenerVentaPorId", "ObtenerVentas", "ObtenerVentasDelDia",
+            "RegistrarReembolso", "RegistrarVenta"
         },
         ["TicketEsperaService"] = new[] { "Dejar", "Descartar", "Liberar", "Listar", "Retomar" },
         ["CorteCajaService"] = new[]

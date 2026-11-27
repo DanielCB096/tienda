@@ -65,7 +65,7 @@ Acceso rápido desde el panel principal o menú.
 - **Ver ticket** reabre el ticket con su QR; si la venta está anulada, muestra el sello con usuario, fecha y motivo.
 - **Anular venta** (solo dueño o encargado): escribe el motivo y confirma escribiendo `ANULAR`.
 - Se anula la venta completa; el sistema devuelve el stock con el costo congelado, revierte el saldo si fue fiado y deja el registro en la bitácora. La venta original no se edita ni se borra.
-- El reembolso en efectivo se entrega manualmente. La venta se excluye del corte pendiente; si el reembolso se paga después de cerrar el corte, regístralo como retiro en el corte siguiente.
+- El reembolso se registra en la venta anulada, por método y en partes. El efectivo genera un retiro de caja en el periodo abierto; el fiado no se reembolsa porque la anulación revierte el saldo.
 - No se puede anular una venta que ya quedó incluida en un corte cerrado. La misma operación sigue disponible en la consola: Ventas → [3].
 
 ### 4. Corte de Caja

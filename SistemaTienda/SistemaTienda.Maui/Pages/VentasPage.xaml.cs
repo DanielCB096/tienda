@@ -21,6 +21,7 @@ public partial class VentasPage : ContentPage
     private List<VentaLinea> _lineasActuales = new();
     private string? _nombreClienteActual;
     private bool _puedeAnular;
+    private EstadoReembolsoVenta? _estadoReembolso;
 
     public VentasPage(VentaService ventas, ConfiguracionService configuracion,
         TicketService tickets, SesionApp sesion)
@@ -192,7 +193,94 @@ public partial class VentasPage : ContentPage
         AnularButton.IsEnabled = true;
         NotaAnulacionLabel.IsVisible = _puedeAnular && !venta.Anulada;
         VerTicketButton.IsVisible = _lineasActuales.Count > 0;
+
+        CargarReembolso(venta);
         DetalleOverlay.IsVisible = true;
+    }
+
+    private void CargarReembolso(Venta venta)
+    {
+        _estadoReembolso = null;
+        DetalleReembolsoPanel.IsVisible = false;
+
+        if (!venta.Anulada)
+            return;
+
+        _sesion.Aplicar();
+        var estado = _ventas.ObtenerEstadoReembolso(venta.Id);
+        if (estado.IsError)
+            return;
+
+        _estadoReembolso = estado.Value;
+        var pagado = _estadoReembolso.Pagado;
+        if (pagado <= 0)
+        {
+            DetalleReembolsoPanel.IsVisible = true;
+            DetalleReembolsoResumenLabel.Text =
+                "Venta a fiado: la anulación ya revirtió el saldo; no hay efectivo que devolver.";
+            BindableLayout.SetItemsSource(DetalleReembolsosLista, null);
+            DetalleReembolsoPistaLabel.IsVisible = false;
+            ReembolsarButton.IsVisible = false;
+            return;
+        }
+
+        DetalleReembolsoPanel.IsVisible = true;
+        DetalleReembolsoResumenLabel.Text =
+            $"Pagado {Formato.Moneda(pagado)} · Reembolsado {Formato.Moneda(_estadoReembolso.Reembolsado)} · " +
+            $"Pendiente {Formato.Moneda(_estadoReembolso.Pendiente)}";
+
+        var filas = _estadoReembolso.Reembolsos
+            .Select(r => new ReembolsoFila
+            {
+                Detalle = $"{Formato.FechaHora(r.Fecha)} · {r.Metodo} · {r.Usuario}" +
+                          (r.MovimientoCajaId.HasValue ? " · retiro de caja" : string.Empty),
+                Monto = Formato.Moneda(r.Monto)
+            })
+            .ToList();
+        BindableLayout.SetItemsSource(DetalleReembolsosLista, filas);
+
+        var pendiente = _estadoReembolso.Pendiente > 0;
+        ReembolsarButton.IsVisible = pendiente && _puedeAnular;
+        ReembolsarButton.IsEnabled = true;
+        DetalleReembolsoPistaLabel.IsVisible = pendiente && !_puedeAnular;
+        DetalleReembolsoPistaLabel.Text =
+            pendiente && !_puedeAnular
+                ? "El reembolso lo registra el dueño o el encargado."
+                : string.Empty;
+    }
+
+    private async void OnReembolsarClicked(object sender, EventArgs e)
+    {
+        if (_ventaActual == null || _estadoReembolso == null || _sesion.Usuario == null)
+            return;
+
+        if (_estadoReembolso.Pendiente <= 0)
+            return;
+
+        ReembolsarButton.IsEnabled = false;
+
+        var pagina = new ReembolsoPage(_estadoReembolso.Pendiente);
+        await Navigation.PushModalAsync(pagina);
+        var seleccion = await pagina.Resultado;
+        if (seleccion == null)
+        {
+            ReembolsarButton.IsEnabled = true;
+            return;
+        }
+
+        _sesion.Aplicar();
+        var resultado = _ventas.RegistrarReembolso(_ventaActual.Id,
+            seleccion.Metodo, seleccion.Monto, _sesion.Usuario.Nombre);
+        if (resultado.IsError)
+        {
+            await DisplayAlertAsync("No se registró", resultado.Message, "Continuar");
+            ReembolsarButton.IsEnabled = true;
+            return;
+        }
+
+        var ventaId = _ventaActual.Id;
+        await AbrirDetalleAsync(ventaId);
+        await DisplayAlertAsync("Reembolso registrado", resultado.Message, "Continuar");
     }
 
     private async void OnAnularClicked(object sender, EventArgs e)

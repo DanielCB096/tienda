@@ -332,4 +332,107 @@ public class VentaService
 
         return _db.AnularVenta(ventaId, usuario.Trim(), motivo.Trim(), auditoria);
     }
+
+    /// <summary>
+    /// Pagado, reembolsado y pendiente de una venta. El fiado no se reembolsa:
+    /// la anulación ya revirtió el saldo del cliente.
+    /// </summary>
+    public ProcessResult<EstadoReembolsoVenta> ObtenerEstadoReembolso(int ventaId)
+    {
+        var autorizacion = Autorizar(PermisoSistema.Consultar);
+        if (autorizacion.IsError)
+            return ProcessResult<EstadoReembolsoVenta>.Error(autorizacion.Message);
+
+        var venta = _db.ObtenerVentaPorId(ventaId);
+        if (venta == null)
+            return ProcessResult<EstadoReembolsoVenta>.Error($"La venta #{ventaId} no existe");
+
+        var reembolsos = _db.ObtenerReembolsosVenta(ventaId);
+        var estado = new EstadoReembolsoVenta
+        {
+            VentaId = ventaId,
+            Pagado = venta.PagoEfectivo + venta.PagoTarjeta,
+            Reembolsado = reembolsos.Sum(r => r.Monto),
+            Reembolsos = reembolsos
+        };
+
+        return ProcessResult<EstadoReembolsoVenta>.OK(estado);
+    }
+
+    /// <summary>
+    /// Devuelve el dinero de una venta anulada, por método y en una o varias
+    /// partes hasta cubrir lo pagado. Solo el efectivo genera un retiro de caja.
+    /// </summary>
+    public ProcessResult<ReembolsoVenta> RegistrarReembolso(int ventaId, string metodo,
+        long monto, string usuario)
+    {
+        var autorizacion = Autorizar(PermisoSistema.AnularVenta);
+        if (autorizacion.IsError)
+            return ProcessResult<ReembolsoVenta>.Error(autorizacion.Message);
+
+        metodo = MetodoPagoAbono.Normalizar(metodo);
+        if (!MetodoPagoAbono.EsValido(metodo))
+            return ProcessResult<ReembolsoVenta>.Error("Seleccione un método de reembolso válido");
+
+        if (monto <= 0)
+            return ProcessResult<ReembolsoVenta>.Error("El monto debe ser mayor a cero");
+
+        if (string.IsNullOrWhiteSpace(usuario))
+            return ProcessResult<ReembolsoVenta>.Error("El reembolso requiere un usuario");
+
+        var venta = _db.ObtenerVentaPorId(ventaId);
+        if (venta == null)
+            return ProcessResult<ReembolsoVenta>.Error($"La venta #{ventaId} no existe");
+
+        if (!venta.Anulada)
+            return ProcessResult<ReembolsoVenta>.Error(
+                "Solo se reembolsan ventas anuladas");
+
+        var pagado = venta.PagoEfectivo + venta.PagoTarjeta;
+        var reembolsado = _db.ObtenerReembolsosVenta(ventaId).Sum(r => r.Monto);
+        var pendiente = pagado - reembolsado;
+
+        if (pagado <= 0)
+            return ProcessResult<ReembolsoVenta>.Error(
+                "La venta fue a fiado; la anulación ya revirtió el saldo y no hay efectivo que devolver");
+
+        if (pendiente <= 0)
+            return ProcessResult<ReembolsoVenta>.Error(
+                "La venta ya quedó reembolsada por completo");
+
+        if (monto > pendiente)
+            return ProcessResult<ReembolsoVenta>.Error(
+                $"El reembolso no puede superar el pendiente de ${Dinero.Formatear(pendiente)}");
+
+        var reembolso = new ReembolsoVenta
+        {
+            VentaId = ventaId,
+            Fecha = DateTime.Now,
+            Usuario = usuario.Trim(),
+            Metodo = metodo,
+            Monto = monto
+        };
+
+        var generaRetiro = metodo == MetodoPagoAbono.Efectivo;
+        var auditoria = new RegistroBitacora
+        {
+            Fecha = DateTime.Now,
+            Usuario = usuario.Trim(),
+            Accion = AccionBitacora.ReembolsoVenta,
+            Entidad = "Venta",
+            DatosAntes =
+                $"Pagado={Dinero.Formatear(pagado)};Reembolsado={Dinero.Formatear(reembolsado)};" +
+                $"Pendiente={Dinero.Formatear(pendiente)}",
+            DatosDespues =
+                $"Metodo={metodo};Monto={Dinero.Formatear(monto)};" +
+                $"RetiroCaja={(generaRetiro ? "Si" : "No")}",
+            Motivo = $"Reembolso de venta #{ventaId}"
+        };
+
+        var resultado = _db.RegistrarReembolso(reembolso, generaRetiro, auditoria);
+        if (resultado.IsError)
+            return ProcessResult<ReembolsoVenta>.Error(resultado.Message);
+
+        return ProcessResult<ReembolsoVenta>.OK(reembolso, resultado.Message);
+    }
 }

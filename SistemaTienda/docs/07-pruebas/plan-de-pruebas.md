@@ -113,6 +113,7 @@ dotnet test SistemaTienda/SistemaTienda.sln
 | `DineroTests` | Conversión pesos ↔ centavos con redondeo `AwayFromZero`, multiplicación con desbordamiento, porcentaje a centavos y formato invariante |
 | Verificación Android H6 | POCO X6 Pro 5G / Android 16: inventario 3053, lote visible, `cafe`, código completo, guardar/retomar/cobrar, persistencia tras reinicio y descarte auditado; ver `verificacion-h6-android.md` |
 | `BusquedaRendimientoTests` | 3000 productos con umbrales anti-regresión, tope de 200 resultados, cada prefijo del escáner encuentra el producto, código antes que nombre y acentos/mayúsculas |
+| `ReembolsosTests` | Reembolso en efectivo con retiro de caja, tarjeta sin caja, venta mixta, partes hasta cubrir, exceso, venta no anulada, fiado, empleado sin permiso y migración v21 → v22 |
 | `DescuentosTests` | Reparto de centavos, descuento por porcentaje y monto, límites, permiso de empleado, IVA y reporte por producto sobre el neto, fiado y ticket con subtotal/descuento; migración v19 → v20 |
 | `HistorialVentasTests` | Rango inclusivo por día, exclusión de los bordes, ventas anuladas conservadas y marcadas, y rango invertido sin resultados |
 | `RestauracionInstalacionTests` | Restauración en instalación nueva (plano y cifrado), rechazo con tienda configurada, sin confirmación, clave incorrecta y recuperación sin sesión |

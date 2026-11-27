@@ -45,7 +45,7 @@ El detalle, la reimpresión y la anulación desde Ventas llegaron en T16; el des
 2. **Ver ticket** reconstruye el ticket con `TicketService` y lo muestra con su QR, las mismas acciones de compartir y copiar, y el sello de anulación cuando corresponde. Desde el esquema v12 la venta guarda `EfectivoRecibido`, así que la reimpresión de una venta en efectivo repite el monto recibido y el cambio; las ventas anteriores no lo tienen y solo muestran el total.
 3. **Anular venta** solo aparece si el usuario tiene el permiso `AnularVenta` (dueño o encargado). Pide el motivo (obligatorio, hasta 200 caracteres) y luego exige escribir `ANULAR` para confirmar.
 4. `VentaService.AnularVenta` vuelve a validar el permiso, rechaza una venta ya anulada o incluida en un corte cerrado y, en una transacción, registra la anulación, devuelve el stock con el costo congelado, revierte el fiado y deja la bitácora.
-5. La app recarga la lista y el detalle, y avisa que el reembolso en efectivo es manual. El empleado no ve la acción y, si se llamara al servicio, este la rechazaría.
+5. La app recarga la lista y el detalle. La sección **Reembolso** permite devolver lo pagado por método; el efectivo genera un retiro de caja. El empleado no ve la anulación ni el reembolso y, si se llamara al servicio, este lo rechazaría.
 
 El QR es informativo y offline: incluye tienda, folio, fecha, estado (`Vigente`/`Anulada`), total, método de pago y hasta diez productos, con la leyenda de que no es un comprobante fiscal. No contiene enlaces ni valida la venta. Se muestra en pantalla y se puede compartir como PNG generado localmente con `QrImagenService`, sin bibliotecas de dibujo adicionales. La decisión y sus límites están en [ADR-qr-ticket.md](../05-decisiones/ADR-qr-ticket.md).
 
@@ -65,7 +65,7 @@ Reglas confirmadas con el usuario:
 |----------|-------------|
 | **Solo venta completa** | No hay anulación por línea ni devoluciones parciales en esta versión. |
 | **Bloqueo tras corte cerrado** | Si la venta ya quedó incluida en un corte de caja cerrado, no se puede anular; la corrección se hace con movimientos nuevos. |
-| **Reembolso manual** | La anulación no genera un movimiento de caja automático. La venta se excluye del corte pendiente; si el efectivo se devuelve después de ese corte, el dueño lo registra como retiro en el corte siguiente. |
+| **Reembolso por método** | Se registra desde la venta anulada, en partes y por método. Solo el efectivo genera un retiro de caja; el fiado no se reembolsa. |
 
 Flujo:
 
@@ -75,7 +75,7 @@ Flujo:
 4. En una sola transacción se registra la anulación en `AnulacionesVenta`, se devuelve el stock con el costo congelado de cada línea y, si hubo fiado, se descuenta del saldo del cliente.
 5. La acción queda en la bitácora como `AnulacionVenta` con usuario, motivo y datos de la venta. La venta original no se edita ni se borra.
 
-Las ventas anuladas se excluyen del corte pendiente y del reporte de utilidad, y aparecen marcadas `[ANULADA]` en las ventas del día. Si el reembolso en efectivo se paga en el mismo periodo, no se registra retiro: la exclusión de la venta ya refleja la devolución. Si se paga después de cerrar el corte, se registra como retiro en el corte donde sale el efectivo.
+Las ventas anuladas se excluyen del corte pendiente y del reporte de utilidad, y aparecen marcadas `[ANULADA]` en las ventas del día. El reembolso de efectivo genera un retiro en el periodo en que se entrega, sin importar cuándo se anuló la venta.
 
 ## Flujo Simplificado de Venta (Decisiones Confirmadas)
 

@@ -43,12 +43,11 @@ Atajos y pendientes aceptados conscientemente. Cada entrada indica impacto y qu�
 - **Resuelto**: la entrada actualiza `Productos.Costo` con el costo capturado en la misma transacción, con casilla para conservar el actual y bitácora antes/después. Costo cero o igual no actualiza. Dueño y encargado. Ver [ADR-014](../../SistemaMaestro/docs/07-decisiones/ADR-014-costo-entrada.md).
 - **Pendiente**: un costo de reposición separado, si se necesita valuar sin cambiar el costo congelado.
 
-### Reembolso de anulación sin movimiento de caja
+### Reembolso de ventas anuladas (resuelto el 2026-11-27)
 
-- **Dónde**: `DatabaseTools.AnularVenta`, `Program.AnularVenta` y `VentasPage` de la app MAUI.
-- **Por qué**: se confirmó con el usuario que el reembolso sea manual y documentado en esta versión.
-- **Impacto**: la anulación devuelve stock y revierte el fiado, pero no registra un movimiento de caja. La venta se excluye del corte pendiente, así que un reembolso pagado en el mismo periodo no necesita retiro; si se paga después de cerrar el corte, el dueño debe registrar un retiro en el corte siguiente. El sistema no conoce el método ni el momento del reembolso.
-- **Cierre**: si se requiere, generar automáticamente un `MovimientoCaja` de retiro ligado a la anulación, con permiso y bitácora.
+- **Dónde**: `VentaService.RegistrarReembolso`, `DatabaseTools.RegistrarReembolso` y el detalle de Ventas.
+- **Resuelto**: el reembolso se registra por método y en partes hasta cubrir lo pagado; el efectivo genera un retiro de caja en la misma transacción. El fiado no se reembolsa porque la anulación revierte el saldo. Esquema v22. Ver [ADR-015](../../SistemaMaestro/docs/07-decisiones/ADR-015-reembolso-anulacion.md).
+- **Pendiente**: reembolsos parciales con nota o comprobante impreso, si se requieren.
 
 ### Respaldo automático solo se evalúa al iniciar o cerrar
 

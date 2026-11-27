@@ -17,6 +17,14 @@ Cada entrada tiene formato:
 
 ---
 
+## 2026-11-27 — Reembolso de ventas anuladas
+
+- **Agregado**: el detalle de una venta anulada muestra pagado, reembolsado y pendiente, y permite **Registrar reembolso** por método y en partes.
+- El efectivo genera un retiro de caja en la misma transacción; tarjeta, transferencia y otro no mueven la caja. El fiado no se reembolsa porque la anulación revierte el saldo.
+- **Esquema v22**: `ReembolsosVenta` inmutable con `MovimientoCajaId` opcional.
+- **Pruebas**: 9 nuevas en `ReembolsosTests`; suite completa: 534.
+- Ver [ADR-015](../../SistemaMaestro/docs/07-decisiones/ADR-015-reembolso-anulacion.md).
+
 ## 2026-11-27 — Costo del catálogo al registrar entradas
 
 - **Agregado**: la entrada de inventario actualiza el costo del catálogo con el costo capturado, en la misma transacción que el movimiento y con bitácora antes/después.

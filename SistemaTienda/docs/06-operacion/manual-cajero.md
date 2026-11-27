@@ -58,7 +58,7 @@ En la pestaña **Ventas**, toca una venta para abrir su detalle con líneas, pag
 
 - **Ver ticket** reabre el ticket con el QR. Si la venta está anulada, muestra el sello, el usuario, la fecha y el motivo.
 - **Anular venta** (solo dueño o encargado): escribe el motivo y confirma con la palabra `ANULAR`. El sistema devuelve el stock con el costo original, revierte el saldo si fue fiado y deja el registro en la bitácora.
-- El reembolso en efectivo se entrega manualmente. La venta anulada se excluye del corte; si el reembolso se paga después de cerrar el corte, el dueño lo registra como retiro en el corte siguiente.
+- El reembolso se registra en la venta anulada, por método y en partes. El efectivo genera un retiro de caja; el fiado no se reembolsa.
 - No se puede anular una venta que ya quedó incluida en un corte cerrado.
 
 ### 3.1 Clientes y abonos (pestaña Clientes)

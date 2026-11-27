@@ -23,7 +23,7 @@ public sealed class BaseDatosPrueba : IDisposable
         Directory.CreateDirectory(_directorio);
         Ruta = Path.Combine(_directorio, "tienda.db");
 
-        Db = new DatabaseTools(Ruta);
+        Db = new DatabaseTools(Ruta, pooling: false);
         Db.InicializarBaseDeDatos();
         Config = new ConfiguracionService(Db);
         Inventario = new InventoryService(Db);

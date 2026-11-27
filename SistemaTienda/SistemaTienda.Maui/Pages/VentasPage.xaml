@@ -149,8 +149,41 @@
                             </VerticalStackLayout>
                         </Border>
 
+                        <Border x:Name="DetalleReembolsoPanel"
+                                Style="{StaticResource Tarjeta}"
+                                Padding="12"
+                                IsVisible="False">
+                            <VerticalStackLayout Spacing="6">
+                                <Label Text="REEMBOLSO" Style="{StaticResource EtiquetaSeccion}" />
+                                <Label x:Name="DetalleReembolsoResumenLabel" FontSize="13" />
+                                <VerticalStackLayout x:Name="DetalleReembolsosLista" Spacing="4">
+                                    <BindableLayout.ItemTemplate>
+                                        <DataTemplate x:DataType="models:ReembolsoFila">
+                                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                                <Label Text="{Binding Detalle}"
+                                                       Style="{StaticResource TextoNota}"
+                                                       FontSize="12" />
+                                                <Label Grid.Column="1" Text="{Binding Monto}"
+                                                       FontSize="12" FontAttributes="Bold"
+                                                       HorizontalTextAlignment="End" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </BindableLayout.ItemTemplate>
+                                </VerticalStackLayout>
+                                <Label x:Name="DetalleReembolsoPistaLabel"
+                                       Style="{StaticResource TextoNota}"
+                                       FontSize="12"
+                                       IsVisible="False" />
+                                <Button x:Name="ReembolsarButton"
+                                        Text="Registrar reembolso"
+                                        Style="{StaticResource BotonSecundario}"
+                                        IsVisible="False"
+                                        Clicked="OnReembolsarClicked" />
+                            </VerticalStackLayout>
+                        </Border>
+
                         <Label x:Name="NotaAnulacionLabel"
-                               Text="La anulación devuelve el stock y revierte el fiado. El reembolso en efectivo se entrega manualmente; si la venta ya está en un corte cerrado no se puede anular."
+                               Text="La anulación devuelve el stock y revierte el fiado. El reembolso se registra en su propia sección, por método; el efectivo genera un retiro de caja. Si la venta ya está en un corte cerrado no se puede anular."
                                Style="{StaticResource TextoNota}"
                                IsVisible="False" />
 
