@@ -57,6 +57,22 @@
 
             <Border Style="{StaticResource Tarjeta}">
                 <VerticalStackLayout Spacing="6">
+                    <Label Text="LICENCIA" Style="{StaticResource EtiquetaSeccion}" />
+                    <Label x:Name="LicenciaEstadoLabel" FontSize="18" FontAttributes="Bold" />
+                    <Label x:Name="LicenciaDetalleLabel" Style="{StaticResource TextoNota}" />
+                    <Button x:Name="ImportarLicenciaButton"
+                            Text="Importar licencia"
+                            Style="{StaticResource BotonSecundario}"
+                            Clicked="OnImportarLicenciaClicked"
+                            IsVisible="False"
+                            Margin="0,8,0,0" />
+                    <Label Text="La licencia es perpetua. Si la prueba vence o la licencia falta, la app solo avisa; no bloquea ventas."
+                           Style="{StaticResource TextoNota}" />
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Style="{StaticResource Tarjeta}">
+                <VerticalStackLayout Spacing="6">
                     <Label Text="RESPALDO" Style="{StaticResource EtiquetaSeccion}" />
                     <Label x:Name="UltimoRespaldoLabel" FontSize="18" FontAttributes="Bold" />
                     <Label x:Name="RespaldoDetalleLabel" Style="{StaticResource TextoNota}" />

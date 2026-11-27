@@ -21,6 +21,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SistemaTienda.Application",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SistemaTienda.Semilla", "SistemaTienda.Semilla\SistemaTienda.Semilla.csproj", "{D8AFA389-4E67-43E8-9159-059E436FA93E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SistemaTienda.Licencias", "SistemaTienda.Licencias\SistemaTienda.Licencias.csproj", "{26FF1CFC-3478-4069-99FE-737A86D71FE6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -103,6 +105,18 @@ Global
 		{D8AFA389-4E67-43E8-9159-059E436FA93E}.Release|x64.Build.0 = Release|Any CPU
 		{D8AFA389-4E67-43E8-9159-059E436FA93E}.Release|x86.ActiveCfg = Release|Any CPU
 		{D8AFA389-4E67-43E8-9159-059E436FA93E}.Release|x86.Build.0 = Release|Any CPU
+		{26FF1CFC-3478-4069-99FE-737A86D71FE6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{26FF1CFC-3478-4069-99FE-737A86D71FE6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{26FF1CFC-3478-4069-99FE-737A86D71FE6}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{26FF1CFC-3478-4069-99FE-737A86D71FE6}.Debug|x64.Build.0 = Debug|Any CPU
+		{26FF1CFC-3478-4069-99FE-737A86D71FE6}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{26FF1CFC-3478-4069-99FE-737A86D71FE6}.Debug|x86.Build.0 = Debug|Any CPU
+		{26FF1CFC-3478-4069-99FE-737A86D71FE6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{26FF1CFC-3478-4069-99FE-737A86D71FE6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{26FF1CFC-3478-4069-99FE-737A86D71FE6}.Release|x64.ActiveCfg = Release|Any CPU
+		{26FF1CFC-3478-4069-99FE-737A86D71FE6}.Release|x64.Build.0 = Release|Any CPU
+		{26FF1CFC-3478-4069-99FE-737A86D71FE6}.Release|x86.ActiveCfg = Release|Any CPU
+		{26FF1CFC-3478-4069-99FE-737A86D71FE6}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

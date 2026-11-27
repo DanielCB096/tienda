@@ -15,6 +15,10 @@
                 <Label x:Name="AvisoRespaldoLabel" FontSize="14" TextColor="#7A5B00" />
             </Border>
 
+            <Border x:Name="AvisoLicencia" Style="{StaticResource Aviso}" IsVisible="False">
+                <Label x:Name="AvisoLicenciaLabel" FontSize="14" TextColor="#7A5B00" />
+            </Border>
+
             <Border Style="{StaticResource Tarjeta}">
                 <Grid ColumnDefinitions="*,Auto">
                     <VerticalStackLayout Spacing="2">

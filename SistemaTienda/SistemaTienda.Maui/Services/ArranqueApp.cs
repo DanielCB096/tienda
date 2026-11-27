@@ -12,11 +12,14 @@ public sealed class ArranqueApp
 {
     private readonly DatabaseTools _db;
     private readonly IServiceProvider _services;
+    private readonly Application.Services.LicenciaService _licencia;
 
-    public ArranqueApp(DatabaseTools db, IServiceProvider services)
+    public ArranqueApp(DatabaseTools db, IServiceProvider services,
+        Application.Services.LicenciaService licencia)
     {
         _db = db;
         _services = services;
+        _licencia = licencia;
     }
 
     public Page CrearPaginaInicial()
@@ -24,6 +27,7 @@ public sealed class ArranqueApp
         try
         {
             _db.InicializarBaseDeDatos();
+            _licencia.Iniciar();
             return _db.ContarUsuarios() == 0
                 ? _services.GetRequiredService<ConfiguracionInicialPage>()
                 : _services.GetRequiredService<LoginPage>();

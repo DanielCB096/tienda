@@ -17,6 +17,14 @@ Cada entrada tiene formato:
 
 ---
 
+## 2026-11-27 — Licencia offline
+
+- **Agregado**: licencia perpetua firmada con RSA-PSS en un archivo `.poslic`, sin atarse al hardware y sin bloquear la operación.
+- **Agregado**: Ajustes muestra el estado de la licencia y permite importarla pegando el contenido; Inicio avisa cuando la prueba de 30 días vence, la licencia falla o el soporte venció.
+- **Agregado**: herramienta `SistemaTienda.Licencias` para generar llaves, emitir y verificar licencias; la llave privada queda fuera del repositorio.
+- **Pruebas**: 9 nuevas en `LicenciasTests`; suite completa: 544.
+- Ver [ADR-016](../../SistemaMaestro/docs/07-decisiones/ADR-016-licencia-offline.md) y [licencias.md](04-operacion/licencias.md).
+
 ## 2026-11-27 — Simulación de un día completo
 
 - **Agregado**: `DiaCompletoTests` simula un día con ventas en efectivo, tarjeta, mixta y fiado, descuentos por producto, dos anulaciones con reembolso, abono, gasto, merma y compra; valida ventas, reporte, desglose, caja, stock y corte sin diferencia.

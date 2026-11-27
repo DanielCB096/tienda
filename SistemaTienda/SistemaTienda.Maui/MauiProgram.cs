@@ -39,7 +39,9 @@ public static class MauiProgram
 		builder.Services.AddSingleton<ReporteUtilidadService>();
 		builder.Services.AddSingleton<RespaldoService>();
 		builder.Services.AddSingleton<PaqueteSoporteService>();
-		builder.Services.AddSingleton<BitacoraService>();		builder.Services.AddSingleton<SesionApp>();
+		builder.Services.AddSingleton<BitacoraService>();
+		builder.Services.AddSingleton<LicenciaService>();
+		builder.Services.AddSingleton<SesionApp>();
 		builder.Services.AddSingleton<NavegacionApp>();
 		builder.Services.AddSingleton<BloqueoSesion>();
 		builder.Services.AddSingleton<ArranqueApp>();

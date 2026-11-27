@@ -47,6 +47,7 @@ Estado al 2026-11-25. T1–T42 y H1–H5 están integrados en `main`; H6.1 (impo
 - El pago a proveedores elige método (efectivo, tarjeta, transferencia u otro) y, si es en efectivo, genera un retiro de caja en la misma transacción que el historial y el saldo. Los pagos anteriores al esquema v9 no tienen método ni movimiento de caja y así se muestran. El historial solo cubre los pagos hechos desde el esquema v8.
 - El QR del ticket es informativo y offline: no es un comprobante fiscal, se comparte como texto o imagen PNG, resume hasta diez productos y la reimpresión repite el efectivo recibido y el cambio desde el esquema v12. La imagen y el diálogo se verificaron en Android 16 el 2026-11-21.
 - El PDF de reportes y estados de cuenta se genera con `PdfDocumento`, un escritor propio sin dependencias externas; usa Helvetica y Latin-1, así que no admite todos los caracteres Unicode ni imágenes. El archivo se comparte o guarda desde el diálogo del sistema y se imprime con cualquier lector.
+- Licencia offline perpetua con prueba de 30 días y avisos sin bloqueo; herramienta de emisión fuera de la app.
 - La entrada de inventario actualiza el costo del catálogo (con casilla para conservarlo); el valorizado y las ventas siguientes usan ese costo.
 - La app MAUI usa .NET 10 y las bibliotecas `net8.0`; si una biblioteca agrega APIs no disponibles en net8.0 habrá que subir su framework o aislar la dependencia.
 - La app MAUI solo se ha probado en Windows y en un Redmi Note 13 con Android 16; falta validar en otros fabricantes y versiones de Android y en tabletas.

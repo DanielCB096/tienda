@@ -99,6 +99,7 @@ public static class AccionBitacora
     public const string Venta = "Venta";
     public const string AnulacionVenta = "AnulacionVenta";
     public const string ReembolsoVenta = "ReembolsoVenta";
+    public const string Licencia = "Licencia";
     public const string Cliente = "Cliente";
     public const string EditarCliente = "EditarCliente";
     public const string CambiarEstadoCliente = "CambiarEstadoCliente";

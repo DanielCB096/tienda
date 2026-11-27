@@ -15,6 +15,7 @@ public partial class AjustesPage : ContentPage
     private readonly RespaldoService _respaldos;
     private readonly PaqueteSoporteService _soporte;
     private readonly BitacoraService _bitacora;
+    private readonly LicenciaService _licencia;
     private readonly SesionApp _sesion;
     private readonly NavegacionApp _navegacion;
     private readonly BloqueoSesion _bloqueo;
@@ -22,6 +23,7 @@ public partial class AjustesPage : ContentPage
 
     public AjustesPage(ConfiguracionService config, RespaldoService respaldos,
         PaqueteSoporteService soporte, BitacoraService bitacora,
+        LicenciaService licencia,
         SesionApp sesion, NavegacionApp navegacion, BloqueoSesion bloqueo)
     {
         InitializeComponent();
@@ -29,6 +31,7 @@ public partial class AjustesPage : ContentPage
         _respaldos = respaldos;
         _soporte = soporte;
         _bitacora = bitacora;
+        _licencia = licencia;
         _sesion = sesion;
         _navegacion = navegacion;
         _bloqueo = bloqueo;
@@ -200,6 +203,9 @@ public partial class AjustesPage : ContentPage
             ? string.Empty
             : $"Sesión: {_sesion.Usuario.Nombre} · Rol: {_sesion.Usuario.Rol}";
 
+        ImportarLicenciaButton.IsVisible = PuedeConfigurar();
+        CargarLicencia();
+
         EditarConfiguracionButton.IsVisible = _sesion.Usuario != null &&
             AutorizacionService.Puede(_sesion.Usuario, PermisoSistema.Configurar);
         UsuariosButton.IsVisible = _sesion.Usuario != null &&
@@ -256,6 +262,33 @@ public partial class AjustesPage : ContentPage
 
         UsuariosOverlay.IsVisible = true;
         CargarUsuarios();
+    }
+
+    private void CargarLicencia()
+    {
+        _sesion.Aplicar();
+        var estado = _licencia.ObtenerEstado();
+        LicenciaEstadoLabel.Text = estado.Titulo;
+        LicenciaDetalleLabel.Text = estado.Detalle;
+        LicenciaEstadoLabel.TextColor = estado.Nivel switch
+        {
+            NivelLicencia.Licencia => Color.FromArgb("#2E6B4F"),
+            NivelLicencia.Invalida => Color.FromArgb("#B3261E"),
+            _ => Color.FromArgb("#7A4F01")
+        };
+    }
+
+    private async void OnImportarLicenciaClicked(object sender, EventArgs e)
+    {
+        if (!PuedeConfigurar())
+            return;
+
+        _sesion.Aplicar();
+        var pagina = new LicenciaPage(_licencia, _sesion);
+        await Navigation.PushModalAsync(pagina);
+        await pagina.Resultado;
+        _sesion.Aplicar();
+        CargarLicencia();
     }
 
     private void CargarUsuarios()

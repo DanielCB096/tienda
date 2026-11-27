@@ -11,10 +11,12 @@ public partial class InicioPage : ContentPage
     private readonly CorteCajaService _cortes;
     private readonly InventoryService _inventario;
     private readonly RespaldoService _respaldos;
+    private readonly LicenciaService _licencia;
     private readonly SesionApp _sesion;
 
     public InicioPage(ConfiguracionService config, VentaService ventas, CorteCajaService cortes,
-        InventoryService inventario, RespaldoService respaldos, SesionApp sesion)
+        InventoryService inventario, RespaldoService respaldos, LicenciaService licencia,
+        SesionApp sesion)
     {
         InitializeComponent();
         _config = config;
@@ -22,6 +24,7 @@ public partial class InicioPage : ContentPage
         _cortes = cortes;
         _inventario = inventario;
         _respaldos = respaldos;
+        _licencia = licencia;
         _sesion = sesion;
     }
 
@@ -39,6 +42,10 @@ public partial class InicioPage : ContentPage
             return;
 
         _sesion.Aplicar();
+
+        var licencia = _licencia.ObtenerEstado();
+        AvisoLicencia.IsVisible = licencia.MostrarAviso;
+        AvisoLicenciaLabel.Text = $"{licencia.Titulo}. {licencia.Detalle}";
 
         var config = _config.ObtenerConfiguracion().Value;
         NombreTiendaLabel.Text = config?.NombreTienda ?? "Mi tienda";
