@@ -303,11 +303,7 @@ public sealed class DescuentosTests
     [Fact]
     public void Migracion_DesdeV20_AgregaElPorcentajePorLinea()
     {
-        using var bd = new BaseDatosPrueba();
-        bd.ConfigurarTienda();
-
-        bd.Db.ExecuteCommand("ALTER TABLE VentaLineas DROP COLUMN DescuentoPorcentaje");
-        bd.Db.ExecuteCommand("PRAGMA user_version = 20");
+        using var bd = new BaseDatosPrueba(versionEsquema: 20);
 
         bd.Db.InicializarBaseDeDatos();
 

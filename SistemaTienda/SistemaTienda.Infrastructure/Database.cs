@@ -54,7 +54,7 @@ public class DatabaseTools
     /// Crea el esquema base si no existe y aplica las migraciones pendientes.
     /// Antes de migrar se crea un respaldo; si algo falla, la base queda en su versión anterior.
     /// </summary>
-    public void InicializarBaseDeDatos()
+    public void InicializarBaseDeDatos(int? versionMaxima = null)
     {
         var esquemaCreado = false;
 
@@ -75,7 +75,15 @@ public class DatabaseTools
             }
         }
 
-        var actualizador = new ActualizadorEsquema(RutaBaseDatos, DirectorioRespaldos);
+        // Las pruebas de migración crean una base en una versión anterior y luego
+        // aplican el resto; la app siempre llama sin argumento.
+        var migraciones = versionMaxima.HasValue
+            ? Migraciones.ObtenerTodas()
+                .Where(m => m.Version <= versionMaxima.Value)
+                .ToList()
+            : null;
+
+        var actualizador = new ActualizadorEsquema(RutaBaseDatos, DirectorioRespaldos, migraciones);
         var resultado = actualizador.Aplicar(crearRespaldoPrevio: !esquemaCreado);
         if (!string.IsNullOrEmpty(resultado.Mensaje) && !resultado.Actualizada && !resultado.YaAlDia)
             throw new InvalidOperationException(resultado.Mensaje);

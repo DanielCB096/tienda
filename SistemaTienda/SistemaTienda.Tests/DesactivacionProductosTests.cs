@@ -42,15 +42,10 @@ public sealed class DesactivacionProductosTests
     [Fact]
     public void MigracionV7_AgregaColumnaActivoYMarcaLosProductosExistentesComoActivos()
     {
-        using var entorno = new EntornoMigracionV7();
+        using var entorno = new EntornoMigracionV7(6);
 
-        // Simula un esquema v6: la base física pierde la columna y su versión baja a 6.
+        // Base en la versión 6: la columna Activo todavía no existe.
         entorno.Db.ExecuteCommand(@"
-            ALTER TABLE Productos DROP COLUMN Activo;
-            ALTER TABLE ClientesFiado DROP COLUMN Activo;
-            ALTER TABLE Proveedores DROP COLUMN Activo;
-            DROP TABLE PagosProveedor;
-            PRAGMA user_version = 6;
             INSERT INTO Productos (CodigoBarras, Nombre, Costo, Precio, Stock, StockMinimo, Categoria, Impuesto)
                 VALUES ('A1', 'Producto heredado', 1000, 2000, 5, 5, '', 16.00);
         ");
@@ -292,13 +287,13 @@ public sealed class DesactivacionProductosTests
         public string RutaDb { get; }
         public DatabaseTools Db { get; }
 
-        public EntornoMigracionV7()
+        public EntornoMigracionV7(int? versionEsquema = null)
         {
             _directorio = Path.Combine(Path.GetTempPath(), $"sistematienda-v7-{Guid.NewGuid():N}");
             Directory.CreateDirectory(_directorio);
             RutaDb = Path.Combine(_directorio, "tienda.db");
             Db = new DatabaseTools(RutaDb);
-            Db.InicializarBaseDeDatos();
+            Db.InicializarBaseDeDatos(versionEsquema);
         }
 
         public void Dispose()

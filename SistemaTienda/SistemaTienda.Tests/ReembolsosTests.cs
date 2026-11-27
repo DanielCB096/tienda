@@ -217,11 +217,7 @@ public sealed class ReembolsosTests
     [Fact]
     public void Migracion_DesdeV21_CreaLosReembolsos()
     {
-        using var bd = new BaseDatosPrueba();
-        bd.ConfigurarTienda();
-
-        bd.Db.ExecuteCommand("DROP TABLE ReembolsosVenta");
-        bd.Db.ExecuteCommand("PRAGMA user_version = 21");
+        using var bd = new BaseDatosPrueba(versionEsquema: 21);
 
         bd.Db.InicializarBaseDeDatos();
 

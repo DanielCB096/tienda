@@ -1,3 +1,4 @@
+using Microsoft.Data.Sqlite;
 using SistemaTienda.Application.Services;
 using SistemaTienda.Core;
 using SistemaTienda.Infrastructure;
@@ -9,28 +10,26 @@ public sealed class BajaClientesProveedoresTests
     [Fact]
     public void MigracionV10_MarcaRegistrosExistentesComoActivosYConservaSaldos()
     {
-        using var bd = new BaseDatosPrueba();
-        bd.ConfigurarTienda();
-        var cliente = bd.Config.AgregarClienteFiado(new ClienteFiado
-        {
-            Nombre = "Cliente heredado",
-            SaldoActual = 1_250
-        });
-        var proveedor = bd.Config.AgregarProveedor(new Proveedor
-        {
-            Nombre = "Proveedor heredado",
-            SaldoPendiente = 2_500
-        });
+        using var bd = new BaseDatosPrueba(versionEsquema: 9);
 
         bd.Db.ExecuteCommand(@"
-            ALTER TABLE ClientesFiado DROP COLUMN Activo;
-            ALTER TABLE Proveedores DROP COLUMN Activo;
-            PRAGMA user_version = 9;
-        ");
+            INSERT INTO ClientesFiado (Nombre, Telefono, SaldoActual, FechaRegistro)
+            VALUES ('Cliente heredado', '', 1250, @fecha)",
+            new SqliteParameter("@fecha", DateTime.Now));
+        var clienteId = bd.Db.ExecuteScalar<int>(
+            "SELECT Id FROM ClientesFiado WHERE Nombre = 'Cliente heredado'");
+
+        bd.Db.ExecuteCommand(@"
+            INSERT INTO Proveedores (Nombre, Clave, Telefono, Direccion, SaldoPendiente, FechaRegistro)
+            VALUES ('Proveedor heredado', 'P9', '', '', 2500, @fecha)",
+            new SqliteParameter("@fecha", DateTime.Now));
+        var proveedorId = bd.Db.ExecuteScalar<int>(
+            "SELECT Id FROM Proveedores WHERE Nombre = 'Proveedor heredado'");
+
         bd.Db.InicializarBaseDeDatos();
 
-        var clienteMigrado = bd.Db.ObtenerClienteFiadoPorId(cliente.Value.ClienteId);
-        var proveedorMigrado = bd.Db.ObtenerProveedorPorId(proveedor.Value.ProveedorId);
+        var clienteMigrado = bd.Db.ObtenerClienteFiadoPorId(clienteId);
+        var proveedorMigrado = bd.Db.ObtenerProveedorPorId(proveedorId);
 
         Assert.Equal(Migraciones.VersionMaxima(Migraciones.ObtenerTodas()),
             bd.Db.ExecuteScalar<int>("PRAGMA user_version"));

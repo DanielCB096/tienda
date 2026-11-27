@@ -165,16 +165,14 @@ public sealed class PagoProveedorMetodoTests
     [Fact]
     public void MigracionV8aV9_ConservaPagosConMetodoVacioYSinMovimiento()
     {
-        using var bd = new BaseDatosPrueba();
-        bd.ConfigurarTienda();
-        var proveedorId = CrearProveedor(bd, saldoInicial: 0);
+        using var bd = new BaseDatosPrueba(versionEsquema: 8);
 
-        // Simula una base v8: quita las columnas nuevas y baja la versión.
-        bd.Db.ExecuteCommand("ALTER TABLE PagosProveedor DROP COLUMN MetodoPago");
-        bd.Db.ExecuteCommand("ALTER TABLE PagosProveedor DROP COLUMN MovimientoCajaId");
-        bd.Db.ExecuteCommand("ALTER TABLE ClientesFiado DROP COLUMN Activo");
-        bd.Db.ExecuteCommand("ALTER TABLE Proveedores DROP COLUMN Activo");
-        bd.Db.ExecuteCommand("PRAGMA user_version = 8");
+        bd.Db.ExecuteCommand(@"
+            INSERT INTO Proveedores (Nombre, Clave, Telefono, Direccion, SaldoPendiente, FechaRegistro)
+            VALUES ('Proveedor heredado', 'P8', '', '', 15000, @fecha)",
+            new SqliteParameter("@fecha", DateTime.Now));
+        var proveedorId = bd.Db.ExecuteScalar<int>(
+            "SELECT Id FROM Proveedores WHERE Nombre = 'Proveedor heredado'");
 
         bd.Db.ExecuteCommand(@"
             INSERT INTO PagosProveedor (ProveedorId, Fecha, Monto, SaldoAnterior, SaldoNuevo, Usuario)

@@ -162,18 +162,28 @@ public sealed class EfectivoRecibidoTests
     [Fact]
     public void MigracionV12_AgregaColumnaConservaVentasYDejaNulo()
     {
-        using var bd = new BaseDatosPrueba();
-        bd.ConfigurarTienda();
-        var producto = CrearProducto(bd);
-        var venta = Vender(bd, producto, new PagoSolicitado
-        {
-            Efectivo = 2_500,
-            EfectivoRecibido = 5_000
-        });
-        Assert.True(venta.IsSuccess, venta.Message);
+        using var bd = new BaseDatosPrueba(versionEsquema: 11);
 
-        bd.Db.ExecuteCommand("ALTER TABLE Ventas DROP COLUMN EfectivoRecibido");
-        bd.Db.ExecuteCommand("PRAGMA user_version = 11");
+        bd.Db.ExecuteCommand(@"
+            INSERT INTO Productos (CodigoBarras, Nombre, Costo, Precio, Stock, StockMinimo, Categoria, Impuesto, FechaCreacion, Activo)
+            VALUES ('V11', 'Producto v11', 1000, 2500, 10, 5, '', 16.00, @fecha, 1)",
+            new SqliteParameter("@fecha", DateTime.Now));
+        var productoId = bd.Db.ExecuteScalar<int>(
+            "SELECT Id FROM Productos WHERE CodigoBarras = 'V11'");
+
+        bd.Db.ExecuteCommand(@"
+            INSERT INTO Ventas (Fecha, Usuario, MetodoPago, Total, CostoTotal,
+                                PagoEfectivo, PagoTarjeta, PagoFiado, ComisionTarjeta)
+            VALUES (@fecha, 'Cajero', 'Efectivo', 2500, 1000, 2500, 0, 0, 0)",
+            new SqliteParameter("@fecha", DateTime.Now));
+        var ventaId = bd.Db.ExecuteScalar<int>("SELECT MAX(Id) FROM Ventas");
+
+        bd.Db.ExecuteCommand(@"
+            INSERT INTO VentaLineas (VentaId, ProductoId, CodigoBarras, Nombre, Cantidad,
+                                     PrecioUnitario, CostoUnitario, Importe)
+            VALUES (@venta, @producto, 'V11', 'Producto v11', 1, 2500, 1000, 2500)",
+            new SqliteParameter("@venta", ventaId),
+            new SqliteParameter("@producto", productoId));
 
         bd.Db.InicializarBaseDeDatos();
 
@@ -182,7 +192,7 @@ public sealed class EfectivoRecibidoTests
         Assert.Equal(1, bd.Db.ExecuteScalar<int>(
             "SELECT COUNT(*) FROM pragma_table_info('Ventas') WHERE name = 'EfectivoRecibido'"));
         Assert.Equal(1, bd.Db.ExecuteScalar<int>("SELECT COUNT(*) FROM Ventas"));
-        Assert.Null(bd.Db.ObtenerVentaPorId(venta.Value.Id).EfectivoRecibido);
+        Assert.Null(bd.Db.ObtenerVentaPorId(ventaId).EfectivoRecibido);
         Assert.Single(RespaldoLocal.Listar(bd.Db.DirectorioRespaldos),
             r => r.Nombre.Contains("antes-migrar"));
     }

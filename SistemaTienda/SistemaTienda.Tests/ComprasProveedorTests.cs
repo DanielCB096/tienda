@@ -214,12 +214,7 @@ public sealed class ComprasProveedorTests
     [Fact]
     public void Migracion_DesdeV12_CreaLasTablasDeCompras()
     {
-        using var bd = new BaseDatosPrueba();
-        bd.ConfigurarTienda();
-
-        bd.Db.ExecuteCommand("DROP TABLE CompraProveedorLineas");
-        bd.Db.ExecuteCommand("DROP TABLE ComprasProveedor");
-        bd.Db.ExecuteCommand("PRAGMA user_version = 12");
+        using var bd = new BaseDatosPrueba(versionEsquema: 12);
 
         bd.Db.InicializarBaseDeDatos();
 

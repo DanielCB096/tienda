@@ -17,14 +17,14 @@ public sealed class BaseDatosPrueba : IDisposable
     public ConfiguracionService Config { get; }
     public InventoryService Inventario { get; }
 
-    public BaseDatosPrueba()
+    public BaseDatosPrueba(int? versionEsquema = null)
     {
         _directorio = Path.Combine(Path.GetTempPath(), $"sistematienda-test-{Guid.NewGuid():N}");
         Directory.CreateDirectory(_directorio);
         Ruta = Path.Combine(_directorio, "tienda.db");
 
         Db = new DatabaseTools(Ruta, pooling: false);
-        Db.InicializarBaseDeDatos();
+        Db.InicializarBaseDeDatos(versionEsquema);
         Config = new ConfiguracionService(Db);
         Inventario = new InventoryService(Db);
 

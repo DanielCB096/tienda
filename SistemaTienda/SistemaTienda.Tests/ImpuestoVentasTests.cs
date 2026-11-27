@@ -89,12 +89,7 @@ public sealed class ImpuestoVentasTests
     [Fact]
     public void Migracion_DesdeV13_AgregaElImpuestoALasLineas()
     {
-        using var bd = new BaseDatosPrueba();
-        bd.ConfigurarTienda();
-
-        bd.Db.ExecuteCommand("ALTER TABLE VentaLineas DROP COLUMN ImpuestoImporte");
-        bd.Db.ExecuteCommand("ALTER TABLE VentaLineas DROP COLUMN ImpuestoPorcentaje");
-        bd.Db.ExecuteCommand("PRAGMA user_version = 13");
+        using var bd = new BaseDatosPrueba(versionEsquema: 13);
 
         bd.Db.InicializarBaseDeDatos();
 
