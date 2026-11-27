@@ -17,6 +17,13 @@ Cada entrada tiene formato:
 
 ---
 
+## 2026-11-27 — Simulación de un día completo
+
+- **Agregado**: `DiaCompletoTests` simula un día con ventas en efectivo, tarjeta, mixta y fiado, descuentos por producto, dos anulaciones con reembolso, abono, gasto, merma y compra; valida ventas, reporte, desglose, caja, stock y corte sin diferencia.
+- **Modificado**: el escenario `demo` agrega una venta con descuentos, una anulación reembolsada en efectivo y otra con reembolso parcial con tarjeta para revisar las pantallas.
+- **Pruebas**: 1 nueva en `DiaCompletoTests`; `SemillaTests` valida anulaciones y reembolsos; suite completa: 535.
+- **Extra**: la base de pruebas usa SQLite sin pooling para evitar bloqueos entre pruebas.
+
 ## 2026-11-27 — Reembolso de ventas anuladas
 
 - **Agregado**: el detalle de una venta anulada muestra pagado, reembolsado y pendiente, y permite **Registrar reembolso** por método y en partes.

@@ -78,6 +78,12 @@ dotnet run --project SistemaTienda/SistemaTienda.Semilla -- --db C:\ruta\tienda.
 `%LOCALAPPDATA%\SistemaTienda\com.sistematienda.p3\Data\tienda.db`, la base de la app
 aislada que se usa para la prueba con una persona no técnica.
 
+El escenario `demo` incluye ventas de los cuatro métodos, una venta con descuentos
+distintos por producto, una venta en efectivo anulada y reembolsada por completo,
+una venta con tarjeta anulada con reembolso parcial, un corte cerrado y un periodo
+abierto. Sirve para revisar ventas, tickets, reportes, caja y reembolsos sin capturar
+nada a mano.
+
 ## Qué valida la suite
 
 `SemillaTests` genera los escenarios en un directorio temporal y comprueba:
@@ -86,6 +92,9 @@ aislada que se usa para la prueba con una persona no técnica.
 - Que el corte tenga diferencia cero y que el desglose sume el efectivo contado.
 - Que el stock de cada producto siga siendo la suma de sus movimientos, incluso con
   anulación y compras.
+- Que existan las anulaciones, los reembolsos y sus retiros de caja.
+- Que `DiaCompletoTests` cuadre un día con ventas, descuentos, reembolsos, abono,
+  gasto, merma y compra contra ventas, reportes y corte.
 - Que `limpio` borre base y respaldos.
 - Que sin `--reset` no se sobrescriba una base existente.
 

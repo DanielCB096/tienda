@@ -252,6 +252,50 @@ public static class GeneradorSemilla
         Exigir(ventas.AnularVenta(aAnular.Id, "El cliente canceló la compra", "Dueño"),
             "anulación de venta");
 
+        // Venta con descuento distinto por producto: 10% en uno y $2.00 en otro.
+        var brutoDescuentoA = productos[9].Precio;
+        var descuentoA = Dinero.Porcentaje(brutoDescuentoA, 10m);
+        var totalConDescuento = brutoDescuentoA - descuentoA + productos[6].Precio - 200;
+        var ventaConDescuento = ventas.RegistrarVenta(new[]
+        {
+            new LineaVentaSolicitada
+            {
+                ProductoId = productos[9].Id,
+                Cantidad = 1,
+                DescuentoPorcentaje = 10m
+            },
+            new LineaVentaSolicitada
+            {
+                ProductoId = productos[6].Id,
+                Cantidad = 1,
+                DescuentoMonto = 200
+            }
+        }, new PagoSolicitado
+        {
+            Efectivo = totalConDescuento,
+            EfectivoRecibido = totalConDescuento
+        }, "Dueño");
+        Exigir(ventaConDescuento, "venta con descuentos");
+        ventasDelDia.Add(ventaConDescuento.Value);
+
+        // Venta en efectivo anulada y reembolsada por completo.
+        var reembolsoEfectivo = Vender(ventas, productos, ventasDelDia,
+            MetodoPagoVenta.Efectivo, 0, (14, 1));
+        Exigir(ventas.AnularVenta(reembolsoEfectivo.Id,
+            "Cliente devolvió el producto", "Dueño"), "anulación para reembolso");
+        Exigir(ventas.RegistrarReembolso(reembolsoEfectivo.Id,
+            MetodoPagoAbono.Efectivo, reembolsoEfectivo.Total, "Dueño"),
+            "reembolso en efectivo");
+
+        // Venta con tarjeta anulada con reembolso parcial: deja un pendiente visible.
+        var reembolsoParcial = Vender(ventas, productos, ventasDelDia,
+            MetodoPagoVenta.Tarjeta, 0, (15, 1));
+        Exigir(ventas.AnularVenta(reembolsoParcial.Id,
+            "Cargo duplicado en la terminal", "Dueño"), "anulación parcial");
+        Exigir(ventas.RegistrarReembolso(reembolsoParcial.Id,
+            MetodoPagoAbono.Tarjeta, reembolsoParcial.Total / 2, "Dueño"),
+            "reembolso parcial con tarjeta");
+
         Exigir(config.RegistrarAbonoCliente(clientes[0].Id, 5_000, "Dueño", MetodoPagoAbono.Efectivo),
             "abono en efectivo");
         Exigir(config.RegistrarAbonoCliente(clientes[1].Id, 3_000, "Dueño", MetodoPagoAbono.Transferencia),

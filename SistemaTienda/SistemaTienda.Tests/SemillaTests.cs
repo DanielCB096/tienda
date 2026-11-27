@@ -37,7 +37,12 @@ public sealed class SemillaTests : IDisposable
         Assert.Equal(5, db.ExecuteScalar<long>("SELECT COUNT(*) FROM Proveedores"));
         Assert.Equal(3, db.ExecuteScalar<long>("SELECT COUNT(*) FROM UsuariosSistema"));
         Assert.Equal(1, db.ExecuteScalar<long>("SELECT COUNT(*) FROM CortesCaja"));
-        Assert.Equal(1, db.ExecuteScalar<long>("SELECT COUNT(*) FROM AnulacionesVenta"));
+        Assert.Equal(3, db.ExecuteScalar<long>("SELECT COUNT(*) FROM AnulacionesVenta"));
+        Assert.Equal(2, db.ExecuteScalar<long>("SELECT COUNT(*) FROM ReembolsosVenta"));
+        Assert.Equal(1, db.ExecuteScalar<long>(
+            "SELECT COUNT(*) FROM MovimientosCaja WHERE Motivo LIKE 'Reembolso%'"));
+        Assert.True(db.ExecuteScalar<long>(
+            "SELECT COUNT(*) FROM VentaLineas WHERE Descuento > 0") >= 2);
 
         var diferencia = db.ExecuteScalar<long>("SELECT Diferencia FROM CortesCaja LIMIT 1");
         Assert.Equal(0, diferencia);
