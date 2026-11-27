@@ -28,6 +28,16 @@ public sealed class LicenciasTests
         new(bd.Db, publica);
 
     [Fact]
+    public void LicenciaPublica_EsUnaLlavePemValida()
+    {
+        Assert.Contains("BEGIN PUBLIC KEY", LicenciaPublica.Pem);
+
+        using var rsa = RSA.Create();
+        rsa.ImportFromPem(LicenciaPublica.Pem);
+        Assert.True(rsa.KeySize >= 2048);
+    }
+
+    [Fact]
     public void LicenciaFirma_FirmaValida_SeAcepta()
     {
         var (llave, publica) = CrearLlave();

@@ -22,7 +22,7 @@ Cada entrada tiene formato:
 - **Agregado**: licencia perpetua firmada con RSA-PSS en un archivo `.poslic`, sin atarse al hardware y sin bloquear la operación.
 - **Agregado**: Ajustes muestra el estado de la licencia y permite importarla pegando el contenido; Inicio avisa cuando la prueba de 30 días vence, la licencia falla o el soporte venció.
 - **Agregado**: herramienta `SistemaTienda.Licencias` para generar llaves, emitir y verificar licencias; la llave privada queda fuera del repositorio.
-- **Pruebas**: 9 nuevas en `LicenciasTests`; suite completa: 544.
+- **Pruebas**: 10 nuevas en `LicenciasTests` (incluye la llave pública); suite completa: 545.
 - Ver [ADR-016](../../SistemaMaestro/docs/07-decisiones/ADR-016-licencia-offline.md) y [licencias.md](04-operacion/licencias.md).
 
 ## 2026-11-27 — Simulación de un día completo
