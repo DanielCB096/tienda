@@ -1003,7 +1003,11 @@ public sealed class MigradorEsquema
         {
             DataSource = _rutaBaseDatos,
             ForeignKeys = true,
-            DefaultTimeout = 30
+            DefaultTimeout = 30,
+            // La migración corre al arrancar y no se beneficia del pooling; al
+            // desactivarlo se evita reutilizar una conexión con el esquema viejo
+            // cuando una prueba reconstruye la base.
+            Pooling = false
         }.ToString();
     }
 
