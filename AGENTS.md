@@ -87,7 +87,7 @@ Cada agente: su carpeta, su rama y su PR.
 - H6.2: tickets en espera persistidos (esquema v19), sin reservar stock, precios recalculados con aviso, máximo 10 y venta atómica que cierra el ticket.
 - Descuento por producto (% o monto, distinto por renglón y atajo para toda la venta) con permiso de dueño/encargado, IVA y comisión sobre el neto, bitácora y esquema v20/v21; 513 pruebas; verificado en Windows el 2026-11-26.
 - Costo del catálogo en entradas: la entrada actualiza `Productos.Costo` (casilla para conservar) y, si el dueño lo marca, el precio conservando el margen en pesos; bitácora; 525 pruebas; verificado en Windows el 2026-11-27.
-- Licencia offline perpetua firmada (RSA-PSS) con prueba de 30 días, avisos sin bloqueo, importación desde Ajustes y herramienta `SistemaTienda.Licencias` para emitir; 10 pruebas nuevas (545); pendiente verificación visual.
+- Licencia offline perpetua firmada (RSA-PSS) con prueba de 30 días, avisos sin bloqueo, importación desde Ajustes y herramienta `SistemaTienda.Licencias` para emitir; 10 pruebas nuevas (545); verificado en Windows el 2026-11-27.
 - Reembolso de ventas anuladas por método y en partes; el efectivo genera retiro de caja y el fiado no se reembolsa (v22); 534 pruebas; verificado en Windows el 2026-11-27.
 - Día completo simulado: `DiaCompletoTests` cubre ventas de todos los tipos, descuentos, anulaciones, reembolsos, abono, gasto, merma y compra, y cuadra reportes y caja; el escenario `demo` incluye esos casos; 535 pruebas; verificado en Windows el 2026-11-27. Migrador de esquema sin pooling para evitar conexiones con esquema viejo en pruebas.
 - Reportes por producto/categoría y edición de gastos (bloqueada tras corte cerrado) con 499 pruebas; verificado en Windows el 2026-11-26.
